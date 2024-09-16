@@ -1,5 +1,4 @@
-﻿using System.Reflection;
-using amethyst.DataStores;
+﻿using amethyst.DataStores;
 using Func;
 
 namespace amethyst.Services;
@@ -8,20 +7,27 @@ public interface IGameDiscoveryService
 {
     IEnumerable<GameInfo> GetGames();
     GameInfo GetGame(GameInfo gameInfo);
+
+    public static string GetGameFileName(GameInfo game) =>
+        $"{CleanFileName(game.Name)}_{game.Id}";
+
+    private static string CleanFileName(string value) =>
+        value.Split(Path.GetInvalidFileNameChars())
+            .Map(string.Concat)
+            .Replace(" ", "")
+            .Map(s => s[..Math.Min(20, s.Length)])
+            .TrimEnd('.');
 }
 
-public class GameDiscoveryService(GameStoreFactory gameStoreFactory, RunningEnvironment environment) : IGameDiscoveryService
+public class GameDiscoveryService(GameStoreFactory gameStoreFactory) : IGameDiscoveryService
 {
-    public const string GamesFolderName = "games";
-    public string GamesFolder => Path.Combine(environment.RootPath, "db", GamesFolderName);
-
     public IEnumerable<GameInfo> GetGames() =>
-        Directory.GetFiles(GamesFolder, "*.db")
+        Directory.GetFiles(GameDataStore.GamesFolder, "*.db")
             .Select(GetGameInfo);
 
     public GameInfo GetGame(GameInfo gameInfo)
     {
-        using var gameStore = gameStoreFactory(GetGameFileName(gameInfo));
+        using var gameStore = gameStoreFactory(IGameDiscoveryService.GetGameFileName(gameInfo));
         gameStore.SetInfo(gameInfo);
 
         return gameStore.GetInfo();
@@ -35,14 +41,4 @@ public class GameDiscoveryService(GameStoreFactory gameStoreFactory, RunningEnvi
 
         return new(gameInfo.Id, gameInfo.Name);
     }
-
-    private static string GetGameFileName(GameInfo game) =>
-        $"{CleanFileName(game.Name)}_{game.Id}";
-
-    private static string CleanFileName(string value) =>
-        value.Split(Path.GetInvalidFileNameChars())
-            .Map(string.Concat)
-            .Replace(" ", "")
-            .Map(s => s[..Math.Min(20, s.Length)])
-            .TrimEnd('.');
 }

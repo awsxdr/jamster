@@ -47,9 +47,12 @@ public class TeamsController(
     {
         logger.LogInformation("Deleting team {id}", id);
 
-        teamsStore.ArchiveTeam(id);
-
-        return NoContent();
+        return teamsStore.ArchiveTeam(id) switch
+        {
+            Success => NoContent(),
+            Failure<TeamNotFoundError> => NotFound(),
+            _ => throw new UnexpectedResultException()
+        };
     }
 
     [HttpGet("{teamId:guid}/roster")]
@@ -59,7 +62,7 @@ public class TeamsController(
 
         return teamsStore.GetTeam(teamId) switch
         {
-            Success<Team> s => Ok(s.Value.Roster),
+            Success<Team> s => Ok((RosterModel) s.Value.Roster),
             Failure<TeamNotFoundError> => NotFound(),
             _ => throw new UnexpectedResultException()
         };
@@ -103,4 +106,7 @@ public record TeamWithRosterModel(
         new(team.Id, team.Names, team.Colors, team.Roster);
 }
 
-public record RosterModel(List<Skater> Roster);
+public record RosterModel(List<Skater> Roster)
+{
+    public static explicit operator RosterModel(List<Skater> skaters) => new(skaters);
+}

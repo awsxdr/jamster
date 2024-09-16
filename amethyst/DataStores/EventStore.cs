@@ -10,9 +10,9 @@ public abstract class EventStore : IEventStore
 {
     public ISQLiteConnection Connection { get; }
 
-    protected EventStore(string databaseName, ConnectionFactory connectionFactory, RunningEnvironment environment)
+    protected EventStore(string databaseName, ConnectionFactory connectionFactory)
     {
-        Connection = connectionFactory(Path.Combine(environment.RootPath, "db", $"{databaseName}.db"), SQLiteOpenFlags.Create | SQLiteOpenFlags.ReadWrite);
+        Connection = connectionFactory(Path.Combine(RunningEnvironment.RootPath, "db", $"{databaseName}.db"), SQLiteOpenFlags.Create | SQLiteOpenFlags.ReadWrite);
     }
 
     public void Dispose()

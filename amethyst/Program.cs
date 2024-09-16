@@ -1,4 +1,3 @@
-using System.Reflection;
 using System.Text.Json.Serialization;
 using amethyst;
 using amethyst.DataStores;
@@ -19,15 +18,13 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.AddSingleton<ITeamsDataStore, TeamsDataStore>();
 builder.Services.AddSingleton<ConnectionFactory>((connectionString, flags) => new SQLiteConnection(connectionString, flags));
-builder.Services.AddSingleton<GameStoreFactory>(services => path => new GameDataStore(path, services.GetService<ConnectionFactory>()!, services.GetService<RunningEnvironment>()!));
+builder.Services.AddSingleton<GameStoreFactory>(services => path => new GameDataStore(path, services.GetService<ConnectionFactory>()!));
 builder.Services.AddSingleton<IGameDiscoveryService, GameDiscoveryService>();
+builder.Services.AddSingleton<IEventConverter, EventConverter>();
 
-var environment = new RunningEnvironment(Path.GetDirectoryName(Assembly.GetEntryAssembly()!.Location)!);
-builder.Services.AddSingleton(environment);
-
-var databasesPath = Path.Combine(environment.RootPath, "db");
+var databasesPath = Path.Combine(RunningEnvironment.RootPath, "db");
 Directory.CreateDirectory(databasesPath);
-Directory.CreateDirectory(Path.Combine(databasesPath, GameDiscoveryService.GamesFolderName));
+Directory.CreateDirectory(Path.Combine(databasesPath, GameDataStore.GamesFolderName));
 
 
 var app = builder.Build();
@@ -45,3 +42,5 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
+public partial class Program;

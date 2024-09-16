@@ -25,11 +25,11 @@ public abstract class DataStore<TData> : IDataStore
 
     public ISQLiteConnection Connection { get; }
 
-    protected DataStore(string databaseName, KeySelector keySelector, ConnectionFactory connectionFactory, RunningEnvironment environment)
+    protected DataStore(string databaseName, KeySelector keySelector, ConnectionFactory connectionFactory)
     {
         _keySelector = keySelector;
         _tableName = typeof(TData).Name;
-        Connection = connectionFactory(Path.Combine(environment.RootPath, "db", $"{databaseName}.db"), SQLiteOpenFlags.Create | SQLiteOpenFlags.ReadWrite);
+        Connection = connectionFactory(Path.Combine(RunningEnvironment.RootPath, "db", $"{databaseName}.db"), SQLiteOpenFlags.Create | SQLiteOpenFlags.ReadWrite);
 
         Connection.Execute($"CREATE TABLE IF NOT EXISTS {_tableName} (id BLOB PRIMARY KEY, data TEXT, isArchived INTEGER)");
     }
@@ -55,8 +55,13 @@ public abstract class DataStore<TData> : IDataStore
     protected void Insert(TData item) =>
         Connection.Execute($"INSERT INTO {_tableName} (id, data, isArchived) VALUES (?, ?, FALSE)", _keySelector(item), Serialize(item));
 
-    protected void Archive(Guid key) =>
-        Connection.Execute($"UPDATE {_tableName} SET isArchived = TRUE WHERE id = ?", key);
+    protected Result Archive(Guid key) =>
+        Connection.Query<int>($"UPDATE {_tableName} SET isArchived = TRUE WHERE id = ? RETURNING 0", key).Count switch
+        {
+            1 => Succeed(),
+            0 => Fail<NotFoundError>(),
+            _ => throw new UnexpectedUpdateCountException()
+        };
 
     protected void Update(Guid key, TData item) =>
         Connection.Execute($"UPDATE {_tableName} SET data = ? WHERE id = ?", Serialize(item), key);

@@ -1,3 +1,8 @@
-﻿namespace amethyst;
+﻿using System.Reflection;
 
-public record RunningEnvironment(string RootPath);
+namespace amethyst;
+
+public static class RunningEnvironment
+{
+    public static readonly string RootPath = Path.GetDirectoryName(Assembly.GetEntryAssembly()!.Location)!;
+};

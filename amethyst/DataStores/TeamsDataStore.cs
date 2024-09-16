@@ -9,12 +9,12 @@ public interface ITeamsDataStore
     Team CreateTeam(Team team);
     Result<Team> GetTeam(Guid teamId);
     Result<Team> GetTeamIncludingArchived(Guid teamId);
-    void ArchiveTeam(Guid teamId);
+    Result ArchiveTeam(Guid teamId);
     Result SetRoster(Guid teamId, IEnumerable<Skater> skaters);
 }
 
-public class TeamsDataStore(ConnectionFactory connectionFactory, RunningEnvironment environment) 
-    : DataStore<Team>("teams", t => t.Id, connectionFactory, environment)
+public class TeamsDataStore(ConnectionFactory connectionFactory) 
+    : DataStore<Team>("teams", t => t.Id, connectionFactory)
     , ITeamsDataStore
 {
     public IEnumerable<Team> GetTeams() =>
@@ -45,8 +45,13 @@ public class TeamsDataStore(ConnectionFactory connectionFactory, RunningEnvironm
         return newTeam;
     }
 
-    public void ArchiveTeam(Guid teamId) =>
-        Archive(teamId);
+    public Result ArchiveTeam(Guid teamId) =>
+        Archive(teamId) switch
+        {
+            Success s => s,
+            Failure<NotFoundError> => Result.Fail<TeamNotFoundError>(),
+            _ => throw new UnexpectedResultException()
+        };
 
     public Result SetRoster(Guid teamId, IEnumerable<Skater> skaters) =>
         Get(teamId)
