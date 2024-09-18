@@ -15,26 +15,25 @@ using Services;
 public class EventBusIntegrationTests
 {
     [Test]
-    public async Task Test()
+    public async Task SingleEventInEmptyGame_SetsExpectedState()
     {
         var mocker = new AutoMocker(MockBehavior.Loose);
 
-        var reducers = typeof(Reducer<>).Assembly.GetExportedTypes()
+        var reducerFactories = typeof(Reducer<>).Assembly.GetExportedTypes()
             .Where(type => !type.IsAbstract && type.IsAssignableTo(typeof(IReducer)))
-            .Select(type => (IReducer)mocker.CreateInstance(type))
+            .Select(type => (ReducerFactory)(_ => (IReducer)mocker.CreateInstance(type)))
             .ToImmutableList();
 
-        mocker.Use<IImmutableList<IReducer>>(reducers);
-
-        var stateStore = mocker.CreateInstance<GameStateStore>();
-        mocker.Use(stateStore);
-
-        var stateStoreFactoryMock = mocker.GetMock<IGameStateStoreFactory>();
-        stateStoreFactoryMock.Setup(m => m.GetGame(It.IsAny<GameInfo>())).Returns(stateStore);
-        mocker.Use(stateStoreFactoryMock.Object);
+        mocker.Use<IImmutableList<ReducerFactory>>(reducerFactories);
 
         var dataStoreMock = mocker.GetMock<IGameDataStore>();
         mocker.Use((GameStoreFactory)(_ => dataStoreMock.Object));
+
+        var stateStore = mocker.CreateInstance<GameStateStore>();
+        mocker.Use<IGameStateStore>(stateStore);
+
+        var gameContextFactory = mocker.CreateInstance<GameContextFactory>();
+        mocker.Use<IGameContextFactory>(gameContextFactory);
 
         var subject = mocker.CreateInstance<EventBus>();
 

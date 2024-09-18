@@ -12,6 +12,7 @@ using Events;
 public class GamesController(
     IGameDiscoveryService gameDiscoveryService,
     IEventConverter eventConverter,
+    IEventBus eventBus,
     ILogger<GamesController> logger
     ) : Controller
 {
@@ -37,13 +38,21 @@ public class GamesController(
     }
 
     [HttpPost("{gameId:guid}")]
-    public ActionResult<EventCreatedModel> AddEvent(Guid gameId, [FromBody] CreateEventModel model)
+    public async Task<ActionResult<EventCreatedModel>> AddEvent(Guid gameId, [FromBody] CreateEventModel model)
     {
-        return eventConverter.DecodeEvent(model.AsUntypedEvent()) switch
+        logger.LogDebug("Adding event {eventType} to game {gameId}", model.Type, gameId);
+
+        return 
+            (await eventConverter.DecodeEvent(model.AsUntypedEvent()) 
+                    .And(gameDiscoveryService.GetExistingGame(gameId))
+                    .ThenMap(x => eventBus.AddEventAtCurrentTick(x.Item2, x.Item1)))
+                switch
         {
             Success => Accepted(new EventCreatedModel(Guid.NewGuid())),
             Failure<EventTypeNotKnownError> => BadRequest(),
             Failure<BodyFormatIncorrectError> => BadRequest(),
+            Failure<GameFileNotFoundForIdError> => NotFound(),
+            Failure<MultipleGameFilesFoundForIdError> => StatusCode(500),
             _ => throw new UnexpectedResultException()
         };
     }

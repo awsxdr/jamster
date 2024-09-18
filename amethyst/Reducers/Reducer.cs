@@ -1,17 +1,30 @@
 ﻿namespace amethyst.Reducers;
 
+using Events;
 using Services;
+
+public delegate IReducer ReducerFactory(IGameStateStore stateStore);
 
 public interface IReducer
 {
     object GetDefaultState();
 
-    public async Task Handle<TEvent>(TEvent @event)
+    public async Task Handle<TEvent>(TEvent @event) where TEvent : class
     {
         if (this is not IHandlesEventAsync<TEvent> handler)
             return;
 
         await handler.HandleAsync(@event);
+    }
+
+    public Task HandleUntyped(Event @event)
+    {
+        var handleTask = (Task) typeof(IReducer)
+            .GetMethod(nameof(Handle))
+            !.MakeGenericMethod(@event.GetType())
+            .Invoke(this, [@event])!;
+
+        return handleTask;
     }
 }
 

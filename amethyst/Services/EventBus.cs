@@ -3,12 +3,17 @@
 using DataStores;
 using Events;
 using Func;
-using Reducers;
+
+public interface IEventBus
+{
+    Task<Event> AddEventAtCurrentTick(GameInfo game, Event @event);
+    Task<Event> AddEvent(GameInfo game, Event @event);
+}
 
 public class EventBus(
-    IGameStateStoreFactory stateStoreFactory,
+    IGameContextFactory contextFactory,
     GameStoreFactory gameStoreFactory,
-    ILogger<EventBus> logger)
+    ILogger<EventBus> logger) : IEventBus
 {
     public Task<Event> AddEventAtCurrentTick(GameInfo game, Event @event)
     {
@@ -18,14 +23,14 @@ public class EventBus(
 
     public async Task<Event> AddEvent(GameInfo game, Event @event)
     {
-        var stateStore = stateStoreFactory.GetGame(game);
+        var stateStore = contextFactory.GetGame(game);
 
         if (PersistEventToDatabase(game, @event) is not Success<Guid> persistResult)
             return @event;
 
         //TODO: Store ID
 
-        await stateStore.ApplyEvents(@event);
+        await stateStore.StateStore.ApplyEvents(stateStore.Reducers, @event);
 
         return @event;
     }

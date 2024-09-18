@@ -3,10 +3,13 @@ using Func;
 
 namespace amethyst.Services;
 
+using Domain;
+
 public interface IGameDiscoveryService
 {
     IEnumerable<GameInfo> GetGames();
     GameInfo GetGame(GameInfo gameInfo);
+    Result<GameInfo> GetExistingGame(Guid gameId);
 
     public static string GetGameFileName(GameInfo game) =>
         $"{CleanFileName(game.Name)}_{game.Id}";
@@ -33,6 +36,18 @@ public class GameDiscoveryService(GameStoreFactory gameStoreFactory) : IGameDisc
         return gameStore.GetInfo();
     }
 
+    public Result<GameInfo> GetExistingGame(Guid gameId) =>
+        GetGameNameForId(gameId)
+            .ThenMap(GetGameInfo);
+
+    private static Result<string> GetGameNameForId(Guid gameId) =>
+        Directory.GetFiles(GameDataStore.GamesFolder, $"*_{gameId}.db") switch
+        {
+            { Length: >1 } => Result<string>.Fail<MultipleGameFilesFoundForIdError>(),
+            { Length: 0 } => Result<string>.Fail<GameFileNotFoundForIdError>(),
+            [var file] => Result.Succeed(file)
+        };
+
     private GameInfo GetGameInfo(string gamePath)
     {
         using var gameStore = gameStoreFactory(Path.GetFileNameWithoutExtension(gamePath));
@@ -41,4 +56,8 @@ public class GameDiscoveryService(GameStoreFactory gameStoreFactory) : IGameDisc
 
         return new(gameInfo.Id, gameInfo.Name);
     }
+
 }
+
+public sealed class MultipleGameFilesFoundForIdError : ResultError;
+public sealed class GameFileNotFoundForIdError : NotFoundError;

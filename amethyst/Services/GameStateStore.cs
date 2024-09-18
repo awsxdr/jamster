@@ -1,7 +1,7 @@
 ﻿namespace amethyst.Services;
 
-using System.Collections.Immutable;
-using Events;
+using System.Collections.Immutable;using amethyst.DataStores;
+using amethyst.Events;
 using Microsoft.Extensions.Logging;
 using Reducers;
 
@@ -9,33 +9,15 @@ public interface IGameStateStore
 {
     TState GetState<TState>() where TState : class;
     void SetState<TState>(TState state) where TState : class;
-    Task ApplyEvents(params Event[] events);
+    void LoadDefaultStates(IImmutableList<IReducer> reducers);
+    Task ApplyEvents(IImmutableList<IReducer> reducers, params Event[] events);
 }
 
-public class GameStateStore : IGameStateStore
+public class GameStateStore(ILogger<GameStateStore> logger) : IGameStateStore
 {
-    private readonly IImmutableList<IReducer> _reducers;
-    private readonly ILogger<GameStateStore> _logger;
-    private readonly IDictionary<Type, object> _states;
+    private readonly Dictionary<Type, object> _states = new();
 
     public event EventHandler<StateUpdatedEventArgs>? StateUpdated;
-
-    public GameStateStore(
-        IImmutableList<IReducer> reducers,
-        ILogger<GameStateStore> logger)
-    {
-        _reducers = reducers
-            .Where(r => r.GetType().GetInterfaces().Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IReducer<>)))
-            .ToImmutableList();
-        _logger = logger;
-
-        _states = _reducers.ToDictionary(
-            k => k.GetType().GetInterfaces()
-                .Single(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IReducer<>))
-                .GetGenericArguments()
-                .Single(), 
-            v => v.GetDefaultState());
-    }
 
     public TState GetState<TState>() where TState : class =>
         (TState)_states[typeof(TState)];
@@ -46,25 +28,34 @@ public class GameStateStore : IGameStateStore
         StateUpdated?.Invoke(this, new(state));
     }
 
-    public async Task ApplyEvents(params Event[] events)
+    public void LoadDefaultStates(IImmutableList<IReducer> reducers)
     {
-        foreach (var @event in events)
+        foreach (var reducer in reducers)
         {
-            await HandleEvent(@event);
+            var state = reducer.GetDefaultState();
+            _states[state.GetType()] = state;
         }
     }
 
-    private async Task HandleEvent(Event @event)
+    public async Task ApplyEvents(IImmutableList<IReducer> reducers, params Event[] events)
     {
-        foreach (var reducer in _reducers)
+        foreach (var @event in events)
+        {
+            await HandleEvent(reducers, @event);
+        }
+    }
+
+    private async Task HandleEvent(IImmutableList<IReducer> reducers, Event @event)
+    {
+        foreach (var reducer in reducers)
         {
             try
             {
-                await reducer.Handle(@event);
+                await reducer.HandleUntyped(@event);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error while applying {eventType} with reducer {reducerType}. Game state may now be invalid.", @event.GetType().Name, reducer.GetType().Name);
+                logger.LogError(ex, "Error while applying {eventType} with reducer {reducerType}. Game state may now be invalid.", @event.GetType().Name, reducer.GetType().Name);
             }
         }
     }
