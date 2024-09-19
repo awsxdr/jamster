@@ -31,12 +31,13 @@ public class GameContextFactory(
         var events = game.GetEvents().ToArray();
 
         var stateStore = stateStoreFactory();
-        var reducers = reducerFactories.Select(f => f(stateStore)).ToImmutableList();
+        var gameContextWithoutReducers = new GameContext(gameInfo, [], stateStore);
+        var reducers = reducerFactories.Select(f => f(gameContextWithoutReducers)).ToImmutableList();
         stateStore.LoadDefaultStates(reducers);
         stateStore.ApplyEvents(reducers, events);
 
-        _gameContexts[gameInfo.Id] = new(reducers, stateStore);
+        _gameContexts[gameInfo.Id] = gameContextWithoutReducers with { Reducers = reducers };
     }
 }
 
-public record GameContext(IImmutableList<IReducer> Reducers, IGameStateStore StateStore);
+public record GameContext(GameInfo GameInfo, IImmutableList<IReducer> Reducers, IGameStateStore StateStore);

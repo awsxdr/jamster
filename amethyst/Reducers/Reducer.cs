@@ -3,7 +3,7 @@
 using Events;
 using Services;
 
-public delegate IReducer ReducerFactory(IGameStateStore stateStore);
+public delegate IReducer ReducerFactory(GameContext gameContext);
 
 public interface IReducer
 {
@@ -49,9 +49,11 @@ public interface IHandlesEventAsync<in TEvent>
     Task HandleAsync(TEvent @event);
 }
 
-public abstract class Reducer<TState>(IGameStateStore stateStore) : IReducer<TState>
+public abstract class Reducer<TState>(GameContext context) : IReducer<TState>
     where TState : class
 {
+    protected GameContext Context { get; } = context;
+
     protected abstract TState DefaultState { get; }
 
     public object GetDefaultState() => DefaultState;
@@ -59,8 +61,8 @@ public abstract class Reducer<TState>(IGameStateStore stateStore) : IReducer<TSt
     protected TState GetState() => GetState<TState>();
 
     protected TOtherState GetState<TOtherState>() where TOtherState : class =>
-        stateStore.GetState<TOtherState>();
+        Context.StateStore.GetState<TOtherState>();
 
     protected void SetState(TState state) =>
-        stateStore.SetState(state);
+        Context.StateStore.SetState(state);
 }

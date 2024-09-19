@@ -17,28 +17,29 @@ public abstract class ControllerIntegrationTest
     protected JsonSerializerOptions SerializerOptions { get; } = new(JsonSerializerDefaults.Web);
 
     [OneTimeSetUp]
-    public void OneTimeSetup()
+    public virtual void OneTimeSetup()
     {
         SerializerOptions.Converters.Add(new JsonStringEnumConverter());
-    }
 
-    [OneTimeTearDown]
-    public void OneTimeTearDown()
-    {
-        _applicationFactory.Dispose();
-    }
-
-    [SetUp]
-    public void Setup()
-    {
         Client = _applicationFactory.CreateClient();
         Client.GetAsync("/").Wait();
     }
 
-    [TearDown]
-    public void TearDown()
+    [OneTimeTearDown]
+    public virtual void OneTimeTearDown()
     {
         Client.Dispose();
+        _applicationFactory.Dispose();
+    }
+
+    [SetUp]
+    public virtual void Setup()
+    {
+    }
+
+    [TearDown]
+    public virtual void TearDown()
+    {
         CleanDatabase();
     }
 
