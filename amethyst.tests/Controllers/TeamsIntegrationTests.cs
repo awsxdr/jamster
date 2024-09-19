@@ -1,8 +1,8 @@
-namespace amethyst.tests;
+namespace amethyst.tests.Controllers;
 
 using System.Net;
 using System.Net.Http.Json;
-using Controllers;
+using amethyst.Controllers;
 using DataStores;
 using Domain;
 using FluentAssertions;
@@ -108,7 +108,7 @@ public class TeamsIntegrationTests : ControllerIntegrationTest
 
         var createResponse = (await Post<TeamModel>("api/Teams", team, HttpStatusCode.Created))!;
 
-        var roster = new RosterModel([ 
+        var roster = new RosterModel([
             new Skater("1", "One", "he/him", SkaterRole.Skater),
             new Skater("2", "Two", "she/her", SkaterRole.NotSkating),
             new Skater("3", "Three", "they/them", SkaterRole.BenchStaff),

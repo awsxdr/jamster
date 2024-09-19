@@ -11,6 +11,7 @@ using Events;
 [ApiController, Route("api/[controller]")]
 public class GamesController(
     IGameDiscoveryService gameDiscoveryService,
+    IGameContextFactory contextFactory,
     IEventConverter eventConverter,
     IEventBus eventBus,
     ILogger<GamesController> logger
@@ -37,7 +38,7 @@ public class GamesController(
         return Created($"api/games/{game.Id}", game);
     }
 
-    [HttpPost("{gameId:guid}")]
+    [HttpPost("{gameId:guid}/events")]
     public async Task<ActionResult<EventCreatedModel>> AddEvent(Guid gameId, [FromBody] CreateEventModel model)
     {
         logger.LogDebug("Adding event {eventType} to game {gameId}", model.Type, gameId);
@@ -55,6 +56,22 @@ public class GamesController(
             Failure<MultipleGameFilesFoundForIdError> => StatusCode(500),
             _ => throw new UnexpectedResultException()
         };
+    }
+
+    [HttpGet("{gameId:guid}/state/{stateName}")]
+    public ActionResult GetState(Guid gameId, string stateName)
+    {
+        logger.LogDebug("Retrieving state {stateName} for game {gameId}", stateName, gameId);
+
+        return gameDiscoveryService.GetExistingGame(gameId)
+                .ThenMap(contextFactory.GetGame)
+                .Then(c => c.StateStore.GetStateByName(stateName))
+            switch
+            {
+                Success<object> s => Ok(s.Value),
+                Failure<StateNotFoundError> => NotFound(),
+                _ => throw new UnexpectedResultException()
+            };
     }
 }
 

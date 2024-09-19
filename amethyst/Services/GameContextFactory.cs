@@ -10,8 +10,8 @@ public interface IGameContextFactory
 }
 
 public class GameContextFactory(
-    Func<IGameStateStore> stateStoreFactory, 
-    IImmutableList<ReducerFactory> reducerFactories, 
+    GameStateStoreFactory stateStoreFactory, 
+    IEnumerable<ReducerFactory> reducerFactories, 
     GameStoreFactory gameStoreFactory) : IGameContextFactory
 {
     private readonly Dictionary<Guid, GameContext> _gameContexts = [];

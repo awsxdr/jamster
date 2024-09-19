@@ -1,9 +1,12 @@
-﻿namespace amethyst.Services;
-
-using System.Collections.Immutable;using amethyst.DataStores;
+﻿using System.Collections.Immutable;
+using amethyst.Domain;
 using amethyst.Events;
-using Microsoft.Extensions.Logging;
-using Reducers;
+using amethyst.Reducers;
+using Func;
+
+namespace amethyst.Services;
+
+public delegate IGameStateStore GameStateStoreFactory();
 
 public interface IGameStateStore
 {
@@ -11,20 +14,26 @@ public interface IGameStateStore
     void SetState<TState>(TState state) where TState : class;
     void LoadDefaultStates(IImmutableList<IReducer> reducers);
     Task ApplyEvents(IImmutableList<IReducer> reducers, params Event[] events);
+    Result<object> GetStateByName(string stateName);
 }
 
 public class GameStateStore(ILogger<GameStateStore> logger) : IGameStateStore
 {
-    private readonly Dictionary<Type, object> _states = new();
+    private readonly Dictionary<string, object> _states = new();
 
     public event EventHandler<StateUpdatedEventArgs>? StateUpdated;
 
     public TState GetState<TState>() where TState : class =>
-        (TState)_states[typeof(TState)];
+        (TState)_states[typeof(TState).Name];
+
+    public Result<object> GetStateByName(string stateName) =>
+        _states.TryGetValue(stateName, out var state)
+            ? Result.Succeed(state)
+            : Result<object>.Fail<StateNotFoundError>();
 
     public void SetState<TState>(TState state) where TState : class
     {
-        _states[typeof(TState)] = state;
+        _states[typeof(TState).Name] = state;
         StateUpdated?.Invoke(this, new(state));
     }
 
@@ -33,7 +42,7 @@ public class GameStateStore(ILogger<GameStateStore> logger) : IGameStateStore
         foreach (var reducer in reducers)
         {
             var state = reducer.GetDefaultState();
-            _states[state.GetType()] = state;
+            _states[state.GetType().Name] = state;
         }
     }
 
@@ -67,3 +76,5 @@ public class GameStateStore(ILogger<GameStateStore> logger) : IGameStateStore
         public object State { get; } = state;
     }
 }
+
+public sealed class StateNotFoundError : NotFoundError;

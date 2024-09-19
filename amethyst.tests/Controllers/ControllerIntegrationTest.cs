@@ -1,4 +1,4 @@
-namespace amethyst.tests;
+namespace amethyst.tests.Controllers;
 
 using System.Diagnostics;
 using System.Net;
@@ -42,7 +42,7 @@ public abstract class ControllerIntegrationTest
         CleanDatabase();
     }
 
-    protected Task<HttpResponseMessage> Get(string path) => 
+    protected Task<HttpResponseMessage> Get(string path) =>
         Time($"GET {path}", () => Client.GetAsync(path));
 
     protected async Task<TContent?> Get<TContent>(string path, HttpStatusCode expectedStatusCode)

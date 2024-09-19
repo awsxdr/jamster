@@ -17,6 +17,7 @@ public abstract class EventStore : IEventStore
 
     public void Dispose()
     {
+        Connection.Close();
         Connection.Dispose();
     }
 }

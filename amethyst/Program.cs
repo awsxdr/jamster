@@ -1,10 +1,40 @@
+using System.Collections.Immutable;
 using System.Text.Json.Serialization;
 using amethyst;
 using amethyst.DataStores;
+using amethyst.Extensions;
+using amethyst.Reducers;
 using amethyst.Services;
+using Autofac;
+using Autofac.Extensions.DependencyInjection;
 using SQLite;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Host.UseServiceProviderFactory(new AutofacServiceProviderFactory(container =>
+{
+    container.RegisterType<TeamsDataStore>().As<ITeamsDataStore>().SingleInstance();
+    container.RegisterInstance<ConnectionFactory>((connectionString, flags) => new SQLiteConnection(connectionString, flags));
+    container.Register<GameStoreFactory>(context =>
+    {
+        var cachedContext = context.Resolve<IComponentContext>();
+        return path => cachedContext.Resolve<Func<string, IGameDataStore>>()(path);
+    });
+    container.RegisterType<GameDiscoveryService>().As<IGameDiscoveryService>().SingleInstance();
+    container.RegisterType<EventConverter>().As<IEventConverter>().SingleInstance();
+    container.RegisterType<GameStateStore>().As<IGameStateStore>();
+    container.RegisterType<GameContextFactory>().As<IGameContextFactory>().SingleInstance();
+    container.RegisterType<EventBus>().As<IEventBus>().SingleInstance();
+    container.RegisterType<GameDataStore>().As<IGameDataStore>().ExternallyOwned().InstancePerDependency();
+
+    var reducerTypes = AppDomain.CurrentDomain.GetAssemblies()
+        .Where(a => !a.IsDynamic)
+        .SelectMany(a => a.GetExportedTypes())
+        .Where(t => !t.IsAbstract && t.IsAssignableTo<IReducer>())
+        .ToArray();
+
+    container.RegisterTypes(reducerTypes).As<IReducer>();
+}));
 
 builder.Services
     .AddControllers()
@@ -16,16 +46,12 @@ builder.Services
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-builder.Services.AddSingleton<ITeamsDataStore, TeamsDataStore>();
-builder.Services.AddSingleton<ConnectionFactory>((connectionString, flags) => new SQLiteConnection(connectionString, flags));
-builder.Services.AddSingleton<GameStoreFactory>(services => path => new GameDataStore(path, services.GetService<ConnectionFactory>()!));
-builder.Services.AddSingleton<IGameDiscoveryService, GameDiscoveryService>();
-builder.Services.AddSingleton<IEventConverter, EventConverter>();
-
 var databasesPath = Path.Combine(RunningEnvironment.RootPath, "db");
 Directory.CreateDirectory(databasesPath);
 Directory.CreateDirectory(Path.Combine(databasesPath, GameDataStore.GamesFolderName));
 
+
+//builder.Services.AddSingleton<ImmutableList<Func<IReducer>>>(services => reducerTypes.Select(type => services))
 
 var app = builder.Build();
 

@@ -24,13 +24,15 @@ public class EventBusIntegrationTests
             .Select(type => (ReducerFactory)(_ => (IReducer)mocker.CreateInstance(type)))
             .ToImmutableList();
 
-        mocker.Use<IImmutableList<ReducerFactory>>(reducerFactories);
+        mocker.Use<IEnumerable<ReducerFactory>>(reducerFactories);
 
         var dataStoreMock = mocker.GetMock<IGameDataStore>();
         mocker.Use((GameStoreFactory)(_ => dataStoreMock.Object));
 
         var stateStore = mocker.CreateInstance<GameStateStore>();
         mocker.Use<IGameStateStore>(stateStore);
+
+        mocker.Use<GameStateStoreFactory>(() => mocker.Get<IGameStateStore>());
 
         var gameContextFactory = mocker.CreateInstance<GameContextFactory>();
         mocker.Use<IGameContextFactory>(gameContextFactory);
