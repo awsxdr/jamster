@@ -1,7 +1,7 @@
-﻿namespace amethyst.Reducers;
+﻿using amethyst.Events;
+using amethyst.Services;
 
-using Events;
-using Services;
+namespace amethyst.Reducers;
 
 public class JamClock(GameContext gameContext, IEventBus eventBus) 
     : Reducer<JamClockState>(gameContext)
@@ -9,12 +9,14 @@ public class JamClock(GameContext gameContext, IEventBus eventBus)
     , IHandlesEvent<JamEnded>
     , ITickReceiver
 {
-    protected override JamClockState DefaultState => new(false, 0, 0);
+    protected override JamClockState DefaultState => new(false, 0, 0, 0);
 
     public void Handle(JamStarted @event)
     {
-        if(!GetState().IsRunning)
-            SetState(new(true, @event.Tick, 0));
+        var state = GetState();
+
+        if(!state.IsRunning)
+            SetState(new(true, state.JamNumber + 1, @event.Tick, 0));
     }
 
     public void Handle(JamEnded @event) =>
@@ -36,4 +38,4 @@ public class JamClock(GameContext gameContext, IEventBus eventBus)
     }
 }
 
-public record JamClockState(bool IsRunning, long StartTick, long TicksPassed);
+public record JamClockState(bool IsRunning, int JamNumber, long StartTick, long TicksPassed);

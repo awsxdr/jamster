@@ -33,7 +33,7 @@ builder.Host.UseServiceProviderFactory(new AutofacServiceProviderFactory(contain
         .Where(t => !t.IsAbstract && t.IsAssignableTo<IReducer>())
         .ToArray();
 
-    container.RegisterTypes(reducerTypes).As<IReducer>();
+    container.RegisterTypes(reducerTypes).AsSelf().AsImplementedInterfaces();
 }));
 
 builder.Services
