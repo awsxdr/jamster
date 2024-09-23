@@ -1,4 +1,5 @@
-﻿using amethyst.DataStores;
+﻿using System.Text.Json;
+using amethyst.DataStores;
 using amethyst.Domain;
 using amethyst.Services;
 using Func;
@@ -72,6 +73,40 @@ public class GamesController(
                 Failure<StateNotFoundError> => NotFound(),
                 _ => throw new UnexpectedResultException()
             };
+    }
+
+    [HttpGet("{gameId:guid}/state/{stateName}/updates")]
+    public async Task<ActionResult> GetUpdatesStream(Guid gameId, string stateName, CancellationToken cancellationToken)
+    {
+        logger.LogDebug("Adding listened for state {stateName} in game {gameId}", stateName, gameId);
+
+        var contextResult = gameDiscoveryService.GetExistingGame(gameId).ThenMap(contextFactory.GetGame);
+
+        if (contextResult is not Success<GameContext> context)
+        {
+            return contextResult switch
+            {
+                Failure<StateNotFoundError> => NotFound(),
+                _ => throw new UnexpectedResultException()
+            };
+        }
+
+        Response.Headers.Append("Content-Type", "text/event-stream");
+
+        context.Value.StateStore.WatchStateByName(stateName, async state =>
+        {
+            await Response.WriteAsync("data: ", cancellationToken);
+            await JsonSerializer.SerializeAsync(Response.Body, state, cancellationToken: cancellationToken);
+            await Response.WriteAsync("\n\n", cancellationToken);
+            await Response.Body.FlushAsync(cancellationToken);
+        });
+
+        while (!cancellationToken.IsCancellationRequested)
+        {
+            await Task.Delay(10, cancellationToken);
+        }
+
+        return Ok();
     }
 }
 

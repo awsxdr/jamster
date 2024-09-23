@@ -16,7 +16,7 @@ public abstract class UnitTest<TSubject> where TSubject : class
         _mocker = new(() => throw new Exception("Mocker cannot be used until Setup() has run"));
     }
 
-    protected TSubject Subject => Mocker.CreateInstance<TSubject>();
+    protected TSubject Subject { get; private set; }
 
     protected Mock<TMock> GetMock<TMock>() where TMock : class => Mocker.GetMock<TMock>();
     protected TConcrete Create<TConcrete>() where TConcrete : class => Mocker.CreateInstance<TConcrete>();
@@ -30,6 +30,7 @@ public abstract class UnitTest<TSubject> where TSubject : class
     protected virtual void Setup()
     {
         _mocker = new(() => new AutoMocker(MockingBehavior));
+        Subject = Mocker.CreateInstance<TSubject>();
     }
 
     [TearDown]

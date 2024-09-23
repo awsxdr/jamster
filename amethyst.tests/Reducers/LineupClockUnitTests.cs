@@ -34,7 +34,7 @@ public class LineupClockUnitTests : UnitTest<LineupClock>
 
         var secondRandomTick = Random.Shared.Next(0, 100000);
 
-        Subject.Handle(new JamStarted(randomTick));
+        Subject.Handle(new JamStarted(secondRandomTick));
 
         _state.IsRunning.Should().BeFalse();
         _state.StartTick.Should().Be(randomTick);

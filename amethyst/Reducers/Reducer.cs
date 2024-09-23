@@ -28,10 +28,7 @@ public interface IReducer
     }
 }
 
-public interface IReducer<out TState> : IReducer
-    where TState : class
-{
-}
+public interface IReducer<out TState> : IReducer where TState : class;
 
 public interface IHandlesEvent<in TEvent> : IHandlesEventAsync<TEvent>
 {

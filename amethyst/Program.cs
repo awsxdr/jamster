@@ -1,8 +1,6 @@
-using System.Collections.Immutable;
 using System.Text.Json.Serialization;
 using amethyst;
 using amethyst.DataStores;
-using amethyst.Extensions;
 using amethyst.Reducers;
 using amethyst.Services;
 using Autofac;
@@ -33,7 +31,18 @@ builder.Host.UseServiceProviderFactory(new AutofacServiceProviderFactory(contain
         .Where(t => !t.IsAbstract && t.IsAssignableTo<IReducer>())
         .ToArray();
 
-    container.RegisterTypes(reducerTypes).AsSelf().AsImplementedInterfaces();
+    foreach (var reducerType in reducerTypes)
+    {
+        container.RegisterType(reducerType).AsSelf();
+        container.Register<ReducerFactory>(context =>
+        {
+            var localContext = context.Resolve<IComponentContext>();
+            return gameContext =>
+                (IReducer)localContext.Resolve(reducerType, new TypedParameter(typeof(GameContext), gameContext));
+        });
+    }
+
+    //container.RegisterTypes(reducerTypes).As<IReducer>();
 }));
 
 builder.Services
@@ -49,9 +58,6 @@ builder.Services.AddSwaggerGen();
 var databasesPath = Path.Combine(RunningEnvironment.RootPath, "db");
 Directory.CreateDirectory(databasesPath);
 Directory.CreateDirectory(Path.Combine(databasesPath, GameDataStore.GamesFolderName));
-
-
-//builder.Services.AddSingleton<ImmutableList<Func<IReducer>>>(services => reducerTypes.Select(type => services))
 
 var app = builder.Build();
 

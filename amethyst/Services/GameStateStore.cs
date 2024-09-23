@@ -1,4 +1,5 @@
 ﻿using System.Collections.Immutable;
+using System.Reflection;
 using amethyst.Domain;
 using amethyst.Events;
 using amethyst.Reducers;
@@ -15,16 +16,17 @@ public interface IGameStateStore
     void LoadDefaultStates(IImmutableList<IReducer> reducers);
     Task ApplyEvents(IImmutableList<IReducer> reducers, params Event[] events);
     Result<object> GetStateByName(string stateName);
+    void WatchState<TState>(Func<TState, Task> onStateUpdate) where TState : class;
+    void WatchStateByName(string stateName, Func<object, Task> onStateUpdate);
 }
 
 public class GameStateStore(ILogger<GameStateStore> logger) : IGameStateStore
 {
     private readonly Dictionary<string, object> _states = new();
-
-    public event EventHandler<StateUpdatedEventArgs>? StateUpdated;
+    private readonly Dictionary<string, IStateUpdatedEventSource> _stateEventStream = new();
 
     public TState GetState<TState>() where TState : class =>
-        (TState)_states[typeof(TState).Name];
+        (TState)_states[GetStateName<TState>()];
 
     public Result<object> GetStateByName(string stateName) =>
         _states.TryGetValue(stateName, out var state)
@@ -33,8 +35,9 @@ public class GameStateStore(ILogger<GameStateStore> logger) : IGameStateStore
 
     public void SetState<TState>(TState state) where TState : class
     {
-        _states[typeof(TState).Name] = state;
-        StateUpdated?.Invoke(this, new(state));
+        var stateName = GetStateName<TState>();
+        _states[stateName] = state;
+        GetEventSource<TState>().Update(state);
     }
 
     public void LoadDefaultStates(IImmutableList<IReducer> reducers)
@@ -42,9 +45,27 @@ public class GameStateStore(ILogger<GameStateStore> logger) : IGameStateStore
         foreach (var reducer in reducers)
         {
             var state = reducer.GetDefaultState();
-            _states[state.GetType().Name] = state;
+            var stateName = GetStateName(state.GetType());
+            _states[stateName] = state;
+            _stateEventStream[stateName] = MakeEventSource(state.GetType());
         }
     }
+
+    public void WatchStateByName(string stateName, Func<object, Task> onStateUpdate)
+    {
+        var stateType = _states[stateName].GetType();
+        var updateHandler = 
+            GetType().GetMethod(nameof(MapStateUpdateHandler), BindingFlags.NonPublic | BindingFlags.Instance)!
+                .MakeGenericMethod(stateType)
+                .Invoke(this, [onStateUpdate])!;
+
+        GetType().GetMethod(nameof(WatchState))!
+            .MakeGenericMethod(stateType)
+            .Invoke(this, [updateHandler]);
+    }
+
+    public void WatchState<TState>(Func<TState, Task> onStateUpdate) where TState : class =>
+        GetEventSource<TState>().StateUpdated += (_, e) => onStateUpdate(e.State);
 
     public async Task ApplyEvents(IImmutableList<IReducer> reducers, params Event[] events)
     {
@@ -53,6 +74,18 @@ public class GameStateStore(ILogger<GameStateStore> logger) : IGameStateStore
             await HandleEvent(reducers, @event);
         }
     }
+
+    private static string GetStateName<TState>() => GetStateName(typeof(TState));
+    private static string GetStateName(Type stateType) => stateType.Name;
+
+    private static Func<TState, Task> MapStateUpdateHandler<TState>(Func<object, Task> onStateUpdate) where TState : class =>
+        onStateUpdate;
+
+    private StateUpdateEventSource<TState> GetEventSource<TState>() =>
+        (StateUpdateEventSource<TState>)_stateEventStream[GetStateName<TState>()];
+
+    private static IStateUpdatedEventSource MakeEventSource(Type stateType) =>
+        (IStateUpdatedEventSource)typeof(StateUpdateEventSource<>).MakeGenericType(stateType).GetConstructor([])!.Invoke([]);
 
     private async Task HandleEvent(IImmutableList<IReducer> reducers, Event @event)
     {
@@ -69,11 +102,20 @@ public class GameStateStore(ILogger<GameStateStore> logger) : IGameStateStore
         }
     }
 
-    public class StateUpdatedEventArgs(object state) : EventArgs
+    private interface IStateUpdatedEventSource;
+    private class StateUpdateEventSource<TState> : IStateUpdatedEventSource
     {
-        public string StateName { get; } = state.GetType().Name;
-        public Type StateType { get; } = state.GetType();
-        public object State { get; } = state;
+        public event EventHandler<StateUpdatedEventArgs>? StateUpdated;
+
+        public class StateUpdatedEventArgs(TState state) : EventArgs
+        {
+            public TState State { get; } = state;
+        }
+
+        internal void Update(TState state)
+        {
+            StateUpdated?.Invoke(this, new StateUpdatedEventArgs(state));
+        }
     }
 }
 

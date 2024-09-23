@@ -3,9 +3,8 @@ using amethyst.Services;
 
 namespace amethyst.Reducers;
 
-public class LineupClock(GameContext gameContext, ILogger<LineupClock> logger)
-    : Reducer<LineupClockState>(gameContext)
-    , IHandlesEvent<JamStarted>
+public sealed class LineupClock(GameContext gameContext, ILogger<LineupClock> logger)
+    : Reducer<LineupClockState>(gameContext), IHandlesEvent<JamStarted>
     , IHandlesEvent<JamEnded>
     , ITickReceiver
 {
