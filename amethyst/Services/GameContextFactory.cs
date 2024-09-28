@@ -11,15 +11,20 @@ public interface IGameContextFactory
 
 public class GameContextFactory(
     GameStateStoreFactory stateStoreFactory, 
-    IEnumerable<ReducerFactory> reducerFactories, 
-    GameStoreFactory gameStoreFactory) : IGameContextFactory
+    IEnumerable<ReducerFactory> reducerFactories,
+    Func<IEnumerable<ITickReceiver>, IGameClock> gameClockFactory,
+    GameStoreFactory gameStoreFactory) 
+    : IGameContextFactory
 {
     private readonly Dictionary<Guid, GameContext> _gameContexts = [];
 
     public GameContext GetGame(GameInfo gameInfo)
     {
-        if (!_gameContexts.ContainsKey(gameInfo.Id))
-            LoadGame(gameInfo);
+        lock (_gameContexts)
+        {
+            if (!_gameContexts.ContainsKey(gameInfo.Id))
+                LoadGame(gameInfo);
+        }
 
         return _gameContexts[gameInfo.Id];
     }
@@ -37,6 +42,8 @@ public class GameContextFactory(
         stateStore.ApplyEvents(reducers, events);
 
         _gameContexts[gameInfo.Id] = gameContextWithoutReducers with { Reducers = reducers };
+
+        gameClockFactory(reducers.OfType<ITickReceiver>()).Run();
     }
 }
 

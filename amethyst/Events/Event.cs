@@ -1,6 +1,7 @@
 ﻿using amethyst.Extensions;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using amethyst.Services;
 using Func;
 
 namespace amethyst.Events;
@@ -8,18 +9,25 @@ namespace amethyst.Events;
 public abstract class Event
 {
     public string Type { get; set; }
-    public long Tick { get; set; }
+    public Guid7 Id { get; set; }
+    public long Tick => Id.Tick;
+    public virtual bool HasBody => false;
 
-    protected Event(long tick)
+    protected Event(Guid7 id)
     {
         Type = GetType().Name;
-        Tick = tick;
+        Id = id;
     }
+
+    public virtual object? GetBodyObject() => null;
 }
 
-public abstract class Event<TBody>(long tick, TBody body) : Event(tick)
+public abstract class Event<TBody>(Guid7 id, TBody body) : Event(id)
 {
+    public override bool HasBody => true;
     public TBody Body { get; set; } = body;
+
+    public override object? GetBodyObject() => Body;
 }
 
 public interface IUntypedEvent
@@ -31,7 +39,11 @@ public interface IUntypedEvent
 
 public sealed class UntypedEvent : Event, IUntypedEvent
 {
-    public UntypedEvent(string type) : base(0)
+    public UntypedEvent(string type) : this(type, Guid.Empty)
+    {
+    }
+
+    public UntypedEvent(string type, Guid7 id) : base(id)
     {
         Type = type;
     }
@@ -47,13 +59,17 @@ public sealed class UntypedEvent : Event, IUntypedEvent
         if (eventType.IsDerivedFrom(typeof(Event<>)))
             throw new EventTypeIncludesUnexpectedBodyException();
 
-        return Result.Succeed((Event)Activator.CreateInstance(eventType, 0L)!);
+        return Result.Succeed((Event)Activator.CreateInstance(eventType, Id)!);
     }
 }
 
 public sealed class UntypedEventWithBody : Event<JsonObject>, IUntypedEvent
 {
-    public UntypedEventWithBody(string type, JsonObject body) : base(0, body)
+    public UntypedEventWithBody(string type, JsonObject body) : this(type, Guid.Empty, body)
+    {
+    }
+
+    public UntypedEventWithBody(string type, Guid7 id, JsonObject body) : base(id, body)
     {
         Type = type;
     }

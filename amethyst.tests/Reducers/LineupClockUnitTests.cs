@@ -30,7 +30,7 @@ public class LineupClockUnitTests : UnitTest<LineupClock>
     {
         var randomTick = Random.Shared.Next(0, 100000);
 
-        _state = new(true, randomTick, randomTick);
+        _state = new(true, randomTick, randomTick, 0);
 
         var secondRandomTick = Random.Shared.Next(0, 100000);
 
@@ -45,7 +45,7 @@ public class LineupClockUnitTests : UnitTest<LineupClock>
     {
         var randomTick = Random.Shared.Next(0, 100000);
 
-        _state = new(false, randomTick, randomTick);
+        _state = new(false, randomTick, randomTick, 0);
 
         var secondRandomTick = randomTick + Random.Shared.Next(1, 10000);
         Subject.Handle(new JamStarted(secondRandomTick));
@@ -57,7 +57,7 @@ public class LineupClockUnitTests : UnitTest<LineupClock>
     public void JamEnded_WhenClockStopped_StartsLineup()
     {
         var randomTick = Random.Shared.Next(1, 100000);
-        _state = new(false, randomTick, randomTick);
+        _state = new(false, randomTick, randomTick, 0);
 
         var secondRandomTick = randomTick + Random.Shared.Next(1, 100000);
         Subject.Handle(new JamEnded(secondRandomTick));
@@ -71,7 +71,7 @@ public class LineupClockUnitTests : UnitTest<LineupClock>
     public void JamEnded_WhenLineupAlreadyRunning_DoesNotChangeState()
     {
         var randomTick = Random.Shared.Next(1, 100000);
-        _state = new(true, randomTick, randomTick);
+        _state = new(true, randomTick, randomTick, 0);
 
         var secondRandomTick = randomTick + Random.Shared.Next(1, 100000);
         Subject.Handle(new JamEnded(secondRandomTick));
@@ -84,7 +84,7 @@ public class LineupClockUnitTests : UnitTest<LineupClock>
     [Test]
     public void Tick_WhenClockRunning_UpdatesTicksPassed()
     {
-        _state = new(true, 0, 0);
+        _state = new(true, 0, 0, 0);
         Subject.Tick(10000, 10000);
 
         _state.TicksPassed.Should().Be(10000);
@@ -93,7 +93,7 @@ public class LineupClockUnitTests : UnitTest<LineupClock>
     [Test]
     public void Tick_ClockStopped_DoesNotChangeState()
     {
-        _state = new(false, 0, 0);
+        _state = new(false, 0, 0, 0);
         Subject.Tick(130 * 1000, 130 * 1000);
 
         _state.IsRunning.Should().BeFalse();

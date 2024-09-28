@@ -10,6 +10,7 @@ public interface IGameDiscoveryService
     IEnumerable<GameInfo> GetGames();
     GameInfo GetGame(GameInfo gameInfo);
     Result<GameInfo> GetExistingGame(Guid gameId);
+    bool GameExists(Guid gameId);
 
     public static string GetGameFileName(GameInfo game) =>
         $"{CleanFileName(game.Name)}_{game.Id}";
@@ -35,6 +36,9 @@ public class GameDiscoveryService(GameStoreFactory gameStoreFactory) : IGameDisc
 
         return gameStore.GetInfo();
     }
+
+    public bool GameExists(Guid gameId) =>
+        GetGameNameForId(gameId) is Success;
 
     public Result<GameInfo> GetExistingGame(Guid gameId) =>
         GetGameNameForId(gameId)

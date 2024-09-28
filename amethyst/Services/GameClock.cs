@@ -3,11 +3,13 @@
 public interface IGameClock : IDisposable
 {
     void Run();
+
+    public static long GetTick() => DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 }
 
 public class GameClock(IEnumerable<ITickReceiver> receivers, ILogger<GameClock> logger) : IGameClock
 {
-    public int MillisecondsBetweenFrames { get; init; } = 100;
+    public int MillisecondsBetweenFrames { get; init; } = 10;
 
     private volatile bool _isRunning;
 
@@ -17,11 +19,11 @@ public class GameClock(IEnumerable<ITickReceiver> receivers, ILogger<GameClock> 
 
         new Thread(() =>
         {
-            var lastTick = GetTick();
+            var lastTick = IGameClock.GetTick();
 
             while (_isRunning)
             {
-                var tick = GetTick();
+                var tick = IGameClock.GetTick();
                 var tickDelta = tick - lastTick;
 
                 foreach (var receiver in receivers)
@@ -41,10 +43,6 @@ public class GameClock(IEnumerable<ITickReceiver> receivers, ILogger<GameClock> 
                 Thread.Sleep(MillisecondsBetweenFrames);
             }
         }).Start();
-
-        return;
-
-        static long GetTick() => DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
     }
 
     public void Dispose()

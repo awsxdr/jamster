@@ -4,6 +4,7 @@ using amethyst.Domain;
 using amethyst.Services;
 using Func;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 
 namespace amethyst.Controllers;
 
@@ -76,7 +77,7 @@ public class GamesController(
     }
 
     [HttpGet("{gameId:guid}/state/{stateName}/updates")]
-    public async Task<ActionResult> GetUpdatesStream(Guid gameId, string stateName, CancellationToken cancellationToken)
+    public async Task<ActionResult> GetUpdatesStream(Guid gameId, string stateName, CancellationToken cancellationToken, IOptions<JsonOptions> jsonOptions)
     {
         logger.LogDebug("Adding listened for state {stateName} in game {gameId}", stateName, gameId);
 
@@ -90,13 +91,13 @@ public class GamesController(
                 _ => throw new UnexpectedResultException()
             };
         }
-
+        
         Response.Headers.Append("Content-Type", "text/event-stream");
 
         context.Value.StateStore.WatchStateByName(stateName, async state =>
         {
             await Response.WriteAsync("data: ", cancellationToken);
-            await JsonSerializer.SerializeAsync(Response.Body, state, cancellationToken: cancellationToken);
+            await JsonSerializer.SerializeAsync(Response.Body, state, jsonOptions.Value.JsonSerializerOptions, cancellationToken: cancellationToken);
             await Response.WriteAsync("\n\n", cancellationToken);
             await Response.Body.FlushAsync(cancellationToken);
         });

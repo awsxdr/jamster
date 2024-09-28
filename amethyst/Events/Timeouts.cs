@@ -1,8 +1,10 @@
-﻿namespace amethyst.Events;
+﻿using amethyst.Services;
 
-public sealed class TimeoutStarted(long tick) : Event(tick);
-public sealed class TimeoutEnded(long tick) : Event(tick);
-public sealed class TimeoutTypeSet(TimeoutType type, long tick) : Event(tick);
+namespace amethyst.Events;
+
+public sealed class TimeoutStarted(Guid7 id) : Event(id);
+public sealed class TimeoutEnded(Guid7 id) : Event(id);
+public sealed class TimeoutTypeSet(TimeoutType type, Guid7 id) : Event(id);
 
 public enum TimeoutType
 {

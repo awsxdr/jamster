@@ -26,14 +26,19 @@ public class Guid7
 
     public static Guid7 NewGuid()
     {
-        var timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-        var timestampBytes = BitConverter.GetBytes(timestamp);
+        var tick = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        return FromTick(tick);
+    }
+
+    public static Guid7 FromTick(long tick)
+    {
+        var tickBytes = BitConverter.GetBytes(tick);
 
         var uuidData = new byte[16];
         Random.NextBytes(uuidData);
 
-        timestampBytes[2..6].CopyTo(uuidData, 0);
-        timestampBytes[..2].CopyTo(uuidData, 4);
+        tickBytes[2..6].CopyTo(uuidData, 0);
+        tickBytes[..2].CopyTo(uuidData, 4);
 
         uuidData[6] &= 0b00001111;
         uuidData[6] |= 0b11100000;
@@ -45,6 +50,7 @@ public class Guid7
 
     public static implicit operator Guid(Guid7 guid) => new Guid(guid._data);
     public static implicit operator Guid7(Guid guid) => new Guid7(guid.ToByteArray());
+    public static implicit operator Guid7(long tick) => FromTick(tick);
 
     public byte[] ToByteArray()
     {

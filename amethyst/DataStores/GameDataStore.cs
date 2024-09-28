@@ -1,5 +1,7 @@
 ﻿using System.Text.Json;
+using System.Text.Json.Nodes;
 using amethyst.Services;
+using Func;
 
 namespace amethyst.DataStores;
 
@@ -18,14 +20,21 @@ public interface IGameDataStore : IEventStore
 
 public class GameDataStore : EventStore, IGameDataStore
 {
+    private readonly IEventConverter _eventConverter;
+    private readonly ILogger<GameDataStore> _logger;
+
     public const string GamesFolderName = "games";
     public static string GamesFolder => Path.Combine(RunningEnvironment.RootPath, "db", GamesFolderName);
 
-    public GameDataStore(string databaseName, ConnectionFactory connectionFactory) 
+    public GameDataStore(string databaseName, ConnectionFactory connectionFactory, IEventConverter eventConverter, ILogger<GameDataStore> logger) 
         : base(Path.Combine(GamesFolderName, databaseName), connectionFactory)
     {
+        _eventConverter = eventConverter;
+        _logger = logger;
         Connection.Execute("CREATE TABLE IF NOT EXISTS gameInfo (id SMALLINT PRIMARY KEY, info TEXT)");
         Connection.Execute("INSERT INTO gameInfo (id, info) VALUES (0, ?) ON CONFLICT DO NOTHING", JsonSerializer.Serialize(new GameInfo()));
+
+        Connection.Execute("CREATE TABLE IF NOT EXISTS events (id BLOB PRIMARY KEY, type TEXT, event TEXT)");
     }
 
     public GameInfo GetInfo() =>
@@ -38,20 +47,53 @@ public class GameDataStore : EventStore, IGameDataStore
 
     public Guid AddEvent(Event @event)
     {
-        var eventId = Guid.NewGuid(); //TODO: Change to GUIDv7
-        //TODO: Add event to database
+        var eventId = @event.Id == Guid.Empty ? Guid7.NewGuid() : @event.Id;
+
+        Connection.Execute(
+            "INSERT INTO events (id, type, event) VALUES (?, ?, ?)", 
+            (Guid) eventId,
+            @event.Type,
+            @event.HasBody ? JsonSerializer.Serialize(@event.GetBodyObject()) : null);
+
         return eventId;
     }
 
     public IEnumerable<Event> GetEvents()
     {
-        return [];
+        var events = Connection.Query<EventItem>("SELECT * FROM events ORDER BY id");
+
+        var eventDecodeResults =
+            events
+                .Select(e => (IUntypedEvent)(
+                    string.IsNullOrWhiteSpace(e.Json)
+                        ? new UntypedEvent(e.Type, e.Id) 
+                        : new UntypedEventWithBody(e.Type, e.Id, JsonNode.Parse(e.Json)!.AsObject())))
+                .Select(_eventConverter.DecodeEvent)
+                .ToArray();
+
+        var failedDecodeCount = eventDecodeResults.Count(r => r is Failure);
+
+        if(failedDecodeCount > 0)
+            _logger.LogError("Failed to decode {failedDecodeCount} events from database {databaseName}", failedDecodeCount, DatabaseName);
+
+        return
+            eventDecodeResults
+                .OfType<Success<Event>>()
+                .Select(s => s.Value)
+                .ToArray();
     }
 }
 
 public record GameInfo(Guid Id, string Name)
 {
     public GameInfo() : this(Guid.NewGuid(), string.Empty)
+    {
+    }
+}
+
+public record EventItem(Guid Id, string Type, string? Json)
+{
+    public EventItem() : this(Guid7.NewGuid(), string.Empty, string.Empty)
     {
     }
 }

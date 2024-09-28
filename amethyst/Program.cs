@@ -1,6 +1,7 @@
 using System.Text.Json.Serialization;
 using amethyst;
 using amethyst.DataStores;
+using amethyst.Hubs;
 using amethyst.Reducers;
 using amethyst.Services;
 using Autofac;
@@ -24,6 +25,7 @@ builder.Host.UseServiceProviderFactory(new AutofacServiceProviderFactory(contain
     container.RegisterType<GameContextFactory>().As<IGameContextFactory>().SingleInstance();
     container.RegisterType<EventBus>().As<IEventBus>().SingleInstance();
     container.RegisterType<GameDataStore>().As<IGameDataStore>().ExternallyOwned().InstancePerDependency();
+    container.RegisterType<GameClock>().As<IGameClock>();
 
     var reducerTypes = AppDomain.CurrentDomain.GetAssemblies()
         .Where(a => !a.IsDynamic)
@@ -52,6 +54,8 @@ builder.Services
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
     });
 
+builder.Services.AddSignalR();
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -67,11 +71,23 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseCors(policyBuilder =>
+{
+    policyBuilder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
+});
+
 app.UseHttpsRedirection();
 
 app.UseAuthorization();
 
 app.MapControllers();
+
+app
+    .MapHub<GameStatesHub>("/api/hubs/game/{gameId:guid}")
+    .RequireCors(policyBuilder =>
+    {
+        policyBuilder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
+    });
 
 app.Run();
 

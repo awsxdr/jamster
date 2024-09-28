@@ -17,7 +17,7 @@ public class EventBus(
 {
     public Task<Event> AddEventAtCurrentTick(GameInfo game, Event @event)
     {
-        //TODO: Set current tick
+        @event.Id = Guid7.FromTick(IGameClock.GetTick());
         return AddEvent(game, @event);
     }
 
@@ -28,7 +28,7 @@ public class EventBus(
         if (PersistEventToDatabase(game, @event) is not Success<Guid> persistResult)
             return @event;
 
-        //TODO: Store ID
+        @event.Id = persistResult.Value;
 
         await stateStore.StateStore.ApplyEvents(stateStore.Reducers, @event);
 
