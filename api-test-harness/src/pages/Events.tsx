@@ -4,8 +4,9 @@ import * as SignalR from '@microsoft/signalr';
 import { ComboBox } from "@/components/ui/combobox";
 import { Plus } from "lucide-react";
 
-const API_URL = 'https://localhost:7255';
+//const API_URL = 'https://localhost:7255';
 //const API_URL = 'http://localhost:5000';
+const API_URL = 'http://localhost:5249';
 
 type GameModel = {
     id: string,
@@ -30,11 +31,17 @@ type JamClockState = {
 
 type LineupClockState = {
     isRunning: boolean,
-    jamNumber: number,
     startTick: number,
     ticksPassed: number,
     secondsPassed: number,
 };
+
+type TimeoutClockState = {
+    isRunning: boolean,
+    startTick: number,
+    ticksPassed: number,
+    secondsPassed: number,
+}
 
 type BasicClockProps<TClockState> = Pick<ClockProps<TClockState>, "gameId">;
 
@@ -45,6 +52,10 @@ const JamClock = ({ gameId }: BasicClockProps<JamClockState>) => (
 const LineupClock = ({ gameId }: BasicClockProps<LineupClockState>) => (
     <Clock<LineupClockState> gameId={gameId} secondsMapper={s => s.secondsPassed} stateName="LineupClockState" direction="up" />
 );
+
+const TimeoutClock = ({ gameId }: BasicClockProps<TimeoutClockState>) => (
+    <Clock<TimeoutClockState> gameId={gameId} secondsMapper={s => s.secondsPassed} stateName="TimeoutClockState" direction="up" />
+)
 
 function Clock<TClockState>({ gameId, secondsMapper, stateName, direction, startValue }: ClockProps<TClockState>) {
 
@@ -146,6 +157,14 @@ export const Events = () => {
         await sendEvent("JamEnded");
     }, [sendEvent]);
 
+    const startTimeout = useCallback(async () => {
+        await sendEvent("TimeoutStarted");
+    }, [sendEvent]);
+
+    const endTimeout = useCallback(async () => {
+        await sendEvent("TimeoutEnded");
+    }, [sendEvent]);
+
     return (
         <>
             <div>
@@ -161,8 +180,15 @@ export const Events = () => {
             </div>
             Jam: <JamClock gameId={gameId} />
             Lineup: <LineupClock gameId={gameId} />
-            <Button onClick={startJam} className="m-[2px]">Start Jam</Button>
-            <Button onClick={endJam} className="m-[2px]">End Jam</Button>
+            Timeout: <TimeoutClock gameId={gameId} />
+            <div>
+                <Button onClick={startJam} className="m-[2px]">Start Jam</Button>
+                <Button onClick={endJam} className="m-[2px]">End Jam</Button>
+            </div>
+            <div>
+                <Button onClick={startTimeout} className="m-[2px]">Start Timeout</Button>
+                <Button onClick={endTimeout} className="m-[2px]">End Timeout</Button>
+            </div>
         </>  
     );
 }

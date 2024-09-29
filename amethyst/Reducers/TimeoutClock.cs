@@ -9,7 +9,7 @@ public class TimeoutClock(GameContext context, ILogger<TimeoutClock> logger) : R
     , IHandlesEvent<TimeoutEnded>
     , ITickReceiver
 {
-    protected override TimeoutClockState DefaultState => new(false, 0, 0, 0);
+    protected override TimeoutClockState DefaultState => new(false, 0, 0, 0, 0);
 
     public void Handle(JamStarted @event)
     {
@@ -54,9 +54,13 @@ public class TimeoutClock(GameContext context, ILogger<TimeoutClock> logger) : R
 
         if (!state.IsRunning) return;
 
-        var newState = state with { TicksPassed = tick - state.StartTick };
+        var newState = state with
+        {
+            TicksPassed = tick - state.StartTick,
+            SecondsPassed = (int)((tick - state.StartTick) / 1000L),
+        };
         SetState(newState);
     }
 }
 
-public record TimeoutClockState(bool IsRunning, long StartTick, long EndTick, long TicksPassed);
+public record TimeoutClockState(bool IsRunning, long StartTick, long EndTick, long TicksPassed, int SecondsPassed);

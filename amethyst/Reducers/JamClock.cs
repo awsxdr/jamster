@@ -7,6 +7,7 @@ public sealed class JamClock(GameContext gameContext, IEventBus eventBus, ILogge
     : Reducer<JamClockState>(gameContext)
     , IHandlesEvent<JamStarted>
     , IHandlesEvent<JamEnded>
+    , IHandlesEvent<TimeoutStarted>
     , ITickReceiver
 {
     protected override JamClockState DefaultState => new(false, 0, 0, 0, 0);
@@ -20,6 +21,9 @@ public sealed class JamClock(GameContext gameContext, IEventBus eventBus, ILogge
     }
 
     public void Handle(JamEnded @event) =>
+        SetState(GetState() with { IsRunning = false });
+
+    public void Handle(TimeoutStarted @event) =>
         SetState(GetState() with { IsRunning = false });
 
     public void Tick(long tick, long tickDelta)

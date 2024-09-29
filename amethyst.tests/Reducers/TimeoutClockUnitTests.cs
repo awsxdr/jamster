@@ -30,7 +30,7 @@ public class TimeoutClockUnitTests : UnitTest<TimeoutClock>
     {
         var randomTick = Random.Shared.Next(0, 100000);
 
-        _state = new(true, randomTick, 0, 0);
+        _state = new(true, randomTick, 0, 0, 0);
 
         var secondRandomTick = randomTick + Random.Shared.Next(1, 10000);
 
@@ -57,7 +57,7 @@ public class TimeoutClockUnitTests : UnitTest<TimeoutClock>
     [Test]
     public void TimeoutStarted_StartsNewTimeout()
     {
-        _state = new(false, 0, 0, 0);
+        _state = new(false, 0, 0, 0, 0);
 
         var randomTick = Random.Shared.Next(10000, 200000);
 
@@ -69,7 +69,7 @@ public class TimeoutClockUnitTests : UnitTest<TimeoutClock>
     [Test]
     public void TimeoutEnded_WhenClockRunningAndEndTickIsZero_SetsEndTick()
     {
-        _state = new(true, Random.Shared.Next(0, 100000), 0, 0);
+        _state = new(true, Random.Shared.Next(0, 100000), 0, 0, 0);
         var initialState = _state;
 
         var randomTick = Random.Shared.Next((int)initialState.StartTick + 10000, (int)initialState.StartTick + 100000);
@@ -82,7 +82,7 @@ public class TimeoutClockUnitTests : UnitTest<TimeoutClock>
     [Test]
     public void TimeoutEnded_WhenClockRunningAndEndTickIsNonZero_DoesNotChangeState()
     {
-        _state = new(true, Random.Shared.Next(0, 100000), Random.Shared.Next(100001, 200000), 0);
+        _state = new(true, Random.Shared.Next(0, 100000), Random.Shared.Next(100001, 200000), 0, 0);
         var initialState = _state;
 
         var randomTick = Random.Shared.Next((int)initialState.StartTick + 10000, (int)initialState.StartTick + 100000);
@@ -95,7 +95,7 @@ public class TimeoutClockUnitTests : UnitTest<TimeoutClock>
     [Test]
     public void TimeoutEnded_WhenClockNotRunning_DoesNotChangeState()
     {
-        _state = new(false, 0, 0, 0);
+        _state = new(false, 0, 0, 0, 0);
         var initialState = _state;
 
         var randomTick = Random.Shared.Next((int)initialState.StartTick + 10000, (int)initialState.StartTick + 100000);
@@ -108,7 +108,7 @@ public class TimeoutClockUnitTests : UnitTest<TimeoutClock>
     [Test]
     public void Tick_WhenClockRunning_UpdatesTicksPassed()
     {
-        _state = new(true, 0, 0, 0);
+        _state = new(true, 0, 0, 0, 0);
         Subject.Tick(10000, 10000);
 
         _state.TicksPassed.Should().Be(10000);
@@ -117,7 +117,7 @@ public class TimeoutClockUnitTests : UnitTest<TimeoutClock>
     [Test]
     public void Tick_ClockStopped_DoesNotChangeState()
     {
-        _state = new(false, 0, 0, 0);
+        _state = new(false, 0, 0, 0, 0);
         Subject.Tick(130 * 1000, 130 * 1000);
 
         _state.IsRunning.Should().BeFalse();

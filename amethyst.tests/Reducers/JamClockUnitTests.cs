@@ -89,6 +89,18 @@ public class JamClockUnitTests : UnitTest<JamClock>
     }
 
     [Test]
+    public void TimeoutStarted_WhenJamRunning_EndsJam()
+    {
+        var randomTick = Random.Shared.Next(1, 100000);
+        _state = new(true, 1, randomTick, randomTick, 0);
+
+        var secondRandomTick = randomTick + Random.Shared.Next(1, 100000);
+        Subject.Handle(new TimeoutStarted(secondRandomTick));
+
+        _state.IsRunning.Should().BeFalse();
+    }
+
+    [Test]
     public void Tick_WhenStillTimeInJam_UpdatesTicksPassed()
     {
         _state = new(true, 1, 0, 0, 0);

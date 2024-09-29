@@ -32,7 +32,7 @@ public class LineupClockUnitTests : UnitTest<LineupClock>
 
         _state = new(true, randomTick, randomTick, 0);
 
-        var secondRandomTick = Random.Shared.Next(0, 100000);
+        var secondRandomTick = randomTick + Random.Shared.Next(1, 100000);
 
         Subject.Handle(new JamStarted(secondRandomTick));
 
@@ -58,6 +58,10 @@ public class LineupClockUnitTests : UnitTest<LineupClock>
     {
         var randomTick = Random.Shared.Next(1, 100000);
         _state = new(false, randomTick, randomTick, 0);
+
+        GetMock<IGameStateStore>()
+            .Setup(mock => mock.GetState<TimeoutClockState>())
+            .Returns(new TimeoutClockState(false, 0, 0, 0, 0));
 
         var secondRandomTick = randomTick + Random.Shared.Next(1, 100000);
         Subject.Handle(new JamEnded(secondRandomTick));
@@ -99,5 +103,38 @@ public class LineupClockUnitTests : UnitTest<LineupClock>
         _state.IsRunning.Should().BeFalse();
         _state.StartTick.Should().Be(0);
         _state.TicksPassed.Should().Be(0);
+    }
+
+    [Test]
+    public void TimeoutStarted_WhenClockRunning_StopsLineup()
+    {
+        var randomTick = Random.Shared.Next(0, 100000);
+
+        _state = new(true, randomTick, randomTick, 0);
+
+        var secondRandomTick = randomTick + Random.Shared.Next(1, 100000);
+
+        Subject.Handle(new TimeoutStarted(secondRandomTick));
+
+        _state.IsRunning.Should().BeFalse();
+        _state.StartTick.Should().Be(randomTick);
+    }
+
+    [Test]
+    public void JamEnded_WhenTimeoutClockRunning_DoesNotStartLineup()
+    {
+        var randomTick = Random.Shared.Next(0, 100000);
+
+        _state = new(false, randomTick, randomTick, 0);
+
+        var secondRandomTick = randomTick + Random.Shared.Next(1, 100000);
+
+        GetMock<IGameStateStore>()
+            .Setup(mock => mock.GetState<TimeoutClockState>())
+            .Returns(() => new(true, 0, 0, 0, 0));
+
+        Subject.Handle(new JamEnded(secondRandomTick));
+
+        _state.IsRunning.Should().BeFalse();
     }
 }

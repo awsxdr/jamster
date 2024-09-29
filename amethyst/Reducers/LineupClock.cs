@@ -6,6 +6,7 @@ namespace amethyst.Reducers;
 public sealed class LineupClock(GameContext gameContext, ILogger<LineupClock> logger)
     : Reducer<LineupClockState>(gameContext), IHandlesEvent<JamStarted>
     , IHandlesEvent<JamEnded>
+    , IHandlesEvent<TimeoutStarted>
     , ITickReceiver
 {
     protected override LineupClockState DefaultState => new(false, 0, 0, 0);
@@ -14,17 +15,25 @@ public sealed class LineupClock(GameContext gameContext, ILogger<LineupClock> lo
     {
         if (!GetState().IsRunning) return;
 
-        logger.LogDebug("Stopping lineup clock");
+        logger.LogDebug("Jam started, stopping lineup clock");
         SetState(GetState() with { IsRunning = false });
     }
 
     public void Handle(JamEnded @event)
     {
-        if (!GetState().IsRunning)
+        if (!GetState().IsRunning && !GetState<TimeoutClockState>().IsRunning)
         {
             logger.LogDebug("Starting lineup clock");
             SetState(new(true, @event.Tick, 0, 0));
         }
+    }
+
+    public void Handle(TimeoutStarted @event)
+    {
+        if (!GetState().IsRunning) return;
+
+        logger.LogDebug("Timeout started, stopping lineup clock");
+        SetState(GetState() with { IsRunning = false });
     }
 
     public void Tick(long tick, long tickDelta)
