@@ -1,4 +1,6 @@
-﻿namespace amethyst.Services;
+﻿using amethyst.Domain;
+
+namespace amethyst.Services;
 
 public class Guid7
 {
@@ -30,7 +32,7 @@ public class Guid7
         return FromTick(tick);
     }
 
-    public static Guid7 FromTick(long tick)
+    public static Guid7 FromTick(Tick tick)
     {
         var tickBytes = BitConverter.GetBytes(tick);
 
@@ -50,6 +52,7 @@ public class Guid7
 
     public static implicit operator Guid(Guid7 guid) => new Guid(guid._data);
     public static implicit operator Guid7(Guid guid) => new Guid7(guid.ToByteArray());
+    public static implicit operator Guid7(Tick tick) => FromTick(tick);
     public static implicit operator Guid7(long tick) => FromTick(tick);
 
     public byte[] ToByteArray()
