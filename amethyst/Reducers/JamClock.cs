@@ -10,14 +10,14 @@ public sealed class JamClock(GameContext gameContext, IEventBus eventBus, ILogge
     , IHandlesEvent<TimeoutStarted>
     , ITickReceiver
 {
-    protected override JamClockState DefaultState => new(false, 0, 0, 0, 0);
+    protected override JamClockState DefaultState => new(false, 0, 0, 0);
 
     public void Handle(JamStarted @event)
     {
         var state = GetState();
 
         if(!state.IsRunning)
-            SetState(new(true, state.JamNumber + 1, @event.Tick, 0, 0));
+            SetState(new(true, @event.Tick, 0, 0));
     }
 
     public void Handle(JamEnded @event) =>
@@ -49,6 +49,6 @@ public sealed class JamClock(GameContext gameContext, IEventBus eventBus, ILogge
     }
 }
 
-public record JamClockState(bool IsRunning, int JamNumber, long StartTick, [property: IgnoreChange] long TicksPassed, int SecondsPassed);
+public record JamClockState(bool IsRunning, long StartTick, [property: IgnoreChange] long TicksPassed, int SecondsPassed);
 
 public sealed class IgnoreChangeAttribute : Attribute;
