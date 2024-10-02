@@ -1,4 +1,5 @@
-﻿using amethyst.Events;
+﻿using amethyst.Domain;
+using amethyst.Events;
 using amethyst.Services;
 
 namespace amethyst.Reducers;
@@ -21,11 +22,20 @@ public sealed class LineupClock(GameContext gameContext, ILogger<LineupClock> lo
 
     public void Handle(JamEnded @event)
     {
-        if (!GetState().IsRunning && !GetState<TimeoutClockState>().IsRunning)
+        if (GetState().IsRunning || GetState<TimeoutClockState>().IsRunning) return;
+
+        var periodClock = GetState<PeriodClockState>();
+        var ticksRemainingInPeriod =
+            PeriodClock.PeriodLengthInTicks - periodClock.TicksPassed;
+
+        if (ticksRemainingInPeriod <= 0)
         {
-            logger.LogDebug("Starting lineup clock");
-            SetState(new(true, @event.Tick, 0, 0));
+            logger.LogDebug("Not starting lineup at jam end due to period clock expiry");
+            return;
         }
+
+        logger.LogDebug("Starting lineup clock due to jam end");
+        SetState(new(true, @event.Tick, 0, 0));
     }
 
     public void Handle(TimeoutStarted @event)

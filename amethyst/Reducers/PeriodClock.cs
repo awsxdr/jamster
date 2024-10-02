@@ -1,9 +1,11 @@
-﻿using amethyst.Events;
+﻿using amethyst.Domain;
+using amethyst.Events;
 using amethyst.Services;
+using Microsoft.Extensions.Logging;
 
 namespace amethyst.Reducers;
 
-public class PeriodClock(GameContext context, ILogger<PeriodClock> logger) 
+public class PeriodClock(GameContext context, IEventBus eventBus, ILogger<PeriodClock> logger) 
     : Reducer<PeriodClockState>(context)
     , IHandlesEvent<JamStarted>
     , IHandlesEvent<JamEnded>
@@ -13,8 +15,8 @@ public class PeriodClock(GameContext context, ILogger<PeriodClock> logger)
 {
     protected override PeriodClockState DefaultState => new(false, 0, 0, 0, 0);
 
-    private const long PeriodLengthInTicks = 30 * 60 * 1000;
-    private const long LineupDurationInTicks = 30 * 1000;
+    public const long PeriodLengthInTicks = 30 * 60 * 1000;
+    public const long LineupDurationInTicks = 30 * 1000;
 
     public void Handle(JamStarted @event)
     {
@@ -70,7 +72,13 @@ public class PeriodClock(GameContext context, ILogger<PeriodClock> logger)
 
         if (ticksRemaining > LineupDurationInTicks) return;
 
-        logger.LogDebug("Starting period clock as timeout ended with less than lineup duration on clock");
+        var lineupClock = GetState<LineupClockState>();
+        var ticksRemainingWhenLastLineupStarted =
+            PeriodLengthInTicks - lineupClock.StartTick - state.LastStartTick + state.TicksPassedAtLastStart;
+
+        if (ticksRemainingWhenLastLineupStarted > LineupDurationInTicks) return;
+
+        logger.LogDebug("Starting period clock as timeout ended and previous lineup started with less than lineup duration on clock");
 
         SetState(state with
         {
@@ -90,6 +98,12 @@ public class PeriodClock(GameContext context, ILogger<PeriodClock> logger)
         if (ticksPassed == PeriodLengthInTicks)
         {
             logger.LogDebug("Period clock expired");
+
+            if (!GetState<JamClockState>().IsRunning)
+            {
+                logger.LogDebug("Period clock stopped due to expiry outside of jam");
+                state = state with {IsRunning = false};
+            }
         }
 
         SetState(state with
@@ -97,6 +111,11 @@ public class PeriodClock(GameContext context, ILogger<PeriodClock> logger)
             TicksPassed = ticksPassed,
             SecondsPassed = (int)(ticksPassed / 1000L)
         });
+
+        if (!state.IsRunning)
+        {
+            eventBus.AddEvent(Context.GameInfo, new PeriodEnded(tick));
+        }
     }
 }
 

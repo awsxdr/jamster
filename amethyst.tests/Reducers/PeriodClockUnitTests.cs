@@ -1,4 +1,5 @@
-﻿using amethyst.Events;
+﻿using amethyst.DataStores;
+using amethyst.Events;
 using amethyst.Reducers;
 using amethyst.Services;
 using FluentAssertions;
@@ -8,25 +9,8 @@ using static amethyst.tests.DataGenerator;
 
 namespace amethyst.tests.Reducers;
 
-public class PeriodClockUnitTests : UnitTest<PeriodClock>
+public class PeriodClockUnitTests : ReducerUnitTest<PeriodClock, PeriodClockState>
 {
-    private PeriodClockState _state;
-
-    protected override void Setup()
-    {
-        base.Setup();
-
-        _state = (PeriodClockState)Subject.GetDefaultState();
-
-        GetMock<IGameStateStore>()
-            .Setup(mock => mock.GetState<PeriodClockState>())
-            .Returns(() => _state);
-
-        GetMock<IGameStateStore>()
-            .Setup(mock => mock.SetState(It.IsAny<PeriodClockState>()))
-            .Callback((PeriodClockState s) => _state = s);
-    }
-
     [Test]
     public void JamStart_WhenPeriodClockStopped_StartsPeriod()
     {
@@ -34,10 +18,285 @@ public class PeriodClockUnitTests : UnitTest<PeriodClock>
 
         Subject.Handle(new JamStarted(randomTick));
 
-        _state.IsRunning.Should().BeTrue();
-        _state.LastStartTick.Should().Be(randomTick);
-        _state.TicksPassed.Should().Be(0);
-        _state.SecondsPassed.Should().Be(0);
-        _state.TicksPassedAtLastStart.Should().Be(0);
+        State.IsRunning.Should().BeTrue();
+        State.LastStartTick.Should().Be(randomTick);
+        State.TicksPassed.Should().Be(0);
+        State.SecondsPassed.Should().Be(0);
+        State.TicksPassedAtLastStart.Should().Be(0);
+    }
+
+    [Test]
+    public void JamStart_WhenPeriodClockRunning_DoesNotChangeState()
+    {
+        var randomTick = GetRandomTick();
+        var ticksPassed = Random.Shared.Next(1000);
+        State = new(true, randomTick, ticksPassed, 1234, 1);
+
+        var originalState = State;
+
+        Subject.Handle(new JamStarted(GetRandomTickFollowing(randomTick)));
+
+        State.Should().Be(originalState);
+    }
+
+    [Test]
+    public void JamEnded_WhenPeriodClockRunning_AndPeriodClockExpired_StopsPeriodClock()
+    {
+        var lastStartTick = GetRandomTick();
+        var ticksPassedAtLastStart = PeriodClock.PeriodLengthInTicks - 10000;
+
+        State = new(
+            true, 
+            lastStartTick, 
+            ticksPassedAtLastStart, 
+            ticksPassedAtLastStart + 12000,
+            (int) ((ticksPassedAtLastStart + 12000) / 1000));
+
+        Subject.Handle(new JamEnded(lastStartTick + 12100));
+
+        State.IsRunning.Should().BeFalse();
+        State.LastStartTick.Should().Be(lastStartTick);
+        State.TicksPassedAtLastStart.Should().Be(ticksPassedAtLastStart);
+        State.TicksPassed.Should().Be(ticksPassedAtLastStart + 12100);
+        State.SecondsPassed.Should().Be((int) (PeriodClock.PeriodLengthInTicks / 1000) + 2);
+    }
+
+    [Test]
+    public void JamEnded_WhenPeriodClockRunning_AndPeriodClockNotExpired_DoesNotChangeState()
+    {
+        var lastStartTick = GetRandomTick();
+        var ticksPassedAtLastStart = PeriodClock.PeriodLengthInTicks - 20000;
+
+        State = new(
+            true,
+            lastStartTick,
+            ticksPassedAtLastStart,
+            ticksPassedAtLastStart + 12000,
+            (int)((ticksPassedAtLastStart + 12000) / 1000));
+
+        var originalState = State;
+
+        Subject.Handle(new JamEnded(lastStartTick + 12100));
+
+        State.Should().Be(originalState);
+    }
+
+    [Test]
+    public void JamEnded_WhenPeriodClockNotRunning_DoesNotChangeState()
+    {
+        var lastStartTick = GetRandomTick();
+        var ticksPassedAtLastStart = PeriodClock.PeriodLengthInTicks - 20000;
+
+        State = new(
+            false,
+            lastStartTick,
+            ticksPassedAtLastStart,
+            ticksPassedAtLastStart + 12000,
+            (int)((ticksPassedAtLastStart + 12000) / 1000));
+
+        var originalState = State;
+
+        Subject.Handle(new JamEnded(lastStartTick + 12100));
+
+        State.Should().Be(originalState);
+    }
+
+    [Test]
+    public void TimeoutStarted_WhenPeriodClockRunning_StopsPeriodClock()
+    {
+        var lastStartTick = GetRandomTick();
+        var ticksPassedAtLastStart = PeriodClock.PeriodLengthInTicks - 20000;
+
+        State = new(
+            true,
+            lastStartTick,
+            ticksPassedAtLastStart,
+            ticksPassedAtLastStart + 12000,
+            (int)((ticksPassedAtLastStart + 12000) / 1000));
+
+        Subject.Handle(new TimeoutStarted(lastStartTick + 12100));
+
+        State.IsRunning.Should().BeFalse();
+        State.LastStartTick.Should().Be(lastStartTick);
+        State.TicksPassedAtLastStart.Should().Be(ticksPassedAtLastStart);
+        State.TicksPassed.Should().Be(ticksPassedAtLastStart + 12100);
+        State.SecondsPassed.Should().Be((int)(PeriodClock.PeriodLengthInTicks / 1000) - 8);
+    }
+
+    [Test]
+    public void TimeoutStarted_WhenPeriodClockNotRunning_DoesNotChangeState()
+    {
+        var lastStartTick = GetRandomTick();
+        var ticksPassedAtLastStart = PeriodClock.PeriodLengthInTicks - 20000;
+
+        State = new(
+            false,
+            lastStartTick,
+            ticksPassedAtLastStart,
+            ticksPassedAtLastStart + 12000,
+            (int)((ticksPassedAtLastStart + 12000) / 1000));
+
+        var originalState = State;
+
+        Subject.Handle(new TimeoutStarted(lastStartTick + 12100));
+
+        State.Should().Be(originalState);
+    }
+
+    [Test]
+    public void TimeoutEnded_WhenLineupStartedWhenTimeRemainingLessThanLineupDuration_StartsPeriodClock()
+    {
+        MockState(new LineupClockState(false, PeriodClock.PeriodLengthInTicks - PeriodClock.LineupDurationInTicks + 1000, 1000, 1));
+
+        State = new(
+            false,
+            0,
+            0,
+            PeriodClock.PeriodLengthInTicks - PeriodClock.LineupDurationInTicks + 1000,
+            (int) ((PeriodClock.PeriodLengthInTicks - PeriodClock.LineupDurationInTicks + 1000) / 1000));
+
+        Subject.Handle(new TimeoutEnded(PeriodClock.PeriodLengthInTicks - PeriodClock.LineupDurationInTicks / 2));
+
+        State.IsRunning.Should().BeTrue();
+    }
+
+    [Test]
+    public void TimeoutEnded_WhenTimeRemainingMoreThanLineupDuration_DoesNotStartPeriodClock()
+    {
+        MockState(new LineupClockState(false, PeriodClock.PeriodLengthInTicks - PeriodClock.LineupDurationInTicks - 1000, 1000, 1));
+
+        State = new(
+            false,
+            0,
+            PeriodClock.PeriodLengthInTicks - PeriodClock.LineupDurationInTicks + 1000,
+            PeriodClock.PeriodLengthInTicks - PeriodClock.LineupDurationInTicks + 1000,
+            (int)((PeriodClock.PeriodLengthInTicks - PeriodClock.LineupDurationInTicks + 1000) / 1000));
+
+        Subject.Handle(new TimeoutEnded(PeriodClock.PeriodLengthInTicks - PeriodClock.LineupDurationInTicks + 2000));
+
+        State.IsRunning.Should().BeFalse();
+    }
+
+    [Test]
+    public void Tick_WhenPeriodClockRunning_AndPeriodClockNotExpired_UpdatesTicksPassedBasedOnLastStartTick()
+    {
+        MockState(new JamClockState(true, 0, 0, 0));
+
+        var lastStartTick = GetRandomTick();
+        var ticksPassedAtLastStart = PeriodClock.PeriodLengthInTicks / 2;
+        var ticksPassed = PeriodClock.PeriodLengthInTicks / 3;
+
+        State = new(
+            true,
+            lastStartTick,
+            ticksPassedAtLastStart,
+            ticksPassed,
+            (int) (ticksPassed / 1000)
+        );
+
+        Subject.Tick(lastStartTick + ticksPassed + 1000, 1000);
+
+        State.IsRunning.Should().BeTrue();
+        State.LastStartTick.Should().Be(lastStartTick);
+        State.TicksPassedAtLastStart.Should().Be(ticksPassedAtLastStart);
+        State.TicksPassed.Should().Be(ticksPassedAtLastStart + ticksPassed + 1000);
+        State.SecondsPassed.Should().Be((int) ((ticksPassedAtLastStart + ticksPassed) / 1000) + 1);
+    }
+
+    [Test]
+    public void Tick_WhenPeriodClockRunning_AndPeriodClockExpired_AndJamRunning_SetsTicksPassedToPeriodDuration_AndDoesNotStopClock()
+    {
+        MockState(new JamClockState(true, 0, 0, 0));
+
+        var lastStartTick = GetRandomTick();
+        var ticksPassedAtLastStart = PeriodClock.PeriodLengthInTicks / 2;
+        var ticksPassed = PeriodClock.PeriodLengthInTicks / 2 + 10000;
+
+        State = new(
+            true,
+            lastStartTick,
+            ticksPassedAtLastStart,
+            ticksPassed,
+            (int)(ticksPassed / 1000)
+        );
+
+        Subject.Tick(lastStartTick + ticksPassed + 1000, 1000);
+
+        State.IsRunning.Should().BeTrue();
+        State.LastStartTick.Should().Be(lastStartTick);
+        State.TicksPassedAtLastStart.Should().Be(ticksPassedAtLastStart);
+        State.TicksPassed.Should().Be(PeriodClock.PeriodLengthInTicks);
+        State.SecondsPassed.Should().Be((int)(PeriodClock.PeriodLengthInTicks / 1000));
+    }
+
+    [Test]
+    public void Tick_WhenPeriodClockRunning_AndPeriodClockExpired_AndJamNotRunning_RaisesPeriodEndedEvent()
+    {
+        GetMock<IGameStateStore>()
+            .Setup(mock => mock.GetState<JamClockState>())
+            .Returns(new JamClockState(false, 0, 0, 0));
+
+        var lastStartTick = GetRandomTick();
+        var ticksPassedAtLastStart = PeriodClock.PeriodLengthInTicks / 2;
+        var ticksPassed = PeriodClock.PeriodLengthInTicks / 2 + 10000;
+
+        State = new(
+            true,
+            lastStartTick,
+            ticksPassedAtLastStart,
+            ticksPassed,
+            (int)(ticksPassed / 1000)
+        );
+
+        var updateTick = lastStartTick + ticksPassed + 1000;
+        Subject.Tick(updateTick, 1000);
+
+        GetMock<IEventBus>()
+            .Verify(mock => mock.AddEvent(It.IsAny<GameInfo>(),  It.Is<PeriodEnded>(e => e.Tick == updateTick)), Times.Once);
+    }
+
+    [Test]
+    public void Tick_WhenPeriodClockRunning_AndPeriodClockExpired_AndJamNotRunning_StopsPeriodClock()
+    {
+        GetMock<IGameStateStore>()
+            .Setup(mock => mock.GetState<JamClockState>())
+            .Returns(new JamClockState(false, 0, 0, 0));
+
+        var lastStartTick = GetRandomTick();
+        var ticksPassedAtLastStart = PeriodClock.PeriodLengthInTicks / 2;
+        var ticksPassed = PeriodClock.PeriodLengthInTicks / 2 + 10000;
+
+        State = new(
+            true,
+            lastStartTick,
+            ticksPassedAtLastStart,
+            ticksPassed,
+            (int)(ticksPassed / 1000)
+        );
+
+        Subject.Tick(lastStartTick + ticksPassed + 1000, 1000);
+
+        State.IsRunning.Should().BeFalse();
+        State.LastStartTick.Should().Be(lastStartTick);
+        State.TicksPassedAtLastStart.Should().Be(ticksPassedAtLastStart);
+        State.TicksPassed.Should().Be(PeriodClock.PeriodLengthInTicks);
+        State.SecondsPassed.Should().Be((int)(PeriodClock.PeriodLengthInTicks / 1000));
+    }
+
+    [Test]
+    public void Tick_WhenPeriodClockNotRunning_DoesNotChangeState()
+    {
+        State = new(
+            false,
+            GetRandomTick(),
+            PeriodClock.PeriodLengthInTicks / 2,
+            PeriodClock.PeriodLengthInTicks / 2,
+            (int) (PeriodClock.PeriodLengthInTicks / 2 / 1000));
+
+        var originalState = State;
+
+        Subject.Tick(State.LastStartTick + 1, 1);
+
+        State.Should().Be(originalState);
     }
 }

@@ -20,6 +20,15 @@ public abstract class Event
     }
 
     public virtual object? GetBodyObject() => null;
+
+    public bool Equals(Event other) =>
+        Type == other.Type && Id == other.Id;
+
+    public override bool Equals(object? obj) =>
+        obj is Event @event && Equals(@event);
+
+    public override int GetHashCode() =>
+        HashCode.Combine(Type, Id);
 }
 
 public abstract class Event<TBody>(Guid7 id, TBody body) : Event(id)

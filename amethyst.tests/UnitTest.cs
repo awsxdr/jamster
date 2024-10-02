@@ -1,4 +1,6 @@
-﻿namespace amethyst.tests;
+﻿using Microsoft.Extensions.Logging;
+
+namespace amethyst.tests;
 
 using Moq;
 using Moq.AutoMock;
@@ -30,6 +32,15 @@ public abstract class UnitTest<TSubject> where TSubject : class
     protected virtual void Setup()
     {
         _mocker = new(() => new AutoMocker(MockingBehavior));
+
+        Mocker.Use(
+            LoggerFactory
+                .Create(builder =>
+                {
+                    builder.AddConsole().SetMinimumLevel(LogLevel.Debug);
+                })
+                .CreateLogger<TSubject>());
+
         Subject = Mocker.CreateInstance<TSubject>();
     }
 

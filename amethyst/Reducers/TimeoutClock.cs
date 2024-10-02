@@ -1,4 +1,5 @@
-﻿using amethyst.Events;
+﻿using amethyst.Domain;
+using amethyst.Events;
 using amethyst.Services;
 
 namespace amethyst.Reducers;
@@ -63,4 +64,4 @@ public class TimeoutClock(GameContext context, ILogger<TimeoutClock> logger) : R
     }
 }
 
-public record TimeoutClockState(bool IsRunning, long StartTick, long EndTick, long TicksPassed, int SecondsPassed);
+public record TimeoutClockState(bool IsRunning, long StartTick, long EndTick, [property: IgnoreChange] long TicksPassed, int SecondsPassed);

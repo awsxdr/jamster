@@ -1,3 +1,6 @@
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Logging;
+
 namespace amethyst.tests.Controllers;
 
 using System.Diagnostics;
@@ -11,10 +14,21 @@ using Microsoft.AspNetCore.Mvc.Testing;
 [TestFixture]
 public abstract class ControllerIntegrationTest
 {
-    private readonly WebApplicationFactory<Program> _applicationFactory = new();
+    private readonly WebApplicationFactory<Program> _applicationFactory;
     protected HttpClient Client { get; private set; }
 
     protected JsonSerializerOptions SerializerOptions { get; } = new(JsonSerializerDefaults.Web);
+
+    protected ControllerIntegrationTest()
+    {
+        _applicationFactory = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
+        {
+            builder.ConfigureLogging(logOptions =>
+            {
+                logOptions.AddConsole().SetMinimumLevel(LogLevel.Debug);
+            });
+        });
+    }
 
     [OneTimeSetUp]
     public virtual void OneTimeSetup()

@@ -4,9 +4,9 @@ import * as SignalR from '@microsoft/signalr';
 import { ComboBox } from "@/components/ui/combobox";
 import { Plus } from "lucide-react";
 
-//const API_URL = 'https://localhost:7255';
+const API_URL = 'https://localhost:7255';
 //const API_URL = 'http://localhost:5000';
-const API_URL = 'http://localhost:5249';
+//const API_URL = 'http://localhost:5249';
 
 type GameModel = {
     id: string,
@@ -23,7 +23,6 @@ type ClockProps<TClockState> = {
 
 type JamClockState = {
     isRunning: boolean,
-    jamNumber: number,
     startTick: number,
     ticksPassed: number,
     secondsPassed: number,
@@ -41,7 +40,15 @@ type TimeoutClockState = {
     startTick: number,
     ticksPassed: number,
     secondsPassed: number,
-}
+};
+
+type PeriodClockState = {
+    isRunning: boolean,
+    lastStartTick: number,
+    ticksPassedAtLastStart: number,
+    ticksPassed: number,
+    secondsPassed: number,
+};
 
 type BasicClockProps<TClockState> = Pick<ClockProps<TClockState>, "gameId">;
 
@@ -55,10 +62,13 @@ const LineupClock = ({ gameId }: BasicClockProps<LineupClockState>) => (
 
 const TimeoutClock = ({ gameId }: BasicClockProps<TimeoutClockState>) => (
     <Clock<TimeoutClockState> gameId={gameId} secondsMapper={s => s.secondsPassed} stateName="TimeoutClockState" direction="up" />
-)
+);
 
-function Clock<TClockState>({ gameId, secondsMapper, stateName, direction, startValue }: ClockProps<TClockState>) {
+const PeriodClock = ({ gameId }: BasicClockProps<PeriodClockState>) => (
+    <Clock<PeriodClockState> gameId={gameId} secondsMapper={s => s.secondsPassed} stateName="PeriodClockState" direction="down" startValue={30 * 60} />
+);
 
+const Clock = <TClockState,>({ gameId, secondsMapper, stateName, direction, startValue }: ClockProps<TClockState>) => {
     const [clock, setClock] = useState<number>(startValue ?? 0)
 
     useEffect(() => {
@@ -68,10 +78,23 @@ function Clock<TClockState>({ gameId, secondsMapper, stateName, direction, start
 
         const hubConnection = new SignalR.HubConnectionBuilder()
             .withUrl(`${API_URL}/api/hubs/game/${gameId}`, { withCredentials: false })
+            .withAutomaticReconnect({ nextRetryDelayInMilliseconds: context => {
+                if(context.previousRetryCount < 10) {
+                    return 250;
+                } else if(context.previousRetryCount < 40) {
+                    return 1000;
+                } else {
+                    return 5000;
+                }
+            }})
             .build();
 
         hubConnection.on("StateChanged", (state: TClockState) => {
             setClock(secondsMapper(state));
+        });
+
+        hubConnection.onreconnected(() => {
+            hubConnection.invoke("WatchState", stateName);
         });
 
         hubConnection.start()
@@ -97,6 +120,76 @@ function Clock<TClockState>({ gameId, secondsMapper, stateName, direction, start
     return (
         <div>
             {time}
+        </div>
+    );
+};
+
+type GameStageDisplayProps = {
+    gameId?: string
+};
+
+enum Stage {
+    BeforeGame,
+    Lineup,
+    Jam,
+    Timeout,
+    Intermission,
+    AfterGame,
+}
+
+type GameStageState = {
+    stage: Stage,
+    periodNumber: number,
+    jamNumber: number,
+};
+
+const GameStageDisplay = ({gameId}: GameStageDisplayProps) => {
+
+    const [state, setState] = useState<GameStageState>({ stage: Stage.BeforeGame, periodNumber: 0, jamNumber: 0});
+
+    useEffect(() => {
+        if(!gameId) {
+            return;
+        }
+
+        const hubConnection = new SignalR.HubConnectionBuilder()
+            .withUrl(`${API_URL}/api/hubs/game/${gameId}`, { withCredentials: false })
+            .withAutomaticReconnect({ nextRetryDelayInMilliseconds: context => {
+                if(context.previousRetryCount < 10) {
+                    return 250;
+                } else if(context.previousRetryCount < 40) {
+                    return 1000;
+                } else {
+                    return 5000;
+                }
+            }})
+            .build();
+
+        hubConnection.on("StateChanged", (state: GameStageState) => {
+            setState(state);
+        });
+
+        hubConnection.onreconnected(() => {
+            hubConnection.invoke("WatchState", "GameStageState");
+        });
+
+        hubConnection.start()
+            .catch(err => console.error(err))
+            .then(() => {
+                hubConnection.invoke("WatchState", "GameStageState");
+            });
+
+        return () => {
+            hubConnection.stop();
+        }
+        
+    }, [gameId, setState]);
+
+    return (
+        <div>
+            <p>Stage: {Stage[state.stage]}</p>
+            <p>Period: {state.periodNumber}</p>
+            <p>Jam: {state.jamNumber}</p>
         </div>
     );
 }
@@ -178,9 +271,17 @@ export const Events = () => {
                     <Plus className="h-4 w-4" />
                 </Button>
             </div>
+            <GameStageDisplay gameId={gameId} />
+            Jam: <JamClock gameId={gameId} />
+            Jam: <JamClock gameId={gameId} />
+            Jam: <JamClock gameId={gameId} />
+            Jam: <JamClock gameId={gameId} />
+            Jam: <JamClock gameId={gameId} />
+            Jam: <JamClock gameId={gameId} />
             Jam: <JamClock gameId={gameId} />
             Lineup: <LineupClock gameId={gameId} />
             Timeout: <TimeoutClock gameId={gameId} />
+            Period: <PeriodClock gameId={gameId} />
             <div>
                 <Button onClick={startJam} className="m-[2px]">Start Jam</Button>
                 <Button onClick={endJam} className="m-[2px]">End Jam</Button>

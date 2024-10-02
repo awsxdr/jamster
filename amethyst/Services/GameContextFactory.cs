@@ -1,4 +1,6 @@
-﻿namespace amethyst.Services;
+﻿using System.Collections.Concurrent;
+
+namespace amethyst.Services;
 
 using System.Collections.Immutable;
 using DataStores;
@@ -16,20 +18,12 @@ public class GameContextFactory(
     GameStoreFactory gameStoreFactory) 
     : IGameContextFactory
 {
-    private readonly Dictionary<Guid, GameContext> _gameContexts = [];
+    private readonly ConcurrentDictionary<Guid, GameContext> _gameContexts = [];
 
-    public GameContext GetGame(GameInfo gameInfo)
-    {
-        lock (_gameContexts)
-        {
-            if (!_gameContexts.ContainsKey(gameInfo.Id))
-                LoadGame(gameInfo);
-        }
+    public GameContext GetGame(GameInfo gameInfo) =>
+        _gameContexts.GetOrAdd(gameInfo.Id, _ => LoadGame(gameInfo));
 
-        return _gameContexts[gameInfo.Id];
-    }
-
-    private void LoadGame(GameInfo gameInfo)
+    private GameContext LoadGame(GameInfo gameInfo)
     {
         using var game = gameStoreFactory(IGameDiscoveryService.GetGameFileName(gameInfo));
 
@@ -41,9 +35,9 @@ public class GameContextFactory(
         stateStore.LoadDefaultStates(reducers);
         stateStore.ApplyEvents(reducers, events);
 
-        _gameContexts[gameInfo.Id] = gameContextWithoutReducers with { Reducers = reducers };
-
         gameClockFactory(reducers.OfType<ITickReceiver>()).Run();
+
+        return gameContextWithoutReducers with {Reducers = reducers};
     }
 }
 

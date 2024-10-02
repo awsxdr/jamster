@@ -1,4 +1,5 @@
-﻿using amethyst.Events;
+﻿using amethyst.Domain;
+using amethyst.Events;
 using amethyst.Services;
 
 namespace amethyst.Reducers;
@@ -12,19 +13,36 @@ public sealed class JamClock(GameContext gameContext, IEventBus eventBus, ILogge
 {
     protected override JamClockState DefaultState => new(false, 0, 0, 0);
 
+    public const long JamLengthInTicks = 2 * 60 * 1000;
+
     public void Handle(JamStarted @event)
     {
         var state = GetState();
 
-        if(!state.IsRunning)
-            SetState(new(true, @event.Tick, 0, 0));
+        if (state.IsRunning) return;
+
+        logger.LogDebug("Starting jam clock");
+
+        SetState(new(true, @event.Tick, 0, 0));
     }
 
-    public void Handle(JamEnded @event) =>
-        SetState(GetState() with { IsRunning = false });
+    public void Handle(JamEnded @event)
+    {
+        logger.LogDebug("Stopping jam clock due to jam end");
 
-    public void Handle(TimeoutStarted @event) =>
-        SetState(GetState() with { IsRunning = false });
+        SetState(GetState() with {IsRunning = false});
+    }
+
+    public void Handle(TimeoutStarted @event)
+    {
+        var state = GetState();
+
+        if(!state.IsRunning) return;
+
+        logger.LogDebug("Stopping jam clock due to timeout start");
+
+        SetState(state with {IsRunning = false});
+    }
 
     public void Tick(long tick, long tickDelta)
     {
@@ -32,23 +50,21 @@ public sealed class JamClock(GameContext gameContext, IEventBus eventBus, ILogge
 
         if (!state.IsRunning) return;
 
-        var newState = state with { TicksPassed = tick - state.StartTick };
-        if (newState.TicksPassed > 2 * 60 * 1000)
+        var ticksPassed = tick - state.StartTick;
+        var newState = GetState() with
         {
-            logger.LogDebug("Jam clock expired, ending jam");
-            eventBus.AddEvent(Context.GameInfo, new JamEnded(Guid7.FromTick(state.StartTick + 2 * 60 * 1000)));
-        }
-
-        newState = GetState() with
-        {
-            TicksPassed = newState.TicksPassed,
-            SecondsPassed = (int) (newState.TicksPassed / 1000L)
+            TicksPassed = ticksPassed,
+            SecondsPassed = (int) (ticksPassed / 1000L)
         };
 
         SetState(newState);
+
+        if (ticksPassed > JamLengthInTicks)
+        {
+            logger.LogDebug("Jam clock expired, ending jam");
+            eventBus.AddEvent(Context.GameInfo, new JamEnded(Guid7.FromTick(state.StartTick + JamLengthInTicks)));
+        }
     }
 }
 
 public record JamClockState(bool IsRunning, long StartTick, [property: IgnoreChange] long TicksPassed, int SecondsPassed);
-
-public sealed class IgnoreChangeAttribute : Attribute;
