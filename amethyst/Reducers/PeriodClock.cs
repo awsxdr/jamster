@@ -1,7 +1,6 @@
 ﻿using amethyst.Domain;
 using amethyst.Events;
 using amethyst.Services;
-using Microsoft.Extensions.Logging;
 
 namespace amethyst.Reducers;
 
@@ -16,7 +15,6 @@ public class PeriodClock(GameContext context, IEventBus eventBus, ILogger<Period
     protected override PeriodClockState DefaultState => new(false, 0, 0, 0, 0);
 
     public const long PeriodLengthInTicks = 30 * 60 * 1000;
-    public const long LineupDurationInTicks = 30 * 1000;
 
     public void Handle(JamStarted @event)
     {
@@ -45,6 +43,8 @@ public class PeriodClock(GameContext context, IEventBus eventBus, ILogger<Period
         logger.LogInformation("Period clock expired following jam end");
 
         SetState(state with {IsRunning = false, SecondsPassed = (int) (ticksPassed / 1000), TicksPassed = ticksPassed});
+
+        eventBus.AddEvent(Context.GameInfo, new PeriodEnded(@event.Tick));
     }
 
     public void Handle(TimeoutStarted @event)
@@ -70,13 +70,13 @@ public class PeriodClock(GameContext context, IEventBus eventBus, ILogger<Period
 
         var ticksRemaining = PeriodLengthInTicks - state.TicksPassed;
 
-        if (ticksRemaining > LineupDurationInTicks) return;
+        if (ticksRemaining > LineupClock.LineupDurationInTicks) return;
 
         var lineupClock = GetState<LineupClockState>();
         var ticksRemainingWhenLastLineupStarted =
             PeriodLengthInTicks - lineupClock.StartTick - state.LastStartTick + state.TicksPassedAtLastStart;
 
-        if (ticksRemainingWhenLastLineupStarted > LineupDurationInTicks) return;
+        if (ticksRemainingWhenLastLineupStarted > LineupClock.LineupDurationInTicks) return;
 
         logger.LogDebug("Starting period clock as timeout ended and previous lineup started with less than lineup duration on clock");
 
@@ -88,7 +88,7 @@ public class PeriodClock(GameContext context, IEventBus eventBus, ILogger<Period
         });
     }
 
-    public void Tick(long tick, long tickDelta)
+    public void Tick(Tick tick, long tickDelta)
     {
         var state = GetState();
         if (!state.IsRunning) return;

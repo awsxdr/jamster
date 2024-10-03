@@ -86,23 +86,10 @@ public class GameStateStore(ILogger<GameStateStore> logger) : IGameStateStore
     {
         if (initialState == newState) return false;
 
-        //return initialState.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance)
-        //    .Where(property => property.GetCustomAttribute<IgnoreChangeAttribute>() is null)
-        //    .Select(property => (Initial: property.GetValue(initialState), New: property.GetValue(newState)))
-        //    .All(states => states.Initial?.Equals(states.New) ?? states.New is null);
-
-        foreach (var property in initialState.GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public))
-        {
-            if (property.GetCustomAttribute<IgnoreChangeAttribute>() is not null) continue;
-
-            var initialValue = property.GetValue(initialState);
-            var newValue = property.GetValue(newState);
-
-            if (!initialValue.Equals(newValue))
-                return true;
-        }
-
-        return false;
+        return initialState.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance)
+            .Where(property => property.GetCustomAttribute<IgnoreChangeAttribute>() is null)
+            .Select(property => (Initial: property.GetValue(initialState), New: property.GetValue(newState)))
+            .Any(states => !states.Initial!.Equals(states.New));
     }
 
     private static string GetStateName<TState>() => GetStateName(typeof(TState));

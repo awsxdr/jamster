@@ -1,6 +1,5 @@
 ﻿using amethyst.Events;
 using amethyst.Services;
-using System.Security;
 
 namespace amethyst.Reducers;
 
@@ -23,10 +22,7 @@ public class GameStage(GameContext context)
             _ => state
         };
 
-        if (newState != state)
-        {
-            SetState(newState);
-        }
+        SetStateIfDifferent(newState);
     }
 
     public void Handle(JamStarted @event)
@@ -39,10 +35,7 @@ public class GameStage(GameContext context)
             _ => state with { Stage = Stage.Jam, JamNumber = state.JamNumber + 1}
         };
 
-        if (newState != state)
-        {
-            SetState(newState);
-        }
+        SetStateIfDifferent(newState);
     }
 
     public void Handle(JamEnded @event)
@@ -57,10 +50,7 @@ public class GameStage(GameContext context)
             _ => state
         };
 
-        if (newState != state)
-        {
-            SetState(newState);
-        }
+        SetStateIfDifferent(newState);
     }
 
     public void Handle(TimeoutStarted @event)
@@ -72,10 +62,7 @@ public class GameStage(GameContext context)
             _ => state with {Stage = Stage.Timeout}
         };
 
-        if (newState != state)
-        {
-            SetState(newState);
-        }
+        SetStateIfDifferent(newState);
     }
 
     public void Handle(PeriodEnded @event)
@@ -89,10 +76,7 @@ public class GameStage(GameContext context)
             _ => state
         };
 
-        if (newState != state)
-        {
-            SetState(newState);
-        }
+        SetStateIfDifferent(newState);
     }
 }
 

@@ -49,7 +49,7 @@ public class TimeoutClock(GameContext context, ILogger<TimeoutClock> logger) : R
         }
     }
 
-    public void Tick(long tick, long tickDelta)
+    public void Tick(Tick tick, long tickDelta)
     {
         var state = GetState();
 

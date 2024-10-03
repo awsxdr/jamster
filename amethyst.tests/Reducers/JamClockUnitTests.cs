@@ -8,38 +8,21 @@ using FluentAssertions;
 using Moq;
 using Services;
 
-public class JamClockUnitTests : UnitTest<JamClock>
+public class JamClockUnitTests : ReducerUnitTest<JamClock, JamClockState>
 {
-    private JamClockState _state;
-
-    protected override void Setup()
-    {
-        base.Setup();
-
-        _state = (JamClockState) Subject.GetDefaultState();
-
-        GetMock<IGameStateStore>()
-            .Setup(mock => mock.GetState<JamClockState>())
-            .Returns(() => _state);
-
-        GetMock<IGameStateStore>()
-            .Setup(mock => mock.SetState(It.IsAny<JamClockState>()))
-            .Callback((JamClockState s) => _state = s);
-    }
-
     [Test]
     public void JamStart_WhenClockStopped_StartsJam()
     {
-        _state = new(false, 0, 0, 0);
+        State = new(false, 0, 0, 0);
 
         var randomTick = Random.Shared.Next(0, 100000);
 
         Subject.Handle(new JamStarted(randomTick));
 
-        _state.IsRunning.Should().BeTrue();
-        _state.StartTick.Should().Be(randomTick);
-        _state.TicksPassed.Should().Be(0);
-        _state.SecondsPassed.Should().Be(0);
+        State.IsRunning.Should().BeTrue();
+        State.StartTick.Should().Be(randomTick);
+        State.TicksPassed.Should().Be(0);
+        State.SecondsPassed.Should().Be(0);
     }
 
     [Test]
@@ -47,70 +30,85 @@ public class JamClockUnitTests : UnitTest<JamClock>
     {
         var randomTick = Random.Shared.Next(0, 100000);
 
-        _state = new JamClockState(true, randomTick, randomTick, randomTick / 1000);
+        State = new JamClockState(true, randomTick, randomTick, randomTick / 1000);
 
         var secondRandomTick = randomTick + Random.Shared.Next(1, 100000);
         Subject.Handle(new JamStarted(secondRandomTick));
 
-        _state.IsRunning.Should().BeTrue();
-        _state.StartTick.Should().Be(randomTick);
-        _state.TicksPassed.Should().Be(randomTick);
-        _state.SecondsPassed.Should().Be(randomTick / 1000);
+        State.IsRunning.Should().BeTrue();
+        State.StartTick.Should().Be(randomTick);
+        State.TicksPassed.Should().Be(randomTick);
+        State.SecondsPassed.Should().Be(randomTick / 1000);
+    }
+
+    [Test]
+    public void JamStart_WhenClockRunning_AndPreviousJamRanToLength_StartsNewJam()
+    {
+        State = new JamClockState(true, 0, 0, 0);
+
+        var newJamStartTick = JamClock.JamLengthInTicks + LineupClock.LineupDurationInTicks;
+
+        Subject.Handle(new JamStarted(newJamStartTick));
+
+        State.IsRunning.Should().BeTrue();
+        State.StartTick.Should().Be(newJamStartTick);
+        State.TicksPassed.Should().Be(0);
+        State.SecondsPassed.Should().Be(0);
     }
 
     [Test]
     public void JamEnded_WhenClockRunning_EndsJam()
     {
         var randomTick = Random.Shared.Next(1, 100000);
-        _state = new(true, randomTick, randomTick, 0);
+        State = new(true, randomTick, randomTick, 0);
 
         var secondRandomTick = randomTick + Random.Shared.Next(1, 100000);
         Subject.Handle(new JamEnded(secondRandomTick));
 
-        _state.IsRunning.Should().BeFalse();
+        State.IsRunning.Should().BeFalse();
     }
 
     [Test]
     public void JamEnded_WhenJamNotRunning_DoesNotChangeState()
     {
         var randomTick = Random.Shared.Next(1, 100000);
-        _state = new(false, randomTick, randomTick, randomTick / 1000);
+        State = new(false, randomTick, randomTick, randomTick / 1000);
 
         var secondRandomTick = randomTick + Random.Shared.Next(1, 100000);
         Subject.Handle(new JamEnded(secondRandomTick));
 
-        _state.IsRunning.Should().BeFalse();
-        _state.StartTick.Should().Be(randomTick);
-        _state.TicksPassed.Should().Be(randomTick);
-        _state.SecondsPassed.Should().Be(randomTick / 1000);
+        State.IsRunning.Should().BeFalse();
+        State.StartTick.Should().Be(randomTick);
+        State.TicksPassed.Should().Be(randomTick);
+        State.SecondsPassed.Should().Be(randomTick / 1000);
     }
 
     [Test]
     public void TimeoutStarted_WhenJamRunning_EndsJam()
     {
         var randomTick = Random.Shared.Next(1, 100000);
-        _state = new(true, randomTick, randomTick, 0);
+        State = new(true, randomTick, randomTick, 0);
 
         var secondRandomTick = randomTick + Random.Shared.Next(1, 100000);
         Subject.Handle(new TimeoutStarted(secondRandomTick));
 
-        _state.IsRunning.Should().BeFalse();
+        State.IsRunning.Should().BeFalse();
     }
 
     [Test]
     public void Tick_WhenStillTimeInJam_UpdatesTicksPassed()
     {
-        _state = new(true, 0, 0, 0);
+        State = new(true, 0, 0, 0);
         Subject.Tick(10000, 10000);
 
-        _state.TicksPassed.Should().Be(10000);
-        _state.SecondsPassed.Should().Be(10);
+        State.TicksPassed.Should().Be(10000);
+        State.SecondsPassed.Should().Be(10);
     }
 
     [Test]
     public void Tick_WhenOverJamTimeLimit_SendsJamEndedEvent()
     {
-        _state = new(true, 0, 0, 0);
+        State = new(true, 0, 0, 0);
         Subject.Tick(130 * 1000, 130 * 1000);
 
         GetMock<IEventBus>()

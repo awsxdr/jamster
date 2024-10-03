@@ -10,6 +10,8 @@ public sealed class LineupClock(GameContext gameContext, ILogger<LineupClock> lo
     , IHandlesEvent<TimeoutStarted>
     , ITickReceiver
 {
+    public const long LineupDurationInTicks = 30 * 1000;
+
     protected override LineupClockState DefaultState => new(false, 0, 0, 0);
 
     public void Handle(JamStarted @event)
@@ -46,7 +48,7 @@ public sealed class LineupClock(GameContext gameContext, ILogger<LineupClock> lo
         SetState(GetState() with { IsRunning = false });
     }
 
-    public void Tick(long tick, long tickDelta)
+    public void Tick(Tick tick, long tickDelta)
     {
         var state = GetState();
 

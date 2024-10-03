@@ -62,4 +62,10 @@ public abstract class Reducer<TState>(GameContext context) : IReducer<TState>
 
     protected void SetState(TState state) =>
         Context.StateStore.SetState(state);
+
+    protected void SetStateIfDifferent(TState state)
+    {
+        if (state != GetState())
+            SetState(state);
+    }
 }

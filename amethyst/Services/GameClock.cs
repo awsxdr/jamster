@@ -1,4 +1,6 @@
-﻿namespace amethyst.Services;
+﻿using amethyst.Domain;
+
+namespace amethyst.Services;
 
 public interface IGameClock : IDisposable
 {
@@ -53,5 +55,5 @@ public class GameClock(IEnumerable<ITickReceiver> receivers, ILogger<GameClock> 
 
 public interface ITickReceiver
 {
-    void Tick(long tick, long tickDelta);
+    void Tick(Tick tick, long tickDelta);
 }

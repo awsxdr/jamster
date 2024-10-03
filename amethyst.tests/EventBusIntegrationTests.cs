@@ -2,11 +2,9 @@
 
 using System.Collections.Immutable;
 using amethyst.Reducers;
-using Castle.Core.Logging;
 using DataStores;
 using Events;
 using FluentAssertions;
-using Microsoft.Extensions.Logging;
 using Moq;
 using Moq.AutoMock;
 using Services;
@@ -37,7 +35,7 @@ public class EventBusIntegrationTests
         var gameContextFactory = mocker.CreateInstance<GameContextFactory>();
         mocker.Use<IGameContextFactory>(gameContextFactory);
 
-        var subject = mocker.CreateInstance<EventBus>();
+        var subject = mocker.CreateInstance<Services.EventBus>();
 
         await subject.AddEvent(new(Guid.NewGuid(), "test"), new JamStarted(10000));
 

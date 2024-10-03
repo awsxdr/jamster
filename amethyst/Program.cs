@@ -6,6 +6,7 @@ using amethyst.Reducers;
 using amethyst.Services;
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
+using Microsoft.AspNetCore.Diagnostics;
 using SQLite;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -77,6 +78,21 @@ app.UseCors(policyBuilder =>
 });
 
 app.UseHttpsRedirection();
+
+app.UseExceptionHandler(options =>
+{
+    options.Run(context =>
+    {
+        var logger = context.RequestServices.GetService<ILogger<Program>>()!;
+
+        var exceptionHandler = context.Features.Get<IExceptionHandlerFeature>();
+
+        if (exceptionHandler != null)
+            logger.LogError(exceptionHandler.Error, "Uncaught exception while handling request");
+
+        return Task.CompletedTask;
+    });
+});
 
 app.UseAuthorization();
 

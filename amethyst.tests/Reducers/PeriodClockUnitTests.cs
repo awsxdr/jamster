@@ -62,6 +62,28 @@ public class PeriodClockUnitTests : ReducerUnitTest<PeriodClock, PeriodClockStat
     }
 
     [Test]
+    public void JamEnded_WhenPeriodClockRunning_AndPeriodClockExpired_SendsPeriodEndedEvent()
+    {
+        var lastStartTick = GetRandomTick();
+        var ticksPassedAtLastStart = PeriodClock.PeriodLengthInTicks - 10000;
+
+        State = new(
+            true,
+            lastStartTick,
+            ticksPassedAtLastStart,
+            ticksPassedAtLastStart + 12000,
+            (int)((ticksPassedAtLastStart + 12000) / 1000));
+
+        Subject.Handle(new JamEnded(lastStartTick + 12100));
+
+        GetMock<IEventBus>()
+            .Verify(mock => mock.AddEvent(
+                It.IsAny<GameInfo>(),
+                It.Is<PeriodEnded>(e => e.Tick == lastStartTick + 12100)
+            ), Times.Once);
+    }
+
+    [Test]
     public void JamEnded_WhenPeriodClockRunning_AndPeriodClockNotExpired_DoesNotChangeState()
     {
         var lastStartTick = GetRandomTick();
@@ -146,16 +168,16 @@ public class PeriodClockUnitTests : ReducerUnitTest<PeriodClock, PeriodClockStat
     [Test]
     public void TimeoutEnded_WhenLineupStartedWhenTimeRemainingLessThanLineupDuration_StartsPeriodClock()
     {
-        MockState(new LineupClockState(false, PeriodClock.PeriodLengthInTicks - PeriodClock.LineupDurationInTicks + 1000, 1000, 1));
+        MockState(new LineupClockState(false, PeriodClock.PeriodLengthInTicks - LineupClock.LineupDurationInTicks + 1000, 1000, 1));
 
         State = new(
             false,
             0,
             0,
-            PeriodClock.PeriodLengthInTicks - PeriodClock.LineupDurationInTicks + 1000,
-            (int) ((PeriodClock.PeriodLengthInTicks - PeriodClock.LineupDurationInTicks + 1000) / 1000));
+            PeriodClock.PeriodLengthInTicks - LineupClock.LineupDurationInTicks + 1000,
+            (int) ((PeriodClock.PeriodLengthInTicks - LineupClock.LineupDurationInTicks + 1000) / 1000));
 
-        Subject.Handle(new TimeoutEnded(PeriodClock.PeriodLengthInTicks - PeriodClock.LineupDurationInTicks / 2));
+        Subject.Handle(new TimeoutEnded(PeriodClock.PeriodLengthInTicks - LineupClock.LineupDurationInTicks / 2));
 
         State.IsRunning.Should().BeTrue();
     }
@@ -163,16 +185,16 @@ public class PeriodClockUnitTests : ReducerUnitTest<PeriodClock, PeriodClockStat
     [Test]
     public void TimeoutEnded_WhenTimeRemainingMoreThanLineupDuration_DoesNotStartPeriodClock()
     {
-        MockState(new LineupClockState(false, PeriodClock.PeriodLengthInTicks - PeriodClock.LineupDurationInTicks - 1000, 1000, 1));
+        MockState(new LineupClockState(false, PeriodClock.PeriodLengthInTicks - LineupClock.LineupDurationInTicks - 1000, 1000, 1));
 
         State = new(
             false,
             0,
-            PeriodClock.PeriodLengthInTicks - PeriodClock.LineupDurationInTicks + 1000,
-            PeriodClock.PeriodLengthInTicks - PeriodClock.LineupDurationInTicks + 1000,
-            (int)((PeriodClock.PeriodLengthInTicks - PeriodClock.LineupDurationInTicks + 1000) / 1000));
+            PeriodClock.PeriodLengthInTicks - LineupClock.LineupDurationInTicks + 1000,
+            PeriodClock.PeriodLengthInTicks - LineupClock.LineupDurationInTicks + 1000,
+            (int)((PeriodClock.PeriodLengthInTicks - LineupClock.LineupDurationInTicks + 1000) / 1000));
 
-        Subject.Handle(new TimeoutEnded(PeriodClock.PeriodLengthInTicks - PeriodClock.LineupDurationInTicks + 2000));
+        Subject.Handle(new TimeoutEnded(PeriodClock.PeriodLengthInTicks - LineupClock.LineupDurationInTicks + 2000));
 
         State.IsRunning.Should().BeFalse();
     }
