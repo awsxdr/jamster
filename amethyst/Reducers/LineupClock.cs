@@ -48,11 +48,11 @@ public sealed class LineupClock(GameContext gameContext, ILogger<LineupClock> lo
         SetState(GetState() with { IsRunning = false });
     }
 
-    public void Tick(Tick tick, long tickDelta)
+    public Task Tick(Tick tick, long tickDelta)
     {
         var state = GetState();
 
-        if (!state.IsRunning) return;
+        if (!state.IsRunning) return Task.CompletedTask;
 
         var newState = state with
         {
@@ -60,6 +60,8 @@ public sealed class LineupClock(GameContext gameContext, ILogger<LineupClock> lo
             SecondsPassed = (int)((tick - state.StartTick) / 1000L),
         };
         SetState(newState);
+
+        return Task.CompletedTask;
     }
 }
 

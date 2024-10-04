@@ -12,6 +12,7 @@ public delegate IGameStateStore GameStateStoreFactory();
 public interface IGameStateStore
 {
     TState GetState<TState>() where TState : class;
+    TState GetCachedState<TState>() where TState : class;
     void SetState<TState>(TState state) where TState : class;
     void LoadDefaultStates(IImmutableList<IReducer> reducers);
     Task ApplyEvents(IImmutableList<IReducer> reducers, params Event[] events);
@@ -23,10 +24,14 @@ public interface IGameStateStore
 public class GameStateStore(ILogger<GameStateStore> logger) : IGameStateStore
 {
     private readonly Dictionary<string, object> _states = new();
+    private readonly Dictionary<string, object> _cachedStates = new();
     private readonly Dictionary<string, IStateUpdatedEventSource> _stateEventStream = new();
 
     public TState GetState<TState>() where TState : class =>
         (TState)_states[GetStateName<TState>()];
+
+    public TState GetCachedState<TState>() where TState : class =>
+        (TState)_cachedStates[GetStateName<TState>()];
 
     public Result<object> GetStateByName(string stateName) =>
         _states.TryGetValue(stateName, out var state)
@@ -76,9 +81,17 @@ public class GameStateStore(ILogger<GameStateStore> logger) : IGameStateStore
 
     public async Task ApplyEvents(IImmutableList<IReducer> reducers, params Event[] events)
     {
-        foreach (var @event in events)
+        CacheStates();
+        try
         {
-            await HandleEvent(reducers, @event);
+            foreach (var @event in events)
+            {
+                await HandleEvent(reducers, @event);
+            }
+        }
+        finally
+        {
+            ClearCache();
         }
     }
 
@@ -98,6 +111,25 @@ public class GameStateStore(ILogger<GameStateStore> logger) : IGameStateStore
     private static Func<TState, Task> MapStateUpdateHandler<TState>(Func<object, Task> onStateUpdate) where TState : class =>
         onStateUpdate;
 
+    private void CacheStates()
+    {
+        lock (_cachedStates)
+        {
+            if (_cachedStates.Any()) return;
+
+            foreach (var (key, value) in _states)
+                _cachedStates[key] = value;
+        }
+    }
+
+    private void ClearCache()
+    {
+        lock (_cachedStates)
+        {
+            _cachedStates.Clear();
+        }
+    }
+
     private StateUpdateEventSource<TState> GetEventSource<TState>() =>
         (StateUpdateEventSource<TState>)_stateEventStream[GetStateName<TState>()];
 
@@ -106,6 +138,7 @@ public class GameStateStore(ILogger<GameStateStore> logger) : IGameStateStore
 
     private async Task HandleEvent(IImmutableList<IReducer> reducers, Event @event)
     {
+        logger.BeginScope("Handling {event}", @event);
         foreach (var reducer in reducers)
         {
             try

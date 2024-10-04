@@ -1,13 +1,13 @@
-﻿namespace amethyst.tests;
-
-using System.Collections.Immutable;
+﻿using System.Collections.Immutable;
+using amethyst.DataStores;
+using amethyst.Events;
 using amethyst.Reducers;
-using DataStores;
-using Events;
+using amethyst.Services;
 using FluentAssertions;
 using Moq;
 using Moq.AutoMock;
-using Services;
+
+namespace amethyst.tests;
 
 [TestFixture]
 public class EventBusIntegrationTests

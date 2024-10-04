@@ -7,9 +7,10 @@ namespace amethyst.Reducers;
 public class PeriodClock(GameContext context, IEventBus eventBus, ILogger<PeriodClock> logger) 
     : Reducer<PeriodClockState>(context)
     , IHandlesEvent<JamStarted>
-    , IHandlesEvent<JamEnded>
+    , IHandlesEventAsync<JamEnded>
     , IHandlesEvent<TimeoutStarted>
     , IHandlesEvent<TimeoutEnded>
+    , IHandlesEventAsync<PeriodFinalized>
     , ITickReceiver
 {
     protected override PeriodClockState DefaultState => new(false, 0, 0, 0, 0);
@@ -31,7 +32,7 @@ public class PeriodClock(GameContext context, IEventBus eventBus, ILogger<Period
         });
     }
 
-    public void Handle(JamEnded @event)
+    public async Task HandleAsync(JamEnded @event)
     {
         var state = GetState();
         if (!state.IsRunning) return;
@@ -44,7 +45,7 @@ public class PeriodClock(GameContext context, IEventBus eventBus, ILogger<Period
 
         SetState(state with {IsRunning = false, SecondsPassed = (int) (ticksPassed / 1000), TicksPassed = ticksPassed});
 
-        eventBus.AddEvent(Context.GameInfo, new PeriodEnded(@event.Tick));
+        await eventBus.AddEvent(Context.GameInfo, new PeriodEnded(@event.Tick));
     }
 
     public void Handle(TimeoutStarted @event)
@@ -88,7 +89,17 @@ public class PeriodClock(GameContext context, IEventBus eventBus, ILogger<Period
         });
     }
 
-    public void Tick(Tick tick, long tickDelta)
+    public async Task HandleAsync(PeriodFinalized @event)
+    {
+        logger.LogInformation("Resetting period clock due to period finalization");
+
+        if (GetState().IsRunning)
+            await eventBus.AddEvent(Context.GameInfo, new PeriodEnded(@event.Tick));
+
+        SetState(DefaultState);
+    }
+
+    public async Task Tick(Tick tick, long tickDelta)
     {
         var state = GetState();
         if (!state.IsRunning) return;
@@ -114,7 +125,7 @@ public class PeriodClock(GameContext context, IEventBus eventBus, ILogger<Period
 
         if (!state.IsRunning)
         {
-            eventBus.AddEvent(Context.GameInfo, new PeriodEnded(tick));
+            await eventBus.AddEvent(Context.GameInfo, new PeriodEnded(tick));
         }
     }
 }

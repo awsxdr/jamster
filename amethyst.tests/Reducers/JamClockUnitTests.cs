@@ -1,12 +1,8 @@
-﻿using amethyst.DataStores;
+﻿using amethyst.Events;
+using amethyst.Reducers;
+using FluentAssertions;
 
 namespace amethyst.tests.Reducers;
-
-using amethyst.Reducers;
-using Events;
-using FluentAssertions;
-using Moq;
-using Services;
 
 public class JamClockUnitTests : ReducerUnitTest<JamClock, JamClockState>
 {
@@ -111,10 +107,6 @@ public class JamClockUnitTests : ReducerUnitTest<JamClock, JamClockState>
         State = new(true, 0, 0, 0);
         Subject.Tick(130 * 1000, 130 * 1000);
 
-        GetMock<IEventBus>()
-            .Verify(mock => mock.AddEvent(
-                It.IsAny<GameInfo>(), 
-                It.Is<JamEnded>(e => e.Tick == 120 * 1000)
-            ), Times.Once);
+        VerifyEventSent<JamEnded>(120 * 1000);
     }
 }

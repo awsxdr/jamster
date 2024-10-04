@@ -23,6 +23,8 @@ public sealed class JamClock(GameContext gameContext, IEventBus eventBus, ILogge
         {
             var jamDuration = @event.Tick - state.StartTick;
             if (jamDuration < JamLengthInTicks) return;
+
+            logger.LogDebug("Starting jam after previous jam ran to duration");
         }
 
         logger.LogDebug("Starting jam clock");
@@ -48,7 +50,7 @@ public sealed class JamClock(GameContext gameContext, IEventBus eventBus, ILogge
         SetState(state with {IsRunning = false});
     }
 
-    public void Tick(Tick tick, long tickDelta)
+    public async Task Tick(Tick tick, long tickDelta)
     {
         var state = GetState();
 
@@ -66,7 +68,7 @@ public sealed class JamClock(GameContext gameContext, IEventBus eventBus, ILogge
         if (ticksPassed > JamLengthInTicks)
         {
             logger.LogDebug("Jam clock expired, ending jam");
-            eventBus.AddEvent(Context.GameInfo, new JamEnded(Guid7.FromTick(state.StartTick + JamLengthInTicks)));
+            await eventBus.AddEvent(Context.GameInfo, new JamEnded(Guid7.FromTick(state.StartTick + JamLengthInTicks)));
         }
     }
 }

@@ -55,5 +55,5 @@ public class GameClock(IEnumerable<ITickReceiver> receivers, ILogger<GameClock> 
 
 public interface ITickReceiver
 {
-    void Tick(Tick tick, long tickDelta);
+    Task Tick(Tick tick, long tickDelta);
 }

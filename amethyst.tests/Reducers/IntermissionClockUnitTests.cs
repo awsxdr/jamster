@@ -49,11 +49,41 @@ public class IntermissionClockUnitTests : ReducerUnitTest<IntermissionClock, Int
     }
 
     [Test]
-    public void Tick_WhenClockIsRunning_SetsNewTime()
+    public async Task IntermissionStarted_StartsClock()
+    {
+        await Subject.HandleAsync(new IntermissionStarted(0, new(15 * 60)));
+
+        State.IsRunning.Should().BeTrue();
+    }
+
+    [Test]
+    public async Task IntermissionStarted_RaisesIntermissionLengthSetEvent()
+    {
+        await Subject.HandleAsync(new IntermissionStarted(0, new(15 * 60)));
+
+        VerifyEventSent<IntermissionLengthSet, IntermissionLengthSetBody>(
+            new IntermissionLengthSet(0, new(15 * 60)));
+    }
+
+    [Test]
+    public void IntermissionLengthSet_SetsClock()
+    {
+        State = new(true, false, 15000, 15);
+
+        Subject.Handle(new IntermissionLengthSet(10000, new(20)));
+
+        State.IsRunning.Should().BeTrue();
+        State.HasExpired.Should().BeFalse();
+        State.TargetTick.Should().Be(30000);
+        State.SecondsRemaining.Should().Be(20);
+    }
+
+    [Test]
+    public async Task Tick_WhenClockIsRunning_SetsNewTime()
     {
         State = new(true, false, 30000, 10);
 
-        Subject.Tick(22000, 2000);
+        await Subject.Tick(22000, 2000);
 
         State.IsRunning.Should().BeTrue();
         State.HasExpired.Should().BeFalse();
@@ -62,11 +92,11 @@ public class IntermissionClockUnitTests : ReducerUnitTest<IntermissionClock, Int
     }
 
     [Test]
-    public void Tick_WhenClockIsRunning_AndTargetTickHasPassed_MarksClockAsExpired()
+    public async Task Tick_WhenClockIsRunning_AndTargetTickHasPassed_MarksClockAsExpired()
     {
         State = new(true, false, 30000, 10);
 
-        Subject.Tick(30001, 10);
+        await Subject.Tick(30001, 10);
 
         State.IsRunning.Should().BeTrue();
         State.HasExpired.Should().BeTrue();

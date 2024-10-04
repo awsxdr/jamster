@@ -4,9 +4,11 @@ using amethyst.Services;
 
 namespace amethyst.Reducers;
 
-public class IntermissionClock(GameContext context, ILogger<IntermissionClock> logger) 
+public class IntermissionClock(GameContext context, IEventBus eventBus, ILogger<IntermissionClock> logger) 
     : Reducer<IntermissionClockState>(context)
     , IHandlesEvent<JamStarted>
+    , IHandlesEventAsync<IntermissionStarted>
+    , IHandlesEvent<IntermissionLengthSet>
     , IHandlesEvent<IntermissionEnded>
     , ITickReceiver
 {
@@ -18,7 +20,29 @@ public class IntermissionClock(GameContext context, ILogger<IntermissionClock> l
 
         if (!state.IsRunning) return;
 
+        logger.LogDebug("Stopping intermission clock due to jam start");
+
         SetState(state with { IsRunning = false });
+    }
+
+    public async Task HandleAsync(IntermissionStarted @event)
+    {
+        logger.LogInformation("Intermission started");
+
+        await eventBus.AddEvent(Context.GameInfo, new IntermissionLengthSet(@event.Tick, new(@event.Body.DurationInSeconds)));
+
+        SetState(GetState() with { IsRunning = true });
+    }
+
+    public void Handle(IntermissionLengthSet @event)
+    {
+        logger.LogDebug("Intermission length set to {length} seconds", @event.Body.DurationInSeconds);
+        SetState(GetState() with
+        {
+            HasExpired = @event.Body.DurationInSeconds <= 0,
+            SecondsRemaining = @event.Body.DurationInSeconds,
+            TargetTick = @event.Tick + @event.Body.DurationInSeconds * 1000,
+        });
     }
 
     public void Handle(IntermissionEnded @event)
@@ -30,11 +54,11 @@ public class IntermissionClock(GameContext context, ILogger<IntermissionClock> l
         SetState(state with { IsRunning = false });
     }
 
-    public void Tick(Tick tick, long tickDelta)
+    public Task Tick(Tick tick, long tickDelta)
     {
         var state = GetState();
 
-        if (!state.IsRunning) return;
+        if (!state.IsRunning) return Task.CompletedTask;
 
         var ticksRemaining = Math.Max(0, state.TargetTick - tick);
 
@@ -43,6 +67,8 @@ public class IntermissionClock(GameContext context, ILogger<IntermissionClock> l
             HasExpired = ticksRemaining == 0,
             SecondsRemaining = (int)(ticksRemaining / 1000),
         });
+
+        return Task.CompletedTask;
     }
 }
 

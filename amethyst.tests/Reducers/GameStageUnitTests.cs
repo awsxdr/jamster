@@ -14,7 +14,7 @@ public class GameStageUnitTests : ReducerUnitTest<GameStage, GameStageState>
     [TestCase(Stage.AfterGame, Stage.AfterGame)]
     public void IntermissionEnded_SetsExpectedStage(Stage currentStage, Stage expectedStage)
     {
-        State = new(currentStage, 1, 1);
+        State = new(currentStage, 1, 1, false);
 
         Subject.Handle(new IntermissionEnded(0));
 
@@ -29,11 +29,23 @@ public class GameStageUnitTests : ReducerUnitTest<GameStage, GameStageState>
     [TestCase(Stage.AfterGame, Stage.Jam)]
     public void JamStarted_SetsExpectedStage(Stage currentStage, Stage expectedStage)
     {
-        State = new(currentStage, 1, 1);
+        State = new(currentStage, 1, 1, false);
+        MockState(new JamClockState(currentStage == Stage.Jam, 0, 0, 0));
 
         Subject.Handle(new JamStarted(0));
 
         State.Stage.Should().Be(expectedStage);
+    }
+
+    [Test]
+    public void JamStarted_WhenPeriodFinalized_SetsPeriodToNotBeFinalized()
+    {
+        State = new(Stage.Lineup, 2, 1, true);
+        MockState(new JamClockState(false, 0, 0, 0));
+
+        Subject.Handle(new JamStarted(0));
+
+        State.PeriodIsFinalized.Should().BeFalse();
     }
 
     [TestCase(Stage.BeforeGame, Stage.BeforeGame, false, 1)]
@@ -47,7 +59,7 @@ public class GameStageUnitTests : ReducerUnitTest<GameStage, GameStageState>
     [TestCase(Stage.AfterGame, Stage.AfterGame, false, 1)]
     public void JamEnded_SetsExpectedStage(Stage currentStage, Stage expectedStage, bool periodClockExpired, int period)
     {
-        State = new(currentStage, period, 1);
+        State = new(currentStage, period, 1, false);
 
         MockState<PeriodClockState>(new (!periodClockExpired, 0, 0, PeriodClock.PeriodLengthInTicks + (periodClockExpired ? 10000 : -10000), 0));
 
@@ -64,7 +76,7 @@ public class GameStageUnitTests : ReducerUnitTest<GameStage, GameStageState>
     [TestCase(Stage.AfterGame, Stage.Timeout)]
     public void TimeoutStarted_SetsExpectedStage(Stage currentStage, Stage expectedStage)
     {
-        State = new(currentStage, 1, 1);
+        State = new(currentStage, 1, 1, false);
 
         Subject.Handle(new TimeoutStarted(0));
 
@@ -80,11 +92,11 @@ public class GameStageUnitTests : ReducerUnitTest<GameStage, GameStageState>
     [TestCase(Stage.Timeout, Stage.AfterGame, 2)]
     [TestCase(Stage.Intermission, Stage.Intermission, 1)]
     [TestCase(Stage.AfterGame, Stage.AfterGame, 2)]
-    public void PeriodEnded_SetsExpectedStage(Stage currentStage, Stage expectedStage, int period)
+    public async Task PeriodEnded_SetsExpectedStage(Stage currentStage, Stage expectedStage, int period)
     {
-        State = new(currentStage, period, 1);
+        State = new(currentStage, period, 1, false);
 
-        Subject.Handle(new PeriodEnded(0));
+        await Subject.HandleAsync(new PeriodEnded(0));
 
         State.Stage.Should().Be(expectedStage);
     }
@@ -97,10 +109,38 @@ public class GameStageUnitTests : ReducerUnitTest<GameStage, GameStageState>
     [TestCase(Stage.AfterGame, 10, 11)]
     public void JamStarted_SetsExpectedJamNumber(Stage currentStage, int jamNumber, int expectedJamNumber)
     {
-        State = new(currentStage, 1, jamNumber);
+        State = new(currentStage, 1, jamNumber, false);
+        MockState(new JamClockState(currentStage == Stage.Jam, 0, 0, 0));
 
         Subject.Handle(new JamStarted(0));
 
         State.JamNumber.Should().Be(expectedJamNumber);
+    }
+
+    [Test]
+    public async Task PeriodEnded_WhenEnteringIntermission_StartsIntermissionClock()
+    {
+        State = new(Stage.Jam, 1, 15, false);
+        MockState<PeriodClockState>(new(false, 0, 0, PeriodClock.PeriodLengthInTicks + 10000, 0));
+
+        await Subject.HandleAsync(new PeriodEnded(123));
+
+        VerifyEventSent<IntermissionStarted, IntermissionStartedBody>(new IntermissionStarted(123, new(15 * 60)));
+    }
+
+    [TestCase(Stage.BeforeGame, 0, 0, false)]
+    [TestCase(Stage.Lineup, 1, 1, false)]
+    [TestCase(Stage.Jam, 1,  1, false)]
+    [TestCase(Stage.Timeout, 1, 1, false)]
+    [TestCase(Stage.Intermission, 1, 2, true)]
+    [TestCase(Stage.AfterGame, 2, 2, true)]
+    public void PeriodFinalized_SetsExpectedPeriodNumber_AndSetsExpectedFinalizedState(Stage currentStage, int periodNumber, int expectedPeriodNumber, bool expectedFinalized)
+    {
+        State = new(currentStage, periodNumber, 1, false);
+        
+        Subject.Handle(new PeriodFinalized(0));
+
+        State.PeriodNumber.Should().Be(expectedPeriodNumber);
+        State.PeriodIsFinalized.Should().Be(expectedFinalized);
     }
 }

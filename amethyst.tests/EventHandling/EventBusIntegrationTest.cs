@@ -3,13 +3,11 @@ using amethyst.Domain;
 using amethyst.Events;
 using amethyst.Reducers;
 using amethyst.Services;
-using FluentAssertions;
-using Func;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Moq.AutoMock;
 
-namespace amethyst.tests.EventBus;
+namespace amethyst.tests.EventHandling;
 
 [TestFixture]
 public abstract class EventBusIntegrationTest
@@ -106,6 +104,8 @@ public abstract class EventBusIntegrationTest
     protected TState GetState<TState>() where TState : class =>
         StateStore.GetState<TState>();
 
+    protected void Tick(Func<Tick, Tick> tick) =>
+        Tick(tick(_lastTick));
 
     protected void Tick(Tick tick)
     {
@@ -124,9 +124,6 @@ public abstract class EventBusIntegrationTest
         _lastTick = tick;
     }
 
-    protected static Event ValidateState(Tick tick, params object[] states) =>
-        new ValidateStateFakeEvent(tick, states);
-
     private static IEnumerable<Type> GetReducerTypes() =>
         typeof(IReducer).Assembly.GetExportedTypes()
             .Where(t => !t.IsAbstract && t.IsAssignableTo(typeof(IReducer)));
@@ -143,21 +140,9 @@ public abstract class EventBusIntegrationTest
             LoggerFactory
                 .Create(builder =>
                 {
-                    builder.AddConsole().SetMinimumLevel(LogLevel.Debug);
+                    builder
+                        .AddConsole()
+                        .SetMinimumLevel(LogLevel.Debug);
                 })])!);
-    }
-
-    private class ValidateStateFakeEvent(Tick tick, params object[] states) : Event(tick)
-    {
-        public void ValidateStates(IGameStateStore stateStore)
-        {
-            foreach (var state in states)
-            {
-                var storedState = stateStore.GetStateByName(state.GetType().Name);
-
-                storedState.Should().BeAssignableTo<Success>();
-                storedState.ValueOr(() => null).Result.Should().Be(state);
-            }
-        }
     }
 }

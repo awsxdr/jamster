@@ -60,12 +60,20 @@ public abstract class Reducer<TState>(GameContext context) : IReducer<TState>
     protected TOtherState GetState<TOtherState>() where TOtherState : class =>
         Context.StateStore.GetState<TOtherState>();
 
+    protected TOtherState GetCachedState<TOtherState>() where TOtherState : class =>
+        Context.StateStore.GetCachedState<TOtherState>();
+
     protected void SetState(TState state) =>
         Context.StateStore.SetState(state);
 
-    protected void SetStateIfDifferent(TState state)
+    protected bool SetStateIfDifferent(TState state)
     {
         if (state != GetState())
+        {
             SetState(state);
+            return true;
+        }
+
+        return false;
     }
 }

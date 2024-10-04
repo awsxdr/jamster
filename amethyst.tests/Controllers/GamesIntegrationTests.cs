@@ -83,5 +83,5 @@ public class TestEvent(long tick, TestEventBody body) : Event<TestEventBody>(tic
 
 public class TestEventBody
 {
-    public string Value { get; set; }
+    public string Value { get; set; } = string.Empty;
 }
