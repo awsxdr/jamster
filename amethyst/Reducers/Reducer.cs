@@ -31,11 +31,15 @@ public interface IReducer
 public interface IReducer<out TState> : IReducer where TState : class;
 
 public interface IHandlesEvent<in TEvent> : IHandlesEventAsync<TEvent>
+    where TEvent : Event
 {
     void Handle(TEvent @event);
 
     Task IHandlesEventAsync<TEvent>.HandleAsync(TEvent @event)
     {
+        if (this is ITickReceiver tickReceiver)
+            tickReceiver.Tick(@event.Id.Tick);
+
         Handle(@event);
         return Task.CompletedTask;
     }

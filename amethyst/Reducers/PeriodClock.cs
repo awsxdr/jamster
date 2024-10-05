@@ -15,7 +15,7 @@ public class PeriodClock(GameContext context, IEventBus eventBus, ILogger<Period
 {
     protected override PeriodClockState DefaultState => new(false, 0, 0, 0, 0);
 
-    public const long PeriodLengthInTicks = 30 * 60 * 1000;
+    public static readonly Tick PeriodLengthInTicks = 30 * 60 * 1000;
 
     public void Handle(JamStarted @event)
     {
@@ -99,12 +99,12 @@ public class PeriodClock(GameContext context, IEventBus eventBus, ILogger<Period
         SetState(DefaultState);
     }
 
-    public async Task Tick(Tick tick, long tickDelta)
+    public async Task Tick(Tick tick)
     {
         var state = GetState();
         if (!state.IsRunning) return;
 
-        var ticksPassed = Math.Min(PeriodLengthInTicks, tick - state.LastStartTick + state.TicksPassedAtLastStart);
+        var ticksPassed = Math.Min(PeriodLengthInTicks, (long)tick - state.LastStartTick + state.TicksPassedAtLastStart);
 
         if (ticksPassed == PeriodLengthInTicks)
         {

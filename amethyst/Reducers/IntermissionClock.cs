@@ -54,18 +54,18 @@ public class IntermissionClock(GameContext context, IEventBus eventBus, ILogger<
         SetState(state with { IsRunning = false });
     }
 
-    public Task Tick(Tick tick, long tickDelta)
+    public Task Tick(Tick tick)
     {
         var state = GetState();
 
         if (!state.IsRunning) return Task.CompletedTask;
 
-        var ticksRemaining = Math.Max(0, state.TargetTick - tick);
+        var ticksRemaining = (Tick) Math.Max(0, (long)state.TargetTick - (long)tick);
 
         SetState(state with
         {
             HasExpired = ticksRemaining == 0,
-            SecondsRemaining = (int)(ticksRemaining / 1000),
+            SecondsRemaining = ticksRemaining.Seconds,
         });
 
         return Task.CompletedTask;

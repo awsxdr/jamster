@@ -2,20 +2,12 @@
 
 public readonly struct Tick(long value)
 {
-    public override int GetHashCode()
-    {
-        return _value.GetHashCode();
-    }
-
-    private readonly long _value = value switch
-    {
-        > MaxValue => throw new ArgumentException("Value too large", nameof(value)),
-        < MinValue => throw new ArgumentException("Value too small", nameof(value)),
-        _ => value
-    };
-
     public const long MaxValue = long.MaxValue & 0x0000ffffffffffff;
     public const long MinValue = 0;
+
+    private readonly long _value = value;
+
+    public int Seconds => (int)(_value / 1000);
 
     public static implicit operator long(Tick tick) => tick._value;
     public static implicit operator Tick(long tick) => new(tick);
@@ -23,9 +15,22 @@ public readonly struct Tick(long value)
     public static bool operator ==(Tick left, Tick right) => left.Equals(right);
     public static bool operator !=(Tick left, Tick right) => !(left == right);
 
-    public readonly bool Equals(Tick other) => _value == other._value;
+    public static Tick operator +(Tick left, Tick right) => new(left._value + right._value);
+    public static Tick operator +(Tick left, long right) => new(left._value - right);
+    public static Tick operator +(Tick left, int right) => new(left._value + right);
+    public static Tick operator -(Tick left, Tick right) => new(left._value - right._value);
+    public static Tick operator -(Tick left, long right) => new(left._value - right);
+    public static Tick operator -(Tick left, int right) => new(left._value - right);
+    public static Tick operator *(Tick left, Tick right) => new(left._value * right._value);
+    public static Tick operator *(Tick left, long right) => new(left._value * right);
+    public static Tick operator *(Tick left, int right) => new(left._value * right);
+    public static Tick operator /(Tick left, Tick right) => new(left._value / right._value);
+    public static Tick operator /(Tick left, long right) => new(left._value / right);
+    public static Tick operator /(Tick left, int right) => new(left._value / right);
 
-    public readonly override bool Equals(object? obj) =>
+    public bool Equals(Tick other) => _value == other._value;
+
+    public override bool Equals(object? obj) =>
         obj switch
         {
             Tick t => Equals(t),
@@ -39,5 +44,7 @@ public readonly struct Tick(long value)
             _ => false
         };
 
-    public readonly override string ToString() => _value.ToString();
+    public override int GetHashCode() => _value.GetHashCode();
+
+    public override string ToString() => _value.ToString();
 }

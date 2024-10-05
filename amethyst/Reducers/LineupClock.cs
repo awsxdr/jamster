@@ -10,7 +10,7 @@ public sealed class LineupClock(GameContext gameContext, ILogger<LineupClock> lo
     , IHandlesEvent<TimeoutStarted>
     , ITickReceiver
 {
-    public const long LineupDurationInTicks = 30 * 1000;
+    public static readonly Tick LineupDurationInTicks = 30 * 1000;
 
     protected override LineupClockState DefaultState => new(false, 0, 0, 0);
 
@@ -28,7 +28,7 @@ public sealed class LineupClock(GameContext gameContext, ILogger<LineupClock> lo
 
         var periodClock = GetState<PeriodClockState>();
         var ticksRemainingInPeriod =
-            PeriodClock.PeriodLengthInTicks - periodClock.TicksPassed;
+            (long)PeriodClock.PeriodLengthInTicks - periodClock.TicksPassed;
 
         if (ticksRemainingInPeriod <= 0)
         {
@@ -48,7 +48,7 @@ public sealed class LineupClock(GameContext gameContext, ILogger<LineupClock> lo
         SetState(GetState() with { IsRunning = false });
     }
 
-    public Task Tick(Tick tick, long tickDelta)
+    public Task Tick(Tick tick)
     {
         var state = GetState();
 

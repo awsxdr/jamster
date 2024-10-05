@@ -6,19 +6,18 @@ using Moq;
 using Moq.AutoMock;
 
 [TestFixture]
-public abstract class UnitTest<TSubject> where TSubject : class
+public abstract class UnitTest<TSubject> : UnitTest<TSubject, TSubject>
+    where TSubject : class;
+
+public abstract class UnitTest<TSubject, TSubjectCast> 
+    where TSubject : class, TSubjectCast
 {
     protected MockBehavior MockingBehavior { get; set; } = MockBehavior.Loose;
 
-    private Lazy<AutoMocker> _mocker;
+    private Lazy<AutoMocker> _mocker = new(() => throw new Exception("Mocker cannot be used until Setup() has run"));
     protected AutoMocker Mocker => _mocker.Value;
 
-    protected UnitTest()
-    {
-        _mocker = new(() => throw new Exception("Mocker cannot be used until Setup() has run"));
-    }
-
-    protected TSubject Subject { get; private set; }
+    protected TSubjectCast Subject { get; private set; }
 
     protected Mock<TMock> GetMock<TMock>() where TMock : class => Mocker.GetMock<TMock>();
     protected TConcrete Create<TConcrete>() where TConcrete : class => Mocker.CreateInstance<TConcrete>();

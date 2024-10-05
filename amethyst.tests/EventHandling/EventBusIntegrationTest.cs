@@ -118,7 +118,7 @@ public abstract class EventBusIntegrationTest
 
         foreach (var receiver in tickReceivers)
         {
-            receiver.Tick(tick, tick - _lastTick);
+            receiver.Tick(tick);
         }
 
         _lastTick = tick;

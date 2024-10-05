@@ -32,7 +32,7 @@ public class GameClock(IEnumerable<ITickReceiver> receivers, ILogger<GameClock> 
                 {
                     try
                     {
-                        receiver.Tick(tick, tickDelta);
+                        receiver.Tick(tick);
                     }
                     catch (Exception ex)
                     {
@@ -55,5 +55,5 @@ public class GameClock(IEnumerable<ITickReceiver> receivers, ILogger<GameClock> 
 
 public interface ITickReceiver
 {
-    Task Tick(Tick tick, long tickDelta);
+    Task Tick(Tick tick);
 }

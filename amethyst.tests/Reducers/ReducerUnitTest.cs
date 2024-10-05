@@ -8,7 +8,7 @@ using Result = Func.Result;
 
 namespace amethyst.tests.Reducers;
 
-public abstract class ReducerUnitTest<TReducer, TState> : UnitTest<TReducer> 
+public abstract class ReducerUnitTest<TReducer, TState> : UnitTest<TReducer, IReducer<TState>> 
     where TReducer : class, IReducer<TState>
     where TState : class
 {
@@ -27,6 +27,14 @@ public abstract class ReducerUnitTest<TReducer, TState> : UnitTest<TReducer>
         GetMock<IGameStateStore>()
             .Setup(mock => mock.SetState(It.IsAny<TState>()))
             .Callback((TState s) => State = s);
+
+        GetMock<IEventBus>()
+            .Setup(mock => mock.AddEvent(It.IsAny<GameInfo>(), It.IsAny<Event>()))
+            .Returns(async (GameInfo _, Event @event) =>
+            {
+                await Subject.HandleUntyped(@event);
+                return @event;
+            });
     }
 
     protected void MockState<TOtherState>(TOtherState state) where TOtherState : class
