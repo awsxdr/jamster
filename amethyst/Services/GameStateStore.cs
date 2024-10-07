@@ -12,8 +12,11 @@ public delegate IGameStateStore GameStateStoreFactory();
 public interface IGameStateStore
 {
     TState GetState<TState>() where TState : class;
+    TState GetKeyedState<TState>(string key) where TState : class;
     TState GetCachedState<TState>() where TState : class;
+    TState GetCachedKeyedState<TState>(string key) where TState : class;
     void SetState<TState>(TState state) where TState : class;
+    void SetKeyedState<TState>(string key, TState state) where TState : class;
     void LoadDefaultStates(IImmutableList<IReducer> reducers);
     Task ApplyEvents(IImmutableList<IReducer> reducers, params Event[] events);
     Result<object> GetStateByName(string stateName);
@@ -30,34 +33,36 @@ public class GameStateStore(ILogger<GameStateStore> logger) : IGameStateStore
     public TState GetState<TState>() where TState : class =>
         (TState)_states[GetStateName<TState>()];
 
+    public TState GetKeyedState<TState>(string key) where TState : class =>
+        (TState) _states[$"{GetStateName<TState>()}_{key}"];
+
     public TState GetCachedState<TState>() where TState : class =>
         (TState)_cachedStates[GetStateName<TState>()];
+
+    public TState GetCachedKeyedState<TState>(string key) where TState : class =>
+        (TState)_cachedStates[$"{GetStateName<TState>()}_{key}"];
 
     public Result<object> GetStateByName(string stateName) =>
         _states.TryGetValue(stateName, out var state)
             ? Result.Succeed(state)
             : Result<object>.Fail<StateNotFoundError>();
 
-    public void SetState<TState>(TState state) where TState : class
-    {
-        var stateName = GetStateName<TState>();
-        
-        var previousState = _states[stateName];
-        _states[stateName] = state;
+    public void SetState<TState>(TState state) where TState : class =>
+        SetState(GetStateName<TState>(), state);
 
-        var hasChanged = DetectChanges(previousState, state);
-        if (hasChanged)
-        {
-            GetEventSource<TState>().Update(state);
-        }
-    }
+    public void SetKeyedState<TState>(string key, TState state) where TState : class =>
+        SetState($"{GetStateName<TState>()}_{key}");
 
     public void LoadDefaultStates(IImmutableList<IReducer> reducers)
     {
         foreach (var reducer in reducers)
         {
             var state = reducer.GetDefaultState();
-            var stateName = GetStateName(state.GetType());
+            var stateName = reducer.GetStateKey() switch
+            {
+                Some<string> s => $"{GetStateName(state.GetType())}_{s.Value}",
+                _ => GetStateName(state.GetType())
+            };
             _states[stateName] = state;
             _stateEventStream[stateName] = MakeEventSource(state.GetType());
         }
@@ -110,6 +115,18 @@ public class GameStateStore(ILogger<GameStateStore> logger) : IGameStateStore
 
     private static Func<TState, Task> MapStateUpdateHandler<TState>(Func<object, Task> onStateUpdate) where TState : class =>
         onStateUpdate;
+
+    private void SetState<TState>(string stateName, TState state) where TState : class
+    {
+        var previousState = _states[stateName];
+        _states[stateName] = state;
+
+        var hasChanged = DetectChanges(previousState, state);
+        if (hasChanged)
+        {
+            GetEventSource<TState>().Update(state);
+        }
+    }
 
     private void CacheStates()
     {

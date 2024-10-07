@@ -1,6 +1,7 @@
 ﻿using amethyst.Reducers;
 using amethyst.Services;
 using FluentAssertions;
+using Func;
 
 namespace amethyst.tests;
 
@@ -40,5 +41,6 @@ public class GameStateStoreUnitTests : UnitTest<GameStateStore>
     private class TestReducer : IReducer<TestState>
     {
         public object GetDefaultState() => new TestState(Guid.NewGuid());
+        public Option<string> GetStateKey() => Option.None<string>();
     }
 }

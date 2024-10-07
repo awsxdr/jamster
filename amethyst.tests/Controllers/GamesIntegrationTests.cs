@@ -4,6 +4,7 @@ using System.Text.Json.Nodes;
 using amethyst.Controllers;
 using amethyst.DataStores;
 using amethyst.Events;
+using amethyst.Services;
 using FluentAssertions;
 
 namespace amethyst.tests.Controllers;
@@ -79,7 +80,7 @@ public class GamesIntegrationTests : ControllerIntegrationTest
     }
 }
 
-public class TestEvent(long tick, TestEventBody body) : Event<TestEventBody>(tick, body);
+public class TestEvent(Guid7 id, TestEventBody body) : Event<TestEventBody>(id, body);
 
 public class TestEventBody
 {

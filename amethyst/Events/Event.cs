@@ -1,6 +1,7 @@
 ﻿using amethyst.Extensions;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
 using amethyst.Services;
 using Func;
 
@@ -92,11 +93,13 @@ public sealed class UntypedEventWithBody : Event<JsonObject>, IUntypedEvent
             throw new EventTypeDoesNotIncludeBodyException();
 
         var bodyType = eventBodyType!.GetGenericArguments().Single();
-        var body = Body.Deserialize(bodyType);
+        var serializerOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web);
+        serializerOptions.Converters.Add(new JsonStringEnumConverter());
+        var body = Body.Deserialize(bodyType, serializerOptions);
 
         return body is null
             ? Result<Event>.Fail<BodyFormatIncorrectError>()
-            : Result.Succeed((Event)Activator.CreateInstance(eventType, 0L, body)!);
+            : Result.Succeed((Event)Activator.CreateInstance(eventType, (Guid7) 0, body)!);
     }
 }
 

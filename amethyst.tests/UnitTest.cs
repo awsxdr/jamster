@@ -1,9 +1,10 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Autofac;
+using Microsoft.Extensions.Logging;
 
 namespace amethyst.tests;
 
 using Moq;
-using Moq.AutoMock;
+using Autofac.Extras.Moq;
 
 [TestFixture]
 public abstract class UnitTest<TSubject> : UnitTest<TSubject, TSubject>
@@ -12,15 +13,15 @@ public abstract class UnitTest<TSubject> : UnitTest<TSubject, TSubject>
 public abstract class UnitTest<TSubject, TSubjectCast> 
     where TSubject : class, TSubjectCast
 {
-    protected MockBehavior MockingBehavior { get; set; } = MockBehavior.Loose;
-
-    private Lazy<AutoMocker> _mocker = new(() => throw new Exception("Mocker cannot be used until Setup() has run"));
-    protected AutoMocker Mocker => _mocker.Value;
+    private Lazy<AutoMock> _mocker = new(() => throw new Exception("Mocker cannot be used until Setup() has run"));
+    protected AutoMock Mocker => _mocker.Value;
 
     protected TSubjectCast Subject { get; private set; }
 
-    protected Mock<TMock> GetMock<TMock>() where TMock : class => Mocker.GetMock<TMock>();
-    protected TConcrete Create<TConcrete>() where TConcrete : class => Mocker.CreateInstance<TConcrete>();
+    protected virtual TSubject SubjectFactory() => Mocker.Create<TSubject>();
+
+    protected Mock<TMock> GetMock<TMock>() where TMock : class => Mocker.Mock<TMock>();
+    protected TConcrete Create<TConcrete>() where TConcrete : class => Mocker.Create<TConcrete>();
 
     [OneTimeSetUp]
     protected virtual void OneTimeSetup()
@@ -30,17 +31,18 @@ public abstract class UnitTest<TSubject, TSubjectCast>
     [SetUp]
     protected virtual void Setup()
     {
-        _mocker = new(() => new AutoMocker(MockingBehavior));
+        _mocker = new(AutoMock.GetLoose(builder =>
+        {
+            builder.RegisterInstance(
+                LoggerFactory
+                    .Create(options =>
+                    {
+                        options.AddConsole().SetMinimumLevel(LogLevel.Debug);
+                    })
+                    .CreateLogger<TSubject>());
+        }));
 
-        Mocker.Use(
-            LoggerFactory
-                .Create(builder =>
-                {
-                    builder.AddConsole().SetMinimumLevel(LogLevel.Debug);
-                })
-                .CreateLogger<TSubject>());
-
-        Subject = Mocker.CreateInstance<TSubject>();
+        Subject = SubjectFactory();
     }
 
     [TearDown]

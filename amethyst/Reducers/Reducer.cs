@@ -1,4 +1,6 @@
-﻿namespace amethyst.Reducers;
+﻿using Func;
+
+namespace amethyst.Reducers;
 
 using Events;
 using Services;
@@ -8,6 +10,7 @@ public delegate IReducer ReducerFactory(GameContext gameContext);
 public interface IReducer
 {
     object GetDefaultState();
+    Option<string> GetStateKey();
 
     public async Task Handle<TEvent>(TEvent @event) where TEvent : class
     {
@@ -58,17 +61,44 @@ public abstract class Reducer<TState>(GameContext context) : IReducer<TState>
     protected abstract TState DefaultState { get; }
 
     public object GetDefaultState() => DefaultState;
+    public virtual Option<string> GetStateKey() => Option.None<string>();
 
-    protected TState GetState() => GetState<TState>();
+    protected TState GetState() =>
+        GetStateKey() switch
+        {
+            Some<string> s => GetKeyedState<TState>(s.Value),
+            _ => GetState<TState>()
+        };
 
     protected TOtherState GetState<TOtherState>() where TOtherState : class =>
         Context.StateStore.GetState<TOtherState>();
 
+    protected TOtherState GetKeyedState<TOtherState>(string key) where TOtherState : class =>
+        Context.StateStore.GetKeyedState<TOtherState>(key);
+
     protected TOtherState GetCachedState<TOtherState>() where TOtherState : class =>
         Context.StateStore.GetCachedState<TOtherState>();
 
-    protected void SetState(TState state) =>
-        Context.StateStore.SetState(state);
+    protected TOtherState GetCachedKeyedState<TOtherState>(string key) where TOtherState : class =>
+        Context.StateStore.GetCachedKeyedState<TOtherState>(key);
+
+    protected void SetState(TState state)
+    {
+        switch (GetStateKey())
+        {
+            case Some<string> s:
+                Context.StateStore.SetKeyedState(s.Value, state);
+                break;
+
+            default:
+                Context.StateStore.SetState(state);
+                break;
+        }
+    }
+
+
+    protected void SetKeyedState(string key, TState state) =>
+        Context.StateStore.SetKeyedState(key, state);
 
     protected bool SetStateIfDifferent(TState state)
     {

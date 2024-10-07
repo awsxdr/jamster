@@ -25,8 +25,16 @@ public abstract class ReducerUnitTest<TReducer, TState> : UnitTest<TReducer, IRe
             .Returns(() => State);
 
         GetMock<IGameStateStore>()
+            .Setup(mock => mock.GetKeyedState<TState>(It.IsAny<string>()))
+            .Returns(() => State);
+
+        GetMock<IGameStateStore>()
             .Setup(mock => mock.SetState(It.IsAny<TState>()))
             .Callback((TState s) => State = s);
+
+        GetMock<IGameStateStore>()
+            .Setup(mock => mock.SetKeyedState<TState>(It.IsAny<string>(), It.IsAny<TState>()))
+            .Callback((string _, TState s) => State = s);
 
         GetMock<IEventBus>()
             .Setup(mock => mock.AddEvent(It.IsAny<GameInfo>(), It.IsAny<Event>()))
