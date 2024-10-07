@@ -7,10 +7,10 @@ using Func;
 namespace amethyst.tests;
 
 [TestFixture]
-public class EventUnitTests
+public class UntypedEventUnitTests
 {
     [Test]
-    public void Test()
+    public void AsEvent_ParsesJsonBodyCorrectly()
     {
         var subject = new UntypedEventWithBody(
             "TestEvent",

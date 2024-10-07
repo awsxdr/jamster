@@ -4,7 +4,7 @@ using Func;
 
 namespace amethyst.Reducers;
 
-public abstract class TeamScore(Team team, GameContext gameContext, IEventBus eventBus, ILogger<JamClock> logger)
+public abstract class TeamScore(TeamSide teamSide, GameContext gameContext, ILogger logger)
     : Reducer<TeamScoreState>(gameContext)
     , IHandlesEvent<ScoreModifiedRelative>
     , IHandlesEvent<ScoreSet>
@@ -12,10 +12,12 @@ public abstract class TeamScore(Team team, GameContext gameContext, IEventBus ev
     protected override TeamScoreState DefaultState => new(0);
 
     public override Option<string> GetStateKey() =>
-        Option.Some(team.ToString());
+        Option.Some(teamSide.ToString());
 
     public void Handle(ScoreModifiedRelative @event) => HandleIfTeam(@event, () =>
     {
+        logger.LogDebug("Changing {teamSide} score by {points} points", teamSide, @event.Body.Value);
+
         var state = GetState();
 
         state = state with {Score = Math.Max(0, state.Score + @event.Body.Value)};
@@ -25,6 +27,8 @@ public abstract class TeamScore(Team team, GameContext gameContext, IEventBus ev
 
     public void Handle(ScoreSet @event) => HandleIfTeam(@event, () =>
     {
+        logger.LogDebug("Setting {teamSide} score to {points} points", teamSide, @event.Body.Value);
+
         var state = GetState();
 
         state = state with {Score = Math.Max(0, @event.Body.Value)};
@@ -34,7 +38,7 @@ public abstract class TeamScore(Team team, GameContext gameContext, IEventBus ev
 
     private void HandleIfTeam<TEvent>(TEvent @event, Action handler) where TEvent : Event
     {
-        if (@event.HasBody && @event.GetBodyObject() is TeamEventBody teamEventBody && teamEventBody.Team != team)
+        if (@event.HasBody && @event.GetBodyObject() is TeamEventBody teamEventBody && teamEventBody.TeamSide != teamSide)
             return;
 
         handler();
@@ -43,13 +47,13 @@ public abstract class TeamScore(Team team, GameContext gameContext, IEventBus ev
 
 public record TeamScoreState(int Score);
 
-public enum Team
+public enum TeamSide
 {
     Home,
     Away,
 }
 
-public sealed class HomeTeamScore(GameContext gameContext, IEventBus eventBus, ILogger<JamClock> logger)
-    : TeamScore(Team.Home, gameContext, eventBus, logger);
-public sealed class AwayTeamScore(GameContext gameContext, IEventBus eventBus, ILogger<JamClock> logger) 
-    : TeamScore(Team.Away, gameContext, eventBus, logger);
+public sealed class HomeTeamScore(GameContext gameContext, ILogger<HomeTeamScore> logger)
+    : TeamScore(TeamSide.Home, gameContext, logger);
+public sealed class AwayTeamScore(GameContext gameContext, ILogger<AwayTeamScore> logger) 
+    : TeamScore(TeamSide.Away, gameContext, logger);
