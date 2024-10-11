@@ -100,7 +100,7 @@ public class JamClockUnitTests : ReducerUnitTest<JamClock, JamClockState>
     public async Task Tick_WhenStillTimeInJam_UpdatesTicksPassed()
     {
         State = new(true, 0, 0, 0);
-        await ((ITickReceiver)Subject).Tick(10000);
+        await Tick(10000);
 
         State.TicksPassed.Should().Be(10000);
         State.SecondsPassed.Should().Be(10);
@@ -110,7 +110,7 @@ public class JamClockUnitTests : ReducerUnitTest<JamClock, JamClockState>
     public async Task Tick_WhenOverJamTimeLimit_SendsJamEndedEvent()
     {
         State = new(true, 0, 0, 0);
-        await ((ITickReceiver)Subject).Tick(130 * 1000);
+        await Tick(130 * 1000);
 
         VerifyEventSent<JamEnded>(120 * 1000);
     }

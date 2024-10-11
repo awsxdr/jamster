@@ -9,7 +9,11 @@ public abstract class TeamDetails(TeamSide teamSide, GameContext context, ILogge
     : Reducer<TeamDetailsState>(context)
     , IHandlesEvent<TeamSet>
 {
-    protected override TeamDetailsState DefaultState => new(new Team(Guid.NewGuid(), [], [], []));
+    protected override TeamDetailsState DefaultState => new(new Team(
+        Guid.NewGuid(),
+        new() { ["default"] = teamSide == TeamSide.Home ? "Black" : "White" },
+        [],
+        []));
 
     public override Option<string> GetStateKey() =>
         Option.Some(teamSide.ToString());

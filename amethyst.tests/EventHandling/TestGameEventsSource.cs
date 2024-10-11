@@ -5,6 +5,58 @@ namespace amethyst.tests.EventHandling;
 
 public static class TestGameEventsSource
 {
+    public static Event[] SingleJamWithScores => new EventsBuilder(0, [])
+        .Validate(new GameStageState(Stage.BeforeGame, 0, 0, false))
+        .Event<IntermissionEnded>(15)
+        .Validate(new GameStageState(Stage.Lineup, 1, 0, false))
+        .Event<JamStarted>(12)
+        // TODO: Lead jammer
+        .Wait(15)
+        .Validate(
+            ("Home", new TeamScoreState(0)),
+            ("Away", new TeamScoreState(0)),
+            ("Home", new PassScoreState(0, 0)),
+            ("Away", new PassScoreState(0, 0))
+        )
+        .Event<ScoreModifiedRelative>(0).WithBody(new ScoreModifiedRelativeBody(TeamSide.Home, 4))
+        .Validate(tick => [
+            ("Home", new TeamScoreState(4)),
+            ("Away", new TeamScoreState(0)),
+            ("Home", new PassScoreState(4, tick)),
+            ("Away", new PassScoreState(0, 0))
+        ])
+        .Wait(2)
+        .Event<ScoreModifiedRelative>(0).WithBody(new ScoreModifiedRelativeBody(TeamSide.Away, 4))
+        .Validate(tick => [
+            ("Home", new TeamScoreState(4)),
+            ("Away", new TeamScoreState(4)),
+            ("Home", new PassScoreState(4, tick - 2000)),
+            ("Away", new PassScoreState(4, tick))
+        ])
+        .Wait(2)
+        .Validate(tick => [
+            ("Home", new TeamScoreState(4)),
+            ("Away", new TeamScoreState(4)),
+            ("Home", new PassScoreState(0, tick - 1000)),
+            ("Away", new PassScoreState(4, tick - 2000))
+        ])
+        .Wait(2)
+        .Validate(tick => [
+            ("Home", new TeamScoreState(4)),
+            ("Away", new TeamScoreState(4)),
+            ("Home", new PassScoreState(0, tick - 3000)),
+            ("Away", new PassScoreState(0, tick - 1000))
+        ])
+        .Wait(15)
+        .Event<JamEnded>(2)
+        .Event<ScoreModifiedRelative>(0).WithBody(new ScoreModifiedRelativeBody(TeamSide.Home, 3))
+        .Event<ScoreModifiedRelative>(0).WithBody(new ScoreModifiedRelativeBody(TeamSide.Away, 1))
+        .Validate(
+            ("Home", new TeamScoreState(7)),
+            ("Away", new TeamScoreState(5))
+        )
+        .Build();
+
     public static Event[] FullGame => new EventsBuilder(0, [])
         .Validate(new GameStageState(Stage.BeforeGame, 0, 0, false))
         .Event<IntermissionEnded>(15)

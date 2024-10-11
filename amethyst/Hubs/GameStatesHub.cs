@@ -23,7 +23,7 @@ public class GameStatesHub(IGameDiscoveryService gameDiscoveryService, IGameCont
 
         gameContext.StateStore.WatchStateByName(stateName, async state =>
         {
-            await caller.SendCoreAsync("StateChanged", [state]);
+            await caller.SendCoreAsync("StateChanged", [stateName, state]);
         });
 
         return Task.CompletedTask;

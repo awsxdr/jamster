@@ -18,10 +18,11 @@ public class GameContextFactory(
     GameStoreFactory gameStoreFactory) 
     : IGameContextFactory
 {
-    private readonly ConcurrentDictionary<Guid, GameContext> _gameContexts = [];
+    private readonly ConcurrentDictionary<Guid, Lazy<GameContext>> _gameContexts = [];
 
     public GameContext GetGame(GameInfo gameInfo) =>
-        _gameContexts.GetOrAdd(gameInfo.Id, _ => LoadGame(gameInfo));
+        // GetOrAdd is not thread-safe. The use of Lazy<> ensures that LoadGame only gets called once.
+        _gameContexts.GetOrAdd(gameInfo.Id, _ => new(() => LoadGame(gameInfo))).Value;
 
     private GameContext LoadGame(GameInfo gameInfo)
     {

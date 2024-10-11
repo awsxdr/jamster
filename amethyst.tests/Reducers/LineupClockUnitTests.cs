@@ -92,7 +92,7 @@ public class LineupClockUnitTests : ReducerUnitTest<LineupClock, LineupClockStat
     public async Task Tick_WhenClockRunning_UpdatesTicksPassed()
     {
         State = new(true, 0, 0, 0);
-        await ((ITickReceiver)Subject).Tick(10000);
+        await Tick(10000);
 
         State.TicksPassed.Should().Be(10000);
     }
@@ -101,7 +101,7 @@ public class LineupClockUnitTests : ReducerUnitTest<LineupClock, LineupClockStat
     public async Task Tick_ClockStopped_DoesNotChangeState()
     {
         State = new(false, 0, 0, 0);
-        await ((ITickReceiver)Subject).Tick(130 * 1000);
+        await Tick(130 * 1000);
 
         State.IsRunning.Should().BeFalse();
         State.StartTick.Should().Be(0);

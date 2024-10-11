@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="10.0.0" />
+    <PackageReference Include="DotNext.Threading" Version="5.13.0" />
     <PackageReference Include="Func" Version="0.3.2" />
     <PackageReference Include="sqlite-net-pcl" Version="1.9.172" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.7.3" />

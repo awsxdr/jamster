@@ -84,7 +84,7 @@ public class IntermissionClockUnitTests : ReducerUnitTest<IntermissionClock, Int
     {
         State = new(true, false, 30000, 10);
 
-        await ((ITickReceiver)Subject).Tick(22000);
+        await Tick(22000);
 
         State.IsRunning.Should().BeTrue();
         State.HasExpired.Should().BeFalse();
@@ -97,7 +97,7 @@ public class IntermissionClockUnitTests : ReducerUnitTest<IntermissionClock, Int
     {
         State = new(true, false, 30000, 10);
 
-        await ((ITickReceiver)Subject).Tick(30001);
+        await Tick(30001);
 
         State.IsRunning.Should().BeTrue();
         State.HasExpired.Should().BeTrue();

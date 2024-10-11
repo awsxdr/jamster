@@ -1,4 +1,6 @@
-﻿using amethyst.Domain;
+﻿using System.Data;
+using System.Runtime.CompilerServices;
+using amethyst.Domain;
 using amethyst.Events;
 using amethyst.Services;
 using FluentAssertions;
@@ -8,34 +10,69 @@ namespace amethyst.tests.EventHandling;
 
 public class EventsBuilder(Tick tick, Event[] events)
 {
-    public EventsBuilder Event<TEvent>(int durationInSeconds) where TEvent : Event
-    {
-        var @event = (Event)Activator.CreateInstance(typeof(TEvent), [(Guid7) tick])!;
+    internal Tick Tick { get; } = tick;
 
-        return Event(@event, durationInSeconds);
-    }
+    public virtual EventsBuilder<TEvent> Event<TEvent>(int durationInSeconds) where TEvent : Event =>
+        new (Tick, events, durationInSeconds);
 
     public EventsBuilder Event(Event @event, int durationInSeconds) =>
         new (
             GetNextTick(durationInSeconds),
             [.. events, @event]);
 
-    public EventsBuilder Validate(params object[] states) =>
-        Event(new ValidateStateFakeEvent(tick, states), 0);
+    public virtual EventsBuilder Validate(params object[] states) =>
+        Event(new ValidateStateFakeEvent(Tick, states), 0);
 
-    public EventsBuilder Validate(Func<Tick, object[]> states) =>
-        Validate(states(tick));
+    public virtual EventsBuilder Validate(Func<Tick, object[]> states) =>
+        Validate(states(Tick));
 
-    public EventsBuilder Wait(int durationInSeconds) => Event<WaitFakeEvent>(durationInSeconds);
+    public virtual EventsBuilder Wait(int durationInSeconds) => Event<WaitFakeEvent>(durationInSeconds);
 
-    public Event[] Build() => [..events];
+    public virtual Event[] Build() => [..events];
 
     private Tick GetNextTick(double durationInSeconds)
     {
-        //var variability = Random.Shared.Next(-100, 100);
-        var variability = 0;
-        var durationInTicks = (int)(durationInSeconds * 1000 + variability);
-        return Math.Max(0, tick + durationInTicks);
+        var durationInTicks = (int)(durationInSeconds * 1000);
+        return Math.Max(0, Tick + durationInTicks);
+    }
+}
+
+public class EventsBuilder<TEventBeingBuilt>(Tick tick, Event[] events, int currentEventDurationInSeconds) : EventsBuilder(tick, events)
+    where TEventBeingBuilt : Event
+{
+    internal int EventDurationInSeconds { get; } = currentEventDurationInSeconds;
+
+    public override EventsBuilder<TEvent> Event<TEvent>(int durationInSeconds) =>
+        BuildCurrentEvent().Event<TEvent>(durationInSeconds);
+
+    public override EventsBuilder Validate(params object[] states) =>
+        BuildCurrentEvent().Validate(states);
+
+    public override EventsBuilder Validate(Func<Tick, object[]> states) =>
+        BuildCurrentEvent().Validate(states);
+
+    public override EventsBuilder Wait(int durationInSeconds) =>
+        BuildCurrentEvent().Wait(durationInSeconds);
+
+    public override Event[] Build() =>
+        BuildCurrentEvent().Build();
+
+    private EventsBuilder BuildCurrentEvent()
+    {
+        var @event = (TEventBeingBuilt)Activator.CreateInstance(typeof(TEventBeingBuilt), [(Guid7)Tick])!;
+
+        return Event(@event, EventDurationInSeconds);
+    }
+}
+
+public static class EventsBuilderExtensions
+{
+    public static EventsBuilder WithBody<TEvent, TBody>(this EventsBuilder<TEvent> builder, TBody body)
+        where TEvent : Event<TBody>
+    {
+        var @event = (TEvent) Activator.CreateInstance(typeof(TEvent), [(Guid7) builder.Tick, body])!;
+
+        return builder.Event(@event, builder.EventDurationInSeconds);
     }
 }
 
@@ -45,10 +82,25 @@ public class ValidateStateFakeEvent(Tick tick, params object[] states) : Event(t
     {
         foreach (var state in states)
         {
-            var storedState = stateStore.GetStateByName(state.GetType().Name);
+            if (state is ITuple tuple)
+            {
+                if (tuple.Length != 2 || tuple[0] is not string key || tuple[1] is null)
+                    throw new ArgumentException();
 
-            storedState.Should().BeAssignableTo<Success>();
-            storedState.ValueOr(() => null).Result.Should().Be(state);
+                var tupleState = tuple[1]!;
+
+                var storedState = stateStore.GetStateByName($"{tupleState.GetType().Name}_{key}");
+
+                storedState.Should().BeAssignableTo<Success>();
+                storedState.ValueOr(() => null).Result.Should().Be(tupleState);
+            }
+            else
+            {
+                var storedState = stateStore.GetStateByName(state.GetType().Name);
+
+                storedState.Should().BeAssignableTo<Success>();
+                storedState.ValueOr(() => null).Result.Should().Be(state);
+            }
         }
     }
 }

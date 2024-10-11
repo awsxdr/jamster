@@ -51,7 +51,7 @@ public class GameStateStore(ILogger<GameStateStore> logger) : IGameStateStore
         SetState(GetStateName<TState>(), state);
 
     public void SetKeyedState<TState>(string key, TState state) where TState : class =>
-        SetState($"{GetStateName<TState>()}_{key}");
+        SetState($"{GetStateName<TState>()}_{key}", state);
 
     public void LoadDefaultStates(IImmutableList<IReducer> reducers)
     {
@@ -82,7 +82,7 @@ public class GameStateStore(ILogger<GameStateStore> logger) : IGameStateStore
     }
 
     public void WatchState<TState>(Func<TState, Task> onStateUpdate) where TState : class =>
-        GetEventSource<TState>().StateUpdated += (_, e) => onStateUpdate(e.State);
+        GetEventSource<TState>(GetStateName<TState>()).StateUpdated += (_, e) => onStateUpdate(e.State);
 
     public async Task ApplyEvents(IImmutableList<IReducer> reducers, params Event[] events)
     {
@@ -124,7 +124,7 @@ public class GameStateStore(ILogger<GameStateStore> logger) : IGameStateStore
         var hasChanged = DetectChanges(previousState, state);
         if (hasChanged)
         {
-            GetEventSource<TState>().Update(state);
+            GetEventSource<TState>(stateName).Update(state);
         }
     }
 
@@ -147,8 +147,8 @@ public class GameStateStore(ILogger<GameStateStore> logger) : IGameStateStore
         }
     }
 
-    private StateUpdateEventSource<TState> GetEventSource<TState>() =>
-        (StateUpdateEventSource<TState>)_stateEventStream[GetStateName<TState>()];
+    private StateUpdateEventSource<TState> GetEventSource<TState>(string stateName) =>
+        (StateUpdateEventSource<TState>)_stateEventStream[stateName];
 
     private static IStateUpdatedEventSource MakeEventSource(Type stateType) =>
         (IStateUpdatedEventSource)typeof(StateUpdateEventSource<>).MakeGenericType(stateType).GetConstructor([])!.Invoke([]);

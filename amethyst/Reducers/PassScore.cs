@@ -23,19 +23,29 @@ public abstract class PassScore(TeamSide teamSide, GameContext context, ILogger 
         var state = GetState();
 
         SetState(new(
-            @event.Tick - state.LastChangeTick < PassScoreResetTimeInTicks
-            ? Math.Min(4, Math.Max(0, state.Score + @event.Body.Value))
-            : Math.Min(4, Math.Max(0, @event.Body.Value)),
+            Math.Min(4, Math.Max(0,
+                @event.Tick - state.LastChangeTick < PassScoreResetTimeInTicks
+                ? state.Score + @event.Body.Value
+                : @event.Body.Value)),
             @event.Tick
         ));
     });
 
-    public void Handle(ScoreSet @event)
+    public void Handle(ScoreSet @event) => HandleIfTeam(@event, () =>
     {
-    }
+        SetState(new(0, @event.Tick));
+    });
 
     public Task Tick(Tick tick)
     {
+        var state = GetState();
+
+        if (state.Score == 0) return Task.CompletedTask;
+
+        if (tick - state.LastChangeTick < PassScoreResetTimeInTicks) return Task.CompletedTask;
+
+        SetState(state with { Score = 0, LastChangeTick = state.LastChangeTick + PassScoreResetTimeInTicks });
+
         return Task.CompletedTask;
     }
 
@@ -51,4 +61,4 @@ public abstract class PassScore(TeamSide teamSide, GameContext context, ILogger 
 public sealed record PassScoreState(int Score, Tick LastChangeTick);
 
 public sealed class HomePassScore(GameContext context, ILogger<HomePassScore> logger) : PassScore(TeamSide.Home, context, logger);
-public sealed class AwayPassScore(GameContext context, ILogger<AwayPassScore> logger) : PassScore(TeamSide.Home, context, logger);
+public sealed class AwayPassScore(GameContext context, ILogger<AwayPassScore> logger) : PassScore(TeamSide.Away, context, logger);

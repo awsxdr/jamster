@@ -104,6 +104,9 @@ public abstract class EventBusIntegrationTest
     protected TState GetState<TState>() where TState : class =>
         StateStore.GetState<TState>();
 
+    protected TState GetState<TState>(string key) where TState : class =>
+        StateStore.GetKeyedState<TState>(key);
+
     protected void Tick(Func<Tick, Tick> tick) =>
         Tick(tick(_lastTick));
 

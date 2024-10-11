@@ -242,7 +242,7 @@ public class PeriodClockUnitTests : ReducerUnitTest<PeriodClock, PeriodClockStat
             ticksPassed.Seconds
         );
 
-        await ((ITickReceiver)Subject).Tick(lastStartTick + ticksPassed + 1000);
+        await Tick(lastStartTick + ticksPassed + 1000);
 
         State.IsRunning.Should().BeTrue();
         State.LastStartTick.Should().Be(lastStartTick);
@@ -268,7 +268,7 @@ public class PeriodClockUnitTests : ReducerUnitTest<PeriodClock, PeriodClockStat
             (int)(ticksPassed / 1000)
         );
 
-        await ((ITickReceiver)Subject).Tick(lastStartTick + ticksPassed + 1000);
+        await Tick(lastStartTick + ticksPassed + 1000);
 
         State.IsRunning.Should().BeTrue();
         State.LastStartTick.Should().Be(lastStartTick);
@@ -297,7 +297,7 @@ public class PeriodClockUnitTests : ReducerUnitTest<PeriodClock, PeriodClockStat
         );
 
         var updateTick = lastStartTick + ticksPassed + 1000;
-        await ((ITickReceiver)Subject).Tick(updateTick);
+        await Tick(updateTick);
 
         GetMock<IEventBus>()
             .Verify(mock => mock.AddEvent(It.IsAny<GameInfo>(),  It.Is<PeriodEnded>(e => e.Tick == updateTick)), Times.Once);
@@ -322,7 +322,7 @@ public class PeriodClockUnitTests : ReducerUnitTest<PeriodClock, PeriodClockStat
             (int)(ticksPassed / 1000)
         );
 
-        await ((ITickReceiver)Subject).Tick(lastStartTick + ticksPassed + 1000);
+        await Tick(lastStartTick + ticksPassed + 1000);
 
         State.IsRunning.Should().BeFalse();
         State.LastStartTick.Should().Be(lastStartTick);
@@ -343,7 +343,7 @@ public class PeriodClockUnitTests : ReducerUnitTest<PeriodClock, PeriodClockStat
 
         var originalState = State;
 
-        await ((ITickReceiver)Subject).Tick(State.LastStartTick + 1);
+        await Tick(State.LastStartTick + 1);
 
         State.Should().Be(originalState);
     }

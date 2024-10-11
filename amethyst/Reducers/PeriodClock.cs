@@ -7,7 +7,7 @@ namespace amethyst.Reducers;
 public class PeriodClock(GameContext context, IEventBus eventBus, ILogger<PeriodClock> logger) 
     : Reducer<PeriodClockState>(context)
     , IHandlesEvent<JamStarted>
-    , IHandlesEventAsync<JamEnded>
+    , IHandlesEvent<JamEnded>
     , IHandlesEvent<TimeoutStarted>
     , IHandlesEvent<TimeoutEnded>
     , IHandlesEventAsync<PeriodFinalized>
@@ -32,7 +32,7 @@ public class PeriodClock(GameContext context, IEventBus eventBus, ILogger<Period
         });
     }
 
-    public async Task HandleAsync(JamEnded @event)
+    public void Handle(JamEnded @event)
     {
         var state = GetState();
         if (!state.IsRunning) return;
@@ -45,7 +45,7 @@ public class PeriodClock(GameContext context, IEventBus eventBus, ILogger<Period
 
         SetState(state with {IsRunning = false, SecondsPassed = (int) (ticksPassed / 1000), TicksPassed = ticksPassed});
 
-        await eventBus.AddEvent(Context.GameInfo, new PeriodEnded(@event.Tick));
+        _ = eventBus.AddEvent(Context.GameInfo, new PeriodEnded(@event.Tick));
     }
 
     public void Handle(TimeoutStarted @event)

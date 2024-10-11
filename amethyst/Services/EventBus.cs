@@ -1,4 +1,7 @@
-﻿namespace amethyst.Services;
+﻿using System.Collections.Concurrent;
+using DotNext.Threading;
+
+namespace amethyst.Services;
 
 using DataStores;
 using Events;
@@ -13,8 +16,11 @@ public interface IEventBus
 public class EventBus(
     IGameContextFactory contextFactory,
     GameStoreFactory gameStoreFactory,
-    ILogger<EventBus> logger) : IEventBus
+    ILogger<EventBus> logger) 
+    : IEventBus
 {
+    private readonly ConcurrentDictionary<Guid, Lazy<AsyncManualResetEvent>> _gameLocks = new();
+
     public Task<Event> AddEventAtCurrentTick(GameInfo game, Event @event)
     {
         @event.Id = Guid7.FromTick(IGameClock.GetTick());
@@ -23,6 +29,9 @@ public class EventBus(
 
     public async Task<Event> AddEvent(GameInfo game, Event @event)
     {
+        var eventLock = _gameLocks.GetOrAdd(game.Id, _ => new(() => new AsyncManualResetEvent(false))).Value;
+        using var @lock = await eventLock.AcquireLockAsync();
+
         var stateStore = contextFactory.GetGame(game);
 
         if (PersistEventToDatabase(game, @event) is not Success<Guid> persistResult)

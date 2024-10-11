@@ -79,4 +79,14 @@ public abstract class ReducerUnitTest<TReducer, TState> : UnitTest<TReducer, IRe
                 It.Is<TEvent>(e => e.Tick == @event.Tick && e.Body!.Equals(@event.Body))
             ), Times.Once);
     }
+
+    protected Task Tick(Tick tick)
+    {
+        if (Subject is not ITickReceiver tickReceiver)
+            throw new SubjectNotTickReceiverException();
+
+        return tickReceiver.Tick(tick);
+    }
+
+    public class SubjectNotTickReceiverException : Exception;
 }
