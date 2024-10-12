@@ -16,7 +16,7 @@ public interface IEventBus
 
 public class EventBus(
     IGameContextFactory contextFactory,
-    GameStoreFactory gameStoreFactory,
+    IGameDataStoreFactory gameStoreFactory,
     ILogger<EventBus> logger) 
     : IEventBus
 {
@@ -65,7 +65,7 @@ public class EventBus(
 
         try
         {
-            var dataStore = gameStoreFactory(databaseName);
+            var dataStore = gameStoreFactory.GetDataStore(databaseName);
             var eventId = dataStore.AddEvent(@event);
             return Result.Succeed(eventId);
         }

@@ -15,7 +15,7 @@ public class GameContextFactory(
     GameStateStoreFactory stateStoreFactory, 
     IEnumerable<ReducerFactory> reducerFactories,
     GameClock.Factory gameClockFactory,
-    GameStoreFactory gameStoreFactory) 
+    IGameDataStoreFactory gameStoreFactory) 
     : IGameContextFactory
 {
     private readonly ConcurrentDictionary<Guid, Lazy<GameContext>> _gameContexts = [];
@@ -26,7 +26,7 @@ public class GameContextFactory(
 
     private GameContext LoadGame(GameInfo gameInfo)
     {
-        using var game = gameStoreFactory(IGameDiscoveryService.GetGameFileName(gameInfo));
+        var game = gameStoreFactory.GetDataStore(IGameDiscoveryService.GetGameFileName(gameInfo));
 
         var events = game.GetEvents().ToArray();
 

@@ -63,6 +63,10 @@ public abstract class EventBusIntegrationTest
             .Setup(mock => mock.AddEvent(It.IsAny<Event>()))
             .Returns((Event @event) => @event.Id);
 
+        GetMock<IGameDataStoreFactory>()
+            .Setup(mock => mock.GetDataStore(It.IsAny<string>()))
+            .Returns(() => GetMock<IGameDataStore>().Object);
+
         EventBus = Mocker.Create<EventBus>();
 
         Mocker.Create<GameContextFactory>().GetGame(Game);

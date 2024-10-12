@@ -15,11 +15,12 @@ builder.Host.UseServiceProviderFactory(new AutofacServiceProviderFactory(contain
 {
     container.RegisterType<TeamsDataStore>().As<ITeamsDataStore>().SingleInstance();
     container.RegisterInstance<ConnectionFactory>((connectionString, flags) => new SQLiteConnection(connectionString, flags));
-    container.Register<GameStoreFactory>(context =>
+    container.Register<GameDataStore.Factory>(context =>
     {
         var cachedContext = context.Resolve<IComponentContext>();
         return path => cachedContext.Resolve<Func<string, IGameDataStore>>()(path);
     });
+    container.RegisterType<GameDataStoreFactory>().AsImplementedInterfaces().SingleInstance();
     container.RegisterType<GameDiscoveryService>().As<IGameDiscoveryService>().SingleInstance();
     container.RegisterType<EventConverter>().As<IEventConverter>().SingleInstance();
     container.RegisterType<GameStateStore>().As<IGameStateStore>();
@@ -55,7 +56,10 @@ builder.Services
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
     });
 
-builder.Services.AddSignalR();
+builder.Services.AddSignalR().AddJsonProtocol(options =>
+{
+    options.PayloadSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+});
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();

@@ -15,22 +15,11 @@ public class GamesIntegrationTests : ControllerIntegrationTest
 {
     private GameModel _game;
 
-    public override void OneTimeSetup()
+    public override void Setup()
     {
-        base.OneTimeSetup();
+        base.Setup();
 
         _game = Post<GameModel>("/api/games", new CreateGameModel("Test game"), HttpStatusCode.Created).Result!;
-    }
-
-    public override void OneTimeTearDown()
-    {
-        base.OneTimeTearDown();
-
-        GC.Collect(); // Force SQLite to release database files
-        foreach (var databaseFile in Directory.GetFiles(GameDataStore.GamesFolder, "*.db"))
-        {
-            File.Delete(databaseFile);
-        }
     }
 
     [Test]
@@ -77,6 +66,13 @@ public class GamesIntegrationTests : ControllerIntegrationTest
 
     protected override void CleanDatabase()
     {
+        GameDataStoreFactory?.ReleaseConnections();
+        GC.Collect(); // Force SQLite to release database files
+
+        foreach (var databaseFile in Directory.GetFiles(GameDataStore.GamesFolder, "*.db"))
+        {
+            File.Delete(databaseFile);
+        }
     }
 }
 

@@ -1,21 +1,23 @@
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Logging;
-
-namespace amethyst.tests.Controllers;
-
 using System.Diagnostics;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+
+using amethyst.DataStores;
 using FluentAssertions;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Mvc.Testing;
+
+namespace amethyst.tests.Controllers;
 
 [TestFixture]
 public abstract class ControllerIntegrationTest
 {
     private readonly WebApplicationFactory<Program> _applicationFactory;
     protected HttpClient Client { get; private set; }
+    protected GameDataStoreFactory? GameDataStoreFactory { get; private set; }
 
     protected JsonSerializerOptions SerializerOptions { get; } = new(JsonSerializerDefaults.Web);
 
@@ -37,6 +39,8 @@ public abstract class ControllerIntegrationTest
 
         Client = _applicationFactory.CreateClient();
         Client.GetAsync("/").Wait();
+
+        GameDataStoreFactory = _applicationFactory.Services.GetService(typeof(IGameDataStoreFactory)) as GameDataStoreFactory;
     }
 
     [OneTimeTearDown]

@@ -6,9 +6,6 @@ using Func;
 namespace amethyst.DataStores;
 
 using Events;
-using Reducers;
-
-public delegate IGameDataStore GameStoreFactory(string databaseName);
 
 public interface IGameDataStore : IEventStore
 {
@@ -22,6 +19,8 @@ public class GameDataStore : EventStore, IGameDataStore
 {
     private readonly IEventConverter _eventConverter;
     private readonly ILogger<GameDataStore> _logger;
+
+    public delegate IGameDataStore Factory(string databaseName);
 
     public const string GamesFolderName = "games";
     public static string GamesFolder => Path.Combine(RunningEnvironment.RootPath, "db", GamesFolderName);

@@ -23,7 +23,7 @@ public interface IGameDiscoveryService
             .TrimEnd('.');
 }
 
-public class GameDiscoveryService(GameStoreFactory gameStoreFactory) : IGameDiscoveryService
+public class GameDiscoveryService(IGameDataStoreFactory gameStoreFactory) : IGameDiscoveryService
 {
     public IEnumerable<GameInfo> GetGames() =>
         Directory.GetFiles(GameDataStore.GamesFolder, "*.db")
@@ -31,7 +31,7 @@ public class GameDiscoveryService(GameStoreFactory gameStoreFactory) : IGameDisc
 
     public GameInfo GetGame(GameInfo gameInfo)
     {
-        using var gameStore = gameStoreFactory(IGameDiscoveryService.GetGameFileName(gameInfo));
+        var gameStore = gameStoreFactory.GetDataStore(IGameDiscoveryService.GetGameFileName(gameInfo));
         gameStore.SetInfo(gameInfo);
 
         return gameStore.GetInfo();
@@ -54,7 +54,7 @@ public class GameDiscoveryService(GameStoreFactory gameStoreFactory) : IGameDisc
 
     private GameInfo GetGameInfo(string gamePath)
     {
-        using var gameStore = gameStoreFactory(Path.GetFileNameWithoutExtension(gamePath));
+        var gameStore = gameStoreFactory.GetDataStore(Path.GetFileNameWithoutExtension(gamePath));
 
         var gameInfo = gameStore.GetInfo();
 

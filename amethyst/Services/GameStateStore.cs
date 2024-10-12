@@ -88,10 +88,10 @@ public class GameStateStore(ILogger<GameStateStore> logger) : IGameStateStore
     {
         CacheStates();
 
-        var queuedEvents = new Queue<Event>(events.OrderBy(e => e.Id));
-
         try
         {
+            var queuedEvents = new Queue<Event>(events.OrderBy(e => e.Id));
+
             while (queuedEvents.TryDequeue(out var @event))
             {
                 var implicitEvents = await HandleEvent(reducers, @event);
@@ -100,6 +100,12 @@ public class GameStateStore(ILogger<GameStateStore> logger) : IGameStateStore
                 if (implicitEvents.Any())
                     queuedEvents = new Queue<Event>(queuedEvents.Concat(implicitEvents).OrderBy(e => e.Id));
             }
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error while applying events");
+
+            throw;
         }
         finally
         {

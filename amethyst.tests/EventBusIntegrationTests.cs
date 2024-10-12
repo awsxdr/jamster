@@ -6,6 +6,7 @@ using amethyst.Services;
 using Autofac;
 using Autofac.Extras.Moq;
 using FluentAssertions;
+using Moq;
 
 namespace amethyst.tests;
 
@@ -29,6 +30,14 @@ public class EventBusIntegrationTests
             builder.RegisterType<GameContextFactory>().AsImplementedInterfaces().SingleInstance();
             builder.RegisterType<EventBus>().As<IEventBus>().SingleInstance();
         });
+
+        _mocker.Mock<IGameDataStore>()
+            .Setup(mock => mock.GetEvents())
+            .Returns(() => []);
+
+        _mocker.Mock<IGameDataStoreFactory>()
+            .Setup(mock => mock.GetDataStore(It.IsAny<string>()))
+            .Returns(() => _mocker.Mock<IGameDataStore>().Object);
 
         _stateStore = _mocker.Create<IGameStateStore>();
         _reducerFactories = [];
