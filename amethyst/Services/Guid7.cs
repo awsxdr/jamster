@@ -2,11 +2,13 @@
 
 namespace amethyst.Services;
 
-public class Guid7
+public class Guid7 : IComparable<Guid>, IComparable<Guid7>
 {
     private static readonly Random Random = new();
 
     private readonly byte[] _data;
+
+    public static Guid7 Empty => Guid.Empty;
 
     public long Tick
     {
@@ -61,6 +63,22 @@ public class Guid7
         _data.CopyTo(result.AsSpan());
         return result;
     }
+
+    public override string ToString() => ((Guid)this).ToString();
+
+    public int CompareTo(Guid other) => ((Guid)this).CompareTo(other);
+
+    public int CompareTo(Guid7? other) => CompareTo((Guid) (other ?? Empty));
+
+    public override bool Equals(object? obj) =>
+        obj switch
+        {
+            Guid7 g7 => ((Guid) this).Equals((Guid) g7),
+            Guid g => ((Guid) this).Equals(g),
+            _ => false
+        };
+
+    public override int GetHashCode() => ((Guid) this).GetHashCode();
 
     public class InvalidDataSizeException : ArgumentException;
 }
