@@ -12,7 +12,7 @@ public class TimeoutClock(GameContext context, ILogger<TimeoutClock> logger) : R
 {
     protected override TimeoutClockState DefaultState => new(false, 0, 0, 0, 0);
 
-    public void Handle(JamStarted @event)
+    public IEnumerable<Event> Handle(JamStarted @event)
     {
         var state = GetState();
         if (state.IsRunning)
@@ -26,15 +26,19 @@ public class TimeoutClock(GameContext context, ILogger<TimeoutClock> logger) : R
                 TicksPassed = endTick - state.StartTick,
             });
         }
+
+        return [];
     }
 
-    public void Handle(TimeoutStarted @event)
+    public IEnumerable<Event> Handle(TimeoutStarted @event)
     {
         logger.LogDebug("New timeout started at {tick}", @event.Tick);
         SetState(DefaultState with { IsRunning = true, StartTick = @event.Tick });
+
+        return [];
     }
 
-    public void Handle(TimeoutEnded @event)
+    public IEnumerable<Event> Handle(TimeoutEnded @event)
     {
         var state = GetState();
 
@@ -47,13 +51,15 @@ public class TimeoutClock(GameContext context, ILogger<TimeoutClock> logger) : R
         {
             logger.LogDebug("Timeout ended but timeout has already ended at {tick}", @event.Tick);
         }
+
+        return [];
     }
 
-    public Task Tick(Tick tick)
+    public IEnumerable<Event> Tick(Tick tick)
     {
         var state = GetState();
 
-        if (!state.IsRunning) return Task.CompletedTask;
+        if (!state.IsRunning) return [];
 
         var newState = state with
         {
@@ -62,7 +68,7 @@ public class TimeoutClock(GameContext context, ILogger<TimeoutClock> logger) : R
         };
         SetState(newState);
 
-        return Task.CompletedTask;
+        return [];
     }
 }
 

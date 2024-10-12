@@ -14,7 +14,7 @@ public interface IGameContextFactory
 public class GameContextFactory(
     GameStateStoreFactory stateStoreFactory, 
     IEnumerable<ReducerFactory> reducerFactories,
-    Func<IEnumerable<ITickReceiver>, IGameClock> gameClockFactory,
+    GameClock.Factory gameClockFactory,
     GameStoreFactory gameStoreFactory) 
     : IGameContextFactory
 {
@@ -36,7 +36,7 @@ public class GameContextFactory(
         stateStore.LoadDefaultStates(reducers);
         stateStore.ApplyEvents(reducers, events);
 
-        gameClockFactory(reducers.OfType<ITickReceiver>()).Run();
+        gameClockFactory(gameInfo, reducers.OfType<ITickReceiver>()).Run();
 
         return gameContextWithoutReducers with {Reducers = reducers};
     }

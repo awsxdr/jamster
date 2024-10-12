@@ -3,19 +3,18 @@ using amethyst.Domain;
 using amethyst.Events;
 using amethyst.Reducers;
 using amethyst.Services;
+using Autofac;
+using Autofac.Extras.Moq;
 using Microsoft.Extensions.Logging;
 using Moq;
-using Moq.AutoMock;
 
 namespace amethyst.tests.EventHandling;
 
 [TestFixture]
 public abstract class EventBusIntegrationTest
 {
-    protected MockBehavior MockingBehavior { get; set; } = MockBehavior.Loose;
-
-    private Lazy<AutoMocker> _mocker = new(() => throw new Exception("Mocker cannot be used until Setup() has run"));
-    protected AutoMocker Mocker => _mocker.Value;
+    private Lazy<AutoMock> _mocker = new(() => throw new Exception("Mocker cannot be used until Setup() has run"));
+    protected AutoMock Mocker => _mocker.Value;
 
     protected IEventBus EventBus { get; private set; } = null!;
     protected GameInfo Game { get; private set; } = null!;
@@ -23,8 +22,8 @@ public abstract class EventBusIntegrationTest
 
     private Tick _lastTick = 0;
 
-    protected Mock<TMock> GetMock<TMock>() where TMock : class => Mocker.GetMock<TMock>();
-    protected TConcrete Create<TConcrete>() where TConcrete : class => Mocker.CreateInstance<TConcrete>();
+    protected Mock<TMock> GetMock<TMock>() where TMock : class => Mocker.Mock<TMock>();
+    protected TConcrete Create<TConcrete>() where TConcrete : class => Mocker.Create<TConcrete>();
 
     [OneTimeSetUp]
     protected virtual void OneTimeSetup()
@@ -34,45 +33,39 @@ public abstract class EventBusIntegrationTest
     [SetUp]
     protected virtual void Setup()
     {
-        _lastTick = 0;
-        _mocker = new(() => new AutoMocker(MockingBehavior));
-
         Game = new GameInfo(Guid.NewGuid(), "Integration test game");
-        StateStore = Mocker.CreateInstance<GameStateStore>();
-        var context = new GameContext(Game, [], StateStore);
 
-        RegisterLogger(typeof(Services.EventBus));
+        _lastTick = 0;
+        _mocker = new(() => AutoMock.GetLoose(builder =>
+        {
+            var reducerTypes = GetReducerTypes().ToArray();
+            builder.RegisterTypes(reducerTypes).As<IReducer>();
 
-        Mocker.Use(context);
+            builder.RegisterType<GameStateStore>().As<IGameStateStore>().SingleInstance();
+            builder.Register(context => new GameContext(Game, [], context.Resolve<IGameStateStore>()));
 
-        var reducerTypes = GetReducerTypes().ToArray();
+            var createLoggerMethod =
+                typeof(LoggerFactoryExtensions).GetMethods()
+                    .Single(method => method is { IsGenericMethod: true, Name: nameof(LoggerFactoryExtensions.CreateLogger) });
 
-        var reducerFactories =
-            reducerTypes
-                .Select(t => (ReducerFactory)(_ => (IReducer) Mocker.Get(t)))
-                .ToArray();
+            builder.RegisterGeneric((_, types) =>
+                    createLoggerMethod.MakeGenericMethod(types.Single()).Invoke(null, [
+                        LoggerFactory.Create(options => options.AddConsole().SetMinimumLevel(LogLevel.Debug))
+                    ])!)
+                .As(typeof(ILogger<>));
 
-        Mocker.Use<IEnumerable<ReducerFactory>>(reducerFactories);
+            builder.RegisterType<GameContextFactory>().As<IGameContextFactory>().SingleInstance();
+        }));
 
-        Mocker.Use<GameStateStoreFactory>(() => StateStore);
-        Mocker.Use<Func<IEnumerable<ITickReceiver>, IGameClock>>(_ => Mocker.GetMock<IGameClock>().Object);
-        Mocker.Use<GameStoreFactory>(_ => Mocker.GetMock<IGameDataStore>().Object);
+        StateStore = Mocker.Create<IGameStateStore>();
 
         GetMock<IGameDataStore>()
             .Setup(mock => mock.AddEvent(It.IsAny<Event>()))
             .Returns((Event @event) => @event.Id);
 
-        Mocker.Use<IGameContextFactory>(Mocker.CreateInstance<GameContextFactory>());
-        EventBus = Mocker.CreateInstance<Services.EventBus>();
-        Mocker.Use(EventBus);
+        EventBus = Mocker.Create<EventBus>();
 
-        foreach (var reducer in reducerTypes)
-        {
-            RegisterLogger(reducer);
-            Mocker.Use(reducer, Mocker.CreateInstance(reducer));
-        }
-
-        Mocker.CreateInstance<GameContextFactory>().GetGame(Game);
+        Mocker.Create<GameContextFactory>().GetGame(Game);
     }
 
     [TearDown]
@@ -91,7 +84,7 @@ public abstract class EventBusIntegrationTest
         {
             if (@event is ValidateStateFakeEvent validate)
             {
-                Tick(@event.Tick);
+                await Tick(@event.Tick);
                 validate.ValidateStates(StateStore);
             }
             else
@@ -107,21 +100,23 @@ public abstract class EventBusIntegrationTest
     protected TState GetState<TState>(string key) where TState : class =>
         StateStore.GetKeyedState<TState>(key);
 
-    protected void Tick(Func<Tick, Tick> tick) =>
+    protected Task Tick(Func<Tick, Tick> tick) =>
         Tick(tick(_lastTick));
 
-    protected void Tick(Tick tick)
+    protected async Task Tick(Tick tick)
     {
         var tickReceivers =
             GetReducerTypes()
-                .Where(t => t.IsAssignableTo(typeof(ITickReceiver)))
-                .Select(Mocker.Get)
-                .Cast<ITickReceiver>()
+                .Where(t => t.IsAssignableTo(typeof(ITickReceiverAsync)))
+                .Select(t => Mocker.Create(t))
+                .Cast<ITickReceiverAsync>()
                 .ToArray();
 
         foreach (var receiver in tickReceivers)
         {
-            receiver.Tick(tick);
+            var implicitEvents = await receiver.TickAsync(tick);
+            foreach (var @event in implicitEvents)
+                await EventBus.AddEventWithoutPersisting(Game, @event);
         }
 
         _lastTick = tick;
@@ -130,22 +125,4 @@ public abstract class EventBusIntegrationTest
     private static IEnumerable<Type> GetReducerTypes() =>
         typeof(IReducer).Assembly.GetExportedTypes()
             .Where(t => !t.IsAbstract && t.IsAssignableTo(typeof(IReducer)));
-
-    private void RegisterLogger(Type type)
-    {
-        var createLoggerMethod =
-            typeof(LoggerFactoryExtensions).GetMethods()
-                .Single(method => method is {IsGenericMethod: true, Name: nameof(LoggerFactoryExtensions.CreateLogger)});
-
-        Mocker.Use(
-            typeof(ILogger<>).MakeGenericType(type),
-            createLoggerMethod.MakeGenericMethod(type).Invoke(null, [
-            LoggerFactory
-                .Create(builder =>
-                {
-                    builder
-                        .AddConsole()
-                        .SetMinimumLevel(LogLevel.Debug);
-                })])!);
-    }
 }

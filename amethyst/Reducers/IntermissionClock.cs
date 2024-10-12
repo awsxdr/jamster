@@ -4,37 +4,39 @@ using amethyst.Services;
 
 namespace amethyst.Reducers;
 
-public class IntermissionClock(GameContext context, IEventBus eventBus, ILogger<IntermissionClock> logger) 
+public class IntermissionClock(GameContext context, ILogger<IntermissionClock> logger) 
     : Reducer<IntermissionClockState>(context)
     , IHandlesEvent<JamStarted>
-    , IHandlesEventAsync<IntermissionStarted>
+    , IHandlesEvent<IntermissionStarted>
     , IHandlesEvent<IntermissionLengthSet>
     , IHandlesEvent<IntermissionEnded>
     , ITickReceiver
 {
     protected override IntermissionClockState DefaultState => new(false, true, 0, 0);
 
-    public void Handle(JamStarted @event)
+    public IEnumerable<Event> Handle(JamStarted @event)
     {
         var state = GetState();
 
-        if (!state.IsRunning) return;
+        if (!state.IsRunning) return [];
 
         logger.LogDebug("Stopping intermission clock due to jam start");
 
         SetState(state with { IsRunning = false });
+
+        return [];
     }
 
-    public async Task HandleAsync(IntermissionStarted @event)
+    public IEnumerable<Event> Handle(IntermissionStarted @event)
     {
         logger.LogInformation("Intermission started");
 
-        await eventBus.AddEvent(Context.GameInfo, new IntermissionLengthSet(@event.Tick, new(@event.Body.DurationInSeconds)));
-
         SetState(GetState() with { IsRunning = true });
+
+        return [new IntermissionLengthSet(@event.Tick, new(@event.Body.DurationInSeconds))];
     }
 
-    public void Handle(IntermissionLengthSet @event)
+    public IEnumerable<Event> Handle(IntermissionLengthSet @event)
     {
         logger.LogDebug("Intermission length set to {length} seconds", @event.Body.DurationInSeconds);
         SetState(GetState() with
@@ -43,22 +45,26 @@ public class IntermissionClock(GameContext context, IEventBus eventBus, ILogger<
             SecondsRemaining = @event.Body.DurationInSeconds,
             TargetTick = @event.Tick + @event.Body.DurationInSeconds * 1000,
         });
+
+        return [];
     }
 
-    public void Handle(IntermissionEnded @event)
+    public IEnumerable<Event> Handle(IntermissionEnded @event)
     {
         var state = GetState();
 
-        if (!state.IsRunning) return;
+        if (!state.IsRunning) return [];
 
         SetState(state with { IsRunning = false });
+
+        return [];
     }
 
-    public Task Tick(Tick tick)
+    public IEnumerable<Event> Tick(Tick tick)
     {
         var state = GetState();
 
-        if (!state.IsRunning) return Task.CompletedTask;
+        if (!state.IsRunning) return [];
 
         var ticksRemaining = (Tick) Math.Max(0, (long)state.TargetTick - (long)tick);
 
@@ -68,7 +74,7 @@ public class IntermissionClock(GameContext context, IEventBus eventBus, ILogger<
             SecondsRemaining = ticksRemaining.Seconds,
         });
 
-        return Task.CompletedTask;
+        return [];
     }
 }
 

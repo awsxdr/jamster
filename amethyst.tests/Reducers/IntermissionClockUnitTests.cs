@@ -60,10 +60,11 @@ public class IntermissionClockUnitTests : ReducerUnitTest<IntermissionClock, Int
     [Test]
     public async Task IntermissionStarted_RaisesIntermissionLengthSetEvent()
     {
-        await Subject.Handle(new IntermissionStarted(0, new(15 * 60)));
+        var result = await Subject.Handle(new IntermissionStarted(0, new(15 * 60)));
 
-        VerifyEventSent<IntermissionLengthSet, IntermissionLengthSetBody>(
-            new IntermissionLengthSet(0, new(15 * 60)));
+        var implicitEvent = result.Should().ContainSingle().Which.Should().BeAssignableTo<IntermissionLengthSet>().Which;
+        implicitEvent.Tick.Should().Be(0);
+        implicitEvent.Body.DurationInSeconds.Should().Be(15 * 60);
     }
 
     [Test]

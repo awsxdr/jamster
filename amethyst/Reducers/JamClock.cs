@@ -4,7 +4,7 @@ using amethyst.Services;
 
 namespace amethyst.Reducers;
 
-public sealed class JamClock(GameContext gameContext, IEventBus eventBus, ILogger<JamClock> logger) 
+public sealed class JamClock(GameContext gameContext, ILogger<JamClock> logger) 
     : Reducer<JamClockState>(gameContext)
     , IHandlesEvent<JamStarted>
     , IHandlesEvent<JamEnded>
@@ -15,41 +15,47 @@ public sealed class JamClock(GameContext gameContext, IEventBus eventBus, ILogge
 
     public const long JamLengthInTicks = 2 * 60 * 1000;
 
-    public void Handle(JamStarted @event)
+    public IEnumerable<Event> Handle(JamStarted @event)
     {
         var state = GetState();
 
         if (state.IsRunning)
-            return;
+            return [];
 
         logger.LogDebug("Starting jam clock");
 
         SetState(new(true, @event.Tick, 0, 0));
+
+        return [];
     }
 
-    public void Handle(JamEnded @event)
+    public IEnumerable<Event> Handle(JamEnded @event)
     {
         logger.LogDebug("Stopping jam clock due to jam end");
 
         SetState(GetState() with {IsRunning = false});
+
+        return [];
     }
 
-    public void Handle(TimeoutStarted @event)
+    public IEnumerable<Event> Handle(TimeoutStarted @event)
     {
         var state = GetState();
 
-        if(!state.IsRunning) return;
+        if(!state.IsRunning) return [];
 
         logger.LogDebug("Stopping jam clock due to timeout start");
 
         SetState(state with {IsRunning = false});
+
+        return [];
     }
 
-    public async Task Tick(Tick tick)
+    public IEnumerable<Event> Tick(Tick tick)
     {
         var state = GetState();
 
-        if (!state.IsRunning) return;
+        if (!state.IsRunning) return [];
 
         var ticksPassed = tick - state.StartTick;
         var newState = GetState() with
@@ -60,11 +66,13 @@ public sealed class JamClock(GameContext gameContext, IEventBus eventBus, ILogge
 
         SetState(newState);
 
-        if (ticksPassed > JamLengthInTicks)
-        {
-            logger.LogDebug("Jam clock expired, ending jam");
-            await eventBus.AddEvent(Context.GameInfo, new JamEnded(Guid7.FromTick(state.StartTick + JamLengthInTicks)));
-        }
+        if (ticksPassed <= JamLengthInTicks) return [];
+
+        logger.LogDebug("Jam clock expired, ending jam");
+        SetState(newState with { IsRunning = false });
+
+        return [new JamEnded(Guid7.FromTick(state.StartTick + JamLengthInTicks))];
+
     }
 }
 

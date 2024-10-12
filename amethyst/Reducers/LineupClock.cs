@@ -14,17 +14,19 @@ public sealed class LineupClock(GameContext gameContext, ILogger<LineupClock> lo
 
     protected override LineupClockState DefaultState => new(false, 0, 0, 0);
 
-    public void Handle(JamStarted @event)
+    public IEnumerable<Event> Handle(JamStarted @event)
     {
-        if (!GetState().IsRunning) return;
+        if (!GetState().IsRunning) return [];
 
         logger.LogDebug("Jam started, stopping lineup clock");
         SetState(GetState() with { IsRunning = false });
+
+        return [];
     }
 
-    public void Handle(JamEnded @event)
+    public IEnumerable<Event> Handle(JamEnded @event)
     {
-        if (GetState().IsRunning || GetState<TimeoutClockState>().IsRunning) return;
+        if (GetState().IsRunning || GetState<TimeoutClockState>().IsRunning) return [];
 
         var periodClock = GetState<PeriodClockState>();
         var ticksRemainingInPeriod =
@@ -33,26 +35,30 @@ public sealed class LineupClock(GameContext gameContext, ILogger<LineupClock> lo
         if (ticksRemainingInPeriod <= 0)
         {
             logger.LogDebug("Not starting lineup at jam end due to period clock expiry");
-            return;
+            return [];
         }
 
         logger.LogDebug("Starting lineup clock due to jam end");
         SetState(new(true, @event.Tick, 0, 0));
+
+        return [];
     }
 
-    public void Handle(TimeoutStarted @event)
+    public IEnumerable<Event> Handle(TimeoutStarted @event)
     {
-        if (!GetState().IsRunning) return;
+        if (!GetState().IsRunning) return [];
 
         logger.LogDebug("Timeout started, stopping lineup clock");
         SetState(GetState() with { IsRunning = false });
+
+        return [];
     }
 
-    public Task Tick(Tick tick)
+    public IEnumerable<Event> Tick(Tick tick)
     {
         var state = GetState();
 
-        if (!state.IsRunning) return Task.CompletedTask;
+        if (!state.IsRunning) return [];
 
         var newState = state with
         {
@@ -61,7 +67,7 @@ public sealed class LineupClock(GameContext gameContext, ILogger<LineupClock> lo
         };
         SetState(newState);
 
-        return Task.CompletedTask;
+        return [];
     }
 }
 

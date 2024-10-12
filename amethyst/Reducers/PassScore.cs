@@ -18,7 +18,7 @@ public abstract class PassScore(TeamSide teamSide, GameContext context, ILogger 
     public override Option<string> GetStateKey() =>
         Option.Some(teamSide.ToString());
 
-    public void Handle(ScoreModifiedRelative @event) => HandleIfTeam(@event, () =>
+    public IEnumerable<Event> Handle(ScoreModifiedRelative @event) => HandleIfTeam(@event, () =>
     {
         var state = GetState();
 
@@ -29,32 +29,40 @@ public abstract class PassScore(TeamSide teamSide, GameContext context, ILogger 
                 : @event.Body.Value)),
             @event.Tick
         ));
+
+        return [];
     });
 
-    public void Handle(ScoreSet @event) => HandleIfTeam(@event, () =>
+    public IEnumerable<Event> Handle(ScoreSet @event) => HandleIfTeam(@event, () =>
     {
+        logger.LogDebug("Resetting pass score due to absolute score being set");
+
         SetState(new(0, @event.Tick));
+
+        return [];
     });
 
-    public Task Tick(Tick tick)
+    public IEnumerable<Event> Tick(Tick tick)
     {
         var state = GetState();
 
-        if (state.Score == 0) return Task.CompletedTask;
+        if (state.Score == 0) return [];
 
-        if (tick - state.LastChangeTick < PassScoreResetTimeInTicks) return Task.CompletedTask;
+        if (tick - state.LastChangeTick < PassScoreResetTimeInTicks) return [];
+
+        logger.LogDebug("Resetting pass score due to pass time expiring");
 
         SetState(state with { Score = 0, LastChangeTick = state.LastChangeTick + PassScoreResetTimeInTicks });
 
-        return Task.CompletedTask;
+        return [];
     }
 
-    private void HandleIfTeam<TEvent>(TEvent @event, Action handler) where TEvent : Event
+    private IEnumerable<Event> HandleIfTeam<TEvent>(TEvent @event, Func<IEnumerable<Event>> handler) where TEvent : Event
     {
         if (@event.HasBody && @event.GetBodyObject() is TeamEventBody teamEventBody && teamEventBody.TeamSide != teamSide)
-            return;
+            return [];
 
-        handler();
+        return handler();
     }
 }
 

@@ -11,6 +11,7 @@ public interface IEventBus
 {
     Task<Event> AddEventAtCurrentTick(GameInfo game, Event @event);
     Task<Event> AddEvent(GameInfo game, Event @event);
+    Task AddEventWithoutPersisting(GameInfo game, Event @event);
 }
 
 public class EventBus(
@@ -29,8 +30,7 @@ public class EventBus(
 
     public async Task<Event> AddEvent(GameInfo game, Event @event)
     {
-        var eventLock = _gameLocks.GetOrAdd(game.Id, _ => new(() => new AsyncManualResetEvent(false))).Value;
-        using var @lock = await eventLock.AcquireLockAsync();
+        using var @lock = await AcquireLock(game.Id);
 
         var stateStore = contextFactory.GetGame(game);
 
@@ -42,6 +42,21 @@ public class EventBus(
         await stateStore.StateStore.ApplyEvents(stateStore.Reducers, @event);
 
         return @event;
+    }
+
+    public async Task AddEventWithoutPersisting(GameInfo game, Event @event)
+    {
+        using var @lock = await AcquireLock(game.Id);
+
+        var stateStore = contextFactory.GetGame(game);
+
+        await stateStore.StateStore.ApplyEvents(stateStore.Reducers, @event);
+    }
+
+    private async Task<AsyncLock.Holder> AcquireLock(Guid gameId)
+    {
+        var eventLock = _gameLocks.GetOrAdd(gameId, _ => new(() => new AsyncManualResetEvent(false))).Value;
+        return await eventLock.AcquireLockAsync();
     }
 
     private Result<Guid> PersistEventToDatabase(GameInfo game, Event @event)

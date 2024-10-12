@@ -123,9 +123,11 @@ public class GameStageUnitTests : ReducerUnitTest<GameStage, GameStageState>
         State = new(Stage.Jam, 1, 15, false);
         MockState<PeriodClockState>(new(false, 0, 0, PeriodClock.PeriodLengthInTicks + 10000, 0));
 
-        await Subject.Handle(new PeriodEnded(123));
+        var result = await Subject.Handle(new PeriodEnded(123));
 
-        VerifyEventSent<IntermissionStarted, IntermissionStartedBody>(new IntermissionStarted(123, new(15 * 60)));
+        var implicitEvent = result.Should().ContainSingle().Which.Should().BeAssignableTo<IntermissionStarted>().Which;
+        implicitEvent.Tick.Should().Be(123);
+        implicitEvent.Body.DurationInSeconds.Should().Be(15 * 60);
     }
 
     [TestCase(Stage.BeforeGame, 0, 0, false)]

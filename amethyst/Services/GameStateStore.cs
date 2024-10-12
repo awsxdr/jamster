@@ -87,11 +87,18 @@ public class GameStateStore(ILogger<GameStateStore> logger) : IGameStateStore
     public async Task ApplyEvents(IImmutableList<IReducer> reducers, params Event[] events)
     {
         CacheStates();
+
+        var queuedEvents = new Queue<Event>(events.OrderBy(e => e.Id));
+
         try
         {
-            foreach (var @event in events)
+            while (queuedEvents.TryDequeue(out var @event))
             {
-                await HandleEvent(reducers, @event);
+                var implicitEvents = await HandleEvent(reducers, @event);
+                implicitEvents = implicitEvents.ToArray();
+
+                if (implicitEvents.Any())
+                    queuedEvents = new Queue<Event>(queuedEvents.Concat(implicitEvents).OrderBy(e => e.Id));
             }
         }
         finally
@@ -153,20 +160,25 @@ public class GameStateStore(ILogger<GameStateStore> logger) : IGameStateStore
     private static IStateUpdatedEventSource MakeEventSource(Type stateType) =>
         (IStateUpdatedEventSource)typeof(StateUpdateEventSource<>).MakeGenericType(stateType).GetConstructor([])!.Invoke([]);
 
-    private async Task HandleEvent(IImmutableList<IReducer> reducers, Event @event)
+    private async Task<IEnumerable<Event>> HandleEvent(IImmutableList<IReducer> reducers, Event @event)
     {
         logger.BeginScope("Handling {event}", @event);
+
+        var implicitEvents = new List<Event>();
+
         foreach (var reducer in reducers)
         {
             try
             {
-                await reducer.HandleUntyped(@event);
+                implicitEvents.AddRange(await reducer.HandleUntyped(@event));
             }
             catch (Exception ex)
             {
                 logger.LogError(ex, "Error while applying {eventType} with reducer {reducerType}. Game state may now be invalid.", @event.GetType().Name, reducer.GetType().Name);
             }
         }
+
+        return implicitEvents;
     }
 
     private interface IStateUpdatedEventSource;

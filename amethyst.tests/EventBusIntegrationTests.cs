@@ -76,21 +76,23 @@ public class EventBusIntegrationTests
         _stateStore.GetState<ComplexStateTestReducerState>().Count.Should().Be(testCount);
     }
 
-    private sealed class ComplexStateTestReducer(GameContext context, IEventBus eventBus) 
+    private sealed class ComplexStateTestReducer(GameContext context) 
         : Reducer<ComplexStateTestReducerState>(context)
-        , IHandlesEventAsync<TestEvent>
+        , IHandlesEvent<TestEvent>
         , IHandlesEvent<TestIncremented>
     {
         protected override ComplexStateTestReducerState DefaultState => new(0);
 
-        public async Task HandleAsync(TestEvent @event)
+        public IEnumerable<Event> Handle(TestEvent @event)
         {
-            await eventBus.AddEvent(Context.GameInfo, new TestIncremented(@event.Tick, new(GetState().Count + 1)));
+            return [new TestIncremented(@event.Tick, new(GetState().Count + 1))];
         }
 
-        public void Handle(TestIncremented @event)
+        public IEnumerable<Event> Handle(TestIncremented @event)
         {
             SetState(new(@event.Body.Value));
+
+            return [];
         }
     }
 

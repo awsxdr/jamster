@@ -3,18 +3,18 @@ using amethyst.Services;
 
 namespace amethyst.Reducers;
 
-public class GameStage(GameContext context, IEventBus eventBus, ILogger<GameStage> logger) 
+public class GameStage(GameContext context, ILogger<GameStage> logger) 
     : Reducer<GameStageState>(context)
     , IHandlesEvent<IntermissionEnded>
     , IHandlesEvent<JamStarted>
     , IHandlesEvent<JamEnded>
     , IHandlesEvent<TimeoutStarted>
-    , IHandlesEventAsync<PeriodEnded>
+    , IHandlesEvent<PeriodEnded>
     , IHandlesEvent<PeriodFinalized>
 {
     protected override GameStageState DefaultState => new(Stage.BeforeGame, 0, 0, false);
 
-    public void Handle(IntermissionEnded @event)
+    public IEnumerable<Event> Handle(IntermissionEnded @event)
     {
         var state = GetState();
         var newState = state.Stage switch
@@ -25,9 +25,11 @@ public class GameStage(GameContext context, IEventBus eventBus, ILogger<GameStag
 
         if(SetStateIfDifferent(newState))
             logger.LogDebug("Setting game state to {state} after intermission end", newState);
+
+        return [];
     }
 
-    public void Handle(JamStarted @event)
+    public IEnumerable<Event> Handle(JamStarted @event)
     {
         var state = GetState();
 
@@ -43,9 +45,11 @@ public class GameStage(GameContext context, IEventBus eventBus, ILogger<GameStag
 
         if (SetStateIfDifferent(newState))
             logger.LogDebug("Setting game state to {state} after jam start", newState);
+
+        return [];
     }
 
-    public void Handle(JamEnded @event)
+    public IEnumerable<Event> Handle(JamEnded @event)
     {
         var state = GetState();
         var periodClock = GetState<PeriodClockState>();
@@ -59,9 +63,11 @@ public class GameStage(GameContext context, IEventBus eventBus, ILogger<GameStag
 
         if (SetStateIfDifferent(newState))
             logger.LogDebug("Setting game state to {state} after jam end", newState);
+
+        return [];
     }
 
-    public void Handle(TimeoutStarted @event)
+    public IEnumerable<Event> Handle(TimeoutStarted @event)
     {
         var state = GetState();
         var newState = state.Stage switch
@@ -72,9 +78,11 @@ public class GameStage(GameContext context, IEventBus eventBus, ILogger<GameStag
 
         if (SetStateIfDifferent(newState))
             logger.LogDebug("Setting game state to {state} after timeout start", newState);
+
+        return [];
     }
 
-    public async Task HandleAsync(PeriodEnded @event)
+    public IEnumerable<Event> Handle(PeriodEnded @event)
     {
         var state = GetState();
         var newState = state switch
@@ -88,14 +96,13 @@ public class GameStage(GameContext context, IEventBus eventBus, ILogger<GameStag
         if (SetStateIfDifferent(newState))
             logger.LogDebug("Setting game state to {state} after period end", newState);
 
-        if (newState.Stage == Stage.Intermission)
-        {
-            logger.LogInformation("Starting intermission with length {intermissionLength} seconds due to end of period", 15 * 60);
-            await eventBus.AddEvent(Context.GameInfo, new IntermissionStarted(@event.Tick, new(15 * 60)));
-        }
+        if (newState.Stage != Stage.Intermission) return [];
+
+        logger.LogInformation("Starting intermission with length {intermissionLength} seconds due to end of period", 15 * 60);
+        return [new IntermissionStarted(@event.Tick, new(15 * 60))];
     }
 
-    public void Handle(PeriodFinalized @event)
+    public IEnumerable<Event> Handle(PeriodFinalized @event)
     {
         var state = GetState();
         var newState = state switch
@@ -112,6 +119,8 @@ public class GameStage(GameContext context, IEventBus eventBus, ILogger<GameStag
 
         if (SetStateIfDifferent(newState))
             logger.LogDebug("Setting game state to {state} after period finalized", newState);
+
+        return [];
     }
 }
 

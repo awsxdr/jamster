@@ -14,7 +14,7 @@ public abstract class TeamScore(TeamSide teamSide, GameContext gameContext, ILog
     public override Option<string> GetStateKey() =>
         Option.Some(teamSide.ToString());
 
-    public void Handle(ScoreModifiedRelative @event) => HandleIfTeam(@event, () =>
+    public IEnumerable<Event> Handle(ScoreModifiedRelative @event) => HandleIfTeam(@event, () =>
     {
         logger.LogDebug("Changing {teamSide} score by {points} points", teamSide, @event.Body.Value);
 
@@ -23,9 +23,11 @@ public abstract class TeamScore(TeamSide teamSide, GameContext gameContext, ILog
         state = state with {Score = Math.Max(0, state.Score + @event.Body.Value)};
 
         SetState(state);
+
+        return [];
     });
 
-    public void Handle(ScoreSet @event) => HandleIfTeam(@event, () =>
+    public IEnumerable<Event> Handle(ScoreSet @event) => HandleIfTeam(@event, () =>
     {
         logger.LogDebug("Setting {teamSide} score to {points} points", teamSide, @event.Body.Value);
 
@@ -34,14 +36,16 @@ public abstract class TeamScore(TeamSide teamSide, GameContext gameContext, ILog
         state = state with {Score = Math.Max(0, @event.Body.Value)};
 
         SetState(state);
+
+        return [];
     });
 
-    private void HandleIfTeam<TEvent>(TEvent @event, Action handler) where TEvent : Event
+    private IEnumerable<Event> HandleIfTeam<TEvent>(TEvent @event, Func<IEnumerable<Event>> handler) where TEvent : Event
     {
         if (@event.HasBody && @event.GetBodyObject() is TeamEventBody teamEventBody && teamEventBody.TeamSide != teamSide)
-            return;
+            return [];
 
-        handler();
+        return handler();
     }
 }
 

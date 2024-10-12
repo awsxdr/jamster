@@ -18,17 +18,19 @@ public abstract class TeamDetails(TeamSide teamSide, GameContext context, ILogge
     public override Option<string> GetStateKey() =>
         Option.Some(teamSide.ToString());
 
-    public void Handle(TeamSet @event) => HandleIfTeam(@event, () =>
+    public IEnumerable<Event> Handle(TeamSet @event) => HandleIfTeam(@event, () =>
     {
         SetState(new (@event.Body.Team));
+
+        return [];
     });
 
-    private void HandleIfTeam<TEvent>(TEvent @event, Action handler) where TEvent : Event
+    private IEnumerable<Event> HandleIfTeam<TEvent>(TEvent @event, Func<IEnumerable<Event>> handler) where TEvent : Event
     {
         if (@event.HasBody && @event.GetBodyObject() is TeamEventBody teamEventBody && teamEventBody.TeamSide != teamSide)
-            return;
+            return [];
 
-        handler();
+        return handler();
     }
 }
 

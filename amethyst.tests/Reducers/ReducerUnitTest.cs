@@ -43,6 +43,14 @@ public abstract class ReducerUnitTest<TReducer, TState> : UnitTest<TReducer, IRe
                 await Subject.HandleUntyped(@event);
                 return @event;
             });
+
+        GetMock<IEventBus>()
+            .Setup(mock => mock.AddEventWithoutPersisting(It.IsAny<GameInfo>(), It.IsAny<Event>()))
+            .Returns(async (GameInfo _, Event @event) =>
+            {
+                await Subject.HandleUntyped(@event);
+                return @event;
+            });
     }
 
     protected void MockState<TOtherState>(TOtherState state) where TOtherState : class
@@ -65,7 +73,7 @@ public abstract class ReducerUnitTest<TReducer, TState> : UnitTest<TReducer, IRe
     protected void VerifyEventSent<TEvent>(Tick tick) where TEvent : Event
     {
         GetMock<IEventBus>()
-            .Verify(mock => mock.AddEvent(
+            .Verify(mock => mock.AddEventWithoutPersisting(
                 It.IsAny<GameInfo>(),
                 It.Is<TEvent>(e => e.Tick == tick)
             ), Times.Once);
@@ -74,18 +82,18 @@ public abstract class ReducerUnitTest<TReducer, TState> : UnitTest<TReducer, IRe
     protected void VerifyEventSent<TEvent, TBody>(TEvent @event) where TEvent : Event<TBody>
     {
         GetMock<IEventBus>()
-            .Verify(mock => mock.AddEvent(
+            .Verify(mock => mock.AddEventWithoutPersisting(
                 It.IsAny<GameInfo>(),
                 It.Is<TEvent>(e => e.Tick == @event.Tick && e.Body!.Equals(@event.Body))
             ), Times.Once);
     }
 
-    protected Task Tick(Tick tick)
+    protected Task<IEnumerable<Event>> Tick(Tick tick)
     {
-        if (Subject is not ITickReceiver tickReceiver)
+        if (Subject is not ITickReceiverAsync tickReceiver)
             throw new SubjectNotTickReceiverException();
 
-        return tickReceiver.Tick(tick);
+        return tickReceiver.TickAsync(tick);
     }
 
     public class SubjectNotTickReceiverException : Exception;

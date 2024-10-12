@@ -84,7 +84,7 @@ public class ValidateStateFakeEvent(Tick tick, params object[] states) : Event(t
         {
             if (state is ITuple tuple)
             {
-                if (tuple.Length != 2 || tuple[0] is not string key || tuple[1] is null)
+                if (tuple is not [string key, _] || tuple[1] is null)
                     throw new ArgumentException();
 
                 var tupleState = tuple[1]!;

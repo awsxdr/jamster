@@ -4,23 +4,23 @@ using amethyst.Services;
 
 namespace amethyst.Reducers;
 
-public class PeriodClock(GameContext context, IEventBus eventBus, ILogger<PeriodClock> logger) 
+public class PeriodClock(GameContext context, ILogger<PeriodClock> logger) 
     : Reducer<PeriodClockState>(context)
     , IHandlesEvent<JamStarted>
     , IHandlesEvent<JamEnded>
     , IHandlesEvent<TimeoutStarted>
     , IHandlesEvent<TimeoutEnded>
-    , IHandlesEventAsync<PeriodFinalized>
+    , IHandlesEvent<PeriodFinalized>
     , ITickReceiver
 {
     protected override PeriodClockState DefaultState => new(false, 0, 0, 0, 0);
 
     public static readonly Tick PeriodLengthInTicks = 30 * 60 * 1000;
 
-    public void Handle(JamStarted @event)
+    public IEnumerable<Event> Handle(JamStarted @event)
     {
         var state = GetState();
-        if (state.IsRunning) return;
+        if (state.IsRunning) return [];
 
         logger.LogDebug("Starting period clock due to jam start");
 
@@ -30,28 +30,30 @@ public class PeriodClock(GameContext context, IEventBus eventBus, ILogger<Period
             TicksPassedAtLastStart = state.TicksPassed,
             LastStartTick = @event.Tick,
         });
+
+        return [];
     }
 
-    public void Handle(JamEnded @event)
+    public IEnumerable<Event> Handle(JamEnded @event)
     {
         var state = GetState();
-        if (!state.IsRunning) return;
+        if (!state.IsRunning) return [];
 
         var ticksPassed = @event.Tick - state.LastStartTick + state.TicksPassedAtLastStart;
 
-        if (ticksPassed < PeriodLengthInTicks) return;
+        if (ticksPassed < PeriodLengthInTicks) return [];
 
         logger.LogInformation("Period clock expired following jam end");
 
         SetState(state with {IsRunning = false, SecondsPassed = (int) (ticksPassed / 1000), TicksPassed = ticksPassed});
 
-        _ = eventBus.AddEvent(Context.GameInfo, new PeriodEnded(@event.Tick));
+        return [new PeriodEnded(@event.Tick)];
     }
 
-    public void Handle(TimeoutStarted @event)
+    public IEnumerable<Event> Handle(TimeoutStarted @event)
     {
         var state = GetState();
-        if (!state.IsRunning) return;
+        if (!state.IsRunning) return [];
 
         logger.LogDebug("Stopping period clock due to timeout start");
 
@@ -63,21 +65,23 @@ public class PeriodClock(GameContext context, IEventBus eventBus, ILogger<Period
             SecondsPassed = (int)(ticksPassed / 1000),
             TicksPassed = ticksPassed,
         });
+
+        return [];
     }
 
-    public void Handle(TimeoutEnded @event)
+    public IEnumerable<Event> Handle(TimeoutEnded @event)
     {
         var state = GetState();
 
         var ticksRemaining = PeriodLengthInTicks - state.TicksPassed;
 
-        if (ticksRemaining > LineupClock.LineupDurationInTicks) return;
+        if (ticksRemaining > LineupClock.LineupDurationInTicks) return [];
 
         var lineupClock = GetState<LineupClockState>();
         var ticksRemainingWhenLastLineupStarted =
             PeriodLengthInTicks - lineupClock.StartTick - state.LastStartTick + state.TicksPassedAtLastStart;
 
-        if (ticksRemainingWhenLastLineupStarted > LineupClock.LineupDurationInTicks) return;
+        if (ticksRemainingWhenLastLineupStarted > LineupClock.LineupDurationInTicks) return [];
 
         logger.LogDebug("Starting period clock as timeout ended and previous lineup started with less than lineup duration on clock");
 
@@ -87,22 +91,26 @@ public class PeriodClock(GameContext context, IEventBus eventBus, ILogger<Period
             TicksPassedAtLastStart = state.TicksPassed,
             LastStartTick = @event.Tick,
         });
+
+        return [];
     }
 
-    public async Task HandleAsync(PeriodFinalized @event)
+    public IEnumerable<Event> Handle(PeriodFinalized @event)
     {
         logger.LogInformation("Resetting period clock due to period finalization");
 
         if (GetState().IsRunning)
-            await eventBus.AddEvent(Context.GameInfo, new PeriodEnded(@event.Tick));
+            return [new PeriodEnded(@event.Tick)];
 
         SetState(DefaultState);
+
+        return [];
     }
 
-    public async Task Tick(Tick tick)
+    public IEnumerable<Event> Tick(Tick tick)
     {
         var state = GetState();
-        if (!state.IsRunning) return;
+        if (!state.IsRunning) return [];
 
         var ticksPassed = Math.Min(PeriodLengthInTicks, (long)tick - state.LastStartTick + state.TicksPassedAtLastStart);
 
@@ -125,8 +133,10 @@ public class PeriodClock(GameContext context, IEventBus eventBus, ILogger<Period
 
         if (!state.IsRunning)
         {
-            await eventBus.AddEvent(Context.GameInfo, new PeriodEnded(tick));
+            return [new PeriodEnded(tick)];
         }
+
+        return [];
     }
 }
 

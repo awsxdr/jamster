@@ -1,4 +1,6 @@
-﻿using amethyst.Domain;
+﻿using amethyst.DataStores;
+using amethyst.Domain;
+using amethyst.Events;
 
 namespace amethyst.Services;
 
@@ -9,8 +11,10 @@ public interface IGameClock : IDisposable
     public static long GetTick() => DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 }
 
-public class GameClock(IEnumerable<ITickReceiver> receivers, ILogger<GameClock> logger) : IGameClock
+public class GameClock(GameInfo game, IEnumerable<ITickReceiverAsync> receivers, IEventBus eventBus, ILogger<GameClock> logger) : IGameClock
 {
+    public delegate IGameClock Factory(GameInfo game, IEnumerable<ITickReceiverAsync> receivers);
+
     public int MillisecondsBetweenFrames { get; init; } = 10;
 
     private volatile bool _isRunning;
@@ -19,20 +23,19 @@ public class GameClock(IEnumerable<ITickReceiver> receivers, ILogger<GameClock> 
     {
         _isRunning = true;
 
-        new Thread(() =>
+        new TaskFactory(TaskCreationOptions.LongRunning, TaskContinuationOptions.None).StartNew(async() =>
         {
-            var lastTick = IGameClock.GetTick();
-
             while (_isRunning)
             {
                 var tick = IGameClock.GetTick();
-                var tickDelta = tick - lastTick;
 
                 foreach (var receiver in receivers)
                 {
                     try
                     {
-                        receiver.Tick(tick);
+                        var implicitEvents = await receiver.TickAsync(tick);
+                        foreach (var @event in implicitEvents)
+                            await eventBus.AddEventWithoutPersisting(game, @event);
                     }
                     catch (Exception ex)
                     {
@@ -40,11 +43,9 @@ public class GameClock(IEnumerable<ITickReceiver> receivers, ILogger<GameClock> 
                     }
                 }
 
-                lastTick = tick;
-
                 Thread.Sleep(MillisecondsBetweenFrames);
             }
-        }).Start();
+        });
     }
 
     public void Dispose()
@@ -53,7 +54,15 @@ public class GameClock(IEnumerable<ITickReceiver> receivers, ILogger<GameClock> 
     }
 }
 
-public interface ITickReceiver
+public interface ITickReceiver : ITickReceiverAsync
 {
-    Task Tick(Tick tick);
+    IEnumerable<Event> Tick(Tick tick);
+
+    Task<IEnumerable<Event>> ITickReceiverAsync.TickAsync(Tick tick) =>
+        Task.FromResult(Tick(tick));
+}
+
+public interface ITickReceiverAsync
+{
+    Task<IEnumerable<Event>> TickAsync(Tick tick);
 }

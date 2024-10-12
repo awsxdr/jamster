@@ -14,7 +14,7 @@ public class EventIntegrationTests : EventBusIntegrationTest
 
         await AddEvents(events);
 
-        Tick(events.Last().Tick + 1);
+        await Tick(events.Last().Tick + 1);
 
         Console.WriteLine(GetState<GameStageState>());
         Console.WriteLine(GetState<PeriodClockState>());

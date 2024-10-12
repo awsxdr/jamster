@@ -110,8 +110,10 @@ public class JamClockUnitTests : ReducerUnitTest<JamClock, JamClockState>
     public async Task Tick_WhenOverJamTimeLimit_SendsJamEndedEvent()
     {
         State = new(true, 0, 0, 0);
-        await Tick(130 * 1000);
 
-        VerifyEventSent<JamEnded>(120 * 1000);
+        var result = await Tick(130 * 1000);
+
+        var implicitEvent = result.Should().ContainSingle().Which.Should().BeAssignableTo<JamEnded>().Which;
+        implicitEvent.Tick.Should().Be(120 * 1000);
     }
 }

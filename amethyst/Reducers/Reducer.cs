@@ -12,17 +12,17 @@ public interface IReducer
     object GetDefaultState();
     Option<string> GetStateKey();
 
-    public async Task Handle<TEvent>(TEvent @event) where TEvent : class
+    public async Task<IEnumerable<Event>> Handle<TEvent>(TEvent @event) where TEvent : class
     {
         if (this is not IHandlesEventAsync<TEvent> handler)
-            return;
+            return [];
 
-        await handler.HandleAsync(@event);
+        return await handler.HandleAsync(@event);
     }
 
-    public Task HandleUntyped(Event @event)
+    public Task<IEnumerable<Event>> HandleUntyped(Event @event)
     {
-        var handleTask = (Task) typeof(IReducer)
+        var handleTask = (Task<IEnumerable<Event>>) typeof(IReducer)
             .GetMethod(nameof(Handle))
             !.MakeGenericMethod(@event.GetType())
             .Invoke(this, [@event])!;
@@ -31,26 +31,30 @@ public interface IReducer
     }
 }
 
+// ReSharper disable once UnusedTypeParameter - Type is used to mark interface for DI
 public interface IReducer<out TState> : IReducer where TState : class;
 
 public interface IHandlesEvent<in TEvent> : IHandlesEventAsync<TEvent>
     where TEvent : Event
 {
-    void Handle(TEvent @event);
+    IEnumerable<Event> Handle(TEvent @event);
 
-    Task IHandlesEventAsync<TEvent>.HandleAsync(TEvent @event)
+    async Task<IEnumerable<Event>> IHandlesEventAsync<TEvent>.HandleAsync(TEvent @event)
     {
-        if (this is ITickReceiver tickReceiver)
-            tickReceiver.Tick(@event.Id.Tick);
+        var implicitEvents = new List<Event>();
 
-        Handle(@event);
-        return Task.CompletedTask;
+        if (this is ITickReceiverAsync tickReceiver)
+            implicitEvents.AddRange(await tickReceiver.TickAsync(@event.Id.Tick));
+
+        implicitEvents.AddRange(Handle(@event));
+
+        return implicitEvents;
     }
 }
 
 public interface IHandlesEventAsync<in TEvent>
 {
-    Task HandleAsync(TEvent @event);
+    Task<IEnumerable<Event>> HandleAsync(TEvent @event);
 }
 
 public abstract class Reducer<TState>(GameContext context) : IReducer<TState>
