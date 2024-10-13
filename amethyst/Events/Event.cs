@@ -40,6 +40,8 @@ public abstract class Event<TBody>(Guid7 id, TBody body) : Event(id)
     public override object? GetBodyObject() => Body;
 }
 
+public interface IPeriodClockAligned;
+
 public interface IUntypedEvent
 {
     string Type { get; }

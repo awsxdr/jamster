@@ -2,7 +2,9 @@
 
 namespace amethyst.Events;
 
-public class IntermissionStarted(Guid7 id, IntermissionStartedBody body) : Event<IntermissionStartedBody>(id, body);
+public class IntermissionStarted(Guid7 id, IntermissionStartedBody body) 
+    : Event<IntermissionStartedBody>(id, body)
+    , IPeriodClockAligned;
 public record IntermissionStartedBody(int DurationInSeconds);
 
 public class IntermissionLengthSet(Guid7 id, IntermissionLengthSetBody body) : Event<IntermissionLengthSetBody>(id, body);

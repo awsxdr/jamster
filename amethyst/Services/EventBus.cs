@@ -1,4 +1,6 @@
 ﻿using System.Collections.Concurrent;
+using amethyst.Domain;
+using amethyst.Reducers;
 using DotNext.Threading;
 
 namespace amethyst.Services;
@@ -32,14 +34,24 @@ public class EventBus(
     {
         using var @lock = await AcquireLock(game.Id);
 
-        var stateStore = contextFactory.GetGame(game);
+        var gameContext = contextFactory.GetGame(game);
+
+        if (@event is IPeriodClockAligned)
+        {
+            var periodClock = gameContext.StateStore.GetState<PeriodClockState>();
+            if (periodClock.IsRunning)
+            {
+                Tick alignedTick = (long)(Math.Round((@event.Tick - periodClock.LastStartTick) / 1000.0) * 1000) + periodClock.LastStartTick;
+                @event.Id = Guid7.FromTick(alignedTick);
+            }
+        }
 
         if (PersistEventToDatabase(game, @event) is not Success<Guid> persistResult)
             return @event;
 
         @event.Id = persistResult.Value;
 
-        await stateStore.StateStore.ApplyEvents(stateStore.Reducers, @event);
+        await gameContext.StateStore.ApplyEvents(gameContext.Reducers, @event);
 
         return @event;
     }

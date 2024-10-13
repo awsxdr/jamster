@@ -37,7 +37,8 @@ public class GameStage(GameContext context, ILogger<GameStage> logger)
 
         var newState = state.Stage switch
         {
-            Stage.BeforeGame or Stage.Intermission => state with { Stage = Stage.Jam, JamNumber = 1 },
+            Stage.BeforeGame => state with { Stage = Stage.Jam, JamNumber = 1, PeriodNumber = 1 },
+            Stage.Intermission => state with { Stage = Stage.Jam, JamNumber = 1 },
             Stage.Jam when @event.Tick - jamClock.StartTick > JamClock.JamLengthInTicks => state with { JamNumber = state.JamNumber + 1 },
             Stage.Jam => state,
             _ => state with { Stage = Stage.Jam, JamNumber = state.JamNumber + 1}

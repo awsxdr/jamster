@@ -61,7 +61,7 @@ public class GameStageUnitTests : ReducerUnitTest<GameStage, GameStageState>
     {
         State = new(currentStage, period, 1, false);
 
-        MockState<PeriodClockState>(new (!periodClockExpired, 0, 0, PeriodClock.PeriodLengthInTicks + (periodClockExpired ? 10000 : -10000), 0));
+        MockState<PeriodClockState>(new (!periodClockExpired, true, 0, 0, PeriodClock.PeriodLengthInTicks + (periodClockExpired ? 10000 : -10000), 0));
 
         await Subject.Handle(new JamEnded(0));
 
@@ -121,7 +121,7 @@ public class GameStageUnitTests : ReducerUnitTest<GameStage, GameStageState>
     public async Task PeriodEnded_WhenEnteringIntermission_StartsIntermissionClock()
     {
         State = new(Stage.Jam, 1, 15, false);
-        MockState<PeriodClockState>(new(false, 0, 0, PeriodClock.PeriodLengthInTicks + 10000, 0));
+        MockState<PeriodClockState>(new(false, true, 0, 0, PeriodClock.PeriodLengthInTicks + 10000, 0));
 
         var result = await Subject.Handle(new PeriodEnded(123));
 
