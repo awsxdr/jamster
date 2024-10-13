@@ -2,9 +2,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type ScaledTextProps = {
     text: string,
+    className?: string,
 };
 
-export const ScaledText = ({ text }: ScaledTextProps) => {
+export const ScaledText = ({ text, className }: ScaledTextProps) => {
 
     const [fontSize, setFontSize] = useState(0);
     const canvas = useMemo(() => document.createElement("canvas"), []);
@@ -32,20 +33,30 @@ export const ScaledText = ({ text }: ScaledTextProps) => {
         return { width: metrics.width, height: metrics.fontBoundingBoxAscent + metrics.fontBoundingBoxDescent };
     }, [canvas]);
 
+    const updateSize = useCallback(() => {
+        if(!spanRef.current) {
+            return;
+        }
+
+        const computedStyle = window.getComputedStyle(spanRef.current);
+        const width = spanRef.current.clientWidth - parseFloat(computedStyle.paddingLeft) - parseFloat(computedStyle.paddingRight);
+        const height = spanRef.current.clientHeight - parseFloat(computedStyle.paddingTop) - parseFloat(computedStyle.paddingBottom);
+
+        setControlSize({ width, height });
+    }, [spanRef, setControlSize]);
+
     useEffect(() => {
         if(!spanRef.current) {
             return;
         }
 
-        window.addEventListener('resize', () => {
-            if(!spanRef.current) {
-                return;
-            }
+        window.addEventListener('resize', updateSize);
+        updateSize();
+    }, [updateSize]);
 
-            setControlSize({ width: spanRef.current.clientWidth, height: spanRef.current.clientHeight })
-        });
-        setControlSize({ width: spanRef.current.clientWidth, height: spanRef.current.clientHeight })
-    }, [spanRef.current, setControlSize]);
+    useEffect(() => {
+        updateSize()
+    }, [text, updateSize]);
 
     useEffect(() => {
         if(!font) {
@@ -64,7 +75,7 @@ export const ScaledText = ({ text }: ScaledTextProps) => {
                 continue;
             }
 
-            if (textSize.width === controlSize.width || textSize.height === controlSize.height) {
+            if (Math.abs(textSize.width - controlSize.width) <= 1 || Math.abs(textSize.height - controlSize.height) <= 1) {
                 break;
             }
 
@@ -72,12 +83,12 @@ export const ScaledText = ({ text }: ScaledTextProps) => {
             change /= 2;
         }
 
-        setFontSize(size);
+        setFontSize(Math.round(size));
 
     }, [measureText, text, font, setFontSize, controlSize]);
 
     return (
-        <span ref={spanRef} style={{ display: 'inline-block', width: '100%', height: '100%', fontSize: `${fontSize}px` }}>
+        <span ref={spanRef} className={className} style={{ fontSize: `${fontSize}px` }}>
             {text}
         </span>
     );

@@ -13,6 +13,11 @@ type GameModel = {
     name: string,
 };
 
+type ScoreModifiedRelativeBody = {
+    teamSide: string,
+    value: number,
+};
+
 type ClockProps<TClockState> = {
     gameId?: string,
     secondsMapper: (state: TClockState) => number,
@@ -89,7 +94,7 @@ const Clock = <TClockState,>({ gameId, secondsMapper, stateName, direction, star
             }})
             .build();
 
-        hubConnection.on("StateChanged", (state: TClockState) => {
+        hubConnection.on("StateChanged", (_changedStateName: string, state: TClockState) => {
             setClock(secondsMapper(state));
         });
 
@@ -152,6 +157,12 @@ const GameStageDisplay = ({gameId}: GameStageDisplayProps) => {
             return;
         }
 
+        (async () => {
+            const currentStateResponse = await fetch(`${API_URL}/api/games/${gameId}/state/GameStageState`);
+            const currentState = (await currentStateResponse.json()) as GameStageState;
+            setState(currentState);
+        })();
+
         const hubConnection = new SignalR.HubConnectionBuilder()
             .withUrl(`${API_URL}/api/hubs/game/${gameId}`, { withCredentials: false })
             .withAutomaticReconnect({ nextRetryDelayInMilliseconds: context => {
@@ -165,7 +176,7 @@ const GameStageDisplay = ({gameId}: GameStageDisplayProps) => {
             }})
             .build();
 
-        hubConnection.on("StateChanged", (state: GameStageState) => {
+        hubConnection.on("StateChanged", (_changedStateName: string, state: GameStageState) => {
             setState(state);
         });
 
@@ -187,7 +198,7 @@ const GameStageDisplay = ({gameId}: GameStageDisplayProps) => {
 
     return (
         <div>
-            <p>Stage: {Stage[state.stage]}</p>
+            <p>Stage: {state.stage}</p>
             <p>Period: {state.periodNumber}</p>
             <p>Jam: {state.jamNumber}</p>
         </div>
@@ -242,6 +253,27 @@ export const Events = () => {
         });
     }, [gameId]);
 
+    const sendEventWithBody = useCallback(async <TBody,>(eventName: string, body: TBody) => {
+        await fetch(`${API_URL}/api/Games/${gameId}/events`, {
+            method: 'POST',
+            body: JSON.stringify({
+                type: eventName,
+                body: body
+            }),
+            headers: {
+                "Content-type": "application/json; charset=utf-8",
+            }
+        });
+    }, [gameId]);
+
+    const endIntermission = useCallback(async () => {
+        await sendEvent("IntermissionEnded");
+    }, [sendEvent]);
+
+    const finalizePeriod = useCallback(async () => {
+        await sendEvent("PeriodFinalized");
+    }, [sendEvent]);
+
     const startJam = useCallback(async () => {
         await sendEvent("JamStarted");
     }, [sendEvent]);
@@ -258,6 +290,10 @@ export const Events = () => {
         await sendEvent("TimeoutEnded");
     }, [sendEvent]);
 
+    const addPoint = useCallback((team: string, value: number) => async () => {
+        await sendEventWithBody<ScoreModifiedRelativeBody>("ScoreModifiedRelative", { teamSide: team, value });
+    }, [sendEventWithBody]);
+
     return (
         <>
             <div>
@@ -273,15 +309,13 @@ export const Events = () => {
             </div>
             <GameStageDisplay gameId={gameId} />
             Jam: <JamClock gameId={gameId} />
-            Jam: <JamClock gameId={gameId} />
-            Jam: <JamClock gameId={gameId} />
-            Jam: <JamClock gameId={gameId} />
-            Jam: <JamClock gameId={gameId} />
-            Jam: <JamClock gameId={gameId} />
-            Jam: <JamClock gameId={gameId} />
             Lineup: <LineupClock gameId={gameId} />
             Timeout: <TimeoutClock gameId={gameId} />
             Period: <PeriodClock gameId={gameId} />
+            <div>
+                <Button onClick={endIntermission} className="m-[2px]">End intermission</Button>
+                <Button onClick={finalizePeriod} className="m-[2px]">Finalize period</Button>
+            </div>
             <div>
                 <Button onClick={startJam} className="m-[2px]">Start Jam</Button>
                 <Button onClick={endJam} className="m-[2px]">End Jam</Button>
@@ -289,6 +323,16 @@ export const Events = () => {
             <div>
                 <Button onClick={startTimeout} className="m-[2px]">Start Timeout</Button>
                 <Button onClick={endTimeout} className="m-[2px]">End Timeout</Button>
+            </div>
+            <div>
+                Home 
+                <Button onClick={addPoint("Home", 1)} className="m-[2px]">+1</Button>
+                <Button onClick={addPoint("Home", -1)} className="m-[2px]">-1</Button>
+            </div>
+            <div>
+                Away 
+                <Button onClick={addPoint("Away", 1)} className="m-[2px]">+1</Button>
+                <Button onClick={addPoint("Away", -1)} className="m-[2px]">-1</Button>
             </div>
         </>  
     );

@@ -2,14 +2,15 @@ import { useGameState } from "@/hooks";
 import { useMemo } from "react";
 import { ScaledText } from "@components/ScaledText";
 
-type ClockProps<TClockState> = {
+export type ClockProps<TClockState> = {
     secondsMapper: (state: TClockState) => number,
     stateName: string,
     direction: "down" | "up",
     startValue?: number,
+    textClassName?: string,
 };
 
-export const Clock = <TClockState,>({ secondsMapper, stateName, direction, startValue }: ClockProps<TClockState>) => {
+export const Clock = <TClockState,>({ secondsMapper, stateName, direction, startValue, textClassName }: ClockProps<TClockState>) => {
     const gameState = useGameState();
     const clockState = gameState.useStateWatch<TClockState>(stateName);
     
@@ -29,7 +30,7 @@ export const Clock = <TClockState,>({ secondsMapper, stateName, direction, start
 
     return (
         <>
-            <ScaledText text={time} />
+            <ScaledText text={time} className={textClassName} />
         </>
     );
 };

@@ -49,6 +49,15 @@ export const GameStateContextProvider = ({ gameId, children }: PropsWithChildren
         }
     }, [gameId, setConnection]);
 
+    useEffect(() => {
+        (async () => {
+            const resolvedConnection = await connection;
+            resolvedConnection.onreconnected(() => {
+                watchedStates.forEach(stateName => resolvedConnection.invoke("WatchState", stateName));
+            });
+        })();
+    }, [connection, watchedStates]);
+
     const useStateWatch = <TState,>(stateName: string) => {
 
         const [state, setState] = useState<TState>();
@@ -73,7 +82,7 @@ export const GameStateContextProvider = ({ gameId, children }: PropsWithChildren
                 setWatchedStates([...watchedStates, stateName]);
                 (await connection).invoke("WatchState", stateName);
             }
-        }), [connection, stateName]);
+        }), [connection, stateName, watchedStates, setWatchedStates]);
 
         const subscribe = useCallback((onStoreChange: () => void) => {
             subscribeAsync(onStoreChange);
