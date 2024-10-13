@@ -20,7 +20,7 @@ public interface IGameStateStore
     void LoadDefaultStates(IImmutableList<IReducer> reducers);
     Task ApplyEvents(IImmutableList<IReducer> reducers, params Event[] events);
     Result<object> GetStateByName(string stateName);
-    void WatchState<TState>(Func<TState, Task> onStateUpdate) where TState : class;
+    void WatchState<TState>(string stateName, Func<TState, Task> onStateUpdate) where TState : class;
     void WatchStateByName(string stateName, Func<object, Task> onStateUpdate);
 }
 
@@ -78,11 +78,11 @@ public class GameStateStore(ILogger<GameStateStore> logger) : IGameStateStore
 
         GetType().GetMethod(nameof(WatchState))!
             .MakeGenericMethod(stateType)
-            .Invoke(this, [updateHandler]);
+            .Invoke(this, [stateName, updateHandler]);
     }
 
-    public void WatchState<TState>(Func<TState, Task> onStateUpdate) where TState : class =>
-        GetEventSource<TState>(GetStateName<TState>()).StateUpdated += (_, e) => onStateUpdate(e.State);
+    public void WatchState<TState>(string stateName, Func<TState, Task> onStateUpdate) where TState : class =>
+        GetEventSource<TState>(stateName).StateUpdated += (_, e) => onStateUpdate(e.State);
 
     public async Task ApplyEvents(IImmutableList<IReducer> reducers, params Event[] events)
     {

@@ -1,4 +1,5 @@
 ﻿using System.Collections.Concurrent;
+using System.Diagnostics;
 
 namespace amethyst.Services;
 
@@ -15,7 +16,8 @@ public class GameContextFactory(
     GameStateStoreFactory stateStoreFactory, 
     IEnumerable<ReducerFactory> reducerFactories,
     GameClock.Factory gameClockFactory,
-    IGameDataStoreFactory gameStoreFactory) 
+    IGameDataStoreFactory gameStoreFactory,
+    ILogger<GameContextFactory> logger) 
     : IGameContextFactory
 {
     private readonly ConcurrentDictionary<Guid, Lazy<GameContext>> _gameContexts = [];
@@ -26,6 +28,10 @@ public class GameContextFactory(
 
     private GameContext LoadGame(GameInfo gameInfo)
     {
+        logger.LogInformation("Loading game state for {gameName} ({gameId})", gameInfo.Name, gameInfo.Id);
+
+        var loadTimer = Stopwatch.StartNew();
+
         var game = gameStoreFactory.GetDataStore(IGameDiscoveryService.GetGameFileName(gameInfo));
 
         var events = game.GetEvents().ToArray();
@@ -37,6 +43,9 @@ public class GameContextFactory(
         stateStore.ApplyEvents(reducers, events);
 
         gameClockFactory(gameInfo, reducers.OfType<ITickReceiver>()).Run();
+
+        loadTimer.Stop();
+        logger.LogInformation("Loaded game in {loadTime}ms", loadTimer.ElapsedMilliseconds);
 
         return gameContextWithoutReducers with {Reducers = reducers};
     }

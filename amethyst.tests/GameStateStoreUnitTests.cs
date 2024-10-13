@@ -25,7 +25,7 @@ public class GameStateStoreUnitTests : UnitTest<GameStateStore>
         Subject.LoadDefaultStates([new TestReducer()]);
 
         var hasBeenCalled = false;
-        Subject.WatchState<TestState>(state =>
+        Subject.WatchState<TestState>("TestState", _ =>
         {
             hasBeenCalled = true;
             return Task.CompletedTask;
