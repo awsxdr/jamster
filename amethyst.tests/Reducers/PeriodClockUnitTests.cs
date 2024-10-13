@@ -1,10 +1,8 @@
-﻿using amethyst.DataStores;
-using amethyst.Domain;
+﻿using amethyst.Domain;
 using amethyst.Events;
 using amethyst.Reducers;
 using amethyst.Services;
 using FluentAssertions;
-using Moq;
 
 using static amethyst.tests.DataGenerator;
 
@@ -30,7 +28,7 @@ public class PeriodClockUnitTests : ReducerUnitTest<PeriodClock, PeriodClockStat
     public async Task JamStart_WhenPeriodClockRunning_DoesNotChangeState()
     {
         Tick ticksPassed = Random.Shared.Next(1000);
-        State = new(true, 0, 0, ticksPassed, ticksPassed.Seconds);
+        State = new(true, false, 0, 0, ticksPassed, ticksPassed.Seconds);
 
         MockState(new JamClockState(false, 0, ticksPassed, ticksPassed.Seconds));
 
@@ -49,6 +47,7 @@ public class PeriodClockUnitTests : ReducerUnitTest<PeriodClock, PeriodClockStat
 
         State = new(
             true, 
+            false,
             lastStartTick, 
             ticksPassedAtLastStart, 
             ticksPassedAtLastStart + 12000,
@@ -73,6 +72,7 @@ public class PeriodClockUnitTests : ReducerUnitTest<PeriodClock, PeriodClockStat
 
         State = new(
             true,
+            false,
             lastStartTick,
             ticksPassedAtLastStart,
             ticksPassedAtLastStart + 12000,
@@ -94,6 +94,7 @@ public class PeriodClockUnitTests : ReducerUnitTest<PeriodClock, PeriodClockStat
 
         State = new(
             true,
+            false,
             lastStartTick,
             ticksPassedAtLastStart,
             ticksPassedAtLastStart + 12000,
@@ -114,6 +115,7 @@ public class PeriodClockUnitTests : ReducerUnitTest<PeriodClock, PeriodClockStat
 
         State = new(
             false,
+            true,
             lastStartTick,
             ticksPassedAtLastStart,
             ticksPassedAtLastStart + 12000,
@@ -134,6 +136,7 @@ public class PeriodClockUnitTests : ReducerUnitTest<PeriodClock, PeriodClockStat
 
         State = new(
             true,
+            false,
             lastStartTick,
             ticksPassedAtLastStart,
             ticksPassedAtLastStart + 12000,
@@ -156,6 +159,7 @@ public class PeriodClockUnitTests : ReducerUnitTest<PeriodClock, PeriodClockStat
 
         State = new(
             false,
+            true,
             lastStartTick,
             ticksPassedAtLastStart,
             ticksPassedAtLastStart + 12000,
@@ -175,6 +179,7 @@ public class PeriodClockUnitTests : ReducerUnitTest<PeriodClock, PeriodClockStat
 
         State = new(
             false,
+            true,
             0,
             0,
             PeriodClock.PeriodLengthInTicks - LineupClock.LineupDurationInTicks + 1000,
@@ -194,6 +199,7 @@ public class PeriodClockUnitTests : ReducerUnitTest<PeriodClock, PeriodClockStat
 
         State = new(
             false,
+            true,
             0,
             ticksPassed,
             ticksPassed,
@@ -208,7 +214,7 @@ public class PeriodClockUnitTests : ReducerUnitTest<PeriodClock, PeriodClockStat
     [Test]
     public async Task PeriodFinalized_ResetsPeriodClock()
     {
-        State = new(false, 0, 0, PeriodClock.PeriodLengthInTicks, (int) (PeriodClock.PeriodLengthInTicks / 1000));
+        State = new(false, true, 0, 0, PeriodClock.PeriodLengthInTicks, (int) (PeriodClock.PeriodLengthInTicks / 1000));
 
         await Subject.Handle(new PeriodFinalized(PeriodClock.PeriodLengthInTicks + 30000));
 
@@ -221,7 +227,7 @@ public class PeriodClockUnitTests : ReducerUnitTest<PeriodClock, PeriodClockStat
     [Test]
     public async Task PeriodFinalized_WhenPeriodNotExpired_EndsPeriod()
     {
-        State = new(true, 0, 0, 0, 0);
+        State = new(true, false, 0, 0, 0, 0);
 
         var result = await Subject.Handle(new PeriodFinalized(10000));
 
@@ -240,6 +246,7 @@ public class PeriodClockUnitTests : ReducerUnitTest<PeriodClock, PeriodClockStat
 
         State = new(
             true,
+            false,
             lastStartTick,
             ticksPassedAtLastStart,
             ticksPassed,
@@ -266,6 +273,7 @@ public class PeriodClockUnitTests : ReducerUnitTest<PeriodClock, PeriodClockStat
 
         State = new(
             true,
+            false,
             lastStartTick,
             ticksPassedAtLastStart,
             ticksPassed,
@@ -294,6 +302,7 @@ public class PeriodClockUnitTests : ReducerUnitTest<PeriodClock, PeriodClockStat
 
         State = new(
             true,
+            false,
             lastStartTick,
             ticksPassedAtLastStart,
             ticksPassed,
@@ -320,6 +329,7 @@ public class PeriodClockUnitTests : ReducerUnitTest<PeriodClock, PeriodClockStat
 
         State = new(
             true,
+            false,
             lastStartTick,
             ticksPassedAtLastStart,
             ticksPassed,
@@ -340,6 +350,7 @@ public class PeriodClockUnitTests : ReducerUnitTest<PeriodClock, PeriodClockStat
     {
         State = new(
             false,
+            true,
             GetRandomTick(),
             PeriodClock.PeriodLengthInTicks / 2,
             PeriodClock.PeriodLengthInTicks / 2,

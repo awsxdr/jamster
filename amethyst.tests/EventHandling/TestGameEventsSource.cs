@@ -57,6 +57,12 @@ public static class TestGameEventsSource
         )
         .Build();
 
+    public static Event[] SingleJamStartedWithoutEndingIntermission => new EventsBuilder(0, [])
+        .Validate(new GameStageState(Stage.BeforeGame, 0, 0, false))
+        .Event<JamStarted>(30)
+        .Validate(new GameStageState(Stage.Jam, 1, 1, false))
+        .Build();
+
     public static Event[] FullGame => new EventsBuilder(0, [])
         .Validate(new GameStageState(Stage.BeforeGame, 0, 0, false))
         .Event<IntermissionEnded>(15)
@@ -116,6 +122,7 @@ public static class TestGameEventsSource
             new TimeoutClockState(true, tick - 7000, 0, 7000, 7),
             new PeriodClockState(
                 false,
+                false,
                 tick - (94 + 30 + 120 + 15 + 16 + 180 + 16 + 7) * 1000,
                 0,
                 (94 + 30 + 120 + 15) * 1000,
@@ -131,6 +138,7 @@ public static class TestGameEventsSource
             new JamClockState(true, tick - 10000, 10000, 10),
             new PeriodClockState(
                 true, 
+                false,
                 tick - 10000,
                 (94 + 30 + 120 + 15 + 109 + 30 + 35) * 1000,
                 (94 + 30 + 120 + 15 + 109 + 30 + 35 + 10) * 1000,

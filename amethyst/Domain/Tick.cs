@@ -7,6 +7,8 @@ public readonly struct Tick(long value)
 
     private readonly long _value = value;
 
+    public static Tick FromSeconds(int seconds) => seconds * 1000;
+
     public int Seconds => (int)(_value / 1000);
 
     public static implicit operator long(Tick tick) => tick._value;

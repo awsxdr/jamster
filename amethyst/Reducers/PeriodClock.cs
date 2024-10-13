@@ -13,7 +13,7 @@ public class PeriodClock(GameContext context, ILogger<PeriodClock> logger)
     , IHandlesEvent<PeriodFinalized>
     , ITickReceiver
 {
-    protected override PeriodClockState DefaultState => new(false, 0, 0, 0, 0);
+    protected override PeriodClockState DefaultState => new(false, false, 0, 0, 0, 0);
 
     public static readonly Tick PeriodLengthInTicks = 30 * 60 * 1000;
 
@@ -27,6 +27,7 @@ public class PeriodClock(GameContext context, ILogger<PeriodClock> logger)
         SetState(GetState() with
         {
             IsRunning = true, 
+            HasExpired = false,
             TicksPassedAtLastStart = state.TicksPassed,
             LastStartTick = @event.Tick,
         });
@@ -39,13 +40,13 @@ public class PeriodClock(GameContext context, ILogger<PeriodClock> logger)
         var state = GetState();
         if (!state.IsRunning) return [];
 
-        var ticksPassed = @event.Tick - state.LastStartTick + state.TicksPassedAtLastStart;
+        Tick ticksPassed = @event.Tick - state.LastStartTick + state.TicksPassedAtLastStart;
 
         if (ticksPassed < PeriodLengthInTicks) return [];
 
         logger.LogInformation("Period clock expired following jam end");
 
-        SetState(state with {IsRunning = false, SecondsPassed = (int) (ticksPassed / 1000), TicksPassed = ticksPassed});
+        SetState(state with {IsRunning = false, HasExpired = true, SecondsPassed = ticksPassed.Seconds, TicksPassed = ticksPassed});
 
         return [new PeriodEnded(@event.Tick)];
     }
@@ -114,7 +115,7 @@ public class PeriodClock(GameContext context, ILogger<PeriodClock> logger)
 
         var ticksPassed = Math.Min(PeriodLengthInTicks, (long)tick - state.LastStartTick + state.TicksPassedAtLastStart);
 
-        if (ticksPassed == PeriodLengthInTicks)
+        if (!state.HasExpired && ticksPassed == PeriodLengthInTicks)
         {
             logger.LogDebug("Period clock expired");
 
@@ -123,6 +124,8 @@ public class PeriodClock(GameContext context, ILogger<PeriodClock> logger)
                 logger.LogDebug("Period clock stopped due to expiry outside of jam");
                 state = state with {IsRunning = false};
             }
+
+            state = state with {HasExpired = true};
         }
 
         SetState(state with
@@ -140,4 +143,4 @@ public class PeriodClock(GameContext context, ILogger<PeriodClock> logger)
     }
 }
 
-public record PeriodClockState(bool IsRunning, long LastStartTick, long TicksPassedAtLastStart, [property: IgnoreChange] long TicksPassed, int SecondsPassed);
+public record PeriodClockState(bool IsRunning, bool HasExpired, long LastStartTick, long TicksPassedAtLastStart, [property: IgnoreChange] long TicksPassed, int SecondsPassed);
