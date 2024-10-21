@@ -1,4 +1,5 @@
-﻿using amethyst.Events;
+﻿using amethyst.Domain;
+using amethyst.Events;
 using amethyst.Services;
 using Func;
 
@@ -50,12 +51,6 @@ public abstract class TeamScore(TeamSide teamSide, GameContext gameContext, ILog
 }
 
 public record TeamScoreState(int Score);
-
-public enum TeamSide
-{
-    Home,
-    Away,
-}
 
 public sealed class HomeTeamScore(GameContext gameContext, ILogger<HomeTeamScore> logger)
     : TeamScore(TeamSide.Home, gameContext, logger);

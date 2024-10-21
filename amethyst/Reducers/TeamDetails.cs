@@ -1,4 +1,5 @@
 ﻿using amethyst.DataStores;
+using amethyst.Domain;
 using amethyst.Events;
 using amethyst.Services;
 using Func;

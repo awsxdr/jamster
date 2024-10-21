@@ -1,4 +1,4 @@
-﻿using System.Resources;
+﻿using amethyst.Domain;
 using amethyst.Events;
 using amethyst.Reducers;
 using FluentAssertions;
