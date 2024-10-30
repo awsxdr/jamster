@@ -5,6 +5,7 @@ import { useGameState } from '@hooks/StateHook';
 import { TeamScore, TeamSide } from '@components/TeamScore';
 import { PassScore } from '@/components/PassScore';
 import { TeamName } from '@/components/TeamName';
+import { TeamTimeouts } from '@/components/TeamTimeouts';
 
 type GameStageState = {
     stage: Stage,
@@ -38,6 +39,7 @@ export const Scoreboard = () => {
                     <div className={styles.clocksAndScores}>
                         <div className={styles.scoresContainer}>
                             <div className={styles.teamScoreContainer}>
+                                <TeamTimeouts side={TeamSide.Home} />
                                 <ScoreboardComponent className={styles.teamScore}>
                                     <TeamScore side={TeamSide.Home} textClassName={styles.teamScoreText} />
                                 </ScoreboardComponent>
@@ -53,6 +55,7 @@ export const Scoreboard = () => {
                                 <ScoreboardComponent className={styles.teamScore}>
                                     <TeamScore side={TeamSide.Away} textClassName={styles.teamScoreText} />
                                 </ScoreboardComponent>
+                                <TeamTimeouts side={TeamSide.Away} />
                             </div>
                         </div>
                         <div className={styles.clockContainer}>

@@ -27,5 +27,7 @@ public class EventIntegrationTests : EventBusIntegrationTest
         Console.WriteLine(GetState<TeamScoreState>("Away"));
         Console.WriteLine(GetState<PassScoreState>("Home"));
         Console.WriteLine(GetState<PassScoreState>("Away"));
+        Console.WriteLine(GetState<TeamTimeoutsState>("Home"));
+        Console.WriteLine(GetState<TeamTimeoutsState>("Away"));
     }
 }

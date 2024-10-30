@@ -23,7 +23,7 @@ public abstract class Event
     public virtual object? GetBodyObject() => null;
 
     public bool Equals(Event other) =>
-        Type == other.Type && Id == other.Id;
+        Type == other.Type && Equals(Id, other.Id);
 
     public override bool Equals(object? obj) =>
         obj is Event @event && Equals(@event);
