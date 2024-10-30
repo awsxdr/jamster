@@ -1,13 +1,24 @@
 import { GameStateContextProvider } from "@hooks/StateHook";
 import { Scoreboard } from "./pages/Scoreboard";
+import { SystemStateContextProvider, useSystemState } from "./hooks";
 
-const App = () => {
+const CurrentGameScoreboard = () => {
+
+  const currentGame = useSystemState().useCurrentGame();
 
   return (
+    <GameStateContextProvider gameId={currentGame}>
+      <Scoreboard />
+    </GameStateContextProvider>
+  );
+};
+
+const App = () => {
+  return (
     <>
-      <GameStateContextProvider gameId="51e24679-1bc5-4852-bf1f-313661e9b020">
-        <Scoreboard />
-      </GameStateContextProvider>
+      <SystemStateContextProvider>
+        <CurrentGameScoreboard />
+      </SystemStateContextProvider>
     </>
   )
 }

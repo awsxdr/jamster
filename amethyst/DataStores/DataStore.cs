@@ -1,5 +1,4 @@
-﻿using System.Reflection;
-using System.Text.Json;
+﻿using System.Text.Json;
 using amethyst.Domain;
 using Func;
 using SQLite;
@@ -15,13 +14,13 @@ public interface IDataStore : IDisposable
 
 public delegate ISQLiteConnection ConnectionFactory(string connectionString, SQLiteOpenFlags flags);
 
-public abstract class DataStore<TData> : IDataStore
+public abstract class DataStore<TData, TKey> : IDataStore
     where TData : new()
 {
     private readonly KeySelector _keySelector;
     private readonly string _tableName;
 
-    protected delegate Guid KeySelector(TData dataItem);
+    protected delegate TKey KeySelector(TData dataItem);
 
     public ISQLiteConnection Connection { get; }
 
@@ -38,14 +37,14 @@ public abstract class DataStore<TData> : IDataStore
         Connection.Query<DataStoreItem>($"SELECT * FROM {_tableName} WHERE isArchived = FALSE", _tableName)
             .Select(MapItem);
 
-    protected Result<TData> Get(Guid key) =>
+    protected Result<TData> Get(TKey key) =>
         Connection.Query<DataStoreItem>($"SELECT id, data FROM {_tableName} WHERE id = ? AND isArchived = FALSE LIMIT 1", key)
             .Select(MapItem)
             .SingleOrDefault()
             ?.Map(x => Succeed(x!))
         ?? Result<TData>.Fail<NotFoundError>();
 
-    protected Result<TData> GetIncludingArchived(Guid key) =>
+    protected Result<TData> GetIncludingArchived(TKey key) =>
         Connection.Query<DataStoreItem>($"SELECT id, data FROM {_tableName} WHERE id = ? LIMIT 1", key)
             .Select(MapItem)
             .SingleOrDefault()
@@ -55,7 +54,20 @@ public abstract class DataStore<TData> : IDataStore
     protected void Insert(TData item) =>
         Connection.Execute($"INSERT INTO {_tableName} (id, data, isArchived) VALUES (?, ?, FALSE)", _keySelector(item), Serialize(item));
 
-    protected Result Archive(Guid key) =>
+    protected void Upsert(TData item)
+    {
+        var key = _keySelector(item);
+        var data = Serialize(item);
+
+        Connection.Execute(
+            $"INSERT INTO {_tableName} (id, data, isArchived) VALUES (?, ?, FALSE) ON CONFLICT DO UPDATE SET data = ? WHERE id = ?",
+            key,
+            data,
+            data,
+            key);
+    }
+
+    protected Result Archive(TKey key) =>
         Connection.Query<int>($"UPDATE {_tableName} SET isArchived = TRUE WHERE id = ? RETURNING 0", key).Count switch
         {
             1 => Succeed(),
@@ -63,13 +75,13 @@ public abstract class DataStore<TData> : IDataStore
             _ => throw new UnexpectedUpdateCountException()
         };
 
-    protected void Update(Guid key, TData item) =>
+    protected void Update(TKey key, TData item) =>
         Connection.Execute($"UPDATE {_tableName} SET data = ? WHERE id = ?", Serialize(item), key);
 
-    protected bool Exists(Guid key) =>
+    protected bool Exists(TKey key) =>
         Connection.ExecuteScalar<int>($"SELECT COUNT(id) FROM {_tableName} WHERE isArchived = FALSE AND id = ? LIMIT 1", key) == 1;
 
-    private TData MapItem(DataStoreItem item) =>
+    private static TData MapItem(DataStoreItem item) =>
         JsonSerializer.Deserialize<TData>(item.Data) ?? new();
 
     private static string Serialize(TData data) => JsonSerializer.Serialize(data);
@@ -78,12 +90,12 @@ public abstract class DataStore<TData> : IDataStore
     {
         Connection.Dispose();
     }
-}
 
-internal record DataStoreItem(Guid Id, string Data, bool IsArchived)
-{
-    public DataStoreItem() : this(Guid.NewGuid(), string.Empty, false)
+    internal record DataStoreItem(TKey Id, string Data, bool IsArchived)
     {
+        public DataStoreItem() : this(default, string.Empty, false)
+        {
+        }
     }
 }
 

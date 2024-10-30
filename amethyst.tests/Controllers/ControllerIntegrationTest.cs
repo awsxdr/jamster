@@ -30,6 +30,7 @@ public abstract class ControllerIntegrationTest
                 logOptions.AddConsole().SetMinimumLevel(LogLevel.Debug);
             });
         });
+        _applicationFactory.Server.PreserveExecutionContext = true;
     }
 
     [OneTimeSetUp]
@@ -79,6 +80,12 @@ public abstract class ControllerIntegrationTest
         var response = await Post(path, JsonContent.Create(content, content.GetType()));
         response.StatusCode.Should().Be(expectedStatusCode);
         return await response.Content.ReadFromJsonAsync<TContent>(SerializerOptions);
+    }
+
+    protected async Task Post(string path, object content, HttpStatusCode expectedStatusCode)
+    {
+        var response = await Post(path, JsonContent.Create(content, content.GetType()));
+        response.StatusCode.Should().Be(expectedStatusCode);
     }
 
     protected Task<HttpResponseMessage> Put(string path, HttpContent content) =>

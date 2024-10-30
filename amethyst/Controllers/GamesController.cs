@@ -1,10 +1,8 @@
-﻿using System.Text.Json;
-using amethyst.DataStores;
+﻿using amethyst.DataStores;
 using amethyst.Domain;
 using amethyst.Services;
 using Func;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Options;
 
 namespace amethyst.Controllers;
 
@@ -14,6 +12,7 @@ using Events;
 public class GamesController(
     IGameDiscoveryService gameDiscoveryService,
     IGameContextFactory contextFactory,
+    ISystemStateStore systemStateStore,
     IEventConverter eventConverter,
     IEventBus eventBus,
     ILogger<GamesController> logger
@@ -75,24 +74,54 @@ public class GamesController(
                 _ => throw new UnexpectedResultException()
             };
     }
-}
 
-public record GameModel(Guid Id, string Name)
-{
-    public static explicit operator GameModel(GameInfo game) => new(game.Id, game.Name);
-}
+    [HttpGet("current")]
+    public ActionResult<GameModel> GetCurrentGame()
+    {
+        logger.LogDebug("Getting current game");
 
-public record CreateGameModel(string Name)
-{
-    public static explicit operator GameInfo(CreateGameModel model) => new(Guid.NewGuid(), model.Name);
-}
+        return
+            systemStateStore.GetCurrentGame() switch
+            {
+                Success<GameInfo> s => (GameModel) s.Value,
+                Failure<GameFileNotFoundForIdError> => NotFound(),
+                Failure<SystemStateDataStore.CurrentGameNotFoundError> => NotFound(),
+                _ => throw new UnexpectedResultException()
+            };
+    }
 
-public record EventCreatedModel(Guid EventId);
+    [HttpPost("current")]
+    public ActionResult<GameModel> SetCurrentGame(SetCurrentGameModel model)
+    {
+        logger.LogInformation("Setting current game to {gameId}", model.GameId);
 
-public record CreateEventModel(string Type, System.Text.Json.Nodes.JsonObject? Body)
-{
-    public IUntypedEvent AsUntypedEvent() =>
-        Body is null
-            ? new UntypedEvent(Type)
-            : new UntypedEventWithBody(Type, Body);
+        return systemStateStore.SetCurrentGame(model.GameId) switch
+        {
+            Success<GameInfo> s => (GameModel) s.Value,
+            Failure<GameFileNotFoundForIdError> => NotFound(),
+            _ => throw new UnexpectedResultException()
+        };
+    }
+
+    public record GameModel(Guid Id, string Name)
+    {
+        public static explicit operator GameModel(GameInfo game) => new(game.Id, game.Name);
+    }
+
+    public record CreateGameModel(string Name)
+    {
+        public static explicit operator GameInfo(CreateGameModel model) => new(Guid.NewGuid(), model.Name);
+    }
+
+    public record EventCreatedModel(Guid EventId);
+
+    public record CreateEventModel(string Type, System.Text.Json.Nodes.JsonObject? Body)
+    {
+        public IUntypedEvent AsUntypedEvent() =>
+            Body is null
+                ? new UntypedEvent(Type)
+                : new UntypedEventWithBody(Type, Body);
+    }
+
+    public record SetCurrentGameModel(Guid GameId);
 }

@@ -14,7 +14,7 @@ public interface ITeamsDataStore
 }
 
 public class TeamsDataStore(ConnectionFactory connectionFactory) 
-    : DataStore<Team>("teams", t => t.Id, connectionFactory)
+    : DataStore<Team, Guid>("teams", t => t.Id, connectionFactory)
     , ITeamsDataStore
 {
     public IEnumerable<Team> GetTeams() =>

@@ -8,16 +8,16 @@ type GameStateContextProps = {
 };
 
 const GameStateContext = createContext<GameStateContextProps>({
-    useStateWatch: () => { throw new Error("watchState used before context created"); },
+    useStateWatch: () => { throw new Error("useStateWatch used before context created"); },
 });
 
 export const useGameState = () => useContext(GameStateContext);
 
 type GameStateContextProviderProps = {
-    gameId: string,
+    gameId: string | undefined,
 };
 
-const API_URL = 'https://localhost:7255';
+const API_URL = 'http://localhost:5249';
 
 export const GameStateContextProvider = ({ gameId, children }: PropsWithChildren<GameStateContextProviderProps>) => {
 

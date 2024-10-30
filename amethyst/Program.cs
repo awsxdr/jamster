@@ -13,6 +13,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Host.UseServiceProviderFactory(new AutofacServiceProviderFactory(container =>
 {
+    container.RegisterType<SystemStateDataStore>().As<ISystemStateDataStore>().SingleInstance();
+    container.RegisterType<SystemStateStore>().As<ISystemStateStore>().SingleInstance();
     container.RegisterType<TeamsDataStore>().As<ITeamsDataStore>().SingleInstance();
     container.RegisterInstance<ConnectionFactory>((connectionString, flags) => new SQLiteConnection(connectionString, flags));
     container.Register<GameDataStore.Factory>(context =>
@@ -104,6 +106,13 @@ app.MapControllers();
 
 app
     .MapHub<GameStatesHub>("/api/hubs/game/{gameId:guid}")
+    .RequireCors(policyBuilder =>
+    {
+        policyBuilder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
+    });
+
+app
+    .MapHub<SystemStateHub>("/api/hubs/system")
     .RequireCors(policyBuilder =>
     {
         policyBuilder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
