@@ -17,8 +17,7 @@ type TeamScoreState = {
 
 export const TeamScore = ({ side, textClassName }: TeamScoreProps) => {
 
-    const gameState = useGameState();
-    const score = gameState.useStateWatch<TeamScoreState>(`TeamScoreState_${TeamSide[side]}`);
+    const score = useGameState<TeamScoreState>(`TeamScoreState_${TeamSide[side]}`);
 
     return (
         <>

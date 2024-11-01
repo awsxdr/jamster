@@ -4,7 +4,11 @@ using Microsoft.AspNetCore.SignalR;
 
 namespace amethyst.Hubs;
 
-public class GameStatesHub(IGameDiscoveryService gameDiscoveryService, IGameContextFactory contextFactory) : Hub
+public class GameStatesHub(
+    IGameDiscoveryService gameDiscoveryService,
+    IGameContextFactory contextFactory,
+    ILogger<GameStatesHub> logger
+    ) : Hub
 {
     public override async Task OnConnectedAsync()
     {
@@ -17,16 +21,23 @@ public class GameStatesHub(IGameDiscoveryService gameDiscoveryService, IGameCont
 
     public Task WatchState(string stateName)
     {
-        var gameId = GetGameId();
-        var gameContext = GetGameContext(gameId);
-        var caller = Clients.Caller;
-
-        gameContext.StateStore.WatchStateByName(stateName, async state =>
+        try
         {
-            await caller.SendCoreAsync("StateChanged", [stateName, state]);
-        });
+            var gameId = GetGameId();
+            var gameContext = GetGameContext(gameId);
+            var caller = Clients.Caller;
 
-        return Task.CompletedTask;
+            gameContext.StateStore.WatchStateByName(stateName,
+                async state => { await caller.SendCoreAsync("StateChanged", [stateName, state]); });
+
+            return Task.CompletedTask;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error while watching state");
+
+            throw;
+        }
     }
 
     private GameContext GetGameContext(Guid gameId) =>

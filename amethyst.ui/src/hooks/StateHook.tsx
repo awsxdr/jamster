@@ -1,102 +1,90 @@
-import { createContext, PropsWithChildren, useCallback, useContext, useEffect, useState, useSyncExternalStore } from "react"
-import * as SignalR from '@microsoft/signalr';
+import { createContext, PropsWithChildren, useCallback, useContext, useEffect, useMemo, useState, useSyncExternalStore } from "react"
+import { API_URL, useHubConnection } from "./SignalRHubConnection";
+import { HubConnection } from "@microsoft/signalr";
 
-type StateWatch = <TState,>(stateName: string) => TState | undefined;
+type StateChanged<TState> = (state: TState) => void;
+type StateWatch = <TState,>(stateName: string, onStateChange: StateChanged<TState>) => void;
 
 type GameStateContextProps = {
-    useStateWatch: StateWatch,
+    gameId?: string,
+    stateNotifiers: StateNotifierMap,
+    watchState: StateWatch,
+    connection?: HubConnection,
 };
 
 const GameStateContext = createContext<GameStateContextProps>({
-    useStateWatch: () => { throw new Error("useStateWatch used before context created"); },
+    stateNotifiers: {},
+    watchState: () => { throw new Error('watchState called before context created'); },
 });
-
-export const useGameState = () => useContext(GameStateContext);
 
 type GameStateContextProviderProps = {
     gameId: string | undefined,
 };
 
-const API_URL = 'http://localhost:5249';
+type StateNotifier = (genericState: object) => void;
+type StateNotifierMap = { [key: string]: StateNotifier[] };
+
+export const useGameState = <TState,>(stateName: string) => {
+    const context = useContext(GameStateContext);
+    const [value, setValue] = useState<TState>();
+    
+    const getInitialState = useCallback(async (stateName: string) => {
+        const currentStateResponse = await fetch(`${API_URL}/api/games/${context.gameId}/state/${stateName}`);
+        return (await currentStateResponse.json()) as TState;
+    }, [context.gameId]);
+    
+    useEffect(() => {
+        getInitialState(stateName).then(setValue);
+
+        context.watchState<TState>(stateName, setValue);
+    }, []);
+
+    return value;
+}
 
 export const GameStateContextProvider = ({ gameId, children }: PropsWithChildren<GameStateContextProviderProps>) => {
 
-    const [connection, setConnection] = useState<Promise<SignalR.HubConnection>>(Promise.reject("Connection not yet started"));
-    const [watchedStates, setWatchedStates] = useState<string[]>([]);
-    
+    console.log("Render GameStateContextProvider");
+    const [stateNotifiers, setStateNotifiers] = useState<StateNotifierMap>({});
+
+    const connection = useHubConnection(`game/${gameId}`);
+
+    const watchState = <TState,>(stateName: string, onStateChange: StateChanged<TState>) => {
+        setStateNotifiers(sn => ({
+            ...sn,
+            [stateName]: [
+                ...(sn[stateName] ?? []),
+                genericState => onStateChange(genericState as TState)
+            ]
+        }));
+    }
+
     useEffect(() => {
-        if(!gameId) {
+        if(!connection) {
             return;
         }
 
-        const hubConnection = new SignalR.HubConnectionBuilder()
-            .withUrl(`${API_URL}/api/hubs/game/${gameId}`, { withCredentials: false })
-            .withAutomaticReconnect({ nextRetryDelayInMilliseconds: context => {
-                if(context.previousRetryCount < 10) {
-                    return 250;
-                } else if(context.previousRetryCount < 40) {
-                    return 1000;
-                } else {
-                    return 5000;
-                }
-            }})
-            .build();
-
-        setConnection(hubConnection.start().then(() => hubConnection));
-
-        return () => {
-            hubConnection.stop();
-        }
-    }, [gameId, setConnection]);
+        Object.keys(stateNotifiers).forEach(stateName => {
+            connection?.invoke("WatchState", stateName);
+        });
+    }, [connection, stateNotifiers]);
 
     useEffect(() => {
         (async () => {
-            const resolvedConnection = await connection;
-            resolvedConnection.onreconnected(() => {
-                watchedStates.forEach(stateName => resolvedConnection.invoke("WatchState", stateName));
+            connection?.onreconnected(() => {
+                Object.keys(stateNotifiers).forEach(stateName => connection?.invoke("WatchState", stateName));
             });
         })();
-    }, [connection, watchedStates]);
+    }, [connection, stateNotifiers]);
 
-    const useStateWatch = <TState,>(stateName: string) => {
-
-        const [state, setState] = useState<TState>();
-
-        const subscribeAsync = useCallback((async (onStoreChange: () => void) => {
-            const currentStateResponse = await fetch(`${API_URL}/api/games/${gameId}/state/${stateName}`);
-            const currentState = (await currentStateResponse.json()) as TState;
-
-            setState(currentState);
-            
-            onStoreChange();
-
-            (await connection).on("StateChanged", (changedStateName: string, genericState: object) => {
-                if(changedStateName === stateName) {
-                    const newState = genericState as TState;
-                    setState(newState);
-                    onStoreChange();
-                }
-            });
-
-            if(!watchedStates.find(s => s === stateName)) {
-                setWatchedStates([...watchedStates, stateName]);
-                (await connection).invoke("WatchState", stateName);
-            }
-        }), [connection, stateName, watchedStates, setWatchedStates]);
-
-        const subscribe = useCallback((onStoreChange: () => void) => {
-            subscribeAsync(onStoreChange);
-
-            return () => {};
-        }, [subscribeAsync]);
-
-        return useSyncExternalStore(
-            subscribe,
-            () => state);
-    };
+    useEffect(() => {
+        connection?.on("StateChanged", (stateName: string, state: object) => {
+            stateNotifiers[stateName]?.forEach(n => n(state));
+        });
+    }, [connection]);
 
     return (
-        <GameStateContext.Provider value={{ useStateWatch }}>
+        <GameStateContext.Provider value={{ gameId, stateNotifiers, watchState, connection  }}>
             { children }
         </GameStateContext.Provider>
     )

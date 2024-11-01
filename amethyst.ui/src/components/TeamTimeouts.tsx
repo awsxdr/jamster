@@ -53,8 +53,7 @@ const TimeoutSymbol = ({ state }: TimeoutSymbolProps) => {
 
 export const TeamTimeouts = ({ side }: TeamTimeoutsProps) => {
 
-    const gameState = useGameState();
-    const timeouts = gameState.useStateWatch<TeamTimeoutsState>(`TeamTimeoutsState_${TeamSide[side]}`);
+    const timeouts = useGameState<TeamTimeoutsState>(`TeamTimeoutsState_${TeamSide[side]}`);
 
     const reviewSymbolState = useMemo(() =>
         timeouts?.reviewStatus === ReviewStatus.Unused ? TimeoutSymbolState.Default

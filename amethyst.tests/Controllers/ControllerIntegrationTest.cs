@@ -9,6 +9,7 @@ using FluentAssertions;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
 
 namespace amethyst.tests.Controllers;
 
@@ -17,6 +18,7 @@ public abstract class ControllerIntegrationTest
 {
     private readonly WebApplicationFactory<Program> _applicationFactory;
     protected HttpClient Client { get; private set; }
+    protected TestServer Server => _applicationFactory.Server;
     protected GameDataStoreFactory? GameDataStoreFactory { get; private set; }
 
     protected JsonSerializerOptions SerializerOptions { get; } = new(JsonSerializerDefaults.Web);

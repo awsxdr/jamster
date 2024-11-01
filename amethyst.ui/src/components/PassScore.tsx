@@ -13,8 +13,7 @@ type PassScoreState = {
 
 export const PassScore = ({ side, textClassName }: PassScoreProps) => {
 
-    const gameState = useGameState();
-    const score = gameState.useStateWatch<PassScoreState>(`PassScoreState_${TeamSide[side]}`);
+    const score = useGameState<PassScoreState>(`PassScoreState_${TeamSide[side]}`);
 
     return (
         <>

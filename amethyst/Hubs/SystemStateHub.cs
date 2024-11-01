@@ -3,15 +3,16 @@ using Microsoft.AspNetCore.SignalR;
 
 namespace amethyst.Hubs;
 
-public class SystemStateHub(ISystemStateStore systemStateStore) : Hub
+public class SystemStateHub(ISystemStateStore systemStateStore, ILogger<SystemStateHub> logger) : Hub
 {
     public void WatchSystemState()
     {
         var caller = Clients.Caller;
 
-        systemStateStore.CurrentGameChanged += (_, e) =>
+        systemStateStore.CurrentGameChanged += async (_, e) =>
         {
-            caller.SendCoreAsync("CurrentGameChanged", [e.Value]);
+            logger.LogDebug("Notifying client of current game change");
+            await caller.SendAsync("CurrentGameChanged", e.Value);
         };
     }
 }

@@ -24,8 +24,7 @@ enum Stage {
 
 export const Scoreboard = () => {
 
-    const gameState = useGameState();
-    const gameStage = gameState.useStateWatch<GameStageState>("GameStageState") ?? { stage: Stage.BeforeGame, periodNumber: 0, jamNumber: 0 };
+    const gameStage = useGameState<GameStageState>("GameStageState") ?? { stage: Stage.BeforeGame, periodNumber: 0, jamNumber: 0 };
 
     return (
         <>

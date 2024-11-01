@@ -45,8 +45,7 @@ type StringMap<TValue> = {
 
 export const TeamName = ({ side, textClassName }: TeamScoreProps) => {
 
-    const gameState = useGameState();
-    const team = gameState.useStateWatch<TeamDetailsState>(`TeamDetailsState_${TeamSide[side]}`);
+    const team = useGameState<TeamDetailsState>(`TeamDetailsState_${TeamSide[side]}`);
 
     const teamName = useMemo(() => {
         if(!team) {

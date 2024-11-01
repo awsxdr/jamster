@@ -19,7 +19,7 @@ public class SystemStateStoreUnitTests : UnitTest<SystemStateStore>
     }
 
     [Test]
-    public void SetCurrentGame_WhenGameExists_InvokesCurrentGameChangedEvent()
+    public async Task SetCurrentGame_WhenGameExists_InvokesCurrentGameChangedEvent()
     {
         Guid? passedGameId = null;
         var eventInvoked = false;
@@ -28,6 +28,8 @@ public class SystemStateStoreUnitTests : UnitTest<SystemStateStore>
         {
             eventInvoked = true;
             passedGameId = e.Value;
+
+            return Task.CompletedTask;
         };
 
         var gameId = Guid.NewGuid();
@@ -36,22 +38,22 @@ public class SystemStateStoreUnitTests : UnitTest<SystemStateStore>
             .Setup(mock => mock.GetExistingGame(gameId))
             .Returns(Result.Succeed(new GameInfo(gameId, "Test Game")));
 
-        Subject.SetCurrentGame(gameId);
+        await Subject.SetCurrentGame(gameId);
 
         eventInvoked.Should().BeTrue();
         passedGameId.Should().Be(gameId);
     }
 
     [Test]
-    public void SetCurrentGame_WhenGameDoesNotExist_ReturnsNotFoundError()
+    public async Task SetCurrentGame_WhenGameDoesNotExist_ReturnsNotFoundError()
     {
-        var result = Subject.SetCurrentGame(Guid.NewGuid());
+        var result = await Subject.SetCurrentGame(Guid.NewGuid());
 
         result.Should().BeFailure<GameFileNotFoundForIdError>();
     }
 
     [Test]
-    public void SetCurrentGame_WhenGameExists_ReturnsSuccess()
+    public async Task SetCurrentGame_WhenGameExists_ReturnsSuccess()
     {
         var gameId = Guid.NewGuid();
         var gameInfo = new GameInfo(gameId, "Test Game");
@@ -60,7 +62,7 @@ public class SystemStateStoreUnitTests : UnitTest<SystemStateStore>
             .Setup(mock => mock.GetExistingGame(gameId))
             .Returns(Result.Succeed(gameInfo));
 
-        var result = Subject.SetCurrentGame(gameId);
+        var result = await Subject.SetCurrentGame(gameId);
         result.Should().BeSuccess<GameInfo>().Which.Value.Should().Be(gameInfo);
     }
 }

@@ -91,11 +91,11 @@ public class GamesController(
     }
 
     [HttpPost("current")]
-    public ActionResult<GameModel> SetCurrentGame(SetCurrentGameModel model)
+    public async Task<ActionResult<GameModel>> SetCurrentGame(SetCurrentGameModel model)
     {
         logger.LogInformation("Setting current game to {gameId}", model.GameId);
 
-        return systemStateStore.SetCurrentGame(model.GameId) switch
+        return await systemStateStore.SetCurrentGame(model.GameId) switch
         {
             Success<GameInfo> s => (GameModel) s.Value,
             Failure<GameFileNotFoundForIdError> => NotFound(),

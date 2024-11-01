@@ -4,8 +4,10 @@ using System.Text.Json.Nodes;
 using amethyst.Controllers;
 using amethyst.DataStores;
 using amethyst.Events;
+using amethyst.Hubs;
 using amethyst.Services;
 using FluentAssertions;
+using Microsoft.AspNetCore.SignalR.Client;
 
 namespace amethyst.tests.Controllers;
 
@@ -78,6 +80,36 @@ public class GamesIntegrationTests : ControllerIntegrationTest
         var result = await Get<GamesController.GameModel>("/api/games/current", HttpStatusCode.OK);
 
         result.Should().Be(_game);
+    }
+
+    [Test]
+    public async Task SetCurrentGame_NotifiesWatchingClients()
+    {
+        var connection = new HubConnectionBuilder()
+            .WithUrl(
+                Client.BaseAddress + "api/Hubs/System",
+                options =>
+                {
+                    options.HttpMessageHandlerFactory = _ => Server.CreateHandler();
+                })
+            .Build();
+
+        await connection.StartAsync();
+
+        await connection.InvokeAsync(nameof(SystemStateHub.WatchSystemState));
+
+        var taskCompletionSource = new TaskCompletionSource<Guid>();
+
+        connection.On("CurrentGameChanged", (Guid newGameId) =>
+        {
+            taskCompletionSource.SetResult(newGameId);
+        });
+
+        await Post("/api/games/current", new GamesController.SetCurrentGameModel(_game.Id), HttpStatusCode.OK);
+
+        var gameId = await taskCompletionSource.Task;
+
+        gameId.Should().Be(_game.Id);
     }
 
     protected override void CleanDatabase()

@@ -1,5 +1,6 @@
 import { createContext, PropsWithChildren, useCallback, useContext, useEffect, useState, useSyncExternalStore } from "react"
 import * as SignalR from '@microsoft/signalr';
+import { API_URL, useHubConnection } from "./SignalRHubConnection";
 
 type SystemStateContextProps = {
     useCurrentGame: () => string | undefined,
@@ -18,38 +19,14 @@ type GameInfo = {
     name: string,
 };
 
-const API_URL = 'http://localhost:5249';
-
 export const SystemStateContextProvider = ({ children }: PropsWithChildren<SystemStateContextProviderProps>) => {
 
-    const [connection, setConnection] = useState<Promise<SignalR.HubConnection>>(Promise.reject("Connection not yet started"));
-    
-    useEffect(() => {
-        const hubConnection = new SignalR.HubConnectionBuilder()
-            .withUrl(`${API_URL}/api/hubs/system`, { withCredentials: false })
-            .withAutomaticReconnect({ nextRetryDelayInMilliseconds: context => {
-                if(context.previousRetryCount < 10) {
-                    return 250;
-                } else if(context.previousRetryCount < 40) {
-                    return 1000;
-                } else {
-                    return 5000;
-                }
-            }})
-            .build();
-
-        setConnection(hubConnection.start().then(() => hubConnection));
-
-        return () => {
-            hubConnection.stop();
-        }
-    }, [setConnection]);
+    const connection = useHubConnection("system");
 
     useEffect(() => {
         (async () => {
-            const resolvedConnection = await connection;
-            resolvedConnection.onreconnected(() => {
-                resolvedConnection.invoke("WatchSystemState");
+            connection?.onreconnected(() => {
+                connection?.invoke("WatchSystemState");
             });
         })();
     }, [connection]);
@@ -64,7 +41,7 @@ export const SystemStateContextProvider = ({ children }: PropsWithChildren<Syste
 
             onStoreChange();
 
-            (await connection).on("CurrentGameChanged", (newGameId: string) => {
+            connection?.on("CurrentGameChanged", (newGameId: string) => {
                 setCurrentGame(newGameId);
                 onStoreChange();
             });

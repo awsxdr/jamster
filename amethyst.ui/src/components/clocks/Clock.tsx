@@ -11,8 +11,7 @@ export type ClockProps<TClockState> = {
 };
 
 export const Clock = <TClockState,>({ secondsMapper, stateName, direction, startValue, textClassName }: ClockProps<TClockState>) => {
-    const gameState = useGameState();
-    const clockState = gameState.useStateWatch<TClockState>(stateName);
+    const clockState = useGameState<TClockState>(stateName);
     
     const clock = useMemo(() => clockState && secondsMapper(clockState), [secondsMapper, clockState]);
 
