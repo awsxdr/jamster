@@ -32,10 +32,12 @@ export const useGameState = <TState,>(stateName: string) => {
         const currentStateResponse = await fetch(`${API_URL}/api/games/${context.gameId}/state/${stateName}`);
         return (await currentStateResponse.json()) as TState;
     }, [context.gameId]);
-    
+
     useEffect(() => {
         getInitialState(stateName).then(setValue);
-
+    }, [context.gameId])
+    
+    useEffect(() => {
         context.watchState<TState>(stateName, setValue);
     }, []);
 
