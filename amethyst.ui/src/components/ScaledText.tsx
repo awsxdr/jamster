@@ -88,7 +88,7 @@ export const ScaledText = ({ text, className }: ScaledTextProps) => {
     }, [measureText, text, font, setFontSize, controlSize]);
 
     return (
-        <span ref={spanRef} className={className} style={{ fontSize: `${fontSize}px` }}>
+        <span ref={spanRef} className={className} style={{ fontSize: `${fontSize}px`, overflow: 'hidden' }}>
             {text}
         </span>
     );

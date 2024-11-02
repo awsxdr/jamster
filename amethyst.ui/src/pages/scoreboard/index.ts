@@ -1,0 +1,1 @@
+export { Scoreboard, CurrentGameScoreboard } from './Scoreboard';

@@ -1,5 +1,4 @@
 import { createContext, PropsWithChildren, useCallback, useContext, useEffect, useState, useSyncExternalStore } from "react"
-import * as SignalR from '@microsoft/signalr';
 import { API_URL, useHubConnection } from "./SignalRHubConnection";
 
 type SystemStateContextProps = {
@@ -12,14 +11,12 @@ const SystemStateContext = createContext<SystemStateContextProps>({
 
 export const useSystemState = () => useContext(SystemStateContext);
 
-type SystemStateContextProviderProps = {};
-
 type GameInfo = {
     id: string,
     name: string,
 };
 
-export const SystemStateContextProvider = ({ children }: PropsWithChildren<SystemStateContextProviderProps>) => {
+export const SystemStateContextProvider = ({ children }: PropsWithChildren) => {
 
     const connection = useHubConnection("system");
 

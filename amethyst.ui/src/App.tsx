@@ -1,17 +1,5 @@
-import { GameStateContextProvider } from "@hooks/StateHook";
-import { Scoreboard } from "./pages/Scoreboard";
-import { SystemStateContextProvider, useSystemState } from "./hooks";
-
-const CurrentGameScoreboard = () => {
-
-  const currentGame = useSystemState().useCurrentGame();
-
-  return (
-    <GameStateContextProvider gameId={currentGame}>
-      <Scoreboard />
-    </GameStateContextProvider>
-  );
-};
+import { CurrentGameScoreboard } from "./pages/scoreboard";
+import { SystemStateContextProvider } from "@/hooks";
 
 const App = () => {
   return (

@@ -1,0 +1,10 @@
+.teamNameText {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    margin: .1em;
+    overflow: hidden;
+    color: #fff;
+}
