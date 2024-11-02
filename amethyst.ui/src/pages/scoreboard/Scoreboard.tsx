@@ -1,16 +1,15 @@
 import { JamClock, PeriodClock } from '@components/clocks';
 import { ScoreboardComponent } from '@/pages/scoreboard/components/ScoreboardComponent';
-import { GameStateContextProvider, useGameState } from '@hooks/StateHook';
-import { useSystemState } from '@/hooks';
+import { GameStateContextProvider, useGameState, useCurrentGame } from '@/hooks';
 import { GameStageState, Stage, TeamSide } from '@/types';
 import { TeamDetails } from './components/TeamDetails';
 import styles from './Scoreboard.module.css';
 
 export const CurrentGameScoreboard = () => {
-    const currentGame = useSystemState().useCurrentGame();
+    const { currentGame } = useCurrentGame();
   
     return (
-      <GameStateContextProvider gameId={currentGame}>
+      <GameStateContextProvider gameId={currentGame?.id}>
         <Scoreboard />
       </GameStateContextProvider>
     );

@@ -7,6 +7,7 @@ using amethyst.Services;
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.AspNetCore.SignalR;
 using SQLite;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -104,19 +105,17 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-app
-    .MapHub<GameStatesHub>("/api/hubs/game/{gameId:guid}")
-    .RequireCors(policyBuilder =>
-    {
-        policyBuilder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
-    });
+void MapHub<THub>(string pattern) where THub : Hub =>
+    app
+        .MapHub<THub>(pattern)
+        .RequireCors(policyBuilder =>
+        {
+            policyBuilder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
+        });
 
-app
-    .MapHub<SystemStateHub>("/api/hubs/system")
-    .RequireCors(policyBuilder =>
-    {
-        policyBuilder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
-    });
+MapHub<GameStatesHub>("/api/hubs/game/{gameId:guid}");
+MapHub<SystemStateHub>("/api/hubs/system");
+MapHub<GameStoreHub>("/api/hubs/games");
 
 app.Run();
 

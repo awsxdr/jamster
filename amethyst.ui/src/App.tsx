@@ -1,11 +1,13 @@
-import { SystemStateContextProvider } from "@/hooks";
+import { GamesListContextProvider, SystemStateContextProvider } from "@/hooks";
 import { Routes } from "./routes";
 
 const App = () => {
   return (
     <>
       <SystemStateContextProvider>
-        <Routes />
+        <GamesListContextProvider>
+          <Routes />
+        </GamesListContextProvider>
       </SystemStateContextProvider>
     </>
   )

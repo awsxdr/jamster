@@ -76,7 +76,7 @@ public class GamesIntegrationTests : ControllerIntegrationTest
     [Test]
     public async Task GetCurrentGame_AfterSet_ReturnsCurrentGame()
     {
-        await Post("/api/games/current", new GamesController.SetCurrentGameModel(_game.Id), HttpStatusCode.OK);
+        await Put("/api/games/current", new GamesController.SetCurrentGameModel(_game.Id), HttpStatusCode.OK);
         var result = await Get<GamesController.GameModel>("/api/games/current", HttpStatusCode.OK);
 
         result.Should().Be(_game);
@@ -100,12 +100,12 @@ public class GamesIntegrationTests : ControllerIntegrationTest
 
         var taskCompletionSource = new TaskCompletionSource<Guid>();
 
-        connection.On("CurrentGameChanged", (Guid newGameId) =>
+        connection.On("CurrentGameChanged", (GameInfo newGame) =>
         {
-            taskCompletionSource.SetResult(newGameId);
+            taskCompletionSource.SetResult(newGame.Id);
         });
 
-        await Post("/api/games/current", new GamesController.SetCurrentGameModel(_game.Id), HttpStatusCode.OK);
+        await Put("/api/games/current", new GamesController.SetCurrentGameModel(_game.Id), HttpStatusCode.OK);
 
         var gameId = await taskCompletionSource.Task;
 

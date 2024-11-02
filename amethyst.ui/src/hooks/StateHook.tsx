@@ -35,7 +35,7 @@ export const useGameState = <TState,>(stateName: string) => {
 
     useEffect(() => {
         getInitialState(stateName).then(setValue);
-    }, [context.gameId])
+    }, [context.gameId]);
     
     useEffect(() => {
         context.watchState<TState>(stateName, setValue);
@@ -45,8 +45,6 @@ export const useGameState = <TState,>(stateName: string) => {
 }
 
 export const GameStateContextProvider = ({ gameId, children }: PropsWithChildren<GameStateContextProviderProps>) => {
-
-    console.log("Render GameStateContextProvider");
     const [stateNotifiers, setStateNotifiers] = useState<StateNotifierMap>({});
 
     const connection = useHubConnection(`game/${gameId}`);

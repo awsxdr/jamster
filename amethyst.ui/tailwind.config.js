@@ -42,6 +42,10 @@ export default {
   				DEFAULT: 'hsl(var(--destructive))',
   				foreground: 'hsl(var(--destructive-foreground))'
   			},
+			creative: {
+				DEFAULT: 'hsl(var(--creative))',
+				foreground: 'hsl(var(--creative-foreground))'
+			},
   			border: 'hsl(var(--border))',
   			input: 'hsl(var(--input))',
   			ring: 'hsl(var(--ring))',

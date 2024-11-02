@@ -90,7 +90,7 @@ public class GamesController(
             };
     }
 
-    [HttpPost("current")]
+    [HttpPut("current")]
     public async Task<ActionResult<GameModel>> SetCurrentGame(SetCurrentGameModel model)
     {
         logger.LogInformation("Setting current game to {gameId}", model.GameId);

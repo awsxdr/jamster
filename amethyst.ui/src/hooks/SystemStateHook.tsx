@@ -1,60 +1,93 @@
-import { createContext, PropsWithChildren, useCallback, useContext, useEffect, useState, useSyncExternalStore } from "react"
+import { createContext, PropsWithChildren, useCallback, useContext, useEffect, useState } from "react"
 import { API_URL, useHubConnection } from "./SignalRHubConnection";
+import { HubConnection } from "@microsoft/signalr";
+import { GameInfo } from "@/types";
+
+type CurrentGameChanged = (games: GameInfo) => void;
+type CurrentGameWatch = (onCurrentGameChanged: CurrentGameChanged) => void;
 
 type SystemStateContextProps = {
-    useCurrentGame: () => string | undefined,
+    watchCurrentGame: CurrentGameWatch,
+    connection?: HubConnection,
 };
 
 const SystemStateContext = createContext<SystemStateContextProps>({
-    useCurrentGame: () => { throw new Error("useCurrentGame used before context created"); },
+    watchCurrentGame: () => { throw new Error('watchCurrentGame called before context created'); },
 });
 
-export const useSystemState = () => useContext(SystemStateContext);
+export const useCurrentGame = () => {
+    const context = useContext(SystemStateContext);
+    const [currentGame, setCurrentGame] = useState<GameInfo>();
+    
+    const getInitialState = useCallback(async () => {
+        const currentStateResponse = await fetch(`${API_URL}/api/games/current`);
+        return (await currentStateResponse.json()) as GameInfo;
+    }, []);
 
-type GameInfo = {
-    id: string,
-    name: string,
-};
+    useEffect(() => {
+        getInitialState().then(setCurrentGame);
+    }, [getInitialState, setCurrentGame]);
+    
+    useEffect(() => {
+        context.watchCurrentGame(game => {
+            console.log("Current game changed", game);
+            setCurrentGame(game);
+        });
+    }, [context.connection, setCurrentGame]);
+
+    const updateCurrentGame = async (gameId: string) => {
+        await fetch(
+            `${API_URL}/api/games/current`, 
+            { 
+                method: 'PUT', 
+                body: JSON.stringify({ gameId }),
+                headers: {
+                    "Content-Type": "application/json; charset=utf-8"
+                }
+            });
+    };
+
+    return { currentGame, setCurrentGame: updateCurrentGame };
+}
 
 export const SystemStateContextProvider = ({ children }: PropsWithChildren) => {
+    const [currentGameNotifiers, setCurrentGameNotifiers] = useState<CurrentGameChanged[]>([]);
 
-    const connection = useHubConnection("system");
+    const connection = useHubConnection(`System`);
+
+    const watchCurrentGame = (onStateChange: CurrentGameChanged) => {
+        setCurrentGameNotifiers(notifiers => [
+            ...notifiers,
+            onStateChange
+        ]);
+    }
+
+    useEffect(() => {
+        if(!connection) {
+            return;
+        }
+
+        currentGameNotifiers.forEach(() => {
+            connection?.invoke("WatchSystemState");
+        });
+    }, [connection, currentGameNotifiers]);
 
     useEffect(() => {
         (async () => {
             connection?.onreconnected(() => {
-                connection?.invoke("WatchSystemState");
+                currentGameNotifiers.forEach(() => connection?.invoke("WatchSystemState"));
             });
         })();
+    }, [connection, currentGameNotifiers]);
+
+    useEffect(() => {
+        connection?.on("CurrentGameChanged", (game: GameInfo) => {
+            currentGameNotifiers.forEach(n => n(game));
+        });
     }, [connection]);
 
-    const useCurrentGame = () => {
-        const [currentGame, setCurrentGame] = useState<string>();
-
-        const subscribeAsync = useCallback((async (onStoreChange: () => void) => {
-            const currentGameResponse = await fetch(`${API_URL}/api/games/current`);
-            
-            setCurrentGame(((await currentGameResponse.json()) as GameInfo).id);
-
-            onStoreChange();
-
-            connection?.on("CurrentGameChanged", (newGameId: string) => {
-                setCurrentGame(newGameId);
-                onStoreChange();
-            });
-        }), [connection, setCurrentGame]);
-
-        const subscribe = useCallback((onStoreChange: () => void) => {
-            subscribeAsync(onStoreChange);
-
-            return () => {};
-        }, [subscribeAsync]);
-
-        return useSyncExternalStore(subscribe, () => currentGame);
-    };
-
     return (
-        <SystemStateContext.Provider value={{ useCurrentGame }}>
+        <SystemStateContext.Provider value={{ watchCurrentGame, connection  }}>
             { children }
         </SystemStateContext.Provider>
     )
