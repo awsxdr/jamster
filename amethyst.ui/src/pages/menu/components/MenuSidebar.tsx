@@ -1,6 +1,44 @@
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@components/ui/sidebar"
-import { Keyboard, TvMinimal } from "lucide-react"
+import { Keyboard, List, TvMinimal, Users } from "lucide-react"
+import { ReactNode } from "react";
 import { useLocation } from "react-router-dom";
+
+type SidebarItem = {
+    title: string;
+    href: string;
+    icon?: ReactNode;
+};
+
+type SidebarItemList = {
+    [group: string]: SidebarItem[];
+};
+
+const sidebarItems: SidebarItemList = {
+    "Main": [
+        {
+            title: "Scoreboard display",
+            href: "/scoreboard",
+            icon: <TvMinimal />
+        },
+        {
+            title: "Scoreboard control",
+            href: "/control",
+            icon: <Keyboard />
+        }
+    ],
+    "Data": [
+        {
+            title: "Teams",
+            href: "/teams",
+            icon: <Users />
+        },
+        {
+            title: "Games",
+            href: "/games",
+            icon: <List />
+        }
+    ],
+}
 
 export const MenuSidebar = () => {
     const location = useLocation();
@@ -9,30 +47,32 @@ export const MenuSidebar = () => {
         <Sidebar collapsible="icon">
             <SidebarHeader />
             <SidebarContent>
-                <SidebarGroup>
-                    <SidebarGroupLabel>Main</SidebarGroupLabel>
-                    <SidebarGroupContent>
-                        <SidebarMenu>
-                            <SidebarMenuItem key="Scoreboard display">
-                                <SidebarMenuButton asChild>
-                                    <a href="/scoreboard">
-                                        <TvMinimal />
-                                        <span>Scoreboard display</span>
-                                    </a>
-                                </SidebarMenuButton>
-                            </SidebarMenuItem>
-                            <SidebarMenuItem key="Scoreboard control">
-                                <SidebarMenuButton asChild isActive={location.pathname === '/control'}>
-                                    <a href="/control">
-                                        <Keyboard />
-                                        <span>Scoreboard control</span>
-                                    </a>
-                                </SidebarMenuButton>
-                            </SidebarMenuItem>
-                        </SidebarMenu>
-                    </SidebarGroupContent>
-                </SidebarGroup>
-            </SidebarContent>
+                {
+                    Object.keys(sidebarItems).map(groupName => {
+                        const items = sidebarItems[groupName];
+
+                        return (
+                            <SidebarGroup key={groupName}>
+                                <SidebarGroupLabel>{groupName}</SidebarGroupLabel>
+                                <SidebarGroupContent>
+                                    <SidebarMenu>
+                                        {items.map(item =>
+                                            <SidebarMenuItem key={item.title}>
+                                                <SidebarMenuButton asChild isActive={location.pathname === item.href}>
+                                                    <a href={item.href}>
+                                                        {item.icon}
+                                                        <span>{item.title}</span>
+                                                    </a>
+                                                </SidebarMenuButton>
+                                            </SidebarMenuItem>
+                                        )}
+                                    </SidebarMenu>
+                                </SidebarGroupContent>
+                            </SidebarGroup>
+                        );
+                    })
+                }
+           </SidebarContent>
         </Sidebar>
     )
 }

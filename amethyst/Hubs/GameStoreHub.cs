@@ -1,46 +1,35 @@
-﻿using System.Collections.Concurrent;
-using amethyst.DataStores;
-using amethyst.Services;
+﻿using amethyst.Services;
 using Microsoft.AspNetCore.SignalR;
 
 namespace amethyst.Hubs;
 
-public class GameStoreHub : Hub
+public class GameStoreNotifier : IDisposable
 {
-    private readonly IGameDiscoveryService _gameDiscoveryService;
-    private readonly ILogger<GameStoreHub> _logger;
-    private readonly ConcurrentBag<Func<IEnumerable<GameInfo>, Task>> _gameListWatchers = new();
     private readonly CancellationTokenSource _cancellationTokenSource = new();
+    private readonly IGameDiscoveryService _gameDiscoveryService;
+    private readonly IHubContext<GameStoreHub> _hubContext;
 
-    public GameStoreHub(IGameDiscoveryService gameDiscoveryService, ILogger<GameStoreHub> logger)
+    public GameStoreNotifier(
+        IGameDiscoveryService gameDiscoveryService,
+        IHubContext<GameStoreHub> hubContext)
     {
         _gameDiscoveryService = gameDiscoveryService;
-        _logger = logger;
+        _hubContext = hubContext;
 
         RunWatchThread();
-    }
-
-    public void WatchGamesList()
-    {
-        var caller = Clients.Caller;
-
-        lock (_gameListWatchers)
-        {
-            _gameListWatchers.Add(games => caller.SendAsync("GamesListChanged", games));
-        }
     }
 
     private void RunWatchThread()
     {
         new TaskFactory(_cancellationTokenSource.Token, TaskCreationOptions.LongRunning, TaskContinuationOptions.None, TaskScheduler.Current)
-            .StartNew(() =>
+            .StartNew(async () =>
             {
                 var cancellationToken = _cancellationTokenSource.Token;
                 var games = _gameDiscoveryService.GetGames().ToArray();
 
                 while (!cancellationToken.IsCancellationRequested)
                 {
-                    Task.Delay(TimeSpan.FromSeconds(1), cancellationToken);
+                    await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken);
 
                     var updatedGames = _gameDiscoveryService.GetGames().ToArray();
 
@@ -48,21 +37,22 @@ public class GameStoreHub : Hub
                     {
                         games = updatedGames;
 
-                        lock (_gameListWatchers)
-                        {
-                            foreach (var watcher in _gameListWatchers)
-                            {
-                                watcher(games);
-                            }
-                        }
+                        await _hubContext.Clients.Group("GameList").SendAsync("GamesListChanged", games, cancellationToken);
                     }
                 }
             });
     }
 
-    protected override void Dispose(bool disposing)
+    public void Dispose()
     {
         _cancellationTokenSource.Cancel();
-        base.Dispose(disposing);
+    }
+}
+
+public class GameStoreHub : Hub
+{
+    public async Task WatchGamesList()
+    {
+        await Groups.AddToGroupAsync(Context.ConnectionId, "GameList");
     }
 }

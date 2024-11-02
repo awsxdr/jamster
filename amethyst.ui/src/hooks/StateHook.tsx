@@ -1,6 +1,7 @@
 import { createContext, PropsWithChildren, useCallback, useContext, useEffect, useState } from "react"
 import { API_URL, useHubConnection } from "./SignalRHubConnection";
 import { HubConnection } from "@microsoft/signalr";
+import { useGameApi } from "./GameApiHook";
 
 type StateChanged<TState> = (state: TState) => void;
 type StateWatch = <TState,>(stateName: string, onStateChange: StateChanged<TState>) => void;
@@ -27,10 +28,13 @@ type StateNotifierMap = { [key: string]: StateNotifier[] };
 export const useGameState = <TState,>(stateName: string) => {
     const context = useContext(GameStateContext);
     const [value, setValue] = useState<TState>();
+    const gameApi = useGameApi();
     
     const getInitialState = useCallback(async (stateName: string) => {
-        const currentStateResponse = await fetch(`${API_URL}/api/games/${context.gameId}/state/${stateName}`);
-        return (await currentStateResponse.json()) as TState;
+        if(context.gameId) {
+            return await gameApi.getGameState<TState>(context.gameId, stateName);
+        }
+        return undefined;
     }, [context.gameId]);
 
     useEffect(() => {

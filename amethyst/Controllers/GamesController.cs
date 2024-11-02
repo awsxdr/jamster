@@ -39,6 +39,19 @@ public class GamesController(
         return Created($"api/games/{game.Id}", game);
     }
 
+    [HttpGet("{gameId:guid}")]
+    public ActionResult<GameModel> GetGame(Guid gameId)
+    {
+        logger.LogDebug("Getting game {gameId}", gameId);
+
+        return gameDiscoveryService.GetExistingGame(gameId) switch
+        {
+            Success<GameInfo> s => (GameModel)s.Value,
+            Failure<GameFileNotFoundForIdError> => NotFound(),
+            _ => throw new UnexpectedResultException()
+        };
+    }
+
     [HttpPost("{gameId:guid}/events")]
     public async Task<ActionResult<EventCreatedModel>> AddEvent(Guid gameId, [FromBody] CreateEventModel model)
     {

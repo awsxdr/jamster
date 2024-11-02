@@ -2,6 +2,7 @@ import { createContext, PropsWithChildren, useCallback, useContext, useEffect, u
 import { API_URL, useHubConnection } from "./SignalRHubConnection";
 import { HubConnection } from "@microsoft/signalr";
 import { GameInfo } from "@/types";
+import { useGameApi } from "./GameApiHook";
 
 type GamesListChanged = (games: GameInfo[]) => void;
 type GamesListWatch = (onGamesListChanged: GamesListChanged) => void;
@@ -20,10 +21,10 @@ const GamesListContext = createContext<GamesListContextProps>({
 export const useGamesList = () => {
     const context = useContext(GamesListContext);
     const [value, setValue] = useState<GameInfo[]>([]);
+    const gameApi = useGameApi();
     
     const getInitialState = useCallback(async () => {
-        const currentStateResponse = await fetch(`${API_URL}/api/games`);
-        return (await currentStateResponse.json()) as GameInfo[];
+        return await gameApi.getGames();
     }, []);
 
     useEffect(() => {

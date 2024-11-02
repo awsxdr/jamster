@@ -1,26 +1,18 @@
 ﻿using amethyst.Services;
 using Func;
 using Microsoft.AspNetCore.SignalR;
-using Result = Func.Result;
 
 namespace amethyst.Hubs;
 
-public class SystemStateHub(
-    ISystemStateStore systemStateStore,
-    IGameDiscoveryService gameDiscoveryService,
-    ILogger<SystemStateHub> logger) : Hub
+public class SystemStateNotifier
 {
-    public override async Task OnConnectedAsync()
+    public SystemStateNotifier(
+        ISystemStateStore systemStateStore,
+        IGameDiscoveryService gameDiscoveryService,
+        IHubContext<SystemStateHub> hubContext,
+        ILogger<SystemStateNotifier> logger
+        )
     {
-        await Groups.AddToGroupAsync(Context.ConnectionId, "Test");
-
-        await base.OnConnectedAsync();
-    }
-
-    public void WatchSystemState()
-    {
-        var caller = Clients.Caller;
-
         systemStateStore.CurrentGameChanged += async (_, e) =>
         {
             logger.LogDebug("Notifying client of current game change");
@@ -28,7 +20,7 @@ public class SystemStateHub(
             await gameDiscoveryService.GetExistingGame(e.Value)
                 .Then(async gameInfo =>
                 {
-                    await caller.SendAsync("CurrentGameChanged", gameInfo);
+                    await hubContext.Clients.Group("CurrentGame").SendAsync("CurrentGameChanged", gameInfo);
                     return Result.Succeed();
                 })
                 .OnError<GameFileNotFoundForIdError>(_ =>
@@ -36,5 +28,13 @@ public class SystemStateHub(
                     logger.LogError("Could not find game file for new current game");
                 });
         };
+    }
+}
+
+public class SystemStateHub : Hub
+{
+    public async Task WatchSystemState()
+    {
+        await Groups.AddToGroupAsync(Context.ConnectionId, "CurrentGame");
     }
 }

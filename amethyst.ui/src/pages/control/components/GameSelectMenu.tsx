@@ -11,8 +11,6 @@ type GameSelectMenuProps = {
 
 export const GameSelectMenu = ({ games, currentGame, selectedGameId, onSelectedGameIdChanged }: GameSelectMenuProps) => {
 
-    console.log("GameSelectMenu", currentGame);
-
     const items = useMemo(() => 
         games.map(game => ({ value: game.id, text: `${game.name}${(game.id === currentGame?.id ? ' (Current)' : '')}`})),
         [games, currentGame]);

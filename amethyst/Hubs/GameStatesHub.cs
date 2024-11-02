@@ -1,43 +1,34 @@
-﻿using amethyst.Services;
+﻿using System.Collections.Concurrent;
+using amethyst.Services;
 using Func;
 using Microsoft.AspNetCore.SignalR;
 
 namespace amethyst.Hubs;
 
-public class GameStatesHub(
-    IGameDiscoveryService gameDiscoveryService,
-    IGameContextFactory contextFactory,
-    ILogger<GameStatesHub> logger
-    ) : Hub
+public class GameStatesNotifier(IGameDiscoveryService gameDiscoveryService, IHubContext<GameStatesHub> hubContext, IGameContextFactory contextFactory)
 {
-    public override async Task OnConnectedAsync()
-    {
-        var gameId = GetGameId();
+    private readonly ConcurrentDictionary<Guid, List<string>> _watchedStatesByGame = new();
 
-        await Groups.AddToGroupAsync(Context.ConnectionId, gameId.ToString());
-        
-        await base.OnConnectedAsync();
-    }
-
-    public Task WatchState(string stateName)
+    public void WatchStateName(Guid gameId, string stateName)
     {
-        try
+        var watchedStates = _watchedStatesByGame.GetOrAdd(gameId, _ => new());
+
+        lock (watchedStates)
         {
-            var gameId = GetGameId();
+            if (watchedStates.Contains(stateName)) return;
+
+            watchedStates.Add(stateName);
+
             var gameContext = GetGameContext(gameId);
-            var caller = Clients.Caller;
 
-            gameContext.StateStore.WatchStateByName(stateName,
-                async state => { await caller.SendCoreAsync("StateChanged", [stateName, state]); });
-
-            return Task.CompletedTask;
+            gameContext.StateStore.WatchStateByName(
+                stateName,
+                async state =>
+                {
+                    await hubContext.Clients.Group($"{gameId}_{stateName}").SendAsync("StateChanged", stateName, state);
+                });
         }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Error while watching state");
 
-            throw;
-        }
     }
 
     private GameContext GetGameContext(Guid gameId) =>
@@ -48,6 +39,23 @@ public class GameStatesHub(
                 Success<GameContext> context => context.Value,
                 _ => throw new GameNotFoundHubException()
             };
+
+    public class GameNotFoundHubException : HubException;
+}
+
+public class GameStatesHub(
+    GameStatesNotifier notifier,
+    IGameDiscoveryService gameDiscoveryService
+    ) : Hub
+{
+    public async Task WatchState(string stateName)
+    {
+        var gameId = GetGameId();
+
+        await Groups.AddToGroupAsync(Context.ConnectionId, $"{gameId}_{stateName}");
+
+        notifier.WatchStateName(gameId, stateName);
+    }
 
     private Guid GetGameId()
     {

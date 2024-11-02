@@ -1,22 +1,38 @@
 import { Button } from "@/components/ui/button"
 import { GameSelectMenu } from "./GameSelectMenu"
 import { Repeat, SquarePlus } from "lucide-react"
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useCurrentGame, useGamesList } from "@/hooks";
 import styles from './GameToolbar.module.scss';
 import { ConfirmMakeCurrentDialog } from "./ConfirmMakeCurrentDialog";
+import { useSearchParams } from "react-router-dom";
 
 export const GameToolbar = () => {
 
     const games = useGamesList();
+    const [ searchParams, setSearchParams ] = useSearchParams();
     const { currentGame, setCurrentGame } = useCurrentGame();
-    const [selectedGameId, setSelectedGameId] = useState<string | undefined>(currentGame?.id);
+    const [selectedGameId, setSelectedGameId] = useState<string | undefined>(searchParams.get('gameId') ?? '');
     
     useEffect(() => {
-        if (!selectedGameId) {
-            setSelectedGameId(currentGame?.id);
+        const gameId = searchParams.get('gameId');
+
+        if(gameId && gameId !== selectedGameId) {
+            setSelectedGameId(gameId);
         }
-    }, [currentGame]);
+    }, [searchParams, setSelectedGameId])
+
+    useEffect(() => {
+        if (!selectedGameId) {
+            updateSelectedGameId(currentGame?.id);
+        }
+    }, [currentGame, selectedGameId]);
+
+    const updateSelectedGameId = useCallback((gameId?: string) => {
+        searchParams.set('gameId', gameId ?? '');
+        setSearchParams(searchParams);
+        setSelectedGameId(gameId);
+    }, [setSelectedGameId]);
     
     return (
         <div className={styles.toolbar}>
@@ -24,7 +40,7 @@ export const GameToolbar = () => {
                 games={games} 
                 currentGame={currentGame} 
                 selectedGameId={selectedGameId} 
-                onSelectedGameIdChanged={setSelectedGameId} 
+                onSelectedGameIdChanged={updateSelectedGameId} 
             />
             <ConfirmMakeCurrentDialog onAccept={() => selectedGameId && setCurrentGame(selectedGameId)}>
                 <Button variant="secondary" disabled={selectedGameId === currentGame?.id}>

@@ -1,7 +1,8 @@
 import { createContext, PropsWithChildren, useCallback, useContext, useEffect, useState } from "react"
-import { API_URL, useHubConnection } from "./SignalRHubConnection";
+import { useHubConnection } from "./SignalRHubConnection";
 import { HubConnection } from "@microsoft/signalr";
 import { GameInfo } from "@/types";
+import { useGameApi } from "./GameApiHook";
 
 type CurrentGameChanged = (games: GameInfo) => void;
 type CurrentGameWatch = (onCurrentGameChanged: CurrentGameChanged) => void;
@@ -18,10 +19,10 @@ const SystemStateContext = createContext<SystemStateContextProps>({
 export const useCurrentGame = () => {
     const context = useContext(SystemStateContext);
     const [currentGame, setCurrentGame] = useState<GameInfo>();
+    const gameApi = useGameApi();
     
     const getInitialState = useCallback(async () => {
-        const currentStateResponse = await fetch(`${API_URL}/api/games/current`);
-        return (await currentStateResponse.json()) as GameInfo;
+        return await gameApi.getCurrentGame();
     }, []);
 
     useEffect(() => {
@@ -36,15 +37,7 @@ export const useCurrentGame = () => {
     }, [context.connection, setCurrentGame]);
 
     const updateCurrentGame = async (gameId: string) => {
-        await fetch(
-            `${API_URL}/api/games/current`, 
-            { 
-                method: 'PUT', 
-                body: JSON.stringify({ gameId }),
-                headers: {
-                    "Content-Type": "application/json; charset=utf-8"
-                }
-            });
+        await gameApi.setCurrentGame(gameId);
     };
 
     return { currentGame, setCurrentGame: updateCurrentGame };
