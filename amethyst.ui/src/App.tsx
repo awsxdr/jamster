@@ -1,11 +1,11 @@
-import { CurrentGameScoreboard } from "./pages/scoreboard";
 import { SystemStateContextProvider } from "@/hooks";
+import { Routes } from "./routes";
 
 const App = () => {
   return (
     <>
       <SystemStateContextProvider>
-        <CurrentGameScoreboard />
+        <Routes />
       </SystemStateContextProvider>
     </>
   )
