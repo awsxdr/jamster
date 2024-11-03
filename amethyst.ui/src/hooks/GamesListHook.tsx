@@ -1,5 +1,5 @@
 import { createContext, PropsWithChildren, useCallback, useContext, useEffect, useState } from "react"
-import { API_URL, useHubConnection } from "./SignalRHubConnection";
+import { useHubConnection } from "./SignalRHubConnection";
 import { HubConnection } from "@microsoft/signalr";
 import { GameInfo } from "@/types";
 import { useGameApi } from "./GameApiHook";

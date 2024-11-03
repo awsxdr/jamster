@@ -5,15 +5,19 @@ import { TeamSide } from "@/types";
 import { JamClock, LineupClock, PeriodClock, TimeoutClock } from "@/components/clocks";
 import { Clock } from "./Clock";
 
-export const ControlPanel = () => {
+type ControlPanelProps = {
+    gameId?: string;
+}
+
+export const ControlPanel = ({ gameId }: ControlPanelProps) => {
     const gameStage = useGameStageState();
     
     return (
         <>
-            <MainControls />
+            <MainControls gameId={gameId} />
             <div className="w-full flex">
-                <TeamControls side={TeamSide.Home} />
-                <TeamControls side={TeamSide.Away} />
+                <TeamControls side={TeamSide.Home} gameId={gameId} />
+                <TeamControls side={TeamSide.Away} gameId={gameId} />
             </div>
             <div className="w-full flex space-x-2">
                 <Clock name={`Jam ${gameStage?.jamNumber ?? 0}`} clock={c => <JamClock textClassName={c} />} />

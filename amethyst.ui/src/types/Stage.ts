@@ -1,8 +1,8 @@
 export enum Stage {
-    BeforeGame,
-    Lineup,
-    Jam,
-    Timeout,
-    Intermission,
-    AfterGame,
+    BeforeGame = "BeforeGame",
+    Lineup = "Lineup",
+    Jam = "Jam",
+    Timeout = "Timeout",
+    Intermission = "Intermission",
+    AfterGame = "AfterGame",
 }

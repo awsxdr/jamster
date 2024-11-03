@@ -6,12 +6,17 @@ import { TeamScore } from "./TeamScore";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { TripScore } from "./TripScore";
+import { Event, useEvents } from "@/hooks/EventsApiHook";
+import { ScoreModifiedRelative } from "@/types/events/Scores";
 
 type TeamControlsProps = {
+    gameId?: string;
     side: TeamSide;
 }
 
-export const TeamControls = ({ side }: TeamControlsProps) => {
+export const TeamControls = ({ gameId, side }: TeamControlsProps) => {
+
+    const { sendEvent } = useEvents();
 
     const team = useTeamDetailsState(side);
     const teamName = useMemo(() => {
@@ -24,6 +29,20 @@ export const TeamControls = ({ side }: TeamControlsProps) => {
 
     const tripScore = useTripScoreState(side);
 
+    const sendEventIfIdSet = (event: Event) => {
+        if(!gameId) return;
+
+        sendEvent(gameId, event);
+    }
+
+    const incrementScore = () => {
+        sendEventIfIdSet(new ScoreModifiedRelative({ teamSide: side, value: 1 }));
+    }
+
+    const decrementScore = () => {
+        sendEventIfIdSet(new ScoreModifiedRelative({ teamSide: side, value: -1 }));
+    }
+
     return (
         <Card className="grow inline-block m-2">
             <CardHeader>
@@ -32,9 +51,9 @@ export const TeamControls = ({ side }: TeamControlsProps) => {
             <CardContent>
                 <Separator />
                 <div className="flex w-full justify-center items-center">
-                    <Button variant="secondary" className="text-md lg:text-xl">-1 [{side === TeamSide.Home ? 'a' : '\''}]</Button>
+                    <Button onClick={decrementScore} variant="secondary" className="text-md lg:text-xl">-1 [{side === TeamSide.Home ? 'a' : '\''}]</Button>
                     <TeamScore side={side} />
-                    <Button variant="secondary" className="text-md lg:text-xl" >+1 [{side === TeamSide.Home ? 's' : '#'}]</Button>
+                    <Button onClick={incrementScore} variant="secondary" className="text-md lg:text-xl" >+1 [{side === TeamSide.Home ? 's' : '#'}]</Button>
                 </div>
                 <Separator />
                 <TripScore tripScore={tripScore?.score ?? 0} />

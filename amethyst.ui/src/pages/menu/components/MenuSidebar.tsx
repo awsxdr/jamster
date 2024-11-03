@@ -1,10 +1,11 @@
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useTheme } from "@/hooks/ThemeHook";
-import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarTrigger, useSidebar } from "@components/ui/sidebar"
+import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from "@components/ui/sidebar"
 import { ChevronLeft, ChevronRight, ChevronUp, Keyboard, List, Palette, TvMinimal, Users } from "lucide-react"
 import { ReactNode } from "react";
-import { useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
+import { LanguageMenu } from "./LanguageMenu";
 
 type SidebarItem = {
     title: string;
@@ -71,10 +72,10 @@ export const MenuSidebar = () => {
                                         {items.map(item =>
                                             <SidebarMenuItem key={item.title}>
                                                 <SidebarMenuButton asChild isActive={location.pathname === item.href}>
-                                                    <a href={item.href}>
+                                                    <Link to={item.href}>
                                                         {item.icon}
                                                         <span>{item.title}</span>
-                                                    </a>
+                                                    </Link>
                                                 </SidebarMenuButton>
                                             </SidebarMenuItem>
                                         )}
@@ -87,11 +88,12 @@ export const MenuSidebar = () => {
            </SidebarContent>
            <SidebarFooter>
                 <SidebarMenu>
+                    <LanguageMenu />
                     <SidebarMenuItem>
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <SidebarMenuButton>
-                                    <Palette /> Choose theme
+                                    <Palette /> Theme
                                     <ChevronUp className="ml-auto" />
                                 </SidebarMenuButton>
                             </DropdownMenuTrigger>

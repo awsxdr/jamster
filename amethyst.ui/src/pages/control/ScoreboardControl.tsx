@@ -30,7 +30,7 @@ export const ScoreboardControl = () => {
         setSearchParams(searchParams);
         setSelectedGameId(gameId);
     }, [setSelectedGameId]);
-    
+
     return (
         <>
             <GameToolbar 
@@ -42,7 +42,9 @@ export const ScoreboardControl = () => {
             />
             <Separator />
             <GameStateContextProvider gameId={selectedGameId}>
-                <ControlPanel />
+                <ControlPanel 
+                    gameId={selectedGameId}
+                />
             </GameStateContextProvider>
         </>
     );

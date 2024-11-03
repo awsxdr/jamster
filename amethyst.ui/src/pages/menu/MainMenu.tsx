@@ -11,6 +11,7 @@ type MainMenuProps = {
 
 export const MainMenu = ({ content }: MainMenuProps) => {
     const sidebarState = getCookie('sidebar:state') === 'true';
+
     return (
         <>
             <ThemeProvider defaultTheme='light'>

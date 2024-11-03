@@ -1,4 +1,4 @@
 export enum TeamSide {
-    Home,
-    Away,
+    Home = "Home",
+    Away = "Away",
 }
