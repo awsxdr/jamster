@@ -1,4 +1,4 @@
-import { useGameState } from "@/hooks";
+import { useTeamScoreState } from "@/hooks";
 import { ScaledText } from "../../../components/ScaledText";
 import { TeamSide } from "@/types";
 import { ScoreboardComponent } from "./ScoreboardComponent";
@@ -11,13 +11,9 @@ type TeamScoreProps = {
     textClassName?: string,
 };
 
-type TeamScoreState = {
-    score: number,
-};
-
 export const TeamScore = ({ side, textClassName }: TeamScoreProps) => {
 
-    const score = useGameState<TeamScoreState>(`TeamScoreState_${TeamSide[side]}`);
+    const score = useTeamScoreState(side);
 
     return (
         <ScoreboardComponent className={styles.teamScore}>

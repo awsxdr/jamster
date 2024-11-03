@@ -1,6 +1,7 @@
 export * from './DisplayColor';
 export * from './GameInfo';
 export * from './GameStageState';
+export * from './PassScoreState';
 export * from './ReviewStatus';
 export * from './SetCurrentGameModel';
 export * from './Skater';
@@ -9,6 +10,7 @@ export * from './Stage';
 export * from './StringMap';
 export * from './Team';
 export * from './TeamDetailsState';
+export * from './TeamScoreState';
 export * from './TeamSide';
 export * from './TeamTimeoutsState';
 export * from './TimeoutInUse';

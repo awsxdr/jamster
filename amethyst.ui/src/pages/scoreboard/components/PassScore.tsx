@@ -1,4 +1,4 @@
-import { useGameState } from "@/hooks";
+import { usePassScoreState } from "@/hooks";
 import { ScaledText } from "@components/ScaledText";
 import { ScoreboardComponent } from "./ScoreboardComponent";
 import { TeamSide } from "@/types";
@@ -11,13 +11,9 @@ type PassScoreProps = {
     textClassName?: string,
 };
 
-type PassScoreState = {
-    score: number,
-};
-
 export const PassScore = ({ side, textClassName }: PassScoreProps) => {
 
-    const score = useGameState<PassScoreState>(`PassScoreState_${TeamSide[side]}`);
+    const score = usePassScoreState(side);
 
     return (
         <ScoreboardComponent className={styles.passScore}>

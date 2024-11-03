@@ -1,7 +1,8 @@
 import { createContext, PropsWithChildren, useCallback, useContext, useEffect, useState } from "react"
-import { API_URL, useHubConnection } from "./SignalRHubConnection";
+import { useHubConnection } from "./SignalRHubConnection";
 import { HubConnection } from "@microsoft/signalr";
 import { useGameApi } from "./GameApiHook";
+import { GameStageState, PassScoreState, TeamDetailsState, TeamScoreState, TeamSide, TeamTimeoutsState } from "@/types";
 
 type StateChanged<TState> = (state: TState) => void;
 type StateWatch = <TState,>(stateName: string, onStateChange: StateChanged<TState>) => void;
@@ -24,6 +25,12 @@ type GameStateContextProviderProps = {
 
 type StateNotifier = (genericState: object) => void;
 type StateNotifierMap = { [key: string]: StateNotifier[] };
+
+export const useTeamDetailsState = (side: TeamSide) => useGameState<TeamDetailsState>(`TeamDetailsState_${TeamSide[side]}`);
+export const useTeamScoreState = (side: TeamSide) => useGameState<TeamScoreState>(`TeamScoreState_${TeamSide[side]}`);
+export const useGameStageState = () => useGameState<GameStageState>("GameStageState");
+export const usePassScoreState = (side: TeamSide) => useGameState<PassScoreState>(`PassScoreState_${TeamSide[side]}`);
+export const useTeamTimeoutsState = (side: TeamSide) => useGameState<TeamTimeoutsState>(`TeamTimeoutsState_${TeamSide[side]}`);
 
 export const useGameState = <TState,>(stateName: string) => {
     const context = useContext(GameStateContext);

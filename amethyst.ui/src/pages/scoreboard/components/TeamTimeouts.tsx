@@ -1,9 +1,9 @@
-import { useGameState } from "@/hooks";
+import { useTeamTimeoutsState } from "@/hooks";
 import { useMemo } from "react";
 import { ScoreboardComponent } from "./ScoreboardComponent";
 import styles from './TeamTimeouts.module.scss';
 import { ScaledText } from '@components/ScaledText';
-import { ReviewStatus, TeamSide, TeamTimeoutsState, TimeoutInUse } from "@/types";
+import { ReviewStatus, TeamSide, TimeoutInUse } from "@/types";
 
 type TeamTimeoutsProps = {
     side: TeamSide
@@ -34,7 +34,7 @@ const TimeoutSymbol = ({ state }: TimeoutSymbolProps) => {
 
 export const TeamTimeouts = ({ side }: TeamTimeoutsProps) => {
 
-    const timeouts = useGameState<TeamTimeoutsState>(`TeamTimeoutsState_${TeamSide[side]}`);
+    const timeouts = useTeamTimeoutsState(side);
 
     const reviewSymbolState = useMemo(() => {
         switch(timeouts?.reviewStatus ?? ReviewStatus.Unused) {
