@@ -29,7 +29,7 @@ type StateNotifierMap = { [key: string]: StateNotifier[] };
 export const useTeamDetailsState = (side: TeamSide) => useGameState<TeamDetailsState>(`TeamDetailsState_${TeamSide[side]}`);
 export const useTeamScoreState = (side: TeamSide) => useGameState<TeamScoreState>(`TeamScoreState_${TeamSide[side]}`);
 export const useGameStageState = () => useGameState<GameStageState>("GameStageState");
-export const usePassScoreState = (side: TeamSide) => useGameState<PassScoreState>(`PassScoreState_${TeamSide[side]}`);
+export const useTripScoreState = (side: TeamSide) => useGameState<PassScoreState>(`PassScoreState_${TeamSide[side]}`);
 export const useTeamTimeoutsState = (side: TeamSide) => useGameState<TeamTimeoutsState>(`TeamTimeoutsState_${TeamSide[side]}`);
 
 export const useGameState = <TState,>(stateName: string) => {

@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { useTeamDetailsState } from "@/hooks";
+import { useTeamDetailsState, useTripScoreState } from "@/hooks";
 import { TeamSide } from "@/types"
 import { useMemo } from "react";
 import { TeamScore } from "./TeamScore";
@@ -22,6 +22,8 @@ export const TeamControls = ({ side }: TeamControlsProps) => {
         return team.team.names['controls'] || team.team.names['default'] || '';
     }, [team]);
 
+    const tripScore = useTripScoreState(side);
+
     return (
         <Card className="grow inline-block m-2">
             <CardHeader>
@@ -35,7 +37,7 @@ export const TeamControls = ({ side }: TeamControlsProps) => {
                     <Button variant="secondary" className="text-md lg:text-xl" >+1 [{side === TeamSide.Home ? 's' : '#'}]</Button>
                 </div>
                 <Separator />
-                <TripScore />
+                <TripScore tripScore={tripScore?.score ?? 0} />
             </CardContent>
         </Card>
     )
