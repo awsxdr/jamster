@@ -1,4 +1,5 @@
 ﻿using amethyst.DataStores;
+using amethyst.Extensions;
 using Func;
 
 namespace amethyst.Services;
@@ -25,10 +26,7 @@ public class SystemStateStore(ISystemStateDataStore dataStore, IGameDiscoverySer
             .Then(async game =>
             {
                 dataStore.SetCurrentGame(gameId);
-                await Task.WhenAll(
-                    CurrentGameChanged?.GetInvocationList()
-                        .Select(i => (Task)i.DynamicInvoke(this, new SystemStateChangedEventArgs<Guid>(gameId))!)
-                    ?? [Task.CompletedTask]);
+                await CurrentGameChanged.InvokeHandlersAsync(this, new SystemStateChangedEventArgs<Guid>(gameId));
 
                 return Result.Succeed(game);
             });

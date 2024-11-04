@@ -1,5 +1,6 @@
 ﻿using amethyst.DataStores;
 using amethyst.Domain;
+using amethyst.Services;
 using Func;
 using Microsoft.AspNetCore.Mvc;
 
@@ -7,7 +8,7 @@ namespace amethyst.Controllers;
 
 [ApiController, Route("api/[controller]")]
 public class TeamsController(
-    ITeamsDataStore teamsStore,
+    ITeamStore teamsStore,
     ILogger<TeamsController> logger
     ) : Controller
 {
@@ -33,21 +34,21 @@ public class TeamsController(
     }
 
     [HttpPost]
-    public ActionResult<TeamModel> CreateTeam([FromBody] CreateTeamModel team)
+    public async Task<ActionResult<TeamModel>> CreateTeam([FromBody] CreateTeamModel team)
     {
         logger.LogDebug("Creating new team");
 
-        var newTeam = teamsStore.CreateTeam((Team) team);
+        var newTeam = await teamsStore.CreateTeam((Team) team);
 
         return Created($"/api/teams/{newTeam.Id}", (TeamModel) newTeam);
     }
 
     [HttpDelete("{id:guid}")]
-    public IActionResult DeleteTeam(Guid id)
+    public async Task<IActionResult> DeleteTeam(Guid id)
     {
         logger.LogInformation("Deleting team {id}", id);
 
-        return teamsStore.ArchiveTeam(id) switch
+        return await teamsStore.ArchiveTeam(id) switch
         {
             Success => NoContent(),
             Failure<TeamNotFoundError> => NotFound(),
@@ -69,11 +70,11 @@ public class TeamsController(
     }
 
     [HttpPut("{teamId:guid}/roster")]
-    public IActionResult SetRoster(Guid teamId, [FromBody] RosterModel roster)
+    public async Task<IActionResult> SetRoster(Guid teamId, [FromBody] RosterModel roster)
     {
         logger.LogDebug("Setting roster for team ID: {teamId}", teamId);
 
-        return teamsStore.SetRoster(teamId, roster.Roster) switch
+        return await teamsStore.SetRoster(teamId, roster.Roster) switch
         {
             Success => Ok(),
             Failure<TeamNotFoundError> => NotFound(),

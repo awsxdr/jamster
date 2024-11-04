@@ -31,10 +31,12 @@ builder.Host.UseServiceProviderFactory(new AutofacServiceProviderFactory(contain
     container.RegisterType<EventBus>().As<IEventBus>().SingleInstance();
     container.RegisterType<GameDataStore>().As<IGameDataStore>().ExternallyOwned().InstancePerDependency();
     container.RegisterType<GameClock>().As<IGameClock>();
+    container.RegisterType<TeamStore>().As<ITeamStore>().SingleInstance();
 
     container.RegisterType<GameStatesNotifier>().AsSelf().SingleInstance();
     container.RegisterType<GameStoreNotifier>().AsSelf().SingleInstance();
     container.RegisterType<SystemStateNotifier>().AsSelf().SingleInstance();
+    container.RegisterType<TeamsNotifier>().AsSelf().SingleInstance();
 
     var reducerTypes = AppDomain.CurrentDomain.GetAssemblies()
         .Where(a => !a.IsDynamic)
@@ -123,6 +125,8 @@ MapHub<SystemStateHub>("/api/hubs/system");
 _ = app.Services.GetService<SystemStateNotifier>();
 MapHub<GameStoreHub>("/api/hubs/games");
 _ = app.Services.GetService<GameStoreNotifier>();
+MapHub<TeamsHub>("/api/hubs/teams");
+_ = app.Services.GetService<TeamsNotifier>();
 
 app.Run();
 

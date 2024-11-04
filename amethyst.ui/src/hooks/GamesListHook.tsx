@@ -41,7 +41,7 @@ export const useGamesList = () => {
 export const GamesListContextProvider = ({ children }: PropsWithChildren) => {
     const [gamesListNotifiers, setGamesListNotifiers] = useState<GamesListChanged[]>([]);
 
-    const connection = useHubConnection(`games`);
+    const connection = useHubConnection('games');
 
     const watchGamesList = (onStateChange: GamesListChanged) => {
         setGamesListNotifiers(notifiers => [
@@ -51,25 +51,19 @@ export const GamesListContextProvider = ({ children }: PropsWithChildren) => {
     }
 
     useEffect(() => {
-        if(!connection) {
-            return;
-        }
-
-        gamesListNotifiers.forEach(() => {
-            connection?.invoke("WatchGamesList");
-        });
-    }, [connection, gamesListNotifiers]);
+        connection?.invoke("WatchGamesList");
+    }, [connection]);
 
     useEffect(() => {
         (async () => {
             connection?.onreconnected(() => {
-                gamesListNotifiers.forEach(() => connection?.invoke("WatchGamesList"));
+                connection?.invoke("WatchGamesList");
             });
         })();
-    }, [connection, gamesListNotifiers]);
+    }, [connection]);
 
     useEffect(() => {
-        connection?.on("StateChanged", (games: GameInfo[]) => {
+        connection?.on("GamesListChanged", (games: GameInfo[]) => {
             gamesListNotifiers.forEach(n => n(games));
         });
     }, [connection]);
