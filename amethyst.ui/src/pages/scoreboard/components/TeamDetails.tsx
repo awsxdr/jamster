@@ -4,7 +4,7 @@ import { TeamName } from "./TeamName";
 import styles from './TeamDetails.module.scss';
 import { TeamTimeouts } from "./TeamTimeouts";
 import { TeamScore } from "./TeamScore";
-import { PassScore } from "./PassScore";
+import { TripScore } from "./TripScore";
 import { cn } from "@/lib/utils";
 
 type TeamDetailsProps = {
@@ -20,7 +20,7 @@ export const TeamDetails = ({ side }: TeamDetailsProps) => {
             <div className={cn(styles.scoreAndTimeoutsContainer, side === TeamSide.Home ? styles.home : styles.away)}>
                 <TeamTimeouts side={side} />
                 <TeamScore side={side} />
-                <PassScore side={side} />
+                <TripScore side={side} />
             </div>
         </div>
     );

@@ -3,21 +3,23 @@ import { ScaledText } from "@components/ScaledText";
 import { ScoreboardComponent } from "./ScoreboardComponent";
 import { TeamSide } from "@/types";
 
-import styles from './PassScore.module.scss';
 import { cn } from "@/lib/utils";
 
-type PassScoreProps = {
+type TripScoreProps = {
     side: TeamSide,
     textClassName?: string,
 };
 
-export const PassScore = ({ side, textClassName }: PassScoreProps) => {
+export const TripScore = ({ side, textClassName }: TripScoreProps) => {
 
     const score = useTripScoreState(side);
 
     return (
-        <ScoreboardComponent className={styles.passScore}>
-            <ScaledText text={(score?.score ?? 0).toString()} className={cn(styles.passScoreText, textClassName)} />
+        <ScoreboardComponent className="grow w-[10%] h-[40%] m-1">
+            <ScaledText 
+                text={(score?.score ?? 0).toString()} 
+                className={cn("flex justify-center items-center h-full m-0.5 overflow-hidden", textClassName)} 
+            />
         </ScoreboardComponent>
     );
 }

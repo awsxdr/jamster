@@ -16,37 +16,37 @@ public static class TestGameEventsSource
         .Validate(
             ("Home", new TeamScoreState(0)),
             ("Away", new TeamScoreState(0)),
-            ("Home", new PassScoreState(0, 0)),
-            ("Away", new PassScoreState(0, 0))
+            ("Home", new TripScoreState(0, 0)),
+            ("Away", new TripScoreState(0, 0))
         )
         .Event<ScoreModifiedRelative>(0).WithBody(new ScoreModifiedRelativeBody(TeamSide.Home, 4))
         .Validate(tick => [
             ("Home", new TeamScoreState(4)),
             ("Away", new TeamScoreState(0)),
-            ("Home", new PassScoreState(4, tick)),
-            ("Away", new PassScoreState(0, 0))
+            ("Home", new TripScoreState(4, tick)),
+            ("Away", new TripScoreState(0, 0))
         ])
         .Wait(2)
         .Event<ScoreModifiedRelative>(0).WithBody(new ScoreModifiedRelativeBody(TeamSide.Away, 4))
         .Validate(tick => [
             ("Home", new TeamScoreState(4)),
             ("Away", new TeamScoreState(4)),
-            ("Home", new PassScoreState(4, tick - 2000)),
-            ("Away", new PassScoreState(4, tick))
+            ("Home", new TripScoreState(4, tick - 2000)),
+            ("Away", new TripScoreState(4, tick))
         ])
         .Wait(2)
         .Validate(tick => [
             ("Home", new TeamScoreState(4)),
             ("Away", new TeamScoreState(4)),
-            ("Home", new PassScoreState(0, tick - 1000)),
-            ("Away", new PassScoreState(4, tick - 2000))
+            ("Home", new TripScoreState(0, tick - 1000)),
+            ("Away", new TripScoreState(4, tick - 2000))
         ])
         .Wait(2)
         .Validate(tick => [
             ("Home", new TeamScoreState(4)),
             ("Away", new TeamScoreState(4)),
-            ("Home", new PassScoreState(0, tick - 3000)),
-            ("Away", new PassScoreState(0, tick - 1000))
+            ("Home", new TripScoreState(0, tick - 3000)),
+            ("Away", new TripScoreState(0, tick - 1000))
         ])
         .Wait(15)
         .Event<JamEnded>(2)
