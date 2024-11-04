@@ -8,6 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { TripScore } from "./TripScore";
 import { Event, useEvents } from "@/hooks/EventsApiHook";
 import { ScoreModifiedRelative } from "@/types/events/Scores";
+import { useHotkeys } from "react-hotkeys-hook";
 
 type TeamControlsProps = {
     gameId?: string;
@@ -42,6 +43,9 @@ export const TeamControls = ({ gameId, side }: TeamControlsProps) => {
     const decrementScore = () => {
         sendEventIfIdSet(new ScoreModifiedRelative({ teamSide: side, value: -1 }));
     }
+
+    useHotkeys(side === TeamSide.Home ? 'a' : '\'', decrementScore, { preventDefault: true });
+    useHotkeys(side === TeamSide.Home ? 's' : '#', incrementScore, { preventDefault: true });
 
     return (
         <Card className="grow inline-block m-2">
