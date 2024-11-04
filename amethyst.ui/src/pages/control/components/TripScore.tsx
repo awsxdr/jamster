@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button"
+import { useI18n } from "@/hooks/I18nHook";
 
 type TripScoreProps = {
     tripScore: number;
@@ -6,9 +7,11 @@ type TripScoreProps = {
 
 export const TripScore = ({ tripScore }: TripScoreProps) => {
 
+    const { translate } = useI18n();
+
     return (
         <div className="flex flex-wrap justify-center items-center m-2 space-x-2">
-            <span>Trip score</span>
+            <span>{translate("Trip score")}</span>
             <span className="flex flex-wrap justify-center items-center m-2 space-x-2 gap-y-2">
                 <Button variant={tripScore === 0 ? 'default' : 'secondary'}>0</Button>
                 <Button variant={tripScore === 1 ? 'default' : 'secondary'}>1</Button>

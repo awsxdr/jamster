@@ -45,7 +45,7 @@ export const MainControls = ({ gameId }: MainControlsProps) => {
     }, [gameStage]);
 
     const [undoText, undoButtonEnabled] = useMemo(() => {
-        return ["Undo", true];
+        return [translate("Undo"), true];
     }, []);
 
     const sendEventIfIdSet = (event: Event) => {

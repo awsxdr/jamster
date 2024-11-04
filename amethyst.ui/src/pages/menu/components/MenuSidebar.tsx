@@ -1,11 +1,11 @@
 import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { useTheme } from "@/hooks/ThemeHook";
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from "@components/ui/sidebar"
-import { ChevronLeft, ChevronRight, ChevronUp, Keyboard, List, Palette, TvMinimal, Users } from "lucide-react"
+import { ChevronLeft, ChevronRight, Keyboard, List, TvMinimal, Users } from "lucide-react"
 import { ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { LanguageMenu } from "./LanguageMenu";
+import { ThemeMenu } from "./ThemeMenu";
+import { useI18n } from "@/hooks/I18nHook";
 
 type SidebarItem = {
     title: string;
@@ -47,10 +47,8 @@ const sidebarItems: SidebarItemList = {
 export const MenuSidebar = () => {
     const location = useLocation();
 
-    const { setTheme } = useTheme();
-
     const { open: sidebarOpen, toggleSidebar } = useSidebar();
-    
+    const { translate } = useI18n();
 
     return (
         <Sidebar collapsible="icon">
@@ -66,7 +64,7 @@ export const MenuSidebar = () => {
 
                         return (
                             <SidebarGroup key={groupName}>
-                                <SidebarGroupLabel>{groupName}</SidebarGroupLabel>
+                                <SidebarGroupLabel>{translate(groupName)}</SidebarGroupLabel>
                                 <SidebarGroupContent>
                                     <SidebarMenu>
                                         {items.map(item =>
@@ -74,7 +72,7 @@ export const MenuSidebar = () => {
                                                 <SidebarMenuButton asChild isActive={location.pathname === item.href}>
                                                     <Link to={item.href}>
                                                         {item.icon}
-                                                        <span>{item.title}</span>
+                                                        <span>{translate(item.title)}</span>
                                                     </Link>
                                                 </SidebarMenuButton>
                                             </SidebarMenuItem>
@@ -89,24 +87,7 @@ export const MenuSidebar = () => {
            <SidebarFooter>
                 <SidebarMenu>
                     <LanguageMenu />
-                    <SidebarMenuItem>
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <SidebarMenuButton>
-                                    <Palette /> Theme
-                                    <ChevronUp className="ml-auto" />
-                                </SidebarMenuButton>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent
-                                side="top"
-                                className="w-[--radix-popper-anchor-width]"
-                            >
-                                <DropdownMenuItem onClick={() => setTheme("light")}><span>Light</span></DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => setTheme("dark")}><span>Dark</span></DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => setTheme("system")}><span>Match system default</span></DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
-                    </SidebarMenuItem>
+                    <ThemeMenu />
                 </SidebarMenu>
             </SidebarFooter>
         </Sidebar>

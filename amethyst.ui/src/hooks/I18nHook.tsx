@@ -43,43 +43,63 @@ const I18nContext = createContext<I18nContextProps>({
     setLanguage: () => { throw new Error('setLanguage used outside of I18nContextProvider')},
 });
 
-export const makeDevLanguage = (language: Translations) => {
+const makeDevTranslation = (key: string) => {
     const characterReplacements: { [key: string]: string } = {
         a: 'ä',
+        A: '𝒜',
+        b: '𝓫',
+        B: 'Ꞵ',
         c: 'ċ',
+        C: '𝑪',
         d: 'ɗ',
+        D: '𝔻',
         e: 'é',
+        E: '⋿',
+        f: '𝕗',
+        F: '𝓕',
         g: 'ġ',
+        G: '𝔊',
         h: 'һ',
+        H: '𝓗',
         i: 'í',
+        I: 'Ǐ',
         j: 'ј',
+        J: 'Ｊ',
         k: 'κ',
+        K: 'Ｋ',
         l: 'ḷ',
+        L: 'ℒ',
+        M: '𝕸',
         n: 'ո',
+        N: '𝒩',
         o: 'ỏ',
+        O: 'Ｏ',
         p: 'р',
+        P: '𝓟',
         q: 'զ',
+        Q: 'ⵕ',
+        r: '𝖗',
+        R: 'ℝ',
         s: 'ʂ',
+        S: '𐊖',
+        t: '𝓽',
+        T: '𝔗',
         u: 'ú',
+        U: '⋃',
         v: 'ν',
+        V: '𝓥',
         x: 'х',
+        X: '𝔛',
         y: 'ý',
+        Y: 'Ｙ',
         z: 'ż',
+        Z: '𝒵',
     };
 
-    const devLanguage = { ...language };
-
-    Object.keys(devLanguage).forEach(key => {
-        const value = devLanguage[key];
-
-        Object.keys(characterReplacements).forEach(target => {
-            value.replace(target, characterReplacements[target]);
-        });
-
-        return value;
-    });
-
-    return devLanguage;
+    return Object.keys(characterReplacements).reduce(
+        (value, replace) => value.replace(new RegExp(replace, 'g'), characterReplacements[replace]),
+        key
+    );
 }
 
 export const I18nContextProvider = ({ defaultLanguage, languages, children }: PropsWithChildren<I18nContextProviderProps>) => {
@@ -89,8 +109,10 @@ export const I18nContextProvider = ({ defaultLanguage, languages, children }: Pr
     const translations = useMemo(() => languages[language] ?? {}, [languages, language]);
 
     const translate = useCallback((key: string) =>
-        translations[key] ?? key, 
-    [translations]);
+        language === 'dev'
+        ? makeDevTranslation(key)
+        : translations[key] ?? key, 
+    [translations, language]);
 
     const changeLanguage = useCallback((key: string) => {
         setLanguage(key);

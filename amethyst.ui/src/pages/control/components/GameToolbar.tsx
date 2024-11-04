@@ -4,6 +4,7 @@ import { Repeat, SquarePlus } from "lucide-react"
 import styles from './GameToolbar.module.scss';
 import { ConfirmMakeCurrentDialog } from "./ConfirmMakeCurrentDialog";
 import { GameInfo } from "@/types";
+import { useI18n } from "@/hooks/I18nHook";
 
 type GameToolbarProps = {
     games: GameInfo[];
@@ -14,6 +15,8 @@ type GameToolbarProps = {
 }
 
 export const GameToolbar = ({ games, currentGame, onCurrentGameIdChanged, selectedGameId, onSelectedGameIdChanged }: GameToolbarProps) => {
+
+    const { translate } = useI18n();
 
     return (
         <div className={styles.toolbar}>
@@ -26,12 +29,12 @@ export const GameToolbar = ({ games, currentGame, onCurrentGameIdChanged, select
             <ConfirmMakeCurrentDialog onAccept={() => selectedGameId && onCurrentGameIdChanged(selectedGameId)}>
                 <Button variant="secondary" disabled={selectedGameId === currentGame?.id}>
                     <Repeat />
-                    <span className="hidden lg:inline">Make current</span>
+                    <span className="hidden lg:inline">{translate("Make current")}</span>
                 </Button>
             </ConfirmMakeCurrentDialog>
             <Button variant="creative">
                 <SquarePlus />
-                <span className="hidden lg:inline">New game...</span>
+                <span className="hidden lg:inline">{translate("New game...")}</span>
             </Button>
         </div>
     )

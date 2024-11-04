@@ -1,4 +1,5 @@
 import { ComboBox } from "@/components/ui/combobox";
+import { useI18n } from "@/hooks/I18nHook";
 import { GameInfo } from "@/types";
 import { useMemo } from "react";
 
@@ -11,8 +12,10 @@ type GameSelectMenuProps = {
 
 export const GameSelectMenu = ({ games, currentGame, selectedGameId, onSelectedGameIdChanged }: GameSelectMenuProps) => {
 
+    const { translate } = useI18n();
+
     const items = useMemo(() => 
-        games.map(game => ({ value: game.id, text: `${game.name}${(game.id === currentGame?.id ? ' (Current)' : '')}`})),
+        games.map(game => ({ value: game.id, text: `${game.name}${(game.id === currentGame?.id ? ` (${translate('Current')})` : '')}`})),
         [games, currentGame]);
 
     return (
@@ -20,7 +23,7 @@ export const GameSelectMenu = ({ games, currentGame, selectedGameId, onSelectedG
             <ComboBox 
                 items={items}
                 value={selectedGameId ?? ""}
-                placeholder="Select game..."
+                placeholder={translate("Select game...")}
                 onValueChanged={onSelectedGameIdChanged}
             />
         </>
