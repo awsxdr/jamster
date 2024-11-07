@@ -1,4 +1,5 @@
-﻿using amethyst.Domain;
+﻿using System.Text.Json.Nodes;
+using amethyst.Domain;
 using Func;
 
 namespace amethyst.DataStores;
@@ -9,12 +10,13 @@ public interface ITeamsDataStore
     Team CreateTeam(Team team);
     Result<Team> GetTeam(Guid teamId);
     Result<Team> GetTeamIncludingArchived(Guid teamId);
+    Result UpdateTeam(Team team);
     Result ArchiveTeam(Guid teamId);
     Result SetRoster(Guid teamId, IEnumerable<Skater> skaters);
 }
 
 public class TeamsDataStore(ConnectionFactory connectionFactory) 
-    : DataStore<Team, Guid>("teams", t => t.Id, connectionFactory)
+    : DataStore<Team, Guid>("teams", 2, t => t.Id, connectionFactory)
     , ITeamsDataStore
 {
     public IEnumerable<Team> GetTeams() =>
@@ -45,6 +47,9 @@ public class TeamsDataStore(ConnectionFactory connectionFactory)
         return newTeam;
     }
 
+    public Result UpdateTeam(Team team) =>
+        Update(team.Id, team);
+
     public Result ArchiveTeam(Guid teamId) =>
         Archive(teamId) switch
         {
@@ -56,20 +61,46 @@ public class TeamsDataStore(ConnectionFactory connectionFactory)
     public Result SetRoster(Guid teamId, IEnumerable<Skater> skaters) =>
         Get(teamId)
                 .ThenMap(team => team with {Roster = skaters.ToList()})
-                .Then(team =>
-                {
-                    Update(teamId, team);
-                    return Result.Succeed(team);
-                })
+                .Then(Update, teamId)
             switch
             {
-                Success<Team> s => s,
+                Success s => s,
                 Failure<NotFoundError> => Result.Fail<TeamNotFoundError>(),
                 _ => throw new UnexpectedResultException()
             };
+
+    protected override void ApplyUpgrade(int version)
+    {
+        switch (version)
+        {
+            case 1:
+                break;
+
+            case 2:
+            {
+                var items = 
+                    GetAllItems()
+                        .Select(i => JsonNode.Parse(i.Data))
+                        .Cast<JsonObject>()
+                        .Select(i => new Team(
+                            i["Id"]!.GetValue<Guid>(),
+                            i["Names"]!.GetValue<Dictionary<string, string>>(),
+                            new Dictionary<string, Dictionary<string, DisplayColor>>() { ["Legacy"] = i["Colors"]!.GetValue<Dictionary<string, DisplayColor>>() },
+                            i["Roster"]!.GetValue<List<Skater>>()))
+                        .ToArray();
+
+                foreach (var item in items)
+                {
+                    Update(item.Id, item);
+                }
+
+                break;
+            }
+        }
+    }
 }
 
-public record Team(Guid Id, Dictionary<string, string> Names, Dictionary<string, DisplayColor> Colors, List<Skater> Roster)
+public record Team(Guid Id, Dictionary<string, string> Names, Dictionary<string, Dictionary<string, DisplayColor>> Colors, List<Skater> Roster)
 {
     public Team() : this(Guid.NewGuid(), [], [], [])
     {

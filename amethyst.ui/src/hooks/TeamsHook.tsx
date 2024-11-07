@@ -112,7 +112,7 @@ export const TeamListContextProvider = ({ children }: PropsWithChildren) => {
         });
 
         connection?.on("TeamArchived", (teamId: string) => {
-            setTeams(t => Object.keys(t).filter(k => k !== teamId).reduce((l, k) => ({ ...l, k: t[k] }), {}));
+            setTeams(t => Object.keys(t).filter(k => k !== teamId).reduce((l, k) => ({ ...l, [k]: t[k] }), {}));
             teamsListNotifiers.forEach(n => n());
         });
 

@@ -10,7 +10,7 @@ public interface ISystemStateDataStore : IDisposable
 }
 
 public class SystemStateDataStore(ConnectionFactory connectionFactory)
-    : DataStore<SystemStateItem, string>("system", i => i.Key, connectionFactory), ISystemStateDataStore
+    : DataStore<SystemStateItem, string>("system", 1, i => i.Key, connectionFactory), ISystemStateDataStore
 {
     private const string CurrentGameKey = "current_game";
 
@@ -23,6 +23,10 @@ public class SystemStateDataStore(ConnectionFactory connectionFactory)
 
     public void SetCurrentGame(Guid gameId) =>
         Upsert(new(CurrentGameKey, gameId.ToString()));
+
+    protected override void ApplyUpgrade(int version)
+    {
+    }
 
     public sealed class CurrentGameNotFoundError : NotFoundError;
 }

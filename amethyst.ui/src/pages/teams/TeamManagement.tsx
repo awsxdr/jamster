@@ -5,6 +5,6 @@ export const TeamManagement = () => {
     const teams = useTeamList();
 
     return (
-        <>{ teams.forEach(t => t.names) }</>
+        <>{ teams.map((t, i) => (<div key={i}>{t.names["default"]}</div>)) }</>
     );
 }

@@ -9,7 +9,9 @@ using FluentAssertions;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.AspNetCore.TestHost;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace amethyst.tests.Controllers;
 
@@ -135,5 +137,33 @@ public abstract class ControllerIntegrationTest
         return result;
     }
 
+    protected async Task<HubConnection> GetHubConnection(string hubPath)
+    {
+        var connection = new HubConnectionBuilder()
+            .WithUrl(
+                Client.BaseAddress + hubPath,
+                options =>
+                {
+                    options.HttpMessageHandlerFactory = _ => Server.CreateHandler();
+                })
+            .AddJsonProtocol(config =>
+            {
+                config.PayloadSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+            })
+            .Build();
+
+        await connection.StartAsync();
+
+        return connection;
+    }
+
+    protected async Task<TResult> Wait<TResult>(Task<TResult> task, TimeSpan? delay = null) =>
+        await await Task.WhenAny(
+            task,
+            Task.Run<TResult>(async () =>
+            {
+                await Task.Delay(delay ?? TimeSpan.FromSeconds(4));
+                throw new TimeoutException();
+            }));
     protected abstract void CleanDatabase();
 }

@@ -8,7 +8,7 @@ public class TeamsNotifier
 {
     public TeamsNotifier(
         ITeamStore teamStore,
-        IHubContext<TeamsHub> hubContext,
+        IHubContext<TeamsHub, ITeamsHubClient> hubContext,
         ILogger<TeamsNotifier> logger
     )
     {
@@ -16,26 +16,32 @@ public class TeamsNotifier
         {
             logger.LogDebug("Notifying clients of team change");
 
-            await hubContext.Clients.Group("TeamChanged").SendAsync("TeamChanged", (TeamWithRosterModel)e.Team);
+            await hubContext.Clients.Group("TeamChanged").TeamChanged((TeamWithRosterModel)e.Team);
         };
 
         teamStore.TeamCreated += async (_, e) =>
         {
             logger.LogDebug("Notifying clients of team creation");
 
-            await hubContext.Clients.Group("TeamCreated").SendAsync("TeamCreated", (TeamWithRosterModel)e.Team);
+            await hubContext.Clients.Group("TeamCreated").TeamCreated((TeamWithRosterModel) e.Team);
         };
 
         teamStore.TeamArchived += async (_, e) =>
         {
             logger.LogDebug("Notifying clients of team archiving");
-
-            await hubContext.Clients.Group("TeamArchived").SendAsync("TeamArchived", e.TeamId);
+            await hubContext.Clients.Group("TeamArchived").TeamArchived(e.TeamId);
         };
     }
 }
 
-public class TeamsHub : Hub
+public interface ITeamsHubClient
+{
+    Task TeamChanged(TeamWithRosterModel team);
+    Task TeamCreated(TeamWithRosterModel team);
+    Task TeamArchived(Guid teamId);
+}
+
+public class TeamsHub : Hub<ITeamsHubClient>
 {
     public Task WatchTeamCreated() =>
         Groups.AddToGroupAsync(Context.ConnectionId, "TeamCreated");

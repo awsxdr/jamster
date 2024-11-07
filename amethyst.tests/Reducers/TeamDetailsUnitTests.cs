@@ -19,7 +19,7 @@ public class TeamDetailsUnitTests : ReducerUnitTest<HomeTeamDetails, TeamDetails
             },
             new()
             {
-                ["test"] = new DisplayColor(Color.Black, Color.White),
+                ["White"] = new() { ["test"] = new DisplayColor(Color.Black, Color.White) }
             },
             Enumerable.Range(1, 15).Select(i => new Skater(i.ToString(), $"Skater {i}", "test/test", SkaterRole.Skater)).ToList());
 

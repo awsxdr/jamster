@@ -13,6 +13,7 @@ public interface ITeamStore
     Result<Team> GetTeam(Guid teamId);
     Result<Team> GetTeamIncludingArchived(Guid teamId);
     Task<Team> CreateTeam(Team team);
+    Task<Result> UpdateTeam(Team team);
     Task<Result> ArchiveTeam(Guid teamId);
     Task<Result> SetRoster(Guid teamId, IEnumerable<Skater> skaters);
 }
@@ -36,10 +37,18 @@ public class TeamStore(ITeamsDataStore teamDataStore) : ITeamStore
     {
         var newTeam = teamDataStore.CreateTeam(team);
 
-        await TeamCreated.InvokeHandlersAsync(this, new(team));
+        await TeamCreated.InvokeHandlersAsync(this, new(newTeam));
 
         return newTeam;
     }
+
+    public Task<Result> UpdateTeam(Team team) =>
+        teamDataStore.UpdateTeam(team)
+            .Then(async () =>
+            {
+                await TeamChanged.InvokeHandlersAsync(this, new(team));
+                return Result.Succeed();
+            });
 
     public Task<Result> ArchiveTeam(Guid teamId) =>
         teamDataStore.ArchiveTeam(teamId)

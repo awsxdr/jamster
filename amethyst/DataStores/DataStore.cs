@@ -24,18 +24,39 @@ public abstract class DataStore<TData, TKey> : IDataStore
 
     public ISQLiteConnection Connection { get; }
 
-    protected DataStore(string databaseName, KeySelector keySelector, ConnectionFactory connectionFactory)
+    protected DataStore(string databaseName, int version, KeySelector keySelector, ConnectionFactory connectionFactory)
     {
         _keySelector = keySelector;
         _tableName = typeof(TData).Name;
         Connection = connectionFactory(Path.Combine(RunningEnvironment.RootPath, "db", $"{databaseName}.db"), SQLiteOpenFlags.Create | SQLiteOpenFlags.ReadWrite);
 
         Connection.Execute($"CREATE TABLE IF NOT EXISTS {_tableName} (id BLOB PRIMARY KEY, data TEXT, isArchived INTEGER)");
+
+        Connection.Execute("CREATE TABLE IF NOT EXISTS __version (version INTEGER PRIMARY KEY)");
+        var currentVersion = Connection.Query<int>("SELECT version FROM __version LIMIT 1").SingleOrDefault();
+
+        if (currentVersion > version)
+        {
+            throw new DatabaseVersionAheadOfProgramVersion();
+        }
+
+        if (currentVersion < version)
+        {
+            for (var i = currentVersion + 1; i <= version; ++i)
+            {
+                ApplyUpgrade(i);
+            }
+        }
     }
+
+    protected abstract void ApplyUpgrade(int version);
 
     protected IEnumerable<TData> GetAll() =>
         Connection.Query<DataStoreItem>($"SELECT * FROM {_tableName} WHERE isArchived = FALSE", _tableName)
             .Select(MapItem);
+
+    protected IEnumerable<DataStoreItem> GetAllItems() =>
+        Connection.Query<DataStoreItem>($"SELECT * FROM {_tableName}", _tableName);
 
     protected Result<TData> Get(TKey key) =>
         Connection.Query<DataStoreItem>($"SELECT id, data FROM {_tableName} WHERE id = ? AND isArchived = FALSE LIMIT 1", key)
@@ -71,12 +92,17 @@ public abstract class DataStore<TData, TKey> : IDataStore
         Connection.Query<int>($"UPDATE {_tableName} SET isArchived = TRUE WHERE id = ? RETURNING 0", key).Count switch
         {
             1 => Succeed(),
-            0 => Fail<NotFoundError>(),
+            0 => Fail<TeamNotFoundError>(),
             _ => throw new UnexpectedUpdateCountException()
         };
 
-    protected void Update(TKey key, TData item) =>
-        Connection.Execute($"UPDATE {_tableName} SET data = ? WHERE id = ?", Serialize(item), key);
+    protected Result Update(TKey key, TData item) =>
+        Connection.Query<int>($"UPDATE {_tableName} SET data = ? WHERE isArchived = FALSE AND id = ? RETURNING 0", Serialize(item), key).Count switch
+        {
+            1 => Succeed(),
+            0 => Fail<TeamNotFoundError>(),
+            _ => throw new UnexpectedUpdateCountException()
+        };
 
     protected bool Exists(TKey key) =>
         Connection.ExecuteScalar<int>($"SELECT COUNT(id) FROM {_tableName} WHERE isArchived = FALSE AND id = ? LIMIT 1", key) == 1;
@@ -91,7 +117,7 @@ public abstract class DataStore<TData, TKey> : IDataStore
         Connection.Dispose();
     }
 
-    internal record DataStoreItem(TKey Id, string Data, bool IsArchived)
+    protected record DataStoreItem(TKey Id, string Data, bool IsArchived)
     {
         public DataStoreItem() : this(default, string.Empty, false)
         {
@@ -100,3 +126,4 @@ public abstract class DataStore<TData, TKey> : IDataStore
 }
 
 public class UnexpectedUpdateCountException : Exception;
+public class DatabaseVersionAheadOfProgramVersion : Exception;

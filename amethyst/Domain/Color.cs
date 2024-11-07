@@ -58,6 +58,18 @@ public readonly struct Color
 
     public static Color Black => Color.FromRgb(0, 0, 0);
     public static Color White => Color.FromRgb(255, 255, 255);
+
+    public bool Equals(Color other) =>
+        other.Red == Red
+        && other.Green == Green
+        && other.Blue == Blue;
+
+    public override bool Equals(object? obj) =>
+        obj is Color c && Equals(c);
+
+    public override int GetHashCode() => Red.GetHashCode() ^ Green.GetHashCode() ^ Blue.GetHashCode();
+
+    public override string ToString() => HtmlCode;
 }
 
 internal class ColorJsonConverter : JsonConverter<Color>
