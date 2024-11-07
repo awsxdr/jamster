@@ -14,7 +14,8 @@ public abstract class TeamDetails(TeamSide teamSide, GameContext context, ILogge
         Guid.NewGuid(),
         new() { ["default"] = teamSide == TeamSide.Home ? "Black" : "White" },
         [],
-        []));
+        [],
+        DateTimeOffset.MinValue));
 
     public override Option<string> GetStateKey() =>
         Option.Some(teamSide.ToString());

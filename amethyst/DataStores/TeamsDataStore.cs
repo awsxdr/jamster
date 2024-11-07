@@ -1,5 +1,6 @@
 ﻿using System.Text.Json.Nodes;
 using amethyst.Domain;
+using amethyst.Services;
 using Func;
 
 namespace amethyst.DataStores;
@@ -15,8 +16,8 @@ public interface ITeamsDataStore
     Result SetRoster(Guid teamId, IEnumerable<Skater> skaters);
 }
 
-public class TeamsDataStore(ConnectionFactory connectionFactory) 
-    : DataStore<Team, Guid>("teams", 2, t => t.Id, connectionFactory)
+public class TeamsDataStore(ConnectionFactory connectionFactory, ISystemTime systemTime) 
+    : DataStore<Team, Guid>("teams", 3, t => t.Id, connectionFactory)
     , ITeamsDataStore
 {
     public IEnumerable<Team> GetTeams() =>
@@ -77,6 +78,7 @@ public class TeamsDataStore(ConnectionFactory connectionFactory)
                 break;
 
             case 2:
+            case 3:
             {
                 var items = 
                     GetAllItems()
@@ -85,8 +87,9 @@ public class TeamsDataStore(ConnectionFactory connectionFactory)
                         .Select(i => new Team(
                             i["Id"]!.GetValue<Guid>(),
                             i["Names"]!.GetValue<Dictionary<string, string>>(),
-                            new Dictionary<string, Dictionary<string, DisplayColor>>() { ["Legacy"] = i["Colors"]!.GetValue<Dictionary<string, DisplayColor>>() },
-                            i["Roster"]!.GetValue<List<Skater>>()))
+                            new Dictionary<string, Dictionary<string, DisplayColor>> { ["Legacy"] = i["Colors"]!.GetValue<Dictionary<string, DisplayColor>>() },
+                            i["Roster"]!.GetValue<List<Skater>>(),
+                            systemTime.UtcNow()))
                         .ToArray();
 
                 foreach (var item in items)
@@ -100,9 +103,15 @@ public class TeamsDataStore(ConnectionFactory connectionFactory)
     }
 }
 
-public record Team(Guid Id, Dictionary<string, string> Names, Dictionary<string, Dictionary<string, DisplayColor>> Colors, List<Skater> Roster)
+public record Team(
+    Guid Id, 
+    Dictionary<string, string> Names,
+    Dictionary<string, Dictionary<string, DisplayColor>> Colors,
+    List<Skater> Roster,
+    DateTimeOffset LastUpdateTime
+)
 {
-    public Team() : this(Guid.NewGuid(), [], [], [])
+    public Team() : this(Guid.NewGuid(), [], [], [], DateTimeOffset.MinValue)
     {
     }
 }

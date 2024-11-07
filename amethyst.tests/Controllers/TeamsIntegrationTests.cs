@@ -36,10 +36,7 @@ public class TeamsIntegrationTests : ControllerIntegrationTest
         var createResponse = (await Post<TeamModel>("api/Teams", team, HttpStatusCode.Created))!;
         createResponse.Id.Should().NotBeEmpty();
 
-        var expectedTeam = new TeamModel(
-            createResponse.Id,
-            createResponse.Names,
-            createResponse.Colors);
+        var expectedTeam = createResponse with { Names = team.Names, Colors = team.Colors };
 
         createResponse.Should().Be(expectedTeam);
     }
@@ -63,9 +60,9 @@ public class TeamsIntegrationTests : ControllerIntegrationTest
 
         await Put($"api/Teams/{createResponse.Id}", updateRequest, HttpStatusCode.OK);
 
-        var getResponse = await Get<TeamModel>($"api/Teams/{createResponse.Id}", HttpStatusCode.OK);
+        var getResponse = (await Get<TeamModel>($"api/Teams/{createResponse.Id}", HttpStatusCode.OK))!;
 
-        getResponse.Should().Be((TeamModel)(Team)updateRequest with { Id = createResponse.Id });
+        getResponse.Should().Be((TeamModel)(Team)updateRequest with { Id = createResponse.Id, LastUpdateTime = getResponse.LastUpdateTime });
     }
 
     [Test]
@@ -83,10 +80,7 @@ public class TeamsIntegrationTests : ControllerIntegrationTest
 
         var createResponse = (await Post<TeamModel>("api/Teams", team, HttpStatusCode.Created))!;
 
-        var expectedTeam = new TeamModel(
-            createResponse.Id,
-            createResponse.Names,
-            createResponse.Colors);
+        var expectedTeam = createResponse with { Names = team.Names, Colors = team.Colors };
 
         var getTeamsResponse = (await Get<TeamModel[]>("api/Teams", HttpStatusCode.OK))!;
         getTeamsResponse.Should().NotBeEmpty().And.ContainEquivalentOf(expectedTeam);
@@ -95,7 +89,8 @@ public class TeamsIntegrationTests : ControllerIntegrationTest
             expectedTeam.Id,
             expectedTeam.Names,
             expectedTeam.Colors,
-            []);
+            [],
+            expectedTeam.LastUpdateTime);
 
         var getTeamResponse = (await Get<TeamWithRosterModel>($"api/Teams/{createResponse.Id}", HttpStatusCode.OK))!;
         getTeamResponse.Should().BeEquivalentTo(expectedTeamWithRoster);
@@ -212,7 +207,7 @@ public class TeamsIntegrationTests : ControllerIntegrationTest
 
         var notificationTeam = await Wait(taskCompletionSource.Task);
 
-        notificationTeam.Should().Be((TeamModel)(Team)updateRequest with { Id = createResponse.Id });
+        notificationTeam.Should().Be((TeamModel)(Team)updateRequest with { Id = createResponse.Id, LastUpdateTime = notificationTeam.LastUpdateTime });
     }
 
     [Test]

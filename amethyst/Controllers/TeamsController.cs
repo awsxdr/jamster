@@ -99,25 +99,26 @@ public class TeamsController(
 
 public record CreateTeamModel(Dictionary<string, string> Names, Dictionary<string, Dictionary<string, DisplayColor>> Colors)
 {
-    public static explicit operator Team(CreateTeamModel model) => new(Guid.Empty, model.Names, model.Colors, []);
+    public static explicit operator Team(CreateTeamModel model) => new(Guid.Empty, model.Names, model.Colors, [], DateTimeOffset.UtcNow);
 }
 
 public record UpdateTeamModel(Dictionary<string, string> Names, Dictionary<string, Dictionary<string, DisplayColor>> Colors)
 {
-    public static explicit operator Team(UpdateTeamModel model) => new(Guid.Empty, model.Names, model.Colors, []);
+    public static explicit operator Team(UpdateTeamModel model) => new(Guid.Empty, model.Names, model.Colors, [], DateTimeOffset.UtcNow);
 }
 
-public record TeamModel(Guid Id, Dictionary<string, string> Names, Dictionary<string, Dictionary<string, DisplayColor>> Colors)
+public record TeamModel(Guid Id, Dictionary<string, string> Names, Dictionary<string, Dictionary<string, DisplayColor>> Colors, DateTimeOffset LastUpdateTime)
 {
-    public static explicit operator Team(TeamModel model) => new(model.Id, model.Names, model.Colors, []);
-    public static explicit operator TeamModel(Team team) => new(team.Id, team.Names, team.Colors);
+    public static explicit operator Team(TeamModel model) => new(model.Id, model.Names, model.Colors, [], model.LastUpdateTime);
+    public static explicit operator TeamModel(Team team) => new(team.Id, team.Names, team.Colors, team.LastUpdateTime);
 
     public virtual bool Equals(TeamModel? other) =>
         other is not null
         && other.Id == Id
         && other.Names.SequenceEqual(Names)
         && other.Colors.Keys.SequenceEqual(Colors.Keys)
-        && other.Colors.All(o => o.Value.SequenceEqual(Colors[o.Key]));
+        && other.Colors.All(o => o.Value.SequenceEqual(Colors[o.Key]))
+        && other.LastUpdateTime.Equals(LastUpdateTime);
 
     public override int GetHashCode() => HashCode.Combine(Id, Names.SequenceHashCode(), Colors.SequenceHashCode());
 }
@@ -126,13 +127,25 @@ public record TeamWithRosterModel(
     Guid Id,
     Dictionary<string, string> Names,
     Dictionary<string, Dictionary<string, DisplayColor>> Colors,
-    List<Skater> Roster)
+    List<Skater> Roster,
+    DateTimeOffset LastUpdateTime)
 {
     public static explicit operator Team(TeamWithRosterModel model) =>
-        new(model.Id, model.Names, model.Colors, model.Roster);
+        new(model.Id, model.Names, model.Colors, model.Roster, model.LastUpdateTime);
 
     public static explicit operator TeamWithRosterModel(Team team) =>
-        new(team.Id, team.Names, team.Colors, team.Roster);
+        new(team.Id, team.Names, team.Colors, team.Roster, team.LastUpdateTime);
+
+    public virtual bool Equals(TeamWithRosterModel? other) =>
+        other is not null
+        && other.Id == Id
+        && other.Names.SequenceEqual(Names)
+        && other.Colors.Keys.SequenceEqual(Colors.Keys)
+        && other.Colors.All(o => o.Value.SequenceEqual(Colors[o.Key]))
+        && other.Roster.SequenceEqual(Roster)
+        && other.LastUpdateTime.Equals(LastUpdateTime);
+
+    public override int GetHashCode() => HashCode.Combine(Id, Names.SequenceHashCode(), Colors.SequenceHashCode(), Roster.SequenceHashCode(), LastUpdateTime.GetHashCode());
 }
 
 public record RosterModel(List<Skater> Roster)

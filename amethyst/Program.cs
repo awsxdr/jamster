@@ -38,6 +38,8 @@ builder.Host.UseServiceProviderFactory(new AutofacServiceProviderFactory(contain
     container.RegisterType<SystemStateNotifier>().AsSelf().SingleInstance();
     container.RegisterType<TeamsNotifier>().AsSelf().SingleInstance();
 
+    container.RegisterType<SystemTime>().AsImplementedInterfaces().SingleInstance();
+
     var reducerTypes = AppDomain.CurrentDomain.GetAssemblies()
         .Where(a => !a.IsDynamic)
         .SelectMany(a => a.GetExportedTypes())
