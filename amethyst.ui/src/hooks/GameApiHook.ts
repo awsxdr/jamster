@@ -4,6 +4,7 @@ import { API_URL } from "./SignalRHubConnection"
 type GameApi = {
     getGames: () => Promise<GameInfo[]>,
     getGame: (gameId: string) => Promise<GameInfo>,
+    createGame: (name: string) => Promise<string>,
     getCurrentGame: () => Promise<GameInfo>,
     setCurrentGame: (gameId: string) => Promise<void>,
     getGameState: <TState,>(gameId: string, stateName: string) => Promise<TState>,
@@ -18,6 +19,22 @@ export const useGameApi: () => GameApi = () => {
     const getGame = async (gameId: string) => {
         const response = await fetch(`${API_URL}/api/games/${gameId}`);
         return (await response.json()) as GameInfo;
+    }
+
+    const createGame = async (name: string) => {
+        const response = await fetch(
+            `${API_URL}/api/games`,
+            {
+                method: 'POST',
+                body: JSON.stringify({ name }),
+                headers: {
+                    "Content-Type": "application/json; charset=utf-8"
+                }
+            });
+        
+        const { id: gameId } = (await response.json()) as { id: string };
+
+        return gameId;
     }
 
     const getCurrentGame = async () => {
@@ -45,6 +62,7 @@ export const useGameApi: () => GameApi = () => {
     return {
         getGames,
         getGame,
+        createGame,
         getCurrentGame,
         setCurrentGame,
         getGameState,
