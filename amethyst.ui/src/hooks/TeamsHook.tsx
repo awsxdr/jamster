@@ -2,28 +2,20 @@ import { StringMap, Team } from "@/types";
 import { createContext, PropsWithChildren, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useTeamApi } from "./TeamApiHook";
 import { useHubConnection } from "./SignalRHubConnection";
+import { v4 as uuidv4 } from 'uuid';
 
-type TeamListChanged = () => void;
-type TeamListWatch = (onTeamListChanged: TeamListChanged) => void;
-
-type TeamChanged = () => void;
-type TeamWatch = (teamId: string, onTeamChanged: TeamChanged) => void;
+type TeamChanged = (team: Team) => void;
 
 type TeamListContextProps = {
-    teamsListNotifiers: TeamListChanged[];
-    watchTeamsList: TeamListWatch;
-
-    teamNofitiers: StringMap<TeamChanged[]>;
-    watchTeam: TeamWatch;
+    watchTeam: (teamId: string, onTeamChanged: TeamChanged) => string;
+    unwatchTeam: (teamId: string, watchId: string) => void;
 
     teams: StringMap<Team>;
 }
 
 const TeamListContext = createContext<TeamListContextProps>({
-    teamsListNotifiers: [],
-    watchTeamsList: () => { throw new Error('watchTeamsList called before context created'); },
-    teamNofitiers: {},
     watchTeam: () => { throw new Error('watchTeam called before context created'); },
+    unwatchTeam: () => { throw new Error('unwatchTeam called before context created'); },
     teams: {},
 });
 
@@ -46,18 +38,16 @@ export const useTeam = (teamId: string) => {
 
     useEffect(() => {
         getInitialState().then(setTeam);
-    }, []);
+        const watchId = context.watchTeam(teamId, team => setTeam(team));
 
-    useEffect(() => {
-        context.watchTeam(teamId, () => setTeam(context.teams[teamId]));
+        return () => context.unwatchTeam(teamId, watchId);
     }, []);
 
     return team;
 }
 
 export const TeamListContextProvider = ({ children }: PropsWithChildren) => {
-    const [teamsListNotifiers, setTeamsListNotifiers] = useState<TeamListChanged[]>([]);
-    const [teamNofitiers, setTeamNotifiers] = useState<StringMap<TeamChanged[]>>({});
+    const [teamNotifiers, setTeamNotifiers] = useState<StringMap<StringMap<TeamChanged>>>({});
     const [teams, setTeams] = useState<StringMap<Team>>({});
 
     const connection = useHubConnection('teams');
@@ -73,58 +63,72 @@ export const TeamListContextProvider = ({ children }: PropsWithChildren) => {
             setTeams(
                 teams.reduce((teams, team) => ({ ...teams, [team.id]: team }), {})
             );
-            teamsListNotifiers.forEach(n => n());
+
+            Object.keys(teamNotifiers).forEach(teamId =>
+                Object.values(teamNotifiers[teamId] ?? {}).forEach(notifier =>
+                    notifier?.(teams.filter(t => t.id === teamId)[0])
+                )
+            )
         });
     }, []);
 
-    const watchTeamsList = (onTeamListChanged: TeamListChanged) => {
-        setTeamsListNotifiers(notifiers => [
-            ...notifiers,
-            onTeamListChanged,
-        ]);
-    }
-
     const watchTeam = (teamId: string, onTeamChanged: TeamChanged) => {
+        const watchId = uuidv4();
+
         setTeamNotifiers(notifiers => ({
             ...notifiers,
-            [teamId]: [...(notifiers[teamId] ?? []), onTeamChanged]
+            [teamId]: { ...notifiers[teamId], [watchId]: onTeamChanged }
+        }));
+
+        return watchId;
+    }
+
+    const unwatchTeam = (teamId: string, watchId: string) => {
+        setTeamNotifiers(notifiers => ({
+            ...notifiers,
+            [teamId]: { ...notifiers[teamId], [watchId]: undefined }
         }));
     }
 
     useEffect(() => {
-        connection?.invoke("WatchTeamChanged");
-        connection?.invoke("WatchTeamCreated");
-        connection?.invoke("WatchTeamArchived");
+        (async () => {
+            await connection?.invoke("WatchTeamChanged");
+            await connection?.invoke("WatchTeamCreated");
+            await connection?.invoke("WatchTeamArchived");
+        })();
     }, [connection]);
 
     useEffect(() => {
-        (async () => {
+        connection?.onreconnected(() => {
             connection?.invoke("WatchTeamChanged");
             connection?.invoke("WatchTeamCreated");
             connection?.invoke("WatchTeamArchived");
-        })();
+        });
     }, [connection]);
 
     useEffect(() => {
         connection?.on("TeamCreated", (team: Team) => {
             setTeams(t => ({ ...t, [team.id]: team }));
-            teamsListNotifiers.forEach(n => n());
         });
 
         connection?.on("TeamArchived", (teamId: string) => {
             setTeams(t => Object.keys(t).filter(k => k !== teamId).reduce((l, k) => ({ ...l, [k]: t[k] }), {}));
-            teamsListNotifiers.forEach(n => n());
         });
 
         connection?.on("TeamChanged", (team: Team) => {
             setTeams(t => ({ ...t, [team.id]: team }));
-            teamsListNotifiers.forEach(n => n());
-            teamNofitiers[team.id]?.forEach(n => n());
+            Object.values(teamNotifiers[team.id] ?? {}).forEach(n => n?.(team));
         });
-    });
+
+        return () => {
+            connection?.off("TeamCreated");
+            connection?.off("TeamArchived");
+            connection?.off("TeamChanged");
+        };
+    }, [connection]);
 
     return (
-        <TeamListContext.Provider value={{ watchTeamsList, teamsListNotifiers, watchTeam, teamNofitiers, teams }}>
+        <TeamListContext.Provider value={{ watchTeam, unwatchTeam, teams }}>
             { children }
         </TeamListContext.Provider>
     );
