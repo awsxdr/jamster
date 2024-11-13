@@ -9,8 +9,9 @@ public abstract class TeamScore(TeamSide teamSide, GameContext gameContext, ILog
     : Reducer<TeamScoreState>(gameContext)
     , IHandlesEvent<ScoreModifiedRelative>
     , IHandlesEvent<ScoreSet>
+    , IHandlesEvent<JamStarted>
 {
-    protected override TeamScoreState DefaultState => new(0);
+    protected override TeamScoreState DefaultState => new(0, 0);
 
     public override Option<string> GetStateKey() =>
         Option.Some(teamSide.ToString());
@@ -21,7 +22,7 @@ public abstract class TeamScore(TeamSide teamSide, GameContext gameContext, ILog
 
         var state = GetState();
 
-        state = state with {Score = Math.Max(0, state.Score + @event.Body.Value)};
+        state = new TeamScoreState(Score: Math.Max(0, state.Score + @event.Body.Value), JamScore: Math.Max(0, state.JamScore + @event.Body.Value));
 
         SetState(state);
 
@@ -34,12 +35,20 @@ public abstract class TeamScore(TeamSide teamSide, GameContext gameContext, ILog
 
         var state = GetState();
 
-        state = state with {Score = Math.Max(0, @event.Body.Value)};
+        var newScoreValue = Math.Max(0, @event.Body.Value);
+        state = new TeamScoreState(Score: newScoreValue, JamScore: Math.Max(0, state.JamScore + newScoreValue - state.Score));
 
         SetState(state);
 
         return [];
     });
+
+    public IEnumerable<Event> Handle(JamStarted _)
+    {
+        SetState(GetState() with { JamScore = 0 });
+
+        return [];
+    }
 
     private IEnumerable<Event> HandleIfTeam<TEvent>(TEvent @event, Func<IEnumerable<Event>> handler) where TEvent : Event
     {
@@ -50,7 +59,7 @@ public abstract class TeamScore(TeamSide teamSide, GameContext gameContext, ILog
     }
 }
 
-public record TeamScoreState(int Score);
+public record TeamScoreState(int Score, int JamScore);
 
 public sealed class HomeTeamScore(GameContext gameContext, ILogger<HomeTeamScore> logger)
     : TeamScore(TeamSide.Home, gameContext, logger);

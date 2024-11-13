@@ -6,7 +6,7 @@ namespace amethyst.tests.EventHandling;
 public class EventIntegrationTests : EventBusIntegrationTest
 {
     [TestCase( typeof(TestGameEventsSource), nameof(TestGameEventsSource.FullGame))]
-    [TestCase(typeof(TestGameEventsSource), nameof(TestGameEventsSource.SingleJamWithScores))]
+    [TestCase(typeof(TestGameEventsSource), nameof(TestGameEventsSource.TwoJamsWithScores))]
     [TestCase(typeof(TestGameEventsSource), nameof(TestGameEventsSource.SingleJamStartedWithoutEndingIntermission))]
     public async Task EventSources_UpdateStatesAsExpected(Type eventSourceType, string eventSourceName)
     {

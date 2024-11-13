@@ -54,6 +54,7 @@ export const TeamControls = ({ gameId, side }: TeamControlsProps) => {
             </CardHeader>
             <CardContent>
                 <Separator />
+                <JamScore side={side} />
                 <div className="flex w-full justify-center items-center">
                     <Button onClick={decrementScore} variant="secondary" className="text-md lg:text-xl">-1 [{side === TeamSide.Home ? 'a' : '\''}]</Button>
                     <TeamScore side={side} />

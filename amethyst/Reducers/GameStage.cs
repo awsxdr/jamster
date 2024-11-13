@@ -9,6 +9,7 @@ public class GameStage(GameContext context, ILogger<GameStage> logger)
     , IHandlesEvent<JamStarted>
     , IHandlesEvent<JamEnded>
     , IHandlesEvent<TimeoutStarted>
+    , IHandlesEvent<TimeoutEnded>
     , IHandlesEvent<PeriodEnded>
     , IHandlesEvent<PeriodFinalized>
 {
@@ -83,6 +84,21 @@ public class GameStage(GameContext context, ILogger<GameStage> logger)
         return [];
     }
 
+    public IEnumerable<Event> Handle(TimeoutEnded @event)
+    {
+        var state = GetState();
+        var newState = state.Stage switch
+        {
+            Stage.Timeout => state with {Stage = Stage.AfterTimeout},
+            _ => state
+        };
+
+        if (SetStateIfDifferent(newState))
+            logger.LogDebug("Setting game state to {state} after timeout end", newState);
+
+        return [];
+    }
+
     public IEnumerable<Event> Handle(PeriodEnded @event)
     {
         var state = GetState();
@@ -133,6 +149,7 @@ public enum Stage
     Lineup,
     Jam,
     Timeout,
+    AfterTimeout,
     Intermission,
     AfterGame,
 }

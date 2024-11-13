@@ -10,6 +10,8 @@ export type ComboBoxProps = {
     onValueChanged: (value: string) => void,
     items: ComboBoxItem[],
     placeholder: string,
+    className?: string,
+    dropdownClassName?: string,
 };
 
 export type ComboBoxItem = {
@@ -17,7 +19,7 @@ export type ComboBoxItem = {
     value: string,
 };
 
-export const ComboBox = ({ value, onValueChanged, items, placeholder }: ComboBoxProps) => {
+export const ComboBox = ({ value, onValueChanged, items, placeholder, className, dropdownClassName }: ComboBoxProps) => {
     const [isOpen, setIsOpen] = useState(false);
 
     return (
@@ -27,7 +29,7 @@ export const ComboBox = ({ value, onValueChanged, items, placeholder }: ComboBox
                     variant="outline"
                     role="combobox"
                     aria-expanded={isOpen}
-                    className="sm:w-[200px] md:w-[250px] lg:w-[400px] justify-between"
+                    className={cn("justify-between", className)}
                 >
                     {
                         value
@@ -37,7 +39,7 @@ export const ComboBox = ({ value, onValueChanged, items, placeholder }: ComboBox
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-[200px] p-0">
+            <PopoverContent className={cn("p-0", dropdownClassName)}>
                 <Command>
                     <CommandInput placeholder={placeholder} />
                     <CommandList>
