@@ -33,7 +33,7 @@ public abstract class DataStore<TData, TKey> : IDataStore
         Connection.Execute($"CREATE TABLE IF NOT EXISTS {_tableName} (id BLOB PRIMARY KEY, data TEXT, isArchived INTEGER)");
 
         Connection.Execute("CREATE TABLE IF NOT EXISTS __version (version INTEGER PRIMARY KEY)");
-        var currentVersion = Connection.Query<int>("SELECT version FROM __version LIMIT 1").SingleOrDefault();
+        var currentVersion = Connection.QueryScalars<int>("SELECT version FROM __version LIMIT 1").SingleOrDefault();
 
         if (currentVersion > version)
         {
@@ -46,6 +46,8 @@ public abstract class DataStore<TData, TKey> : IDataStore
             {
                 ApplyUpgrade(i);
             }
+
+            Connection.Execute("INSERT INTO __version (version) VALUES (?) ON CONFLICT DO UPDATE SET version = ?", version, version);
         }
     }
 

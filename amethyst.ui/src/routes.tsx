@@ -3,7 +3,8 @@ import { CurrentGameScoreboard } from "./pages/scoreboard";
 import { MainMenu } from "./pages/menu";
 import { TitlePage } from "./pages/title";
 import { ScoreboardControl } from "./pages/control";
-import { TeamManagement } from "./pages/teams/TeamManagement";
+import { TeamsManagement } from "./pages/teams/TeamsManagement";
+import { TeamEdit } from "./pages/teams/TeamEdit";
 
 export const Routes = () => {
     const router = createBrowserRouter([
@@ -17,7 +18,11 @@ export const Routes = () => {
         },
         {
             path: '/teams',
-            element: <MainMenu content={<TeamManagement />} />
+            element: <MainMenu content={<TeamsManagement />} />,
+        },
+        {
+            path: '/teams/:teamId',
+            element: <MainMenu content={<TeamEdit />} />,
         },
         {
             path: '/scoreboard',

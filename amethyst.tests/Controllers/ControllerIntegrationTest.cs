@@ -5,6 +5,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 
 using amethyst.DataStores;
+using amethyst.Services;
 using FluentAssertions;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Logging;
@@ -12,6 +13,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
+using Moq;
 
 namespace amethyst.tests.Controllers;
 
@@ -27,6 +29,9 @@ public abstract class ControllerIntegrationTest
 
     protected ControllerIntegrationTest()
     {
+        var systemTimeMock = new Mock<ISystemTime>();
+        systemTimeMock.Setup(mock => mock.UtcNow()).Returns(new DateTimeOffset(2000, 5, 4, 3, 2, 1, TimeSpan.Zero));
+
         _applicationFactory = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
         {
             builder.ConfigureLogging(logOptions =>
