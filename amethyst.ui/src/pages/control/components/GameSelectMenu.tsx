@@ -12,11 +12,11 @@ type GameSelectMenuProps = {
 
 export const GameSelectMenu = ({ games, currentGame, selectedGameId, onSelectedGameIdChanged }: GameSelectMenuProps) => {
 
-    const { translate } = useI18n();
+    const { translate, language } = useI18n();
 
     const items = useMemo(() => 
         games.map(game => ({ value: game.id, text: `${game.name}${(game.id === currentGame?.id ? ` (${translate('Current')})` : '')}`})),
-        [games, currentGame]);
+        [games, currentGame, language]);
 
     return (
         <>

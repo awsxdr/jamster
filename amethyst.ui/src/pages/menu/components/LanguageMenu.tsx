@@ -2,7 +2,6 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
 import { useI18n } from "@/hooks/I18nHook";
 import { Check, ChevronUp, Globe } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 
 type LanguageItemProps = {
     language: string;
@@ -12,11 +11,8 @@ type LanguageItemProps = {
 const LanguageItem = ({ language, displayName }: LanguageItemProps) => {
     const { language: currentLanguage, setLanguage } = useI18n();
 
-    const navigate = useNavigate();
-
     const changeLanguage = () => {
         setLanguage(language);
-        navigate(0);
     }
 
     return (

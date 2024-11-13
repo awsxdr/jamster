@@ -16,7 +16,7 @@ type MainControlsProps = {
 export const MainControls = ({ gameId }: MainControlsProps) => {
 
     const gameStage = useGameStageState();
-    const {translate} = useI18n();
+    const {translate, language} = useI18n();
     const { sendEvent } = useEvents();
 
     const [startText, startButtonEnabled] = useMemo(() => {
@@ -25,7 +25,7 @@ export const MainControls = ({ gameId }: MainControlsProps) => {
         } else {
             return [translate("Start jam"), true];
         }
-    }, [gameStage]);
+    }, [gameStage, language]);
 
     const [endText, endButtonEnabled] = useMemo(() => {
         switch (gameStage?.stage) {
@@ -35,7 +35,7 @@ export const MainControls = ({ gameId }: MainControlsProps) => {
             case Stage.AfterGame: return [translate("Finalize game"), true];
             default: return ["---", false];
         }
-    }, [gameStage?.stage]);
+    }, [gameStage?.stage, language]);
 
     const [timeoutText, timeoutButtonEnabled] = useMemo(() => {
         if(gameStage && !gameStage.periodIsFinalized) {
@@ -43,11 +43,11 @@ export const MainControls = ({ gameId }: MainControlsProps) => {
         } else {
             return ["---", false];
         }
-    }, [gameStage]);
+    }, [gameStage, language]);
 
     const [undoText, undoButtonEnabled] = useMemo(() => {
-        return [translate("Undo"), true];
-    }, []);
+        return [translate("Undo"), false];
+    }, [language]);
 
     const sendEventIfIdSet = (event: Event) => {
         if(!gameId) return;
