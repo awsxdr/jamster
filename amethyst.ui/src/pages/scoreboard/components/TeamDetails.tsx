@@ -1,7 +1,6 @@
 import { TeamSide } from "@/types";
 import { TeamName } from "./TeamName";
 
-import styles from './TeamDetails.module.scss';
 import { TeamTimeouts } from "./TeamTimeouts";
 import { TeamScore } from "./TeamScore";
 import { TripScore } from "./TripScore";
@@ -13,11 +12,11 @@ type TeamDetailsProps = {
 
 export const TeamDetails = ({ side }: TeamDetailsProps) => {
     return (
-        <div className={styles.container}>
-            <div className={styles.nameContainer}>
+        <div className="flex flex-col grow w-1/2">
+            <div className="h-[40%]">
                 <TeamName side={side} />
             </div>
-            <div className={cn(styles.scoreAndTimeoutsContainer, side === TeamSide.Home ? styles.home : styles.away)}>
+            <div className={cn("flex h-[60%]", side === TeamSide.Home ? "flex-row" : "flex-row-reverse")}>
                 <TeamTimeouts side={side} />
                 <TeamScore side={side} />
                 <TripScore side={side} />

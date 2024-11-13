@@ -8,7 +8,7 @@ export const ClocksContainer = () => {
     const { translate } = useI18n();
 
     return (
-        <div className="w-full flex space-x-2">
+        <div className="w-full flex space-x-5 mt-5">
             <Clock name={`${translate('Jam')} ${gameStage?.jamNumber ?? 0}`} clock={c => <JamClock textClassName={c} />} />
             <Clock name={`${translate('Period')} ${gameStage?.periodNumber ?? 0}`} clock={c => <PeriodClock textClassName={c} />} />
             <Clock name={translate('Lineup')} clock={c => <LineupClock textClassName={c} />} />

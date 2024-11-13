@@ -9,6 +9,8 @@ import { TripScore } from "./TripScore";
 import { Event, useEvents } from "@/hooks/EventsApiHook";
 import { ScoreModifiedRelative } from "@/types/events/Scores";
 import { useHotkeys } from "react-hotkeys-hook";
+import { cn } from "@/lib/utils";
+import { JamScore } from "./JamScore";
 
 type TeamControlsProps = {
     gameId?: string;
@@ -48,7 +50,7 @@ export const TeamControls = ({ gameId, side }: TeamControlsProps) => {
     useHotkeys(side === TeamSide.Home ? 's' : '#', incrementScore, { preventDefault: true });
 
     return (
-        <Card className="grow inline-block m-2">
+        <Card className={cn("grow inline-block mt-5", side === TeamSide.Home ? "mr-2.5" : "ml-2.5")}>
             <CardHeader>
                 <CardTitle className="text-center text-xl">{teamName}</CardTitle>
             </CardHeader>

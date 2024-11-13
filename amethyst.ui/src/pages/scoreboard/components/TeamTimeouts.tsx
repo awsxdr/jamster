@@ -1,7 +1,6 @@
 import { useTeamTimeoutsState } from "@/hooks";
 import { useMemo } from "react";
 import { ScoreboardComponent } from "./ScoreboardComponent";
-import styles from './TeamTimeouts.module.scss';
 import { ScaledText } from '@components/ScaledText';
 import { ReviewStatus, TeamSide, TimeoutInUse } from "@/types";
 
@@ -28,7 +27,7 @@ const TimeoutSymbol = ({ state }: TimeoutSymbolProps) => {
     [state]);
 
     return (
-        <ScaledText className={styles.symbol} text={symbol} />
+        <ScaledText className="flex grow shrink-0 basis-[0] text-black justify-center items-center w-full" text={symbol} />
     );
 }
 
@@ -45,13 +44,13 @@ export const TeamTimeouts = ({ side }: TeamTimeoutsProps) => {
     }, [timeouts]);
 
     return (
-        <div className={styles.container}>
-            <ScoreboardComponent className={styles.teamTimeoutsContainer}>
+        <div className="flex flex-col grow h-full mh-full">
+            <ScoreboardComponent className="flex flex-col m-5 mt-0 py-2 items-center text-center grow-[3]">
                 { Array.from(new Array(timeouts?.numberRemaining ?? 3)).map((_, i) => (<TimeoutSymbol key={i} state={TimeoutSymbolState.Default} />))}
                 { timeouts?.currentTimeout === TimeoutInUse.Timeout && <TimeoutSymbol state={TimeoutSymbolState.Default} active /> }
                 { Array.from(new Array(3 - (timeouts?.numberRemaining ?? 3))).map((_, i) => (<TimeoutSymbol key={3 - i} state={TimeoutSymbolState.Hidden} />))}
             </ScoreboardComponent>
-            <ScoreboardComponent className={styles.reviewContainer}>
+            <ScoreboardComponent className="flex flex-col mx-5 my-0 py-2 items-center text-center grow">
                 <TimeoutSymbol state={reviewSymbolState} active={timeouts?.currentTimeout === TimeoutInUse.Review} />
             </ScoreboardComponent>
         </div>

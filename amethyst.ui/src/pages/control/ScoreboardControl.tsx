@@ -51,12 +51,14 @@ export const ScoreboardControl = () => {
                     onSelectedGameIdChanged={updateSelectedGameId} 
                 />
                 <Separator />
-                <GameStateContextProvider gameId={selectedGameId}>
-                    <ControlPanel 
-                        gameId={selectedGameId}
-                    />
-                </GameStateContextProvider>
-                <NewGameDialog onNewGameCreated={handleNewGameCreated} />
+                <div className="px-5">
+                    <GameStateContextProvider gameId={selectedGameId}>
+                        <ControlPanel 
+                            gameId={selectedGameId}
+                        />
+                    </GameStateContextProvider>
+                    <NewGameDialog onNewGameCreated={handleNewGameCreated} />
+                </div>
             </NewGameDialogContainer>
         </>
     );

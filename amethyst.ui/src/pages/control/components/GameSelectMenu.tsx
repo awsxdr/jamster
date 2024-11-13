@@ -25,6 +25,8 @@ export const GameSelectMenu = ({ games, currentGame, selectedGameId, onSelectedG
                 value={selectedGameId ?? ""}
                 placeholder={translate("Select game...")}
                 onValueChanged={onSelectedGameIdChanged}
+                className="sm:w-[200px] md:w-[250px] lg:w-[400px]"
+                dropdownClassName="sm:w-[200px] md:w-[250px] lg:w-[400px]"
             />
         </>
     );

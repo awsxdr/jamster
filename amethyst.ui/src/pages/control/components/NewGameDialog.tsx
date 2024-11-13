@@ -96,6 +96,7 @@ export const NewGameDialog = ({ onNewGameCreated }: NewGameDialogProps) => {
                         value={homeTeamId ?? ""} 
                         placeholder={translate("NewGameDialog.SelectTeam")} 
                         onValueChanged={setHomeTeamId}
+                        dropdownClassName="w-[460px]"
                     />
                     <Label>{translate("NewGameDialog.AwayTeam")}</Label>
                     <ComboBox 
@@ -103,6 +104,7 @@ export const NewGameDialog = ({ onNewGameCreated }: NewGameDialogProps) => {
                         value={awayTeamId ?? ""} 
                         placeholder={translate("NewGameDialog.SelectTeam")} 
                         onValueChanged={setAwayTeamId}
+                        dropdownClassName="w-[460px]"
                     />
                     <Label>{translate("NewGameDialog.GameName")}</Label>
                     <div className="flex">

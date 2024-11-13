@@ -1,5 +1,4 @@
 import { CSSProperties, PropsWithChildren } from 'react';
-import styles from './ScoreboardComponent.module.css';
 import { cn } from '@/lib/utils';
 
 type ScoreboardComponentProps = {
@@ -10,8 +9,8 @@ type ScoreboardComponentProps = {
 
 export const ScoreboardComponent = ({ header, style, className, children }: PropsWithChildren<ScoreboardComponentProps>) => {
     return (
-        <div style={style} className={cn(className, styles.component )}>
-            { header && <div className={styles.header}>{header}</div> }
+        <div style={style} className={cn(className, "flex flex-col bg-white content-stretch rounded-3xl" )}>
+            { header && <div className="bg-gray-300 rounded-t-3xl text-center text-5xl font-bold p-4">{header}</div> }
             {children}
         </div>
     );

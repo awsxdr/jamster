@@ -3,7 +3,6 @@ import { ScoreboardComponent } from '@/pages/scoreboard/components/ScoreboardCom
 import { GameStateContextProvider, useCurrentGame, useGameStageState } from '@/hooks';
 import { Stage, TeamSide } from '@/types';
 import { TeamDetails } from './components/TeamDetails';
-import styles from './Scoreboard.module.css';
 
 export const CurrentGameScoreboard = () => {
     const { currentGame } = useCurrentGame();
@@ -21,25 +20,25 @@ export const Scoreboard = () => {
 
     return (
         <>
-            <div className={styles.scoreboardPage}>
-                <div className={styles.sidePadding}></div>
-                <div className={styles.centerContent}>
-                    <div className={styles.clocksAndScores}>
-                        <div className={styles.teamDetailsContainer}>
+            <div className="flex bg-black w-full h-full">
+                <div className="inline-block grow"></div>
+                <div className="inline-flex flex-col mw-[140vh] w-full">
+                    <div className="h-screen flex flex-col justify-center">
+                        <div className="flex justify-around items-stretch h-[50vh] overflow-hidden">
                             <TeamDetails side={TeamSide.Home} />
                             <TeamDetails side={TeamSide.Away} />
                         </div>
-                        <div className={styles.clockContainer}>
-                            <ScoreboardComponent className={styles.clock} header={`Period ${gameStage.periodNumber}`}>
-                                <PeriodClock textClassName={styles.clockText} />
+                        <div className="flex justify-around p-4 h-[30vh]">
+                            <ScoreboardComponent className="w-2/5 h-full" header={`Period ${gameStage.periodNumber}`}>
+                                <PeriodClock textClassName="flex justify-center items-center h-full m-2 overflow-hidden" />
                             </ScoreboardComponent>
-                            <ScoreboardComponent className={styles.clock} header={`Jam ${gameStage.jamNumber}`}>
-                                <JamClock textClassName={styles.clockText} />
+                            <ScoreboardComponent className="w-2/5 h-full" header={`Jam ${gameStage.jamNumber}`}>
+                                <JamClock textClassName="flex justify-center items-center h-full m-2 overflow-hidden" />
                             </ScoreboardComponent>
                         </div>
                     </div>
                 </div>
-                <div className={styles.sidePadding}></div>
+                <div className="inline-block grow"></div>
             </div>
         </>
     );

@@ -78,7 +78,7 @@ export const MainControls = ({ gameId }: MainControlsProps) => {
     useHotkeys('t', handleTimeout);
 
     return (
-        <Card className="grow m-2 pt-6">
+        <Card className="grow mt-5 pt-6">
             <CardContent className="flex justify-evenly">
                 <Button onClick={handleStart} disabled={!startButtonEnabled}><Play /> { startText } [`]</Button>
                 <Button onClick={handleEnd} disabled={!endButtonEnabled}><Square /> { endText } [y]</Button>

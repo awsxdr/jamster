@@ -1,7 +1,6 @@
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { MenuSidebar } from './components/MenuSidebar';
 import { ReactNode } from 'react';
-import styles from './MainMenu.module.scss';
 import { ThemeProvider } from '@/hooks/ThemeHook';
 import { getCookie } from 'typescript-cookie';
 
@@ -17,7 +16,7 @@ export const MainMenu = ({ content }: MainMenuProps) => {
             <ThemeProvider defaultTheme='light'>
                 <SidebarProvider defaultOpen={sidebarState}>
                     <MenuSidebar />
-                    <main className={styles.content}>
+                    <main className="w-full">
                         { content }
                     </main>
                 </SidebarProvider>

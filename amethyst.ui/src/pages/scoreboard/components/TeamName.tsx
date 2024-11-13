@@ -2,7 +2,6 @@ import { useTeamDetailsState } from "@/hooks";
 import { ScaledText } from "../../../components/ScaledText";
 import { useMemo } from "react";
 import { TeamSide } from "@/types";
-import styles from './TeamName.module.css';
 import { cn } from "@/lib/utils";
 
 type TeamScoreProps = {
@@ -24,7 +23,7 @@ export const TeamName = ({ side, textClassName }: TeamScoreProps) => {
 
     return (
         <>
-            <ScaledText text={teamName || ''} className={cn(styles.teamNameText, textClassName)} />
+            <ScaledText text={teamName || ''} className={cn("flex justify-center items-center h-full m-2 overflow-hidden text-white", textClassName)} />
         </>
     );
 }

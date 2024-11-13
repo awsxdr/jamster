@@ -1,7 +1,6 @@
 import { Button } from "@/components/ui/button"
 import { GameSelectMenu } from "./GameSelectMenu"
 import { Repeat, SquarePlus } from "lucide-react"
-import styles from './GameToolbar.module.scss';
 import { ConfirmMakeCurrentDialog } from "./ConfirmMakeCurrentDialog";
 import { GameInfo } from "@/types";
 import { useI18n } from "@/hooks/I18nHook";
@@ -20,7 +19,7 @@ export const GameToolbar = ({ games, currentGame, onCurrentGameIdChanged, select
     const { translate } = useI18n();
 
     return (
-        <div className={styles.toolbar}>
+        <div className="flex justify-center p-[20px] bg-card gap-2">
             <GameSelectMenu 
                 games={games} 
                 currentGame={currentGame} 
