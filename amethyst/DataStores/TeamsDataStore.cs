@@ -1,4 +1,5 @@
-﻿using System.Text.Json.Nodes;
+﻿using System.Text.Json;
+using System.Text.Json.Nodes;
 using amethyst.Domain;
 using amethyst.Services;
 using Func;
@@ -86,9 +87,12 @@ public class TeamsDataStore(ConnectionFactory connectionFactory, ISystemTime sys
                         .Cast<JsonObject>()
                         .Select(i => new Team(
                             i["Id"]!.GetValue<Guid>(),
-                            i["Names"]!.GetValue<Dictionary<string, string>>(),
-                            new Dictionary<string, Dictionary<string, DisplayColor>> { ["Legacy"] = i["Colors"]!.GetValue<Dictionary<string, DisplayColor>>() },
-                            i["Roster"]!.GetValue<List<Skater>>(),
+                            i["Names"]!.AsObject().ToDictionary(k => k.Key, v => v.Value!.GetValue<string>()),
+                            new Dictionary<string, Dictionary<string, DisplayColor>>
+                            {
+                                ["Legacy"] = i["Colors"]!.AsObject().ToDictionary(k => k.Key, v => v.Value!.Deserialize<DisplayColor>()!)
+                            },
+                            i["Roster"]!.AsArray().Select(n => n!.Deserialize<Skater>()!).ToList(),
                             systemTime.UtcNow()))
                         .ToArray();
 
