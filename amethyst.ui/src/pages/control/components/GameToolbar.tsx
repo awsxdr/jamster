@@ -5,6 +5,7 @@ import styles from './GameToolbar.module.scss';
 import { ConfirmMakeCurrentDialog } from "./ConfirmMakeCurrentDialog";
 import { GameInfo } from "@/types";
 import { useI18n } from "@/hooks/I18nHook";
+import { NewGameDialogTrigger } from "./NewGameDialog";
 
 type GameToolbarProps = {
     games: GameInfo[];
@@ -32,10 +33,12 @@ export const GameToolbar = ({ games, currentGame, onCurrentGameIdChanged, select
                     <span className="hidden lg:inline">{translate("Make current")}</span>
                 </Button>
             </ConfirmMakeCurrentDialog>
-            <Button variant="creative">
-                <SquarePlus />
-                <span className="hidden lg:inline">{translate("New game...")}</span>
-            </Button>
+            <NewGameDialogTrigger>
+                <Button variant="creative">
+                    <SquarePlus />
+                    <span className="hidden lg:inline">{translate("New game...")}</span>
+                </Button>
+            </NewGameDialogTrigger>
         </div>
     )
 }
