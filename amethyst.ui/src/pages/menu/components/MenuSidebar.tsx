@@ -69,7 +69,7 @@ export const MenuSidebar = () => {
                                     <SidebarMenu>
                                         {items.map(item =>
                                             <SidebarMenuItem key={item.title}>
-                                                <SidebarMenuButton asChild isActive={location.pathname === item.href}>
+                                                <SidebarMenuButton asChild isActive={location.pathname.startsWith(item.href)}>
                                                     <Link to={item.href}>
                                                         {item.icon}
                                                         <span>{translate(item.title)}</span>
