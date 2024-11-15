@@ -7,9 +7,10 @@ using System.Collections.Immutable;
 using DataStores;
 using Reducers;
 
-public interface IGameContextFactory
+public interface IGameContextFactory : IDisposable
 {
     GameContext GetGame(GameInfo gameInfo);
+    void UnloadGame(Guid gameId);
 }
 
 public class GameContextFactory(
@@ -26,6 +27,15 @@ public class GameContextFactory(
         // GetOrAdd is not thread-safe. The use of Lazy<> ensures that LoadGame only gets called once.
         _gameContexts.GetOrAdd(gameInfo.Id, _ => new(() => LoadGame(gameInfo))).Value;
 
+    public void UnloadGame(Guid gameId)
+    {
+        if (!_gameContexts.Remove(gameId, out var context))
+            return;
+
+        context.Value.Dispose();
+    }
+        
+
     private GameContext LoadGame(GameInfo gameInfo)
     {
         logger.LogInformation("Loading game state for {gameName} ({gameId})", gameInfo.Name, gameInfo.Id);
@@ -37,18 +47,42 @@ public class GameContextFactory(
         var events = game.GetEvents().ToArray();
 
         var stateStore = stateStoreFactory();
-        var gameContextWithoutReducers = new GameContext(gameInfo, [], stateStore);
-        var reducers = reducerFactories.Select(f => f(gameContextWithoutReducers)).ToImmutableList();
+        var reducerGameContext = new ReducerGameContext(gameInfo, stateStore);
+        var reducers = reducerFactories.Select(f => f(reducerGameContext)).ToImmutableList();
         stateStore.LoadDefaultStates(reducers);
         stateStore.ApplyEvents(reducers, events);
 
-        gameClockFactory(gameInfo, reducers.OfType<ITickReceiver>()).Run();
+        var gameClock = gameClockFactory(gameInfo, reducers.OfType<ITickReceiver>());
+        gameClock.Run();
 
         loadTimer.Stop();
         logger.LogInformation("Loaded game in {loadTime}ms", loadTimer.ElapsedMilliseconds);
 
-        return gameContextWithoutReducers with {Reducers = reducers};
+        return new GameContext(gameInfo, reducers, stateStore, gameClock);
+    }
+
+    public void Dispose()
+    {
+        foreach (var context in _gameContexts.Values)
+        {
+            context.Value.Dispose();
+        }
+        _gameContexts.Clear();
     }
 }
 
-public record GameContext(GameInfo GameInfo, IImmutableList<IReducer> Reducers, IGameStateStore StateStore);
+public record ReducerGameContext(GameInfo GameInfo, IGameStateStore StateStore);
+
+public record GameContext(
+    GameInfo GameInfo,
+    IImmutableList<IReducer> Reducers,
+    IGameStateStore StateStore,
+    IGameClock GameClock) : IDisposable
+{
+    public void Dispose()
+    {
+        GC.SuppressFinalize(this);
+
+        GameClock.Dispose();
+    }
+}

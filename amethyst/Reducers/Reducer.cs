@@ -5,7 +5,7 @@ namespace amethyst.Reducers;
 using Events;
 using Services;
 
-public delegate IReducer ReducerFactory(GameContext gameContext);
+public delegate IReducer ReducerFactory(ReducerGameContext gameContext);
 
 public interface IReducer
 {
@@ -57,10 +57,10 @@ public interface IHandlesEventAsync<in TEvent>
     Task<IEnumerable<Event>> HandleAsync(TEvent @event);
 }
 
-public abstract class Reducer<TState>(GameContext context) : IReducer<TState>
+public abstract class Reducer<TState>(ReducerGameContext context) : IReducer<TState>
     where TState : class
 {
-    protected GameContext Context { get; } = context;
+    protected ReducerGameContext Context { get; } = context;
 
     protected abstract TState DefaultState { get; }
 

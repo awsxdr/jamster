@@ -13,6 +13,8 @@ public interface IGameDataStore : IEventStore
     void SetInfo(GameInfo info);
     Guid AddEvent(Event @event);
     IEnumerable<Event> GetEvents();
+    Result<Event> GetEvent(Guid id);
+    void DeleteEvent(Guid eventId);
 }
 
 public class GameDataStore : EventStore, IGameDataStore
@@ -69,10 +71,7 @@ public class GameDataStore : EventStore, IGameDataStore
 
         var eventDecodeResults =
             events
-                .Select(e => (IUntypedEvent)(
-                    string.IsNullOrWhiteSpace(e.Body)
-                        ? new UntypedEvent(e.Type, e.Id) 
-                        : new UntypedEventWithBody(e.Type, e.Id, JsonNode.Parse(e.Body)!.AsObject())))
+                .Select(EventItemToUntypedEvent)
                 .Select(_eventConverter.DecodeEvent)
                 .ToArray();
 
@@ -87,6 +86,30 @@ public class GameDataStore : EventStore, IGameDataStore
                 .Select(s => s.Value)
                 .ToArray();
     }
+
+    public Result<Event> GetEvent(Guid id)
+    {
+        var events = Connection.Query<EventItem>("SELECT * FROM events WHERE id = ?", id);
+
+        return
+            events.Count == 1
+                ? _eventConverter.DecodeEvent(EventItemToUntypedEvent(events[0]))
+                : Result<Event>.Fail<EventNotFoundError>();
+    }
+
+    public void DeleteEvent(Guid eventId)
+    {
+        _logger.LogDebug("Deleting event {eventId}", eventId);
+
+        Connection.Execute("DELETE FROM events WHERE id = ?", eventId);
+    }
+
+    private static IUntypedEvent EventItemToUntypedEvent(EventItem @event) =>
+        string.IsNullOrWhiteSpace(@event.Body)
+            ? new UntypedEvent(@event.Type, @event.Id)
+            : new UntypedEventWithBody(@event.Type, @event.Id, JsonNode.Parse(@event.Body)!.AsObject());
+
+    public sealed class EventNotFoundError : ResultError;
 }
 
 public record GameInfo(Guid Id, string Name)

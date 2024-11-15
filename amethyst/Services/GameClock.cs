@@ -7,11 +7,9 @@ namespace amethyst.Services;
 public interface IGameClock : IDisposable
 {
     void Run();
-
-    public static long GetTick() => DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 }
 
-public class GameClock(GameInfo game, IEnumerable<ITickReceiverAsync> receivers, IEventBus eventBus, ILogger<GameClock> logger) : IGameClock
+public class GameClock(GameInfo game, IEnumerable<ITickReceiverAsync> receivers, IEventBus eventBus, ISystemTime systemTime, ILogger<GameClock> logger) : IGameClock
 {
     public delegate IGameClock Factory(GameInfo game, IEnumerable<ITickReceiverAsync> receivers);
 
@@ -27,7 +25,7 @@ public class GameClock(GameInfo game, IEnumerable<ITickReceiverAsync> receivers,
         {
             while (_isRunning)
             {
-                var tick = IGameClock.GetTick();
+                var tick = systemTime.GetTick();
 
                 foreach (var receiver in receivers)
                 {

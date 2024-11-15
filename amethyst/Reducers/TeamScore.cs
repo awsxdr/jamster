@@ -5,7 +5,7 @@ using Func;
 
 namespace amethyst.Reducers;
 
-public abstract class TeamScore(TeamSide teamSide, GameContext gameContext, ILogger logger)
+public abstract class TeamScore(TeamSide teamSide, ReducerGameContext gameContext, ILogger logger)
     : Reducer<TeamScoreState>(gameContext)
     , IHandlesEvent<ScoreModifiedRelative>
     , IHandlesEvent<ScoreSet>
@@ -61,7 +61,7 @@ public abstract class TeamScore(TeamSide teamSide, GameContext gameContext, ILog
 
 public record TeamScoreState(int Score, int JamScore);
 
-public sealed class HomeTeamScore(GameContext gameContext, ILogger<HomeTeamScore> logger)
+public sealed class HomeTeamScore(ReducerGameContext gameContext, ILogger<HomeTeamScore> logger)
     : TeamScore(TeamSide.Home, gameContext, logger);
-public sealed class AwayTeamScore(GameContext gameContext, ILogger<AwayTeamScore> logger) 
+public sealed class AwayTeamScore(ReducerGameContext gameContext, ILogger<AwayTeamScore> logger) 
     : TeamScore(TeamSide.Away, gameContext, logger);

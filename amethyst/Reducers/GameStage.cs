@@ -3,7 +3,7 @@ using amethyst.Services;
 
 namespace amethyst.Reducers;
 
-public class GameStage(GameContext context, ILogger<GameStage> logger) 
+public class GameStage(ReducerGameContext context, ILogger<GameStage> logger) 
     : Reducer<GameStageState>(context)
     , IHandlesEvent<IntermissionEnded>
     , IHandlesEvent<JamStarted>

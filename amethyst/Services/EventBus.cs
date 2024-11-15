@@ -14,11 +14,13 @@ public interface IEventBus
     Task<Event> AddEventAtCurrentTick(GameInfo game, Event @event);
     Task<Event> AddEvent(GameInfo game, Event @event);
     Task AddEventWithoutPersisting(GameInfo game, Event @event);
+    Task<Result> RemoveEvent(GameInfo game, Guid eventId);
 }
 
 public class EventBus(
     IGameContextFactory contextFactory,
     IGameDataStoreFactory gameStoreFactory,
+    ISystemTime systemTime,
     ILogger<EventBus> logger) 
     : IEventBus
 {
@@ -26,7 +28,7 @@ public class EventBus(
 
     public Task<Event> AddEventAtCurrentTick(GameInfo game, Event @event)
     {
-        @event.Id = Guid7.FromTick(IGameClock.GetTick());
+        @event.Id = Guid7.FromTick(systemTime.GetTick());
         return AddEvent(game, @event);
     }
 
@@ -34,10 +36,14 @@ public class EventBus(
     {
         using var @lock = await AcquireLock(game.Id);
 
+        logger.LogDebug("Adding event {event} for game {gameId}", @event, game.Id);
+
         var gameContext = contextFactory.GetGame(game);
 
         if (@event is IPeriodClockAligned)
         {
+            logger.LogDebug("Aligning event to period clock");
+
             var periodClock = gameContext.StateStore.GetState<PeriodClockState>();
             if (periodClock.IsRunning)
             {
@@ -51,6 +57,7 @@ public class EventBus(
 
         @event.Id = persistResult.Value;
 
+        logger.LogDebug("Applying event {eventId} to game {gameId}", @event.Id, game.Id);
         await gameContext.StateStore.ApplyEvents(gameContext.Reducers, @event);
 
         return @event;
@@ -60,13 +67,27 @@ public class EventBus(
     {
         using var @lock = await AcquireLock(game.Id);
 
-        var stateStore = contextFactory.GetGame(game);
+        var gameContext = contextFactory.GetGame(game);
 
-        await stateStore.StateStore.ApplyEvents(stateStore.Reducers, @event);
+        await gameContext.StateStore.ApplyEvents(gameContext.Reducers, @event);
+    }
+
+    public async Task<Result> RemoveEvent(GameInfo game, Guid eventId)
+    {
+        using var @lock = await AcquireLock(game.Id);
+
+        return RemoveEventFromDatabase(game, eventId)
+            .Then(() =>
+            {
+                contextFactory.UnloadGame(game.Id);
+                _ = contextFactory.GetGame(game);
+                return Result.Succeed();
+            });
     }
 
     private async Task<AsyncLock.Holder> AcquireLock(Guid gameId)
     {
+        logger.LogTrace("Acquiring game event lock for {gameId}", gameId);
         var eventLock = _gameLocks.GetOrAdd(gameId, _ => new(() => new AsyncManualResetEvent(false))).Value;
         return await eventLock.AcquireLockAsync();
     }
@@ -88,5 +109,27 @@ public class EventBus(
         }
     }
 
+    private Result RemoveEventFromDatabase(GameInfo game, Guid eventId)
+    {
+        var databaseName = IGameDiscoveryService.GetGameFileName(game);
+
+        try
+        {
+            var dataStore = gameStoreFactory.GetDataStore(databaseName);
+            return dataStore.GetEvent(eventId).Then(_ =>
+            {
+                dataStore.DeleteEvent(eventId);
+                return Result.Succeed();
+            });
+        }
+        catch (Exception ex)
+        {
+            logger.LogCritical(ex, "Unable to delete event {eventId} from game database {databaseName}.", eventId, databaseName);
+            return Result.Fail<EventDeletionFailedError>();
+        }
+    }
+
     private class EventPersistenceFailedError : ResultError;
+
+    public class EventDeletionFailedError : ResultError;
 }

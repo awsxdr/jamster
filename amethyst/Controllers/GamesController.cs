@@ -6,15 +6,11 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace amethyst.Controllers;
 
-using Events;
-
-[ApiController, Route("api/[controller]")]
+[ApiController, Route("api/games")]
 public class GamesController(
     IGameDiscoveryService gameDiscoveryService,
     IGameContextFactory contextFactory,
     ISystemStateStore systemStateStore,
-    IEventConverter eventConverter,
-    IEventBus eventBus,
     ILogger<GamesController> logger
     ) : Controller
 {
@@ -48,26 +44,6 @@ public class GamesController(
         {
             Success<GameInfo> s => (GameModel)s.Value,
             Failure<GameFileNotFoundForIdError> => NotFound(),
-            _ => throw new UnexpectedResultException()
-        };
-    }
-
-    [HttpPost("{gameId:guid}/events")]
-    public async Task<ActionResult<EventCreatedModel>> AddEvent(Guid gameId, [FromBody] CreateEventModel model)
-    {
-        logger.LogDebug("Adding event {eventType} to game {gameId}", model.Type, gameId);
-
-        return 
-            (await eventConverter.DecodeEvent(model.AsUntypedEvent()) 
-                    .And(gameDiscoveryService.GetExistingGame(gameId))
-                    .ThenMap(x => eventBus.AddEventAtCurrentTick(x.Item2, x.Item1)))
-                switch
-        {
-            Success => Accepted(new EventCreatedModel(Guid.NewGuid())),
-            Failure<EventTypeNotKnownError> => BadRequest(),
-            Failure<BodyFormatIncorrectError> => BadRequest(),
-            Failure<GameFileNotFoundForIdError> => NotFound(),
-            Failure<MultipleGameFilesFoundForIdError> => StatusCode(500),
             _ => throw new UnexpectedResultException()
         };
     }
@@ -124,16 +100,6 @@ public class GamesController(
     public record CreateGameModel(string Name)
     {
         public static explicit operator GameInfo(CreateGameModel model) => new(Guid.NewGuid(), model.Name);
-    }
-
-    public record EventCreatedModel(Guid EventId);
-
-    public record CreateEventModel(string Type, System.Text.Json.Nodes.JsonObject? Body)
-    {
-        public IUntypedEvent AsUntypedEvent() =>
-            Body is null
-                ? new UntypedEvent(Type)
-                : new UntypedEventWithBody(Type, Body);
     }
 
     public record SetCurrentGameModel(Guid GameId);

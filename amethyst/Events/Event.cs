@@ -101,7 +101,7 @@ public sealed class UntypedEventWithBody : Event<JsonObject>, IUntypedEvent
 
         return body is null
             ? Result<Event>.Fail<BodyFormatIncorrectError>()
-            : Result.Succeed((Event)Activator.CreateInstance(eventType, (Guid7) 0, body)!);
+            : Result.Succeed((Event)Activator.CreateInstance(eventType, Id, body)!);
     }
 }
 

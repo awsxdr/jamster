@@ -53,7 +53,7 @@ builder.Host.UseServiceProviderFactory(new AutofacServiceProviderFactory(contain
         {
             var localContext = context.Resolve<IComponentContext>();
             return gameContext =>
-                (IReducer)localContext.Resolve(reducerType, new TypedParameter(typeof(GameContext), gameContext));
+                (IReducer)localContext.Resolve(reducerType, new TypedParameter(typeof(ReducerGameContext), gameContext));
         });
     }
 

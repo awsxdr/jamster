@@ -4,8 +4,9 @@ using amethyst.Services;
 
 namespace amethyst.Reducers;
 
-public class TimeoutClock(GameContext context, ILogger<TimeoutClock> logger) : Reducer<TimeoutClockState>(context),
-    IHandlesEvent<JamStarted>
+public class TimeoutClock(ReducerGameContext context, ILogger<TimeoutClock> logger) 
+    : Reducer<TimeoutClockState>(context)
+    , IHandlesEvent<JamStarted>
     , IHandlesEvent<TimeoutStarted>
     , IHandlesEvent<TimeoutEnded>
     , ITickReceiver

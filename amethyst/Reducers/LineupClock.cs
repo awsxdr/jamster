@@ -4,7 +4,7 @@ using amethyst.Services;
 
 namespace amethyst.Reducers;
 
-public sealed class LineupClock(GameContext gameContext, ILogger<LineupClock> logger)
+public sealed class LineupClock(ReducerGameContext gameContext, ILogger<LineupClock> logger)
     : Reducer<LineupClockState>(gameContext), IHandlesEvent<JamStarted>
     , IHandlesEvent<JamEnded>
     , IHandlesEvent<TimeoutStarted>

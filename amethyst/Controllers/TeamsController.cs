@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace amethyst.Controllers;
 
-[ApiController, Route("api/[controller]")]
+[ApiController, Route("api/teams")]
 public class TeamsController(
     ITeamStore teamsStore,
     ILogger<TeamsController> logger

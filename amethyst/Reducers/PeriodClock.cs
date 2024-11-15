@@ -4,7 +4,7 @@ using amethyst.Services;
 
 namespace amethyst.Reducers;
 
-public class PeriodClock(GameContext context, ILogger<PeriodClock> logger) 
+public class PeriodClock(ReducerGameContext context, ILogger<PeriodClock> logger) 
     : Reducer<PeriodClockState>(context)
     , IHandlesEvent<JamStarted>
     , IHandlesEvent<JamEnded>

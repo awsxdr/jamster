@@ -42,7 +42,7 @@ public abstract class EventBusIntegrationTest
             builder.RegisterTypes(reducerTypes).As<IReducer>();
 
             builder.RegisterType<GameStateStore>().As<IGameStateStore>().SingleInstance();
-            builder.Register(context => new GameContext(Game, [], context.Resolve<IGameStateStore>()));
+            builder.Register(context => new GameContext(Game, [], context.Resolve<IGameStateStore>(), context.Resolve<IGameClock>()));
 
             var createLoggerMethod =
                 typeof(LoggerFactoryExtensions).GetMethods()

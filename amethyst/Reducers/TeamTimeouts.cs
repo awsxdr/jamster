@@ -5,7 +5,7 @@ using Func;
 
 namespace amethyst.Reducers;
 
-public abstract class TeamTimeouts(TeamSide teamSide, GameContext context, ILogger logger) 
+public abstract class TeamTimeouts(TeamSide teamSide, ReducerGameContext context, ILogger logger) 
     : Reducer<TeamTimeoutsState>(context)
     , IHandlesEvent<PeriodFinalized>
     , IHandlesEvent<TimeoutTypeSet>
@@ -100,10 +100,10 @@ public abstract class TeamTimeouts(TeamSide teamSide, GameContext context, ILogg
     }
 }
 
-public sealed class HomeTeamTimeouts(GameContext context, ILogger<HomeTeamTimeouts> logger)
+public sealed class HomeTeamTimeouts(ReducerGameContext context, ILogger<HomeTeamTimeouts> logger)
     : TeamTimeouts(TeamSide.Home, context, logger);
 
-public sealed class AwayTeamTimeouts(GameContext context, ILogger<HomeTeamTimeouts> logger)
+public sealed class AwayTeamTimeouts(ReducerGameContext context, ILogger<HomeTeamTimeouts> logger)
     : TeamTimeouts(TeamSide.Away, context, logger);
 
 public sealed record TeamTimeoutsState(int NumberRemaining, ReviewStatus ReviewStatus, TimeoutInUse CurrentTimeout);

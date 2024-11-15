@@ -1,17 +1,11 @@
 ﻿using System.Net;
-using System.Text.Json;
-using System.Text.Json.Nodes;
 using amethyst.Controllers;
 using amethyst.DataStores;
-using amethyst.Events;
 using amethyst.Hubs;
-using amethyst.Services;
 using FluentAssertions;
 using Microsoft.AspNetCore.SignalR.Client;
 
 namespace amethyst.tests.Controllers;
-
-using amethyst.Reducers;
 
 public class GamesIntegrationTests : ControllerIntegrationTest
 {
@@ -31,39 +25,6 @@ public class GamesIntegrationTests : ControllerIntegrationTest
         gamesList.Should().NotBeNull();
         gamesList!.Length.Should().Be(1);
         gamesList.Should().BeEquivalentTo(new[] { _game });
-    }
-
-    [Test]
-    public async Task SendEvents()
-    {
-        await Post<GamesController.EventCreatedModel>(
-            $"/api/games/{_game.Id}/events",
-            new GamesController.CreateEventModel(nameof(TestEvent),
-                JsonObject.Create(JsonSerializer.SerializeToElement(new TestEventBody { Value = "Hello, World!" }))),
-            HttpStatusCode.Accepted);
-
-        await Post<GamesController.EventCreatedModel>(
-            $"/api/games/{_game.Id}/events",
-            new GamesController.CreateEventModel($"InvalidEvent_{Guid.NewGuid()}",
-                JsonObject.Create(JsonSerializer.SerializeToElement(new TestEventBody { Value = "Hello, World!" }))),
-            HttpStatusCode.BadRequest);
-    }
-
-    [Test]
-    public async Task EventsChangeState()
-    {
-        var state = (await Get<JamClockState>($"/api/games/{_game.Id}/state/{nameof(JamClockState)}", HttpStatusCode.OK))!;
-
-        state.IsRunning.Should().BeFalse();
-
-        await Post<GamesController.EventCreatedModel>(
-            $"/api/games/{_game.Id}/events",
-            new GamesController.CreateEventModel(nameof(JamStarted), null),
-            HttpStatusCode.Accepted);
-
-        state = (await Get<JamClockState>($"/api/games/{_game.Id}/state/{nameof(JamClockState)}", HttpStatusCode.OK))!;
-
-        state.IsRunning.Should().BeTrue();
     }
 
     [Test]
@@ -122,11 +83,4 @@ public class GamesIntegrationTests : ControllerIntegrationTest
             File.Delete(databaseFile);
         }
     }
-}
-
-public class TestEvent(Guid7 id, TestEventBody body) : Event<TestEventBody>(id, body);
-
-public class TestEventBody
-{
-    public string Value { get; set; } = string.Empty;
 }

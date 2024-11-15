@@ -85,7 +85,7 @@ public class EventBusIntegrationTests
         _stateStore.GetState<ComplexStateTestReducerState>().Count.Should().Be(testCount);
     }
 
-    private sealed class ComplexStateTestReducer(GameContext context) 
+    private sealed class ComplexStateTestReducer(ReducerGameContext context) 
         : Reducer<ComplexStateTestReducerState>(context)
         , IHandlesEvent<TestEvent>
         , IHandlesEvent<TestIncremented>

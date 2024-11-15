@@ -6,7 +6,7 @@ using Func;
 
 namespace amethyst.Reducers;
 
-public abstract class TeamDetails(TeamSide teamSide, GameContext context, ILogger logger) 
+public abstract class TeamDetails(TeamSide teamSide, ReducerGameContext context, ILogger logger) 
     : Reducer<TeamDetailsState>(context)
     , IHandlesEvent<TeamSet>
 {
@@ -38,5 +38,5 @@ public abstract class TeamDetails(TeamSide teamSide, GameContext context, ILogge
 
 public sealed record TeamDetailsState(Team Team);
 
-public sealed class HomeTeamDetails(GameContext context, ILogger<HomeTeamDetails> logger) : TeamDetails(TeamSide.Home, context, logger);
-public sealed class AwayTeamDetails(GameContext context, ILogger<AwayTeamDetails> logger) : TeamDetails(TeamSide.Away, context, logger);
+public sealed class HomeTeamDetails(ReducerGameContext context, ILogger<HomeTeamDetails> logger) : TeamDetails(TeamSide.Home, context, logger);
+public sealed class AwayTeamDetails(ReducerGameContext context, ILogger<AwayTeamDetails> logger) : TeamDetails(TeamSide.Away, context, logger);

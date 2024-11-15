@@ -5,7 +5,7 @@ using Func;
 
 namespace amethyst.Reducers;
 
-public abstract class TripScore(TeamSide teamSide, GameContext context, ILogger logger)
+public abstract class TripScore(TeamSide teamSide, ReducerGameContext context, ILogger logger)
     : Reducer<TripScoreState>(context)
     , IHandlesEvent<ScoreModifiedRelative>
     , IHandlesEvent<ScoreSet>
@@ -68,5 +68,5 @@ public abstract class TripScore(TeamSide teamSide, GameContext context, ILogger 
 
 public sealed record TripScoreState(int Score, Tick LastChangeTick);
 
-public sealed class HomeTripScore(GameContext context, ILogger<HomeTripScore> logger) : TripScore(TeamSide.Home, context, logger);
-public sealed class AwayTripScore(GameContext context, ILogger<AwayTripScore> logger) : TripScore(TeamSide.Away, context, logger);
+public sealed class HomeTripScore(ReducerGameContext context, ILogger<HomeTripScore> logger) : TripScore(TeamSide.Home, context, logger);
+public sealed class AwayTripScore(ReducerGameContext context, ILogger<AwayTripScore> logger) : TripScore(TeamSide.Away, context, logger);

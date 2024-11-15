@@ -4,7 +4,7 @@ using amethyst.Services;
 
 namespace amethyst.Reducers;
 
-public class IntermissionClock(GameContext context, ILogger<IntermissionClock> logger) 
+public class IntermissionClock(ReducerGameContext context, ILogger<IntermissionClock> logger) 
     : Reducer<IntermissionClockState>(context)
     , IHandlesEvent<JamStarted>
     , IHandlesEvent<IntermissionStarted>
