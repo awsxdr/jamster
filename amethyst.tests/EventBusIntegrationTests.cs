@@ -85,6 +85,7 @@ public class EventBusIntegrationTests
         _stateStore.GetState<ComplexStateTestReducerState>().Count.Should().Be(testCount);
     }
 
+    // ReSharper disable once ClassNeverInstantiated.Local
     private sealed class ComplexStateTestReducer(ReducerGameContext context) 
         : Reducer<ComplexStateTestReducerState>(context)
         , IHandlesEvent<TestEvent>

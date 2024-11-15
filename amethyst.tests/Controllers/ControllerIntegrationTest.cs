@@ -8,6 +8,7 @@ using amethyst.DataStores;
 using amethyst.Services;
 using FluentAssertions;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http.Connections;
 using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.SignalR.Client;
@@ -150,6 +151,7 @@ public abstract class ControllerIntegrationTest
                 options =>
                 {
                     options.HttpMessageHandlerFactory = _ => Server.CreateHandler();
+                    options.Transports = HttpTransportType.ServerSentEvents;
                 })
             .AddJsonProtocol(config =>
             {

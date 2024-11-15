@@ -3,6 +3,8 @@ using amethyst.Controllers;
 using amethyst.DataStores;
 using amethyst.Hubs;
 using FluentAssertions;
+using Microsoft.AspNetCore.Http.Connections;
+using Microsoft.AspNetCore.Http.Connections.Client;
 using Microsoft.AspNetCore.SignalR.Client;
 
 namespace amethyst.tests.Controllers;
@@ -46,16 +48,7 @@ public class GamesIntegrationTests : ControllerIntegrationTest
     [Test]
     public async Task SetCurrentGame_NotifiesWatchingClients()
     {
-        var connection = new HubConnectionBuilder()
-            .WithUrl(
-                Client.BaseAddress + "api/Hubs/System",
-                options =>
-                {
-                    options.HttpMessageHandlerFactory = _ => Server.CreateHandler();
-                })
-            .Build();
-
-        await connection.StartAsync();
+        var connection = await GetHubConnection("api/hubs/system");
 
         await connection.InvokeAsync(nameof(SystemStateHub.WatchSystemState));
 
