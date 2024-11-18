@@ -26,12 +26,19 @@ public class EventsControllerIntegrationTests : ControllerIntegrationTest
     public async Task AddEvent_ReturnsExpectedResult()
     {
         await AddEvent(new TestEvent(Guid.Empty, new TestEventBody {Value = "Hello, World!"}));
-
+        
         await Post<EventsController.EventModel>(
             $"/api/games/{_game.Id}/events",
-            new EventsController.CreateEventModel($"InvalidEvent_{Guid.NewGuid()}",
+            new EventsController.CreateEventModel(
+                $"InvalidEvent_{Guid.NewGuid()}",
                 JsonObject.Create(JsonSerializer.SerializeToElement(new TestEventBody { Value = "Hello, World!" }))),
-        HttpStatusCode.BadRequest);
+            HttpStatusCode.BadRequest);
+    }
+
+    [Test]
+    public async Task AddEvent_WhenGameNotFound_ReturnsNotFound()
+    {
+        await AddEvent(new TestEvent(Guid.Empty, new TestEventBody {Value = "Hello, World!"}), gameId: Guid.NewGuid(), expectedResult: HttpStatusCode.NotFound);
     }
 
     [Test]
@@ -49,7 +56,7 @@ public class EventsControllerIntegrationTests : ControllerIntegrationTest
     }
 
     [Test]
-    public async Task GetEvents_ReturnsGameEvents()
+    public async Task GetEvents_WhenGameFound_ReturnsGameEvents()
     {
         const int testEventCount = 10;
 
@@ -74,6 +81,13 @@ public class EventsControllerIntegrationTests : ControllerIntegrationTest
             .ToArray();
 
         typedEvents.Should().BeEquivalentTo(testEvents);
+    }
+
+    [Test]
+    public async Task GetEvents_WhenGameNotFound_ReturnsNotFound()
+    {
+        var result = await Get($"/api/games/{Guid.NewGuid()}/events");
+        result.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
     [Test]
@@ -108,19 +122,32 @@ public class EventsControllerIntegrationTests : ControllerIntegrationTest
         homeTeamScore.Score.Should().Be(5);
     }
 
-    private async Task<EventsController.EventModel[]> GetEvents() =>
-        (await Get<EventsController.EventModel[]>($"/api/games/{_game.Id}/events", HttpStatusCode.OK))!;
+    [Test]
+    public async Task DeleteEvent_WhenEventNotFound_ReturnsNotFound()
+    {
+        await DeleteEvent(Guid.NewGuid(), expectedResult: HttpStatusCode.NotFound);
+    }
 
-    private async Task<EventsController.EventModel> AddEvent<TEvent>(TEvent @event) where TEvent : Event =>
+    [Test]
+    public async Task DeleteEvent_WhenGameNotFound_ReturnsNotFound()
+    {
+        var @event = await AddEvent(new JamStarted(Guid.Empty));
+        await DeleteEvent(@event.Id, gameId: Guid.NewGuid(), expectedResult: HttpStatusCode.NotFound);
+    }
+
+    private async Task<EventsController.EventModel[]> GetEvents(Guid? gameId = null, HttpStatusCode expectedResult = HttpStatusCode.OK) =>
+        (await Get<EventsController.EventModel[]>($"/api/games/{gameId ?? _game.Id}/events", expectedResult))!;
+
+    private async Task<EventsController.EventModel> AddEvent<TEvent>(TEvent @event, Guid? gameId = null, HttpStatusCode expectedResult = HttpStatusCode.Accepted) where TEvent : Event =>
         (await Post<EventsController.EventModel>(
-            $"/api/games/{_game.Id}/events",
+            $"/api/games/{gameId ?? _game.Id}/events",
             new EventsController.CreateEventModel(
                 @event.GetType().Name,
                 @event.GetBodyObject()?.Map(body => JsonObject.Create(JsonSerializer.SerializeToElement(body)))),
-            HttpStatusCode.Accepted))!;
+            expectedResult))!;
 
-    private Task DeleteEvent(Guid eventId) =>
-        Delete($"/api/games/{_game.Id}/events/{eventId}", HttpStatusCode.NoContent);
+    private Task DeleteEvent(Guid eventId, Guid? gameId = null, HttpStatusCode expectedResult = HttpStatusCode.NoContent) =>
+        Delete($"/api/games/{gameId ?? _game.Id}/events/{eventId}", expectedResult);
 
     private async Task<TState> GetState<TState>() =>
         (await Get<TState>($"/api/games/{_game.Id}/state/{typeof(TState).Name}", HttpStatusCode.OK))!;

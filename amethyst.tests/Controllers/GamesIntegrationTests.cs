@@ -3,8 +3,6 @@ using amethyst.Controllers;
 using amethyst.DataStores;
 using amethyst.Hubs;
 using FluentAssertions;
-using Microsoft.AspNetCore.Http.Connections;
-using Microsoft.AspNetCore.Http.Connections.Client;
 using Microsoft.AspNetCore.SignalR.Client;
 
 namespace amethyst.tests.Controllers;
@@ -65,6 +63,24 @@ public class GamesIntegrationTests : ControllerIntegrationTest
 
         gameId.Should().Be(_game.Id);
     }
+
+    [Test]
+    public async Task GetGame_ReturnsGameDetails()
+    {
+        var game = await GetGame();
+
+        game.Should().Be(_game);
+    }
+
+    [Test]
+    public async Task GetGame_WhenGameNotFound_ReturnsNotFound()
+    {
+        await GetGame(gameId: Guid.NewGuid(), expectedResult: HttpStatusCode.NotFound);
+    }
+
+    private async Task<GamesController.GameModel> GetGame(Guid? gameId = null, HttpStatusCode expectedResult = HttpStatusCode.OK) =>
+        (await Get<GamesController.GameModel>($"/api/games/{gameId ?? _game.Id}", expectedResult))!;
+
 
     protected override void CleanDatabase()
     {
