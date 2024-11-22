@@ -34,7 +34,7 @@ export const ScoreboardControl = () => {
         setSelectedGameId(gameId);
     }, [setSelectedGameId]);
 
-    const handleNewGameCreated = async (homeTeamId: string, awayTeamId: string, gameName: string) => {
+    const handleNewGameCreated = async (_homeTeamId: string, _awayTeamId: string, gameName: string) => {
         const gameId = await createGame(gameName);
 
         setSelectedGameId(gameId);

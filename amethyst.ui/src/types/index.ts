@@ -13,5 +13,6 @@ export * from './TeamDetailsState';
 export * from './TeamScoreState';
 export * from './TeamSide';
 export * from './TeamTimeoutsState';
+export * from './TimeoutType';
 export * from './TimeoutInUse';
 export * from './UpdateTeam';
