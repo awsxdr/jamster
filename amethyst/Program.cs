@@ -1,3 +1,4 @@
+using System.Reflection;
 using System.Text.Json.Serialization;
 using amethyst;
 using amethyst.DataStores;
@@ -8,7 +9,10 @@ using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.FileProviders;
+using Microsoft.Extensions.Primitives;
 using SQLite;
+using Microsoft.Extensions.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -74,6 +78,10 @@ builder.Services.AddSignalR().AddJsonProtocol(options =>
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddSpaStaticFiles(config =>
+{
+    config.RootPath = Path.Combine(Path.GetDirectoryName(Assembly.GetEntryAssembly()!.Location)!, "wwwroot");
+});
 
 var databasesPath = Path.Combine(RunningEnvironment.RootPath, "db");
 Directory.CreateDirectory(databasesPath);
@@ -112,6 +120,24 @@ app.UseExceptionHandler(options =>
 app.UseAuthorization();
 
 app.MapControllers();
+
+//app.MapFallbackToFile("index.html");
+//app.UseDefaultFiles(new DefaultFilesOptions
+//{
+//    DefaultFileNames = ["index.htm", "index.html"]
+//});
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(
+        Path.Combine(Path.GetDirectoryName(Assembly.GetEntryAssembly()!.Location)!, "wwwroot")),
+    RequestPath = "",
+
+});
+app.UseSpaStaticFiles();
+app.UseSpa(config =>
+{
+    config.Options.SourcePath = Path.Combine(Path.GetDirectoryName(Assembly.GetEntryAssembly()!.Location)!, "wwwroot");
+});
 
 void MapHub<THub>(string pattern) where THub : Hub =>
     app
