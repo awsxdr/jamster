@@ -1,4 +1,4 @@
-import { API_URL } from "./SignalRHubConnection";
+import { API_URL } from "@/constants";
 
 type EventsApi = {
     sendEvent: (gameId: string, event: Event) => Promise<void>;

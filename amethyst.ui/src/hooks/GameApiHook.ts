@@ -1,5 +1,5 @@
 import { GameInfo } from "@/types"
-import { API_URL } from "./SignalRHubConnection"
+import { API_URL } from "@/constants";
 
 type GameApi = {
     getGames: () => Promise<GameInfo[]>,

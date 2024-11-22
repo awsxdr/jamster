@@ -1,7 +1,6 @@
 import * as SignalR from '@microsoft/signalr';
 import { useEffect, useMemo, useState } from "react";
-
-export const API_URL = 'http://localhost:5249';
+import { API_URL } from "@/constants";
 
 export const useHubConnection = (hubPath: string) => {
 

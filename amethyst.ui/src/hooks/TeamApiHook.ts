@@ -1,7 +1,7 @@
 import { Skater, Team, UpdateTeam } from "@/types"
 import { CreateTeam } from "@/types/CreateTeam";
 import { Roster } from "@/types/Roster";
-import { API_URL } from "./SignalRHubConnection";
+import { API_URL } from "@/constants";
 
 type TeamApi = {
     getTeams: () => Promise<Team[]>;
