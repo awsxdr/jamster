@@ -20,24 +20,24 @@ type SidebarItemList = {
 const sidebarItems: SidebarItemList = {
     "Main": [
         {
-            title: "Scoreboard display",
+            title: "MenuSidebar.ScoreboardDisplay",
             href: "/scoreboard",
             icon: <TvMinimal />
         },
         {
-            title: "Scoreboard control",
+            title: "MenuSidebar.ScoreboardControl",
             href: "/control",
             icon: <Keyboard />
         }
     ],
     "Data": [
         {
-            title: "Teams",
+            title: "MenuSidebar.Teams",
             href: "/teams",
             icon: <Users />
         },
         {
-            title: "Games",
+            title: "MenuSidebar.Games",
             href: "/games",
             icon: <List />
         }

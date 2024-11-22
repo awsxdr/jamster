@@ -34,7 +34,7 @@ export const LanguageMenu = () => {
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                     <SidebarMenuButton>
-                        <Globe /> {translate("Language")}
+                        <Globe /> {translate("LanguageMenu.Title")}
                         <ChevronUp className="ml-auto" />
                     </SidebarMenuButton>
                 </DropdownMenuTrigger>

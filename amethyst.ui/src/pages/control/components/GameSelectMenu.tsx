@@ -15,7 +15,7 @@ export const GameSelectMenu = ({ games, currentGame, selectedGameId, onSelectedG
     const { translate, language } = useI18n();
 
     const items = useMemo(() => 
-        games.map(game => ({ value: game.id, text: `${game.name}${(game.id === currentGame?.id ? ` (${translate('Current')})` : '')}`})),
+        games.map(game => ({ value: game.id, text: `${game.name}${(game.id === currentGame?.id ? ` (${translate('GameSelectMenu.Current')})` : '')}`})),
         [games, currentGame, language]);
 
     return (
@@ -23,7 +23,7 @@ export const GameSelectMenu = ({ games, currentGame, selectedGameId, onSelectedG
             <ComboBox 
                 items={items}
                 value={selectedGameId ?? ""}
-                placeholder={translate("Select game...")}
+                placeholder={translate("GameSelectMenu.SelectGame")}
                 onValueChanged={onSelectedGameIdChanged}
                 className="sm:w-[200px] md:w-[250px] lg:w-[400px]"
                 dropdownClassName="sm:w-[200px] md:w-[250px] lg:w-[400px]"

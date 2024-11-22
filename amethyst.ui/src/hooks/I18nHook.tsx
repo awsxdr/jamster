@@ -108,10 +108,17 @@ export const I18nContextProvider = ({ defaultLanguage, languages, children }: Pr
     
     const translations = useMemo(() => languages[language] ?? {}, [languages, language]);
 
-    const translate = useCallback((key: string) =>
-        language === 'dev'
-        ? makeDevTranslation(key)
-        : translations[key] ?? key, 
+    const translate = useCallback((key: string) => {
+        if(language === 'dev') {
+            return makeDevTranslation(key);
+        }
+
+        if(!translations[key]) {
+            console.warn("Translation missing for key", key);
+        }
+        
+        return translations[key] ?? key;
+    }, 
     [translations, language]);
 
     const changeLanguage = useCallback((key: string) => {

@@ -23,30 +23,30 @@ export const MainControls = ({ gameId }: MainControlsProps) => {
         if (!gameStage || (gameStage.stage === Stage.AfterGame && gameStage.periodIsFinalized) || gameStage.stage === Stage.Jam) {
             return ["---", false];
         } else {
-            return [translate("Start jam"), true];
+            return [translate("MainControls.StartJam"), true];
         }
     }, [gameStage, language]);
 
     const [endText, endButtonEnabled] = useMemo(() => {
         switch (gameStage?.stage) {
-            case Stage.Jam: return [translate("End jam"), true];
-            case Stage.Timeout: return [translate("End timeout"), true];
-            case Stage.Intermission: return [translate("Finalize period"), !gameStage.periodIsFinalized];
-            case Stage.AfterGame: return [translate("Finalize game"), true];
+            case Stage.Jam: return [translate("MainControls.EndJam"), true];
+            case Stage.Timeout: return [translate("MainControls.EndTimeout"), true];
+            case Stage.Intermission: return [translate("MainControls.FinalizePeriod"), !gameStage.periodIsFinalized];
+            case Stage.AfterGame: return [translate("MainControls.FinalizeGame"), true];
             default: return ["---", false];
         }
     }, [gameStage?.stage, language]);
 
     const [timeoutText, timeoutButtonEnabled] = useMemo(() => {
         if(gameStage && !gameStage.periodIsFinalized) {
-            return [translate("New timeout"), true];
+            return [translate("MainControls.NewTimeout"), true];
         } else {
             return ["---", false];
         }
     }, [gameStage, language]);
 
     const [undoText, undoButtonEnabled] = useMemo(() => {
-        return [translate("Undo"), false];
+        return [translate("MainControls.Undo"), false];
     }, [language]);
 
     const sendEventIfIdSet = (event: Event) => {

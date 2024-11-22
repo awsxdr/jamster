@@ -29,13 +29,13 @@ export const GameToolbar = ({ games, currentGame, onCurrentGameIdChanged, select
             <ConfirmMakeCurrentDialog onAccept={() => selectedGameId && onCurrentGameIdChanged(selectedGameId)}>
                 <Button variant="secondary" disabled={selectedGameId === currentGame?.id}>
                     <Repeat />
-                    <span className="hidden lg:inline">{translate("Make current")}</span>
+                    <span className="hidden lg:inline">{translate("GameToolbar.MakeCurrent")}</span>
                 </Button>
             </ConfirmMakeCurrentDialog>
             <NewGameDialogTrigger>
                 <Button variant="creative">
                     <SquarePlus />
-                    <span className="hidden lg:inline">{translate("New game...")}</span>
+                    <span className="hidden lg:inline">{translate("GameToolbar.NewGame")}</span>
                 </Button>
             </NewGameDialogTrigger>
         </div>

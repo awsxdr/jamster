@@ -13,7 +13,7 @@ export const ThemeMenu = () => {
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                     <SidebarMenuButton>
-                        <Palette /> {translate("Theme")}
+                        <Palette /> {translate("ThemeMenu.Title")}
                         <ChevronUp className="ml-auto" />
                     </SidebarMenuButton>
                 </DropdownMenuTrigger>
@@ -21,9 +21,9 @@ export const ThemeMenu = () => {
                     side="top"
                     className="w-[--radix-popper-anchor-width]"
                 >
-                    <DropdownMenuItem onClick={() => setTheme("light")}><span>{translate("Light")}</span> { theme === "light" ? <Check /> : <></> }</DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setTheme("dark")}><span>{translate("Dark")}</span> { theme === "dark" ? <Check /> : <></> }</DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setTheme("system")}><span>{translate("System default")}</span> { theme === "system" ? <Check /> : <></> }</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setTheme("light")}><span>{translate("ThemeMenu.Light")}</span> { theme === "light" ? <Check /> : <></> }</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setTheme("dark")}><span>{translate("ThemeMenu.Dark")}</span> { theme === "dark" ? <Check /> : <></> }</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setTheme("system")}><span>{translate("ThemeMenu.System")}</span> { theme === "system" ? <Check /> : <></> }</DropdownMenuItem>
                 </DropdownMenuContent>
             </DropdownMenu>
         </SidebarMenuItem>
