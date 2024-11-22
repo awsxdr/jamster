@@ -3,6 +3,7 @@ import { useHubConnection } from "./SignalRHubConnection";
 import { HubConnection } from "@microsoft/signalr";
 import { useGameApi } from "./GameApiHook";
 import { GameStageState, TripScoreState, TeamDetailsState, TeamScoreState, TeamSide, TeamTimeoutsState } from "@/types";
+import { CurrentTimeoutTypeState } from "@/types/CurrentTimeoutTypeState";
 
 type StateChanged<TState> = (state: TState) => void;
 type StateWatch = <TState,>(stateName: string, onStateChange: StateChanged<TState>) => void;
@@ -31,6 +32,7 @@ export const useTeamScoreState = (side: TeamSide) => useGameState<TeamScoreState
 export const useGameStageState = () => useGameState<GameStageState>("GameStageState");
 export const useTripScoreState = (side: TeamSide) => useGameState<TripScoreState>(`TripScoreState_${TeamSide[side]}`);
 export const useTeamTimeoutsState = (side: TeamSide) => useGameState<TeamTimeoutsState>(`TeamTimeoutsState_${TeamSide[side]}`);
+export const useCurrentTimeoutTypeState = () => useGameState<CurrentTimeoutTypeState>("CurrentTimeoutTypeState");
 
 export const useGameState = <TState,>(stateName: string) => {
     const context = useContext(GameStateContext);

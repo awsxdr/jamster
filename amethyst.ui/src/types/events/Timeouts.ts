@@ -8,7 +8,7 @@ export class TimeoutTypeSet extends EventWithBody {
 }
 type TimeoutTypeSetBody = {
     type: "Untyped" | "Team" | "Review" | "Official";
-    side: TeamSide;
+    side?: TeamSide;
 }
 
 export class TimeoutStarted extends EventWithoutBody {

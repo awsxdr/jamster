@@ -12,7 +12,7 @@ export const ControlPanel = ({ gameId }: ControlPanelProps) => {
     return (
         <>
             <MainControls gameId={gameId} />
-            <TimeoutTypePanel />
+            <TimeoutTypePanel gameId={gameId} />
             <div className="w-full flex">
                 <TeamControls side={TeamSide.Home} gameId={gameId} />
                 <TeamControls side={TeamSide.Away} gameId={gameId} />

@@ -120,7 +120,7 @@ public class GameStateStore(ILogger<GameStateStore> logger) : IGameStateStore
         return initialState.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance)
             .Where(property => property.GetCustomAttribute<IgnoreChangeAttribute>() is null)
             .Select(property => (Initial: property.GetValue(initialState), New: property.GetValue(newState)))
-            .Any(states => !states.Initial!.Equals(states.New));
+            .Any(states => !(states.Initial is null && states.New is null) || !(states.Initial?.Equals(states.New) ?? false));
     }
 
     private static string GetStateName<TState>() => GetStateName(typeof(TState));
