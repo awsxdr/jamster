@@ -79,7 +79,7 @@ export const MainControls = ({ gameId }: MainControlsProps) => {
 
     return (
         <Card className="grow mt-5 pt-6">
-            <CardContent className="flex justify-evenly">
+            <CardContent className="flex flex-wrap gap-2 justify-evenly">
                 <Button onClick={handleStart} disabled={!startButtonEnabled}><Play /> { startText } [`]</Button>
                 <Button onClick={handleEnd} disabled={!endButtonEnabled}><Square /> { endText } [y]</Button>
                 <Button onClick={handleTimeout} disabled={!timeoutButtonEnabled}><Pause /> { timeoutText } [t]</Button>

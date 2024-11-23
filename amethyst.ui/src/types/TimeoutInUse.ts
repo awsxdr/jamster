@@ -1,6 +1,6 @@
 export enum TimeoutInUse {
-    None,
-    Timeout,
-    Review
+    None = "None",
+    Timeout = "Timeout",
+    Review = "Review",
 }
 

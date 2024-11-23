@@ -89,7 +89,7 @@ export const TimeoutTypePanel = ({ gameId }: TimeoutTypePanelProps) => {
 
     return (
         <Card className={cn("grow scale-0 transition-all duration-500 h-0 m-0 p-0", stage === Stage.Timeout ? "scale-100 block h-auto  mt-5 pt-6" : "")}>
-            <CardContent className="flex justify-evenly">
+            <CardContent className="flex flex-wrap gap-2 justify-evenly">
                 <Button variant={compoundType === 'HomeTeamTimeout' ? 'default' : 'secondary'} onClick={handleHomeTeamTimeout}>{translate("TimeoutType.HomeTeam")}</Button>
                 <Button variant={compoundType === 'HomeTeamReview' ? 'default' : 'secondary'} onClick={handleHomeTeamReview}>{translate("TimeoutType.HomeTeamReview")}</Button>
                 <Button variant={compoundType === 'Official' ? 'default' : 'secondary'} onClick={handleOfficialTimeout}>{translate("TimeoutType.Official") }</Button>

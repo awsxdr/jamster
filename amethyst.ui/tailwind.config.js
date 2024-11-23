@@ -8,6 +8,9 @@ export default {
 	],
   theme: {
   	extend: {
+		animation: {
+			'pulse-full-fast': 'pulse-full 1s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+		},
   		borderRadius: {
   			lg: 'var(--radius)',
   			md: 'calc(var(--radius) - 2px)',
@@ -68,7 +71,17 @@ export default {
   				border: 'hsl(var(--sidebar-border))',
   				ring: 'hsl(var(--sidebar-ring))'
   			}
-  		}
+  		},
+		keyframes: {
+			'pulse-full': {
+				'0%, 100%': {
+					opacity: 1,
+				},
+				'50%': {
+					opacity: .1,
+				}
+			}
+		}
   	}
   },
   plugins: [tailwindAnimate],

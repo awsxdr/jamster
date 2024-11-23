@@ -14,7 +14,7 @@ export const JamScore = ({ side }: JamScoreProps) => {
 
     return (
         <div className="flex w-full justify-center items-center gap-2">
-            {translate("JamScore.JamScore")}: <span className="text-5xl">{score?.jamScore}</span>
+            {translate("JamScore.JamScore")}: <span className="text-2xl">{score?.jamScore}</span>
         </div>
     )
 }

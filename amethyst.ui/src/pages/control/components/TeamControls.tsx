@@ -51,10 +51,10 @@ export const TeamControls = ({ gameId, side }: TeamControlsProps) => {
 
     return (
         <Card className={cn("grow inline-block mt-5", side === TeamSide.Home ? "mr-2.5" : "ml-2.5")}>
-            <CardHeader>
+            <CardHeader className="p-2">
                 <CardTitle className="text-center text-xl">{teamName}</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="py-0">
                 <Separator />
                 <JamScore side={side} />
                 <div className="flex w-full justify-center items-center">

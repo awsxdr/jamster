@@ -11,6 +11,6 @@ export const TeamScore = ({ side }: TeamScoreProps) => {
     const score = useTeamScoreState(side);
 
     return (
-        <ScaledText text={(score?.score ?? 0).toString()} className="flex justify-center items-center w-1/2 md:w-1/4 h-[25vh] m-1" />
+        <ScaledText text={(score?.score ?? 0).toString()} className="flex justify-center items-center w-1/2 md:w-1/4 h-[14vh] m-1" />
     );
 }
