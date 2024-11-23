@@ -3,7 +3,7 @@ import { TeamName } from "./TeamName";
 
 import { TeamTimeouts } from "./TeamTimeouts";
 import { TeamScore } from "./TeamScore";
-import { TripScore } from "./TripScore";
+import { JamScore } from "./JamScore";
 import { cn } from "@/lib/utils";
 
 type TeamDetailsProps = {
@@ -19,7 +19,7 @@ export const TeamDetails = ({ side }: TeamDetailsProps) => {
             <div className={cn("flex h-[60%]", side === TeamSide.Home ? "flex-row" : "flex-row-reverse")}>
                 <TeamTimeouts side={side} />
                 <TeamScore side={side} />
-                <TripScore side={side} />
+                <JamScore side={side} />
             </div>
         </div>
     );
