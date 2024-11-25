@@ -46,8 +46,17 @@ export const TeamControls = ({ gameId, side }: TeamControlsProps) => {
         sendEventIfIdSet(new ScoreModifiedRelative({ teamSide: side, value: -1 }));
     }
 
+    const setTripScore = (score: number) => {
+        const scoreDelta = score - (tripScore?.score ?? 0);
+        sendEventIfIdSet(new ScoreModifiedRelative({ teamSide: side, value: scoreDelta }));
+    }
+
+    const tripShortcutKeys: string[] = [];
+    tripShortcutKeys[4] = side === TeamSide.Home ? "🠅s" : "🠅#";
+
     useHotkeys(side === TeamSide.Home ? 'a' : '\'', decrementScore, { preventDefault: true });
     useHotkeys(side === TeamSide.Home ? 's' : '#', incrementScore, { preventDefault: true });
+    useHotkeys(side === TeamSide.Home ? 'shift+s' : 'shift+#', () => setTripScore(4), { preventDefault: true });
 
     return (
         <Card className={cn("grow inline-block mt-5", side === TeamSide.Home ? "mr-2.5" : "ml-2.5")}>
@@ -63,7 +72,7 @@ export const TeamControls = ({ gameId, side }: TeamControlsProps) => {
                     <Button onClick={incrementScore} variant="secondary" className="text-md lg:text-xl" >+1 [{side === TeamSide.Home ? 's' : '#'}]</Button>
                 </div>
                 <Separator />
-                <TripScore tripScore={tripScore?.score ?? 0} />
+                <TripScore tripScore={tripScore?.score ?? 0} scoreShortcutKeys={tripShortcutKeys} onTripScoreSet={setTripScore} />
             </CardContent>
         </Card>
     )
