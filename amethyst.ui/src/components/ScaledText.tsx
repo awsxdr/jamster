@@ -1,3 +1,4 @@
+import { cn } from "@/lib/utils";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type ScaledTextProps = {
@@ -50,9 +51,16 @@ export const ScaledText = ({ text, className }: ScaledTextProps) => {
             return;
         }
 
-        window.addEventListener('resize', updateSize);
+        const resizeObserver = new ResizeObserver(() => {
+            updateSize();
+        });
+        resizeObserver.observe(spanRef.current);
+    
         updateSize();
+
+        return () => resizeObserver.disconnect();
     }, [updateSize]);
+
 
     useEffect(() => {
         updateSize()
@@ -88,7 +96,7 @@ export const ScaledText = ({ text, className }: ScaledTextProps) => {
     }, [measureText, text, font, setFontSize, controlSize]);
 
     return (
-        <span ref={spanRef} className={className} style={{ fontSize: `${fontSize}px`, overflow: 'hidden' }}>
+        <span ref={spanRef} className={cn('overflow-hidden', className)} style={{ fontSize: `${fontSize}px`}}>
             {text}
         </span>
     );
