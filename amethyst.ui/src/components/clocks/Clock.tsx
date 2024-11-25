@@ -4,24 +4,30 @@ import { ScaledText } from "@components/ScaledText";
 import { cn } from "@/lib/utils";
 
 export type ClockProps<TClockState> = {
-    secondsMapper: (state: TClockState) => number,
-    stateName: string,
-    direction: "down" | "up",
-    startValue?: number,
-    textClassName?: string,
+    secondsMapper: (state: TClockState) => number;
+    stateName: string;
+    direction: "down" | "up";
+    textOnZero?: string;
+    startValue?: number;
+    textClassName?: string;
 };
 
-export const Clock = <TClockState,>({ secondsMapper, stateName, direction, startValue, textClassName }: ClockProps<TClockState>) => {
+export const Clock = <TClockState,>({ secondsMapper, stateName, direction, textOnZero, startValue, textClassName }: ClockProps<TClockState>) => {
     const clockState = useGameState<TClockState>(stateName);
     
     const clock = useMemo(() => clockState && secondsMapper(clockState), [secondsMapper, clockState]);
 
     const time = useMemo(() => {
         if(clock === undefined) {
-            return '0';
+            return textOnZero ?? '0';
         }
 
         const totalSeconds = direction === 'up' ? clock : ((startValue ?? 0) - clock);
+
+        if (totalSeconds === 0 && textOnZero) {
+            return textOnZero;
+        }
+
         const minutes = Math.floor(totalSeconds / 60);
         const seconds = totalSeconds % 60;
 

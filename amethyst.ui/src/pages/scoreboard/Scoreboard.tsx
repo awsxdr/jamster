@@ -5,6 +5,7 @@ import { JamDetails } from './components/JamDetails';
 import { TimeoutDetails } from './components/TimeoutDetails';
 import { LineupDetails } from './components/LineupDetails';
 import { TeamColorGradients } from './components/TeamColorGradients';
+import { IntermissionDetails } from './components/IntermissionDetails';
 
 export const CurrentGameScoreboard = () => {
     const { currentGame } = useCurrentGame();
@@ -34,6 +35,7 @@ export const Scoreboard = () => {
                             <JamDetails gameStage={gameStage} visible={gameStage.stage === Stage.Jam} />
                             <TimeoutDetails gameStage={gameStage} visible={gameStage.stage === Stage.Timeout || gameStage.stage === Stage.AfterTimeout} />
                             <LineupDetails gameStage={gameStage} visible={gameStage.stage === Stage.Lineup} />
+                            <IntermissionDetails gameStage={gameStage} visible={gameStage.stage === Stage.BeforeGame || gameStage.stage === Stage.Intermission || gameStage.stage === Stage.AfterGame} />
                         </div>
                     </div>
                 </div>
