@@ -1,11 +1,10 @@
+import { ChangeEvent, PropsWithChildren, useEffect, useMemo, useState } from "react";
 import { useI18n } from "@/hooks/I18nHook";
 import { useTeamList } from "@/hooks/TeamsHook";
 import { Team } from "@/types";
-import { Button, ComboBox, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, Input, Label, Tooltip, TooltipProvider, TooltipTrigger } from "@components/ui";
-import { DialogClose } from "@radix-ui/react-dialog";
-import { TooltipContent } from "@radix-ui/react-tooltip";
+import { Button, ComboBox, Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, Input, Label, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@components/ui";
 import { RefreshCcw } from "lucide-react";
-import { ChangeEvent, PropsWithChildren, useEffect, useMemo, useState } from "react";
+import { DateTime } from 'luxon';
 
 export const NewGameDialogContainer = ({ children }: PropsWithChildren) => {
     return (
@@ -59,6 +58,8 @@ export const NewGameDialog = ({ onNewGameCreated }: NewGameDialogProps) => {
     const [gameName, setGameName] = useState("");
     const [gameNameDirty, setGameNameDirty] = useState(false);
 
+    const date = DateTime.now().toISODate();
+
     useEffect(() => {
         if(gameNameDirty) return;
 
@@ -72,7 +73,7 @@ export const NewGameDialog = ({ onNewGameCreated }: NewGameDialogProps) => {
             }
         }
 
-        setGameName(`${getTeamName(homeTeamId)} ${translate("vs")} ${getTeamName(awayTeamId)}`);
+        setGameName(`${date} - ${getTeamName(homeTeamId)} ${translate("vs")} ${getTeamName(awayTeamId)}`);
     }, [homeTeamId, awayTeamId, teams, gameNameDirty]);
 
     const handleTeamNameChanged = (event: ChangeEvent<HTMLInputElement>) => {
@@ -81,6 +82,12 @@ export const NewGameDialog = ({ onNewGameCreated }: NewGameDialogProps) => {
     }
 
     const handleResetTeamName = () => setGameNameDirty(false);
+
+    const clearValues = () => {
+        setHomeTeamId(undefined);
+        setAwayTeamId(undefined);
+        setGameNameDirty(false);
+    }
 
     return (
         <TooltipProvider>
@@ -121,6 +128,15 @@ export const NewGameDialog = ({ onNewGameCreated }: NewGameDialogProps) => {
                         </Tooltip>
                     </div>
                     <DialogFooter>
+                    <DialogClose asChild>
+                            <Button
+                                variant="outline"
+                                className="mt-4"
+                                onClick={clearValues}
+                            >
+                                Cancel
+                            </Button>
+                        </DialogClose>
                         <DialogClose asChild>
                             <Button 
                                 variant="default" 
