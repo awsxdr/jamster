@@ -9,12 +9,15 @@ using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.SignalR;
-using Microsoft.Extensions.FileProviders;
-using Microsoft.Extensions.Primitives;
 using SQLite;
-using Microsoft.Extensions.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Configuration.AddJsonFile(Path.Combine(RunningEnvironment.RootPath, "appsettings.json"), true);
+if (builder.Environment.IsDevelopment())
+{
+    builder.Configuration.AddJsonFile(Path.Combine(RunningEnvironment.RootPath, "appsettings.development.json"), true);
+}
 
 builder.Host.UseServiceProviderFactory(new AutofacServiceProviderFactory(container =>
 {
@@ -60,8 +63,6 @@ builder.Host.UseServiceProviderFactory(new AutofacServiceProviderFactory(contain
                 (IReducer)localContext.Resolve(reducerType, new TypedParameter(typeof(ReducerGameContext), gameContext));
         });
     }
-
-    //container.RegisterTypes(reducerTypes).As<IReducer>();
 }));
 
 builder.Services
@@ -121,22 +122,10 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-//app.MapFallbackToFile("index.html");
-//app.UseDefaultFiles(new DefaultFilesOptions
-//{
-//    DefaultFileNames = ["index.htm", "index.html"]
-//});
-app.UseStaticFiles(new StaticFileOptions
-{
-    FileProvider = new PhysicalFileProvider(
-        Path.Combine(Path.GetDirectoryName(Assembly.GetEntryAssembly()!.Location)!, "wwwroot")),
-    RequestPath = "",
-
-});
 app.UseSpaStaticFiles();
 app.UseSpa(config =>
 {
-    config.Options.SourcePath = Path.Combine(Path.GetDirectoryName(Assembly.GetEntryAssembly()!.Location)!, "wwwroot");
+    config.Options.SourcePath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!, "wwwroot");
 });
 
 void MapHub<THub>(string pattern) where THub : Hub =>

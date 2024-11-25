@@ -1,5 +1,4 @@
-﻿using System.Data;
-using System.Runtime.CompilerServices;
+﻿using System.Runtime.CompilerServices;
 using amethyst.Domain;
 using amethyst.Events;
 using amethyst.Services;

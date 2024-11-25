@@ -4,7 +4,7 @@ using amethyst.Services;
 
 namespace amethyst.Reducers;
 
-public sealed class JamClock(ReducerGameContext gameContext, ILogger<JamClock> logger) 
+public sealed class JamClock(ReducerGameContext gameContext, IEventBus eventBus, ILogger<JamClock> logger) 
     : Reducer<JamClockState>(gameContext)
     , IHandlesEvent<JamStarted>
     , IHandlesEvent<JamEnded>
@@ -69,9 +69,10 @@ public sealed class JamClock(ReducerGameContext gameContext, ILogger<JamClock> l
         if (ticksPassed <= JamLengthInTicks) return [];
 
         logger.LogDebug("Jam clock expired, ending jam");
-        SetState(newState with { IsRunning = false });
 
-        return [new JamEnded(Guid7.FromTick(state.StartTick + JamLengthInTicks))];
+        _ = eventBus.AddEvent(Context.GameInfo, new JamEnded(Guid7.FromTick(state.StartTick + JamLengthInTicks)));
+
+        return [];
 
     }
 }

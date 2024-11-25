@@ -1,8 +1,9 @@
-﻿using amethyst.Events;
+﻿using amethyst.DataStores;
+using amethyst.Events;
 using amethyst.Reducers;
 using amethyst.Services;
 using FluentAssertions;
-
+using Moq;
 using static amethyst.tests.DataGenerator;
 
 namespace amethyst.tests.Reducers;
@@ -113,7 +114,7 @@ public class JamClockUnitTests : ReducerUnitTest<JamClock, JamClockState>
 
         var result = await Tick(130 * 1000);
 
-        var implicitEvent = result.Should().ContainSingle().Which.Should().BeAssignableTo<JamEnded>().Which;
-        implicitEvent.Tick.Should().Be(120 * 1000);
+        GetMock<IEventBus>()
+            .Verify(mock => mock.AddEvent(It.IsAny<GameInfo>(), It.Is<JamEnded>(je => je.Tick == 120 * 1000)));
     }
 }

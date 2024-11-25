@@ -42,7 +42,7 @@ public abstract class EventBusIntegrationTest
             builder.RegisterTypes(reducerTypes).As<IReducer>();
 
             builder.RegisterType<GameStateStore>().As<IGameStateStore>().SingleInstance();
-            builder.Register(context => new GameContext(Game, [], context.Resolve<IGameStateStore>(), context.Resolve<IGameClock>()));
+            builder.Register(context => new ReducerGameContext(Game, context.Resolve<IGameStateStore>()));
 
             var createLoggerMethod =
                 typeof(LoggerFactoryExtensions).GetMethods()
@@ -55,6 +55,8 @@ public abstract class EventBusIntegrationTest
                 .As(typeof(ILogger<>));
 
             builder.RegisterType<GameContextFactory>().As<IGameContextFactory>().SingleInstance();
+
+            builder.RegisterType<EventBus>().As<IEventBus>().SingleInstance();
         }));
 
         StateStore = Mocker.Create<IGameStateStore>();
@@ -67,7 +69,7 @@ public abstract class EventBusIntegrationTest
             .Setup(mock => mock.GetDataStore(It.IsAny<string>()))
             .Returns(() => GetMock<IGameDataStore>().Object);
 
-        EventBus = Mocker.Create<EventBus>();
+        EventBus = Mocker.Create<IEventBus>();
 
         Mocker.Create<GameContextFactory>().GetGame(Game);
     }

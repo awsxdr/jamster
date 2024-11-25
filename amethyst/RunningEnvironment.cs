@@ -4,5 +4,5 @@ namespace amethyst;
 
 public static class RunningEnvironment
 {
-    public static readonly string RootPath = Path.GetDirectoryName(Assembly.GetEntryAssembly()!.Location)!;
+    public static string RootPath = Path.GetDirectoryName(Assembly.GetEntryAssembly()!.Location)!;
 };

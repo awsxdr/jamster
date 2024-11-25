@@ -70,6 +70,17 @@ public abstract class ReducerUnitTest<TReducer, TState> : UnitTest<TReducer, IRe
             .Returns(Result.Succeed<object>(state));
     }
 
+    protected void MockKeyedState<TOtherState>(string key, TOtherState state) where TOtherState : class
+    {
+        GetMock<IGameStateStore>()
+            .Setup(mock => mock.GetKeyedState<TOtherState>(key))
+            .Returns(state);
+
+        GetMock<IGameStateStore>()
+            .Setup(mock => mock.GetCachedKeyedState<TOtherState>(key))
+            .Returns(state);
+    }
+
     protected void VerifyEventSent<TEvent>(Tick tick) where TEvent : Event
     {
         GetMock<IEventBus>()

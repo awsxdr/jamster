@@ -83,7 +83,9 @@ public static class TestGameEventsSource
             ("Home", new TeamTimeoutsState(3, ReviewStatus.Unused, TimeoutInUse.None)),
             ("Away", new TeamTimeoutsState(3, ReviewStatus.Unused, TimeoutInUse.None))
         )
+        .Wait(0)
         .Event<JamStarted>(57) // Jam that is called
+        .Validate(new GameStageState(Stage.Jam, 1, 2, false))
         .Event<JamEnded>(30)
         .Event<JamStarted>(95)
         .Event<JamEnded>(25)
@@ -116,6 +118,7 @@ public static class TestGameEventsSource
         .Event<JamStarted>(58)
         .Event<JamEnded>(30)
         .Event<JamStarted>(120 + 15)
+        .Wait(0)
         .Validate(new GameStageState(Stage.Lineup, 1, 9, false))
         .Event<TimeoutStarted>(90) // Timeout not ended
         .Event<JamStarted>(76)

@@ -25,6 +25,7 @@ public abstract class ControllerIntegrationTest
     protected HttpClient Client { get; private set; }
     protected TestServer Server => _applicationFactory.Server;
     protected GameDataStoreFactory? GameDataStoreFactory { get; private set; }
+    private readonly string _runPath;
 
     protected JsonSerializerOptions SerializerOptions { get; } = new(JsonSerializerDefaults.Web);
 
@@ -32,6 +33,10 @@ public abstract class ControllerIntegrationTest
     {
         var systemTimeMock = new Mock<ISystemTime>();
         systemTimeMock.Setup(mock => mock.UtcNow()).Returns(new DateTimeOffset(2000, 5, 4, 3, 2, 1, TimeSpan.Zero));
+
+        _runPath = Path.Combine(Path.GetTempPath(), $"AmethystControllerTest_{Guid.NewGuid()}");
+        Directory.CreateDirectory(_runPath);
+        RunningEnvironment.RootPath = _runPath;
 
         _applicationFactory = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
         {
@@ -59,6 +64,10 @@ public abstract class ControllerIntegrationTest
     {
         Client.Dispose();
         _applicationFactory.Dispose();
+
+        GC.Collect();
+        Thread.Sleep(500);
+        Directory.Delete(_runPath, true);
     }
 
     [SetUp]
