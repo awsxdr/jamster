@@ -1,6 +1,7 @@
 import { useGameState } from "@/hooks";
 import { useMemo } from "react";
 import { ScaledText } from "@components/ScaledText";
+import { cn } from "@/lib/utils";
 
 export type ClockProps<TClockState> = {
     secondsMapper: (state: TClockState) => number,
@@ -29,7 +30,7 @@ export const Clock = <TClockState,>({ secondsMapper, stateName, direction, start
 
     return (
         <>
-            <ScaledText text={time} className={textClassName} />
+            <ScaledText text={time} className={cn("w-full", textClassName)} />
         </>
     );
 };
