@@ -6,25 +6,34 @@ import { ScaledText } from "@/components/ScaledText";
 
 const BeforeGameBar = ({ visible }: IntermissionDetailsProps) => (
     <ClocksBar visible={visible}>
-        <span>Starting soon</span>
+        <ScoreboardComponent className="w-full h-full pb-5">
+            <ScaledText 
+                text="Starting soon" 
+                className="h-full w-full overflow-hidden flex justify-center items-center"
+            />
+        </ScoreboardComponent>
     </ClocksBar>
 );
 
 const IntermissionBar = ({ visible }: IntermissionDetailsProps) => (
-        <ClocksBar visible={visible}>
-            <ScoreboardComponent className="w-full h-full" header="Intermission">
-                <IntermissionClock 
-                    showTextOnZero={true}
-                    textClassName="flex justify-center items-center h-full m-2 overflow-hidden" 
-                />
-            </ScoreboardComponent>
-        </ClocksBar>
-    );
+    <ClocksBar visible={visible}>
+        <ScoreboardComponent className="w-full h-full" header="Intermission">
+            <IntermissionClock 
+                showTextOnZero={true}
+                textClassName="flex justify-center items-center h-full m-2 overflow-hidden" 
+                autoScale
+            />
+        </ScoreboardComponent>
+    </ClocksBar>
+);
 
 const AfterGameBar = ({ gameStage, visible }: IntermissionDetailsProps) => (
     <ClocksBar visible={visible}>
-        <ScoreboardComponent>
-            <ScaledText text={gameStage.periodIsFinalized ? "Final score" : "Unofficial score"} />
+        <ScoreboardComponent className="w-full h-full">
+            <ScaledText 
+                text={gameStage.periodIsFinalized ? "Final score" : "Unofficial score"} 
+                className="h-full w-full overflow-hidden flex justify-center items-center"
+            />
         </ScoreboardComponent>
     </ClocksBar>
 );

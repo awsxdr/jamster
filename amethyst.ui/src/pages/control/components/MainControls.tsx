@@ -31,14 +31,15 @@ export const MainControls = ({ gameId }: MainControlsProps) => {
         switch (gameStage?.stage) {
             case Stage.Jam: return [translate("MainControls.EndJam"), true];
             case Stage.Timeout: return [translate("MainControls.EndTimeout"), true];
+            case Stage.BeforeGame: return [translate("MainControls.StartLineup"), true];
             case Stage.Intermission: return [translate("MainControls.FinalizePeriod"), !gameStage.periodIsFinalized];
-            case Stage.AfterGame: return [translate("MainControls.FinalizeGame"), true];
+            case Stage.AfterGame: return [translate("MainControls.FinalizeGame"), !gameStage.periodIsFinalized];
             default: return ["---", false];
         }
     }, [gameStage?.stage, language]);
 
     const [timeoutText, timeoutButtonEnabled] = useMemo(() => {
-        if(gameStage && !gameStage.periodIsFinalized) {
+        if(gameStage && !gameStage.periodIsFinalized && gameStage.stage !== Stage.BeforeGame) {
             return [translate("MainControls.NewTimeout"), true];
         } else {
             return ["---", false];
@@ -80,10 +81,10 @@ export const MainControls = ({ gameId }: MainControlsProps) => {
     return (
         <Card className="grow mt-5 pt-6">
             <CardContent className="flex flex-wrap gap-2 justify-evenly">
-                <Button onClick={handleStart} disabled={!startButtonEnabled}><Play /> { startText } [`]</Button>
-                <Button onClick={handleEnd} disabled={!endButtonEnabled}><Square /> { endText } [y]</Button>
-                <Button onClick={handleTimeout} disabled={!timeoutButtonEnabled}><Pause /> { timeoutText } [t]</Button>
-                <Button disabled={!undoButtonEnabled}><Undo /> {undoText} [g]</Button>
+                <Button onClick={handleStart} variant={startButtonEnabled ? 'default' : 'secondary'} disabled={!startButtonEnabled}><Play /> { startText } [`]</Button>
+                <Button onClick={handleEnd} variant={endButtonEnabled ? 'default' : 'secondary'} disabled={!endButtonEnabled}><Square /> { endText } [y,r,i]</Button>
+                <Button onClick={handleTimeout} variant={timeoutButtonEnabled ? 'default' : 'secondary'} disabled={!timeoutButtonEnabled}><Pause /> { timeoutText } [t]</Button>
+                <Button variant={undoButtonEnabled ? 'default' : 'secondary'} disabled={!undoButtonEnabled}><Undo /> {undoText} [g]</Button>
             </CardContent>
         </Card>
     );
