@@ -1,33 +1,24 @@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
-import { useI18n } from "@/hooks/I18nHook";
+import { LanguageName, useI18n } from "@/hooks/I18nHook";
 import { Check, ChevronUp, Globe } from "lucide-react";
 
-type LanguageItemProps = {
-    language: string;
-    displayName: string;
-}
+type LanguageItemProps = LanguageName;
 
-const LanguageItem = ({ language, displayName }: LanguageItemProps) => {
+const LanguageItem = ({ code, displayName }: LanguageItemProps) => {
     const { language: currentLanguage, setLanguage } = useI18n();
 
     const changeLanguage = () => {
-        setLanguage(language);
+        setLanguage(code);
     }
 
     return (
-        <DropdownMenuItem onClick={changeLanguage}><span>{displayName}</span> { currentLanguage === language ? <Check /> : <></> }</DropdownMenuItem>
+        <DropdownMenuItem onClick={changeLanguage}><span>{displayName}</span> { currentLanguage === code ? <Check /> : <></> }</DropdownMenuItem>
     )
 }
 
 export const LanguageMenu = () => {
-    const { translate } = useI18n();
-
-    const languages = [
-        { language: "en", displayName: "English" },
-        { language: "es", displayName: "Español" },
-        { language: "dev", displayName: "Test" },
-    ];
+    const { translate, languages } = useI18n();
 
     return (
         <SidebarMenuItem>
@@ -42,7 +33,7 @@ export const LanguageMenu = () => {
                     side="top"
                     className="w-[--radix-popper-anchor-width]"
                 >
-                    { languages.map(l => <LanguageItem key={l.language} {...l} />)}
+                    { languages.map(l => <LanguageItem key={l.code} {...l} />)}
                 </DropdownMenuContent>
             </DropdownMenu>
         </SidebarMenuItem>

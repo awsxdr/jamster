@@ -10,11 +10,11 @@ export const ClocksContainer = () => {
 
     return (
         <div className="w-full flex space-x-5 mt-5">
-            <Clock name={`${translate('Jam')} ${gameStage?.jamNumber ?? 0}`} clock={c => <JamClock textClassName={c} />} />
-            <Clock name={`${translate('Period')} ${gameStage?.periodNumber ?? 0}`} clock={c => <PeriodClock textClassName={c} />} />
-            <Clock name={translate('Lineup')} clock={c => <LineupClock textClassName={c} />} />
-            <Clock name={translate('Timeout')} clock={c => <TimeoutClock textClassName={c} />} />
-            <Clock name={translate('Intermission')} clock={c => <IntermissionClock textClassName={c} />} />
+            <Clock name={`${translate('ClocksContainer.Jam')} ${gameStage?.jamNumber ?? 0}`} clock={c => <JamClock textClassName={c} />} />
+            <Clock name={`${translate('ClocksContainer.Period')} ${gameStage?.periodNumber ?? 0}`} clock={c => <PeriodClock textClassName={c} />} />
+            <Clock name={translate('ClocksContainer.Lineup')} clock={c => <LineupClock textClassName={c} />} />
+            <Clock name={translate('ClocksContainer.Timeout')} clock={c => <TimeoutClock textClassName={c} />} />
+            <Clock name={translate('ClocksContainer.Intermission')} clock={c => <IntermissionClock textClassName={c} />} />
         </div>
     )
 }

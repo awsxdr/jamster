@@ -18,7 +18,7 @@ type SidebarItemList = {
 };
 
 const sidebarItems: SidebarItemList = {
-    "Main": [
+    "MenuSidebar.MainGroup": [
         {
             title: "MenuSidebar.ScoreboardDisplay",
             href: "/scoreboard",
@@ -30,7 +30,7 @@ const sidebarItems: SidebarItemList = {
             icon: <Keyboard />
         }
     ],
-    "Data": [
+    "MenuSidebar.DataGroup": [
         {
             title: "MenuSidebar.Teams",
             href: "/teams",

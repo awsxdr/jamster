@@ -7,7 +7,7 @@ import { I18nContextProvider } from './hooks/I18nHook.tsx';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <I18nContextProvider defaultLanguage='es' languages={languages}>
+    <I18nContextProvider defaultLanguage='en' languages={languages}>
       <App />
     </I18nContextProvider>
   </StrictMode>,
