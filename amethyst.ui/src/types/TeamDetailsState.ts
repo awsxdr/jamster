@@ -1,5 +1,5 @@
-import { Team } from ".";
+import { GameTeam } from ".";
 
 export type TeamDetailsState = {
-    team: Team,
+    team: GameTeam,
 };

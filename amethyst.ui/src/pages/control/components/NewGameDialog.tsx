@@ -2,13 +2,19 @@ import { ChangeEvent, PropsWithChildren, useEffect, useMemo, useState } from "re
 import { useI18n } from "@/hooks/I18nHook";
 import { useTeamList } from "@/hooks/TeamsHook";
 import { Team } from "@/types";
-import { Button, ComboBox, Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, Input, Label, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@components/ui";
-import { RefreshCcw } from "lucide-react";
+import { Button, ComboBox, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, Input, Label, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@components/ui";
+import { Loader2, RefreshCcw } from "lucide-react";
 import { DateTime } from 'luxon';
+import { cn } from "@/lib/utils";
 
-export const NewGameDialogContainer = ({ children }: PropsWithChildren) => {
+type NewGameDialogContainerProps = {
+    open: boolean;
+    onOpenChange?: (open: boolean) => void;
+}
+
+export const NewGameDialogContainer = ({ children, ...props }: PropsWithChildren<NewGameDialogContainerProps>) => {
     return (
-        <Dialog>
+        <Dialog {...props}>
             {children}
         </Dialog>
     );
@@ -22,18 +28,32 @@ export const NewGameDialogTrigger = ({children}: PropsWithChildren) => {
     )
 }
 
-type NewGameCreated = (homeTeamId: string, awayTeamId: string, gameName: string) => void;
-
-type NewGameDialogProps = {
-    onNewGameCreated?: NewGameCreated
+type ColorBlockProps = {
+    color: string;
 }
 
-export const NewGameDialog = ({ onNewGameCreated }: NewGameDialogProps) => {
+const ColorBlock = ({ color }: ColorBlockProps) => (
+    <span 
+        className="display-inline-block w-5 h-5 self-center" 
+        style={{ backgroundColor: color}}
+    >
+    </span>
+)
 
+type TeamSelectProps = {
+    titleKey: string;
+    teamId?: string;
+    exceptIds?: string[];
+    colorIndex?: number;
+    onTeamIdChanged?: (teamId: string) => void;
+    onColorIndexChanged?: (colorIndex: number) => void;
+}
+
+const TeamSelect = ({ titleKey, teamId, exceptIds, colorIndex, onTeamIdChanged, onColorIndexChanged }: TeamSelectProps) => {
     const { translate } = useI18n();
 
     const teams = useTeamList();
-
+    
     const getDisplayName = (team: Team) =>
         team.names["team"] || team.names["league"] || team.names["default"] || "";
 
@@ -43,18 +63,98 @@ export const NewGameDialog = ({ onNewGameCreated }: NewGameDialogProps) => {
             text: 
                 !!team.names["league"] && !!team.names["team"] ? `${team.names["team"]} (${team.names["league"]})`
                 : getDisplayName(team),
-        })), [teams]);
+        }))
+        .filter(team => !(exceptIds?.find(eid => team.value === eid))),
+        [teams, exceptIds]);
+
+    const teamColors = useMemo(() => {
+        const team = teams.find(team => team.id === teamId);
+
+        if(!team) {
+            return [];
+        }
+
+        return Object.keys(team.colors)
+            .map((key, i) => ({
+                value: i.toString(),
+                text: key,
+                foreground: team.colors[key]?.complementaryColor ?? '#ffffff',
+                background: team.colors[key]?.shirtColor ?? '#000000',
+            }));
+    }, [teams, teamId]);
+
+    useEffect(
+        () => onColorIndexChanged?.(0),
+        [teamColors, onColorIndexChanged]);
+
+    const handleColorIndexChanged = (key: string) => {
+        const index = parseInt(key);
+        if(!Number.isNaN(index)) {
+            onColorIndexChanged?.(index);
+        }
+    }
+    
+    return (
+        <>
+            <Label className="font-bold text-lg">{translate(titleKey)}</Label>
+            <ComboBox 
+                items={teamItems} 
+                value={teamId ?? ""} 
+                placeholder={translate("NewGameDialog.SelectTeam")} 
+                onValueChanged={onTeamIdChanged ?? (() => {})}
+                dropdownClassName="w-[460px]"
+            />
+            <span className={cn(
+                "flex gap-2 items-baseline transition-all duration-500 h-0 overflow-hidden",
+                teamColors.length > 1 ? "h-auto" : ""
+            )}>
+                <span>Kit</span>
+                <ComboBox
+                    items={teamColors}
+                    value={colorIndex?.toString() ?? ""}
+                    placeholder={translate("NewGameDialog.SelectKit")}
+                    onValueChanged={handleColorIndexChanged}
+                    dropdownClassName="w-[460px]"
+                    className="grow"
+                    disabled={!teamId || !teamColors}
+                    hideSearch
+                />
+                <ColorBlock color={teamColors[colorIndex ?? 0]?.background ?? '#000000'} />
+                <ColorBlock color={teamColors[colorIndex ?? 0]?.foreground ?? '#000000'} />
+            </span>
+        </>
+    )
+}
+
+type NewGameCreated = (
+    homeTeamId: string, 
+    homeTeamColorIndex: number,
+    awayTeamId: string, 
+    awayTeamColorIndex: number,
+    gameName: string) => void;
+
+type NewGameDialogProps = {
+    onNewGameCreated?: NewGameCreated;
+    onCancelled?: () => void;
+}
+
+export const NewGameDialog = ({ onNewGameCreated, onCancelled }: NewGameDialogProps) => {
+
+    const { translate } = useI18n();
+
+    const teams = useTeamList();
+
+    const getDisplayName = (team: Team) =>
+        team.names["team"] || team.names["league"] || team.names["default"] || "";
 
     const [homeTeamId, setHomeTeamId] = useState<string>();
     const [awayTeamId, setAwayTeamId] = useState<string>();
 
-    const homeTeamItems = useMemo(() => 
-        teamItems.filter(team => team.value !== awayTeamId)
-    , [teamItems, awayTeamId]);
-    const awayTeamItems = useMemo(() => 
-        teamItems.filter(team => team.value !== homeTeamId)
-    , [teamItems, homeTeamId]);
+    const [isCreating, setIsCreating] = useState(false);
 
+    const [homeTeamColorIndex, setHomeTeamColorIndex] = useState(0);
+    const [awayTeamColorIndex, setAwayTeamColorIndex] = useState(0);
+    
     const [gameName, setGameName] = useState("");
     const [gameNameDirty, setGameNameDirty] = useState(false);
 
@@ -69,11 +169,11 @@ export const NewGameDialog = ({ onNewGameCreated }: NewGameDialogProps) => {
             if(team) {
                 return getDisplayName(team);
             } else {
-                return translate("...");
+                return translate("NewGameDialog.UnknownTeam");
             }
         }
 
-        setGameName(`${date} - ${getTeamName(homeTeamId)} ${translate("vs")} ${getTeamName(awayTeamId)}`);
+        setGameName(`${date} - ${getTeamName(homeTeamId)} ${translate("NewGameDialog.Versus")} ${getTeamName(awayTeamId)}`);
     }, [homeTeamId, awayTeamId, teams, gameNameDirty]);
 
     const handleTeamNameChanged = (event: ChangeEvent<HTMLInputElement>) => {
@@ -89,6 +189,18 @@ export const NewGameDialog = ({ onNewGameCreated }: NewGameDialogProps) => {
         setGameNameDirty(false);
     }
 
+    const handleNewGameClicked = () => {
+        setIsCreating(true);
+
+        onNewGameCreated?.(homeTeamId!, homeTeamColorIndex, awayTeamId!, awayTeamColorIndex, gameName);
+    }
+
+    const handleCancelClicked = () => {
+        clearValues();
+
+        onCancelled?.();
+    }
+
     return (
         <TooltipProvider>
             <DialogContent>
@@ -97,23 +209,23 @@ export const NewGameDialog = ({ onNewGameCreated }: NewGameDialogProps) => {
                     <DialogDescription>{translate("NewGameDialog.Description")}</DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
-                    <Label>{translate("NewGameDialog.HomeTeam")}</Label>
-                    <ComboBox 
-                        items={homeTeamItems} 
-                        value={homeTeamId ?? ""} 
-                        placeholder={translate("NewGameDialog.SelectTeam")} 
-                        onValueChanged={setHomeTeamId}
-                        dropdownClassName="w-[460px]"
+                    <TeamSelect 
+                        titleKey="NewGameDialog.HomeTeam" 
+                        teamId={homeTeamId} 
+                        exceptIds={awayTeamId ? [awayTeamId] : []}
+                        colorIndex={homeTeamColorIndex}
+                        onTeamIdChanged={setHomeTeamId}
+                        onColorIndexChanged={setHomeTeamColorIndex}
                     />
-                    <Label>{translate("NewGameDialog.AwayTeam")}</Label>
-                    <ComboBox 
-                        items={awayTeamItems} 
-                        value={awayTeamId ?? ""} 
-                        placeholder={translate("NewGameDialog.SelectTeam")} 
-                        onValueChanged={setAwayTeamId}
-                        dropdownClassName="w-[460px]"
+                    <TeamSelect 
+                        titleKey="NewGameDialog.AwayTeam" 
+                        teamId={awayTeamId} 
+                        exceptIds={homeTeamId ? [homeTeamId] : []}
+                        colorIndex={awayTeamColorIndex}
+                        onTeamIdChanged={setAwayTeamId}
+                        onColorIndexChanged={setAwayTeamColorIndex}
                     />
-                    <Label>{translate("NewGameDialog.GameName")}</Label>
+                    <Label className="text-lg font-bold">{translate("NewGameDialog.GameName")}</Label>
                     <div className="flex">
                         <Input value={gameName} onChange={handleTeamNameChanged} />
                         <Tooltip>
@@ -128,26 +240,23 @@ export const NewGameDialog = ({ onNewGameCreated }: NewGameDialogProps) => {
                         </Tooltip>
                     </div>
                     <DialogFooter>
-                    <DialogClose asChild>
-                            <Button
-                                variant="outline"
-                                className="mt-4"
-                                onClick={clearValues}
-                            >
-                                Cancel
-                            </Button>
-                        </DialogClose>
-                        <DialogClose asChild>
-                            <Button 
-                                variant="default" 
-                                type="submit"
-                                className="mt-4" 
-                                disabled={!homeTeamId || !awayTeamId}
-                                onClick={() => onNewGameCreated?.(homeTeamId!, awayTeamId!, gameName)}
-                            >
-                                Create
-                            </Button>
-                        </DialogClose>
+                        <Button
+                            variant="outline"
+                            className="mt-4"
+                            onClick={handleCancelClicked}
+                        >
+                            Cancel
+                        </Button>
+                        <Button 
+                            variant="default" 
+                            type="submit"
+                            className="mt-4" 
+                            disabled={isCreating || !homeTeamId || !awayTeamId}
+                            onClick={handleNewGameClicked}
+                        >
+                            { isCreating && <Loader2 className="animate-spin" /> }
+                            Create
+                        </Button>
                     </DialogFooter>
                 </div>
             </DialogContent>

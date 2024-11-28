@@ -21,9 +21,24 @@ export const TeamName = ({ side, textClassName }: TeamScoreProps) => {
         return team.team.names['scoreboard'] || team.team.names['default'] || '';
     }, [team]);
 
+    const foreground = useMemo(
+        () => team?.team.color.complementaryColor ?? '#ffffff',
+        [team]);
+
+    const background = useMemo(
+        () => team?.team.color.shirtColor ?? '#000000',
+        [team]);
+
     return (
         <>
-            <ScaledText text={teamName || ''} className={cn("flex justify-center items-center h-full m-2 overflow-hidden text-white", textClassName)} />
+            <ScaledText 
+                text={teamName || ''} 
+                className={cn(
+                    "flex justify-center items-center h-full m-2 overflow-hidden",
+                    textClassName
+                )} 
+                style={{ color: foreground, backgroundColor: background }}
+            />
         </>
     );
 }

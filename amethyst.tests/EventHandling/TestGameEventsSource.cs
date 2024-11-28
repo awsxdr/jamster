@@ -1,4 +1,5 @@
-﻿using amethyst.Domain;
+﻿using amethyst.DataStores;
+using amethyst.Domain;
 using amethyst.Events;
 using amethyst.Reducers;
 
@@ -7,7 +8,13 @@ namespace amethyst.tests.EventHandling;
 public static class TestGameEventsSource
 {
     public static Event[] TwoJamsWithScores => new EventsBuilder(0, [])
-        .Validate(new GameStageState(Stage.BeforeGame, 0, 0, false))
+        .Event<TeamSet>(0).WithBody(new TeamSetBody(TeamSide.Home, new GameTeam(new() { ["default"] = "Black" }, new TeamColor(Color.Black, Color.White), [])))
+        .Event<TeamSet>(0).WithBody(new TeamSetBody(TeamSide.Away, new GameTeam(new() { ["default"] = "White" }, new TeamColor(Color.White, Color.Black), [])))
+        .Validate(
+            new GameStageState(Stage.BeforeGame, 0, 0, false),
+            ("Home", new TeamDetailsState(new GameTeam(new() { ["default"] = "Black" }, new TeamColor(Color.Black, Color.White), []))),
+            ("Away", new TeamDetailsState(new GameTeam(new() { ["default"] = "White" }, new TeamColor(Color.White, Color.Black), [])))
+        )
         .Event<IntermissionEnded>(15)
         .Validate(new GameStageState(Stage.Lineup, 1, 0, false))
         .Event<JamStarted>(12)
@@ -156,6 +163,7 @@ public static class TestGameEventsSource
         .Validate(new GameStageState(Stage.Jam, 2, 1, false))
         .Event<JamEnded>(30)
         .Event<JamStarted>(120 + 15)
+        .Validate(new GameStageState(Stage.Lineup, 2, 2, false))
         .Event<TimeoutStarted>(0) // Multiple timeouts
         .Event<TimeoutTypeSet>(160).WithBody(new TimeoutTypeSetBody(TimeoutType.Official, null))
         .Validate(
@@ -191,7 +199,8 @@ public static class TestGameEventsSource
         .Event<JamStarted>(109)
         .Validate(
             ("Home", new TeamTimeoutsState(0, ReviewStatus.Used, TimeoutInUse.None)),
-            ("Away", new TeamTimeoutsState(3, ReviewStatus.Unused, TimeoutInUse.None))
+            ("Away", new TeamTimeoutsState(3, ReviewStatus.Unused, TimeoutInUse.None)),
+            new GameStageState(Stage.Jam, 2, 3, false)
         )
         .Event<JamEnded>(30)
         .Event<JamStarted>(35)
@@ -209,7 +218,11 @@ public static class TestGameEventsSource
                 94 + 30 + 120 + 15 + 109 + 30 + 35 + 10),
         ])
         .Wait(120 + 30)
+        .Event<JamEnded>(0)
         .Event<JamStarted>(42)
+        .Validate(
+            new GameStageState(Stage.Jam, 2, 6, false)
+        )
         .Event<JamEnded>(30)
         .Event<JamStarted>(59)
         .Event<JamEnded>(30)

@@ -1,4 +1,5 @@
 ﻿using System.Text.Json;
+using System.Text.Json.Nodes;
 using amethyst.Domain;
 using Func;
 using SQLite;
@@ -98,8 +99,11 @@ public abstract class DataStore<TData, TKey> : IDataStore
             _ => throw new UnexpectedUpdateCountException()
         };
 
-    protected Result Update(TKey key, TData item) =>
-        Connection.Query<int>($"UPDATE {_tableName} SET data = ? WHERE isArchived = FALSE AND id = ? RETURNING 0", Serialize(item), key).Count switch
+    protected Result Update(TKey key, TData item) => Update(key, Serialize(item));
+    protected Result Update(TKey key, JsonObject item) => Update(key, item.ToJsonString());
+
+    private Result Update(TKey key, string itemJson) =>
+        Connection.Query<int>($"UPDATE {_tableName} SET data = ? WHERE isArchived = FALSE AND id = ? RETURNING 0", itemJson, key).Count switch
         {
             1 => Succeed(),
             0 => Fail<TeamNotFoundError>(),

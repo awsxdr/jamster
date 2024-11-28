@@ -1,5 +1,7 @@
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using System.Diagnostics;
+using amethyst.Extensions;
+using Func;
 
 namespace amethyst.Services;
 
@@ -11,6 +13,7 @@ public interface IGameContextFactory : IDisposable
 {
     GameContext GetGame(GameInfo gameInfo);
     void UnloadGame(Guid gameId);
+    public void ReloadGame(GameInfo gameInfo);
 }
 
 public class GameContextFactory(
@@ -34,7 +37,24 @@ public class GameContextFactory(
 
         context.Value.Dispose();
     }
-        
+
+    public void ReloadGame(GameInfo gameInfo)
+    {
+        if (!_gameContexts.ContainsKey(gameInfo.Id) || !_gameContexts[gameInfo.Id].IsValueCreated)
+            return;
+
+        var context = _gameContexts[gameInfo.Id].Value;
+        var stateStore = context.StateStore;
+        stateStore.DisableNotifications();
+        stateStore.LoadDefaultStates(context.Reducers);
+
+        var game = gameStoreFactory.GetDataStore(IGameDiscoveryService.GetGameFileName(gameInfo));
+        var events = game.GetEvents().ToArray();
+        stateStore.ApplyEvents(context.Reducers, events);
+
+        stateStore.EnableNotifications();
+        stateStore.ForceNotify();
+    }
 
     private GameContext LoadGame(GameInfo gameInfo)
     {

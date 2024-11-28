@@ -97,17 +97,17 @@ public class TeamsController(
     }
 }
 
-public record CreateTeamModel(Dictionary<string, string> Names, Dictionary<string, Dictionary<string, DisplayColor>> Colors)
+public record CreateTeamModel(Dictionary<string, string> Names, Dictionary<string, TeamColor> Colors)
 {
     public static explicit operator Team(CreateTeamModel model) => new(Guid.Empty, model.Names, model.Colors, [], DateTimeOffset.UtcNow);
 }
 
-public record UpdateTeamModel(Dictionary<string, string> Names, Dictionary<string, Dictionary<string, DisplayColor>> Colors)
+public record UpdateTeamModel(Dictionary<string, string> Names, Dictionary<string, TeamColor> Colors)
 {
     public static explicit operator Team(UpdateTeamModel model) => new(Guid.Empty, model.Names, model.Colors, [], DateTimeOffset.UtcNow);
 }
 
-public record TeamModel(Guid Id, Dictionary<string, string> Names, Dictionary<string, Dictionary<string, DisplayColor>> Colors, DateTimeOffset LastUpdateTime)
+public record TeamModel(Guid Id, Dictionary<string, string> Names, Dictionary<string, TeamColor> Colors, DateTimeOffset LastUpdateTime)
 {
     public static explicit operator Team(TeamModel model) => new(model.Id, model.Names, model.Colors, [], model.LastUpdateTime);
     public static explicit operator TeamModel(Team team) => new(team.Id, team.Names, team.Colors, team.LastUpdateTime);
@@ -117,7 +117,7 @@ public record TeamModel(Guid Id, Dictionary<string, string> Names, Dictionary<st
         && other.Id == Id
         && other.Names.SequenceEqual(Names)
         && other.Colors.Keys.SequenceEqual(Colors.Keys)
-        && other.Colors.All(o => o.Value.SequenceEqual(Colors[o.Key]))
+        && other.Colors.All(o => o.Value.Equals(Colors[o.Key]))
         && other.LastUpdateTime.Equals(LastUpdateTime);
 
     public override int GetHashCode() => HashCode.Combine(Id, Names.SequenceHashCode(), Colors.SequenceHashCode());
@@ -126,7 +126,7 @@ public record TeamModel(Guid Id, Dictionary<string, string> Names, Dictionary<st
 public record TeamWithRosterModel(
     Guid Id,
     Dictionary<string, string> Names,
-    Dictionary<string, Dictionary<string, DisplayColor>> Colors,
+    Dictionary<string, TeamColor> Colors,
     List<Skater> Roster,
     DateTimeOffset LastUpdateTime)
 {
@@ -141,7 +141,7 @@ public record TeamWithRosterModel(
         && other.Id == Id
         && other.Names.SequenceEqual(Names)
         && other.Colors.Keys.SequenceEqual(Colors.Keys)
-        && other.Colors.All(o => o.Value.SequenceEqual(Colors[o.Key]))
+        && other.Colors.All(o => o.Value.Equals(Colors[o.Key]))
         && other.Roster.SequenceEqual(Roster)
         && other.LastUpdateTime.Equals(LastUpdateTime);
 

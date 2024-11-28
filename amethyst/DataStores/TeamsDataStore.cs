@@ -18,7 +18,7 @@ public interface ITeamsDataStore
 }
 
 public class TeamsDataStore(ConnectionFactory connectionFactory, ISystemTime systemTime) 
-    : DataStore<Team, Guid>("teams", 3, t => t.Id, connectionFactory)
+    : DataStore<Team, Guid>("teams", 4, t => t.Id, connectionFactory)
     , ITeamsDataStore
 {
     public IEnumerable<Team> GetTeams() =>
@@ -82,35 +82,69 @@ public class TeamsDataStore(ConnectionFactory connectionFactory, ISystemTime sys
             case 3:
             {
                 var items = 
-                    GetAllItems()
-                        .Select(i => JsonNode.Parse(i.Data))
-                        .Cast<JsonObject>()
-                        .Select(i => new Team(
-                            i["Id"]!.GetValue<Guid>(),
-                            i["Names"]!.AsObject().ToDictionary(k => k.Key, v => v.Value!.GetValue<string>()),
-                            new Dictionary<string, Dictionary<string, DisplayColor>>
+                    GetAllItemsAsJsonObjects()
+                        .Select(i => new 
+                        {
+                            Id = i["Id"]!.GetValue<Guid>(),
+                            Names = i["Names"]!.AsObject().ToDictionary(k => k.Key, v => v.Value!.GetValue<string>()),
+                            Colors = new Dictionary<string, Dictionary<string, DisplayColor>>
                             {
                                 ["Legacy"] = i["Colors"]!.AsObject().ToDictionary(k => k.Key, v => v.Value!.Deserialize<DisplayColor>()!)
                             },
-                            i["Roster"]!.AsArray().Select(n => n!.Deserialize<Skater>()!).ToList(),
-                            systemTime.UtcNow()))
+                            Roster = i["Roster"]!.AsArray().Select(n => n!.Deserialize<Skater>()!).ToList(),
+                            LastUpdateTime = systemTime.UtcNow()
+                        })
                         .ToArray();
 
                 foreach (var item in items)
                 {
-                    Update(item.Id, item);
+                    Update(item.Id, JsonSerializer.SerializeToNode(item)!.AsObject());
                 }
 
                 break;
             }
+
+            case 4:
+            {
+                    var items =
+                        GetAllItemsAsJsonObjects()
+                            .Select(i => new
+                            {
+                                Id = i["Id"]!.GetValue<Guid>(),
+                                Names = i["Names"]!.AsObject().ToDictionary(k => k.Key, v => v.Value!.GetValue<string>()),
+                                Colors = i["Colors"]!.AsObject().ToDictionary(
+                                    k => k.Key,
+                                    v => v.Value!.AsObject()["default"]!.AsObject().Map(c => new
+                                    {
+                                        ShirtColor = c["Background"]!.GetValue<string>(),
+                                        ComplementaryColor = c["Foreground"]!.GetValue<string>(),
+                                    })
+                                ),
+                                Roster = i["Roster"]!.AsArray().Select(n => n!.Deserialize<Skater>()!).ToList(),
+                                LastUpdateTime = systemTime.UtcNow()
+                            })
+                            .ToArray();
+
+                    foreach (var item in items)
+                    {
+                        Update(item.Id, JsonSerializer.SerializeToNode(item)!.AsObject());
+                    }
+
+                    break;
+            }
         }
     }
+
+    private IEnumerable<JsonObject> GetAllItemsAsJsonObjects() =>
+        GetAllItems()
+            .Select(i => JsonNode.Parse(i.Data))
+            .Cast<JsonObject>();
 }
 
 public record Team(
     Guid Id, 
     Dictionary<string, string> Names,
-    Dictionary<string, Dictionary<string, DisplayColor>> Colors,
+    Dictionary<string, TeamColor> Colors,
     List<Skater> Roster,
     DateTimeOffset LastUpdateTime
 )
@@ -129,6 +163,8 @@ public enum SkaterRole
     NotSkating,
     BenchStaff,
 }
+
+public record TeamColor(Color ShirtColor, Color ComplementaryColor);
 
 public record DisplayColor(Color Foreground, Color Background);
 

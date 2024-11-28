@@ -1,7 +1,7 @@
-import { DisplayColor } from "./DisplayColor"
+import { TeamColor } from "./TeamColor"
 import { StringMap } from "./StringMap"
 
 export type UpdateTeam = {
     names: StringMap<string>,
-    colors: StringMap<StringMap<DisplayColor>>,
+    colors: StringMap<StringMap<TeamColor>>,
 }

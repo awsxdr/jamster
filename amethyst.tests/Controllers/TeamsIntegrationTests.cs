@@ -30,7 +30,7 @@ public class TeamsIntegrationTests : ControllerIntegrationTest
             },
             new()
             {
-                ["White"] = new() { ["default"] = new DisplayColor(Color.Black, Color.White) }
+                ["White"] = new(Color.White, Color.Black)
             });
 
         var createResponse = (await Post<TeamModel>("api/Teams", team, HttpStatusCode.Created))!;
@@ -46,7 +46,7 @@ public class TeamsIntegrationTests : ControllerIntegrationTest
     {
         var team = new CreateTeamModel(
             new() { ["default"] = "Test team", },
-            new() { ["White"] = new() { ["default"] = new DisplayColor(Color.Black, Color.White) }});
+            new() { ["White"] = new(Color.White, Color.Black) });
 
         var createResponse = (await Post<TeamModel>("api/Teams", team, HttpStatusCode.Created))!;
 
@@ -54,8 +54,8 @@ public class TeamsIntegrationTests : ControllerIntegrationTest
             new() { ["default"] = "Edited team", ["new"] = "New name" },
             new()
             {
-                ["White"] = new() { ["default"] = new DisplayColor(Color.White, Color.Black), },
-                ["Test"] = new() { ["new"] = new DisplayColor(Color.FromRgb(1, 2, 3), Color.FromRgb(3, 2, 1)) }
+                ["White"] = new(Color.White, Color.Black),
+                ["Test"] = new(Color.FromRgb(1, 2, 3), Color.FromRgb(3, 2, 1)),
             });
 
         await Put($"api/Teams/{createResponse.Id}", updateRequest, HttpStatusCode.OK);
@@ -75,7 +75,7 @@ public class TeamsIntegrationTests : ControllerIntegrationTest
             },
             new()
             {
-                ["White"] = new() { ["default"] = new DisplayColor(Color.Black, Color.White) }
+                ["White"] = new(Color.White, Color.Black)
             });
 
         var createResponse = (await Post<TeamModel>("api/Teams", team, HttpStatusCode.Created))!;
@@ -124,7 +124,7 @@ public class TeamsIntegrationTests : ControllerIntegrationTest
             },
             new()
             {
-                ["White"] = new() { ["default"] = new DisplayColor(Color.Black, Color.White) }
+                ["White"] = new(Color.White, Color.Black)
             });
 
         var createResponse = (await Post<TeamModel>("api/Teams", team, HttpStatusCode.Created))!;
@@ -163,7 +163,7 @@ public class TeamsIntegrationTests : ControllerIntegrationTest
 
         var team = new CreateTeamModel(
             new() { ["default"] = "Test team", },
-            new() { ["White"] = new() { ["default"] = new DisplayColor(Color.Black, Color.White) }});
+            new() { ["White"] = new(Color.White, Color.Black) });
 
         var createResponse = (await Post<TeamModel>("api/Teams", team, HttpStatusCode.Created))!;
 
@@ -188,7 +188,7 @@ public class TeamsIntegrationTests : ControllerIntegrationTest
 
         var team = new CreateTeamModel(
             new() { ["default"] = "Test team", },
-            new() { ["White"] = new() { ["default"] = new DisplayColor(Color.Black, Color.White) }});
+            new() { ["White"] = new(Color.White, Color.Black) });
 
         var createResponse = (await Post<TeamModel>("api/Teams", team, HttpStatusCode.Created))!;
 
@@ -196,11 +196,8 @@ public class TeamsIntegrationTests : ControllerIntegrationTest
             new() { ["default"] = "Edited team", ["new"] = "New name" },
             new()
             {
-                ["White"] = new()
-                { 
-                    ["default"] = new DisplayColor(Color.White, Color.Black),
-                    ["new"] = new DisplayColor(Color.FromRgb(1, 2, 3), Color.FromRgb(3, 2, 1))
-                }
+                ["White"] = new (Color.FromRgb(1, 2, 3), Color.FromRgb(3, 2, 1)),
+                ["Black"] = new(Color.Black, Color.White),
             });
 
         await Put($"api/Teams/{createResponse.Id}", updateRequest, HttpStatusCode.OK);
@@ -226,7 +223,7 @@ public class TeamsIntegrationTests : ControllerIntegrationTest
 
         var team = new CreateTeamModel(
             new() { ["default"] = "Test team", },
-            new() { ["White"] = new() { ["default"] = new DisplayColor(Color.Black, Color.White) }});
+            new() { ["White"] = new(Color.White, Color.Black) });
 
         var createResponse = (await Post<TeamModel>("api/Teams", team, HttpStatusCode.Created))!;
 
@@ -260,7 +257,7 @@ public class TeamsIntegrationTests : ControllerIntegrationTest
 
         var team = new CreateTeamModel(
             new() { ["default"] = "Test team", },
-            new() { ["White"] = new() { ["default"] = new DisplayColor(Color.Black, Color.White) } });
+            new() { ["White"] = new(Color.White, Color.Black) });
 
         var createResponse = (await Post<TeamModel>("api/Teams", team, HttpStatusCode.Created))!;
 
