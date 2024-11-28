@@ -10,9 +10,10 @@ export type ClockProps<TClockState> = {
     textOnZero?: string;
     startValue?: number;
     textClassName?: string;
+    autoScale?: boolean;
 };
 
-export const Clock = <TClockState,>({ secondsMapper, stateName, direction, textOnZero, startValue, textClassName }: ClockProps<TClockState>) => {
+export const Clock = <TClockState,>({ secondsMapper, stateName, direction, textOnZero, startValue, textClassName, autoScale }: ClockProps<TClockState>) => {
     const clockState = useGameState<TClockState>(stateName);
     
     const clock = useMemo(() => clockState && secondsMapper(clockState), [secondsMapper, clockState]);
@@ -36,7 +37,11 @@ export const Clock = <TClockState,>({ secondsMapper, stateName, direction, textO
 
     return (
         <>
-            <ScaledText text={time} className={cn("w-full", textClassName)} />
+        {
+            autoScale
+            ? <ScaledText text={time} className={cn("w-full", textClassName)} />
+            : <span className={textClassName}>{time}</span>
+        }
         </>
     );
 };

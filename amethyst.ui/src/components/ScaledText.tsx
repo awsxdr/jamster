@@ -1,12 +1,13 @@
 import { cn } from "@/lib/utils";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { CSSProperties, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type ScaledTextProps = {
-    text: string,
-    className?: string,
+    text: string;
+    className?: string;
+    style?: CSSProperties;
 };
 
-export const ScaledText = ({ text, className }: ScaledTextProps) => {
+export const ScaledText = ({ text, className, style }: ScaledTextProps) => {
 
     const [fontSize, setFontSize] = useState(0);
     const canvas = useMemo(() => document.createElement("canvas"), []);
@@ -96,7 +97,11 @@ export const ScaledText = ({ text, className }: ScaledTextProps) => {
     }, [measureText, text, font, setFontSize, controlSize]);
 
     return (
-        <span ref={spanRef} className={cn('overflow-hidden', className)} style={{ fontSize: `${fontSize}px`}}>
+        <span 
+            ref={spanRef} 
+            className={cn('overflow-hidden', className)} 
+            style={{ ...style, fontSize: `${fontSize}px`}}
+        >
             {text}
         </span>
     );

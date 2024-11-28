@@ -1,4 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { ReactNode } from "react";
 
 type ClockProps = {
@@ -9,11 +9,9 @@ type ClockProps = {
 export const Clock = ({ name, clock }: ClockProps) => {
     return (
         <Card className="w-1/5">
-            <CardHeader>
-                <CardTitle className="text-lg -my-4 -mx-2">{name}</CardTitle>
-            </CardHeader>
-            <CardContent className="h-24">
-                { clock("block text-center h-full w-full") }
+            <CardContent className="flex pt-4 items-center justify-between flex-wrap">
+                <span className="text-xl">{name}</span>
+                { clock("inline text-center h-full text-4xl") }
             </CardContent>
         </Card>
     )

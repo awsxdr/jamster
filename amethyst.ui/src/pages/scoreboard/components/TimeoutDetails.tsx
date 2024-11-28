@@ -24,10 +24,10 @@ export const TimeoutDetails = ({ gameStage, visible }: TimeoutDetailsProps) => {
     return (
         <ClocksBar visible={visible} className="gap-5">
             <ScoreboardComponent className="w-1/2 h-full" header={`Period ${gameStage.periodNumber} | Jam ${gameStage.jamNumber}`}>
-                <PeriodClock textClassName="flex justify-center items-center h-full m-2 overflow-hidden" />
+                <PeriodClock textClassName="flex justify-center items-center h-full m-2 overflow-hidden" autoScale />
             </ScoreboardComponent>
             <ScoreboardComponent className="w-1/2 h-full" header={timeoutTypeName} headerClassName="bg-red-300">
-                <TimeoutClock textClassName="flex justify-center items-center h-full m-2 overflow-hidden" />
+                <TimeoutClock textClassName="flex justify-center items-center h-full m-2 overflow-hidden" autoScale />
             </ScoreboardComponent>
         </ClocksBar>
     );

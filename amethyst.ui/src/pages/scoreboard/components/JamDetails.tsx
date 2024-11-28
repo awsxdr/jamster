@@ -12,10 +12,10 @@ export const JamDetails = ({ gameStage, visible }: JamDetailsProps) => {
     return (
         <ClocksBar visible={visible} className="gap-5">
             <ScoreboardComponent className="w-1/2 h-full" header={`Period ${gameStage.periodNumber}`}>
-                <PeriodClock textClassName="flex justify-center items-center h-full m-2 overflow-hidden" />
+                <PeriodClock textClassName="flex justify-center items-center h-full m-2 overflow-hidden" autoScale />
             </ScoreboardComponent>
             <ScoreboardComponent className="w-1/2 h-full" header={`Jam ${gameStage.jamNumber}`}>
-                <JamClock textClassName="flex justify-center items-center h-full m-2 overflow-hidden" />
+                <JamClock textClassName="flex justify-center items-center h-full m-2 overflow-hidden" autoScale />
             </ScoreboardComponent>
         </ClocksBar>
     );

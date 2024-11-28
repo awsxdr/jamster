@@ -6,12 +6,14 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { cn } from "@/lib/utils";
 
 export type ComboBoxProps = {
-    value: string,
-    onValueChanged: (value: string) => void,
-    items: ComboBoxItem[],
-    placeholder: string,
-    className?: string,
-    dropdownClassName?: string,
+    value: string;
+    items: ComboBoxItem[];
+    placeholder: string;
+    className?: string;
+    dropdownClassName?: string;
+    disabled?: boolean;
+    hideSearch?: boolean;
+    onValueChanged: (value: string) => void;
 };
 
 export type ComboBoxItem = {
@@ -19,12 +21,12 @@ export type ComboBoxItem = {
     value: string,
 };
 
-export const ComboBox = ({ value, onValueChanged, items, placeholder, className, dropdownClassName }: ComboBoxProps) => {
+export const ComboBox = ({ value, onValueChanged, items, placeholder, className, dropdownClassName, disabled, hideSearch }: ComboBoxProps) => {
     const [isOpen, setIsOpen] = useState(false);
 
     return (
         <Popover open={isOpen} onOpenChange={setIsOpen}>
-            <PopoverTrigger asChild>
+            <PopoverTrigger asChild disabled={disabled}>
                 <Button
                     variant="outline"
                     role="combobox"
@@ -41,7 +43,7 @@ export const ComboBox = ({ value, onValueChanged, items, placeholder, className,
             </PopoverTrigger>
             <PopoverContent className={cn("p-0", dropdownClassName)}>
                 <Command>
-                    <CommandInput placeholder={placeholder} />
+                    { !hideSearch && <CommandInput placeholder={placeholder} /> }
                     <CommandList>
                         <CommandEmpty>Nothing found.</CommandEmpty>
                         <CommandGroup>
