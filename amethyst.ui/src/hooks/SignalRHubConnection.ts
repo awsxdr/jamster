@@ -8,7 +8,7 @@ export const useHubConnection = (hubPath: string) => {
     const hubUrl = useMemo(() => `${API_URL}/api/Hubs/${hubPath}`, [hubPath]);
 
     const hubConnection = useMemo(() => {
-        console.log("Connecting to hub", hubUrl);
+        console.debug("Connecting to hub", hubUrl);
 
         return new SignalR.HubConnectionBuilder()
             .withUrl(hubUrl, { withCredentials: false })
@@ -26,10 +26,10 @@ export const useHubConnection = (hubPath: string) => {
 
     useEffect(() => {
         (async () => {
-            console.log("Starting connection", hubUrl);
+            console.debug("Starting connection", hubUrl);
             try {
                 await hubConnection.start();
-                console.log("Hub connected", hubUrl);
+                console.debug("Hub connected", hubUrl);
                 setConnection(hubConnection);
             } catch(error) {
                 console.error("Error while starting hub connection", hubUrl, error);
@@ -37,7 +37,7 @@ export const useHubConnection = (hubPath: string) => {
         })();
 
         // return () => {
-        //     console.log("Stopping connection", hubUrl);
+        //     console.debug("Stopping connection", hubUrl);
         //     hubConnection.stop();
         //     setReconnect(r => r += 1);
         // }

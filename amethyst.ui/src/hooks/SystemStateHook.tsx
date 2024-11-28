@@ -31,7 +31,7 @@ export const useCurrentGame = () => {
     
     useEffect(() => {
         context.watchCurrentGame(game => {
-            console.log("Current game changed", game);
+            console.debug("Current game changed", game);
             setCurrentGame(game);
         });
     }, [context.connection, setCurrentGame]);

@@ -85,7 +85,6 @@ export const TimeoutTypePanel = ({ gameId }: TimeoutTypePanelProps) => {
             sendEvent(gameId, new TimeoutTypeSet({ type: "Official" }));
         }
     }
-    console.log(stage);
 
     return (
         <Card className={cn("grow scale-0 transition-all duration-500 h-0 m-0 p-0", stage === Stage.Timeout ? "scale-100 block h-auto  mt-5 pt-6" : "")}>
