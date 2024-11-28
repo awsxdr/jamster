@@ -57,7 +57,15 @@ public interface IHandlesEventAsync<in TEvent>
     Task<IEnumerable<Event>> HandleAsync(TEvent @event);
 }
 
-public abstract class Reducer<TState>(ReducerGameContext context) : IReducer<TState>
+public interface IDependsOnState;
+// ReSharper disable once UnusedTypeParameter
+public interface IDependsOnState<in TState> : IDependsOnState where TState : class;
+
+public sealed class GettingStateWithoutDependencyException()
+    : Exception(
+        "Attempt to get state when reducer is not marked as dependent on that state. Mark reducer with IDependsOnState.");
+
+public abstract class Reducer<TState>(ReducerGameContext context) : IReducer<TState>, IDependsOnState<TState>
     where TState : class
 {
     protected ReducerGameContext Context { get; } = context;
@@ -75,16 +83,24 @@ public abstract class Reducer<TState>(ReducerGameContext context) : IReducer<TSt
         };
 
     protected TOtherState GetState<TOtherState>() where TOtherState : class =>
-        Context.StateStore.GetState<TOtherState>();
+        this is IDependsOnState<TOtherState>
+            ? Context.StateStore.GetState<TOtherState>()
+            : throw new GettingStateWithoutDependencyException();
 
     protected TOtherState GetKeyedState<TOtherState>(string key) where TOtherState : class =>
-        Context.StateStore.GetKeyedState<TOtherState>(key);
+        this is IDependsOnState<TOtherState> or Reducer<TOtherState>
+            ? Context.StateStore.GetKeyedState<TOtherState>(key)
+            : throw new GettingStateWithoutDependencyException();
 
     protected TOtherState GetCachedState<TOtherState>() where TOtherState : class =>
-        Context.StateStore.GetCachedState<TOtherState>();
+        this is IDependsOnState<TOtherState>
+            ? Context.StateStore.GetCachedState<TOtherState>()
+            : throw new GettingStateWithoutDependencyException();
 
     protected TOtherState GetCachedKeyedState<TOtherState>(string key) where TOtherState : class =>
-        Context.StateStore.GetCachedKeyedState<TOtherState>(key);
+        this is IDependsOnState<TOtherState>
+            ? Context.StateStore.GetCachedKeyedState<TOtherState>(key)
+            : throw new GettingStateWithoutDependencyException();
 
     protected void SetState(TState state)
     {
@@ -99,10 +115,6 @@ public abstract class Reducer<TState>(ReducerGameContext context) : IReducer<TSt
                 break;
         }
     }
-
-
-    protected void SetKeyedState(string key, TState state) =>
-        Context.StateStore.SetKeyedState(key, state);
 
     protected bool SetStateIfDifferent(TState state)
     {

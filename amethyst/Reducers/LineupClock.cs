@@ -8,6 +8,8 @@ public sealed class LineupClock(ReducerGameContext gameContext, ILogger<LineupCl
     : Reducer<LineupClockState>(gameContext), IHandlesEvent<JamStarted>
     , IHandlesEvent<JamEnded>
     , IHandlesEvent<TimeoutStarted>
+    , IHandlesEvent<PeriodEnded>
+    , IDependsOnState<TimeoutClockState>
     , ITickReceiver
 {
     public static readonly Tick LineupDurationInTicks = 30 * 1000;
@@ -28,16 +30,6 @@ public sealed class LineupClock(ReducerGameContext gameContext, ILogger<LineupCl
     {
         if (GetState().IsRunning || GetState<TimeoutClockState>().IsRunning) return [];
 
-        var periodClock = GetState<PeriodClockState>();
-        var ticksRemainingInPeriod =
-            (long)PeriodClock.PeriodLengthInTicks - periodClock.TicksPassed;
-
-        if (ticksRemainingInPeriod <= 0)
-        {
-            logger.LogDebug("Not starting lineup at jam end due to period clock expiry");
-            return [];
-        }
-
         logger.LogDebug("Starting lineup clock due to jam end");
         SetState(new(true, @event.Tick, 0, 0));
 
@@ -49,6 +41,16 @@ public sealed class LineupClock(ReducerGameContext gameContext, ILogger<LineupCl
         if (!GetState().IsRunning) return [];
 
         logger.LogDebug("Timeout started, stopping lineup clock");
+        SetState(GetState() with { IsRunning = false });
+
+        return [];
+    }
+
+    public IEnumerable<Event> Handle(PeriodEnded @event)
+    {
+        if (!GetState().IsRunning) return [];
+
+        logger.LogDebug("Stopping lineup clock due to period end");
         SetState(GetState() with { IsRunning = false });
 
         return [];

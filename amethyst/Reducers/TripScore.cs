@@ -10,6 +10,7 @@ public abstract class TripScore(TeamSide teamSide, ReducerGameContext context, I
     , IHandlesEvent<ScoreModifiedRelative>
     , IHandlesEvent<ScoreSet>
     , IHandlesEvent<JamEnded>
+    , IDependsOnState<JamClockState>
     , ITickReceiver
 {
     protected override TripScoreState DefaultState => new(0, 0);

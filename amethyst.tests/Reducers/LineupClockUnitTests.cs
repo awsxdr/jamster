@@ -55,23 +55,6 @@ public class LineupClockUnitTests : ReducerUnitTest<LineupClock, LineupClockStat
     }
 
     [Test]
-    public async Task JamEnded_WhenClockStopped_AndPeriodClockExpired_DoesNotChangeState()
-    {
-        var randomTick = Random.Shared.Next(1, 100000);
-        State = new(false, randomTick, randomTick, 0);
-
-        var originalState = State;
-
-        MockState(new TimeoutClockState(false, 0, 0, 0, 0));
-        MockState(new PeriodClockState(true, false, 0, 0, PeriodClock.PeriodLengthInTicks + 10000, (int)((PeriodClock.PeriodLengthInTicks + 10000) / 1000)));
-
-        var secondRandomTick = randomTick + Random.Shared.Next(1, 100000);
-        await Subject.Handle(new JamEnded(secondRandomTick));
-
-        State.Should().Be(originalState);
-    }
-
-    [Test]
     public async Task JamEnded_WhenLineupAlreadyRunning_DoesNotChangeState()
     {
         var randomTick = GetRandomTick();

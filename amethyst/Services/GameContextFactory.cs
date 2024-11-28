@@ -1,4 +1,4 @@
-﻿using System.Collections.Concurrent;
+using System.Collections.Concurrent;
 using System.Diagnostics;
 
 namespace amethyst.Services;
@@ -48,7 +48,10 @@ public class GameContextFactory(
 
         var stateStore = stateStoreFactory();
         var reducerGameContext = new ReducerGameContext(gameInfo, stateStore);
-        var reducers = reducerFactories.Select(f => f(reducerGameContext)).ToImmutableList();
+        var reducers = 
+            reducerFactories.Select(f => f(reducerGameContext))
+                .SortReducers()
+                .ToImmutableList();
         stateStore.LoadDefaultStates(reducers);
         stateStore.ApplyEvents(reducers, events);
 

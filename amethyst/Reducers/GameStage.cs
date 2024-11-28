@@ -12,6 +12,7 @@ public class GameStage(ReducerGameContext context, ILogger<GameStage> logger)
     , IHandlesEvent<TimeoutEnded>
     , IHandlesEvent<PeriodEnded>
     , IHandlesEvent<PeriodFinalized>
+    , IDependsOnState<PeriodClockState>
 {
     protected override GameStageState DefaultState => new(Stage.BeforeGame, 0, 0, false);
 
@@ -34,13 +35,10 @@ public class GameStage(ReducerGameContext context, ILogger<GameStage> logger)
     {
         var state = GetState();
 
-        var jamClock = GetCachedState<JamClockState>();
-
         var newState = state.Stage switch
         {
             Stage.BeforeGame => state with { Stage = Stage.Jam, JamNumber = 1, PeriodNumber = 1 },
             Stage.Intermission => state with { Stage = Stage.Jam, JamNumber = 1 },
-            Stage.Jam when @event.Tick - jamClock.StartTick > JamClock.JamLengthInTicks => state with { JamNumber = state.JamNumber + 1 },
             Stage.Jam => state,
             _ => state with { Stage = Stage.Jam, JamNumber = state.JamNumber + 1}
         } with { PeriodIsFinalized = false };
@@ -55,11 +53,12 @@ public class GameStage(ReducerGameContext context, ILogger<GameStage> logger)
     {
         var state = GetState();
         var periodClock = GetState<PeriodClockState>();
+
         var newState = state switch
         {
-            (Stage.Jam, _, _, _) when periodClock.IsRunning => state with {Stage = Stage.Lineup},
-            (Stage.Jam, 1, _, _) when !periodClock.IsRunning => state with {Stage = Stage.Intermission},
-            (Stage.Jam, 2, _, _) when !periodClock.IsRunning => state with {Stage = Stage.AfterGame},
+            (Stage.Jam, _, _, _) when !periodClock.HasExpired => state with {Stage = Stage.Lineup},
+            (Stage.Jam, 1, _, _) when periodClock.HasExpired => state with {Stage = Stage.Intermission},
+            (Stage.Jam, 2, _, _) when periodClock.HasExpired => state with {Stage = Stage.AfterGame},
             _ => state
         };
 

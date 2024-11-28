@@ -61,7 +61,7 @@ public class GameStageUnitTests : ReducerUnitTest<GameStage, GameStageState>
     {
         State = new(currentStage, period, 1, false);
 
-        MockState<PeriodClockState>(new (!periodClockExpired, true, 0, 0, PeriodClock.PeriodLengthInTicks + (periodClockExpired ? 10000 : -10000), 0));
+        MockState<PeriodClockState>(new (!periodClockExpired, periodClockExpired, 0, 0, PeriodClock.PeriodLengthInTicks + (periodClockExpired ? 10000 : -10000), 0));
 
         await Subject.Handle(new JamEnded(0));
 

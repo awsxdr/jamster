@@ -11,6 +11,8 @@ public class PeriodClock(ReducerGameContext context, ILogger<PeriodClock> logger
     , IHandlesEvent<TimeoutStarted>
     , IHandlesEvent<TimeoutEnded>
     , IHandlesEvent<PeriodFinalized>
+    , IDependsOnState<JamClockState>
+    , IDependsOnState<LineupClockState>
     , ITickReceiver
 {
     protected override PeriodClockState DefaultState => new(false, false, 0, 0, 0, 0);
