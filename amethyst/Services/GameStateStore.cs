@@ -22,6 +22,9 @@ public interface IGameStateStore
     Result<object> GetStateByName(string stateName);
     void WatchState<TState>(string stateName, Func<TState, Task> onStateUpdate) where TState : class;
     void WatchStateByName(string stateName, Func<object, Task> onStateUpdate);
+    void EnableNotifications();
+    void DisableNotifications();
+    void ForceNotify();
 }
 
 public class GameStateStore(ILogger<GameStateStore> logger) : IGameStateStore
@@ -64,7 +67,6 @@ public class GameStateStore(ILogger<GameStateStore> logger) : IGameStateStore
                 _ => GetStateName(state.GetType())
             };
             _states[stateName] = state;
-            _stateEventStream[stateName] = MakeEventSource(state.GetType());
         }
     }
 
@@ -110,6 +112,18 @@ public class GameStateStore(ILogger<GameStateStore> logger) : IGameStateStore
         finally
         {
             ClearCache();
+        }
+    }
+
+    public void EnableNotifications() => _stateEventStream.Values.ForEach(s => s.NotifyOnStateChange = true).Evaluate();
+    public void DisableNotifications() => _stateEventStream.Values.ForEach(s => s.NotifyOnStateChange = false).Evaluate();
+
+    public void ForceNotify()
+    {
+        foreach (var (key, stream) in _stateEventStream)
+        {
+            var state = _states[key];
+            stream.InvokeStateUpdated(state);
         }
     }
 
@@ -160,8 +174,13 @@ public class GameStateStore(ILogger<GameStateStore> logger) : IGameStateStore
         }
     }
 
-    private StateUpdateEventSource<TState> GetEventSource<TState>(string stateName) =>
-        (StateUpdateEventSource<TState>)_stateEventStream[stateName];
+    private StateUpdateEventSource<TState> GetEventSource<TState>(string stateName)
+    {
+        if (!_stateEventStream.ContainsKey(stateName))
+            _stateEventStream[stateName] = MakeEventSource(typeof(TState));
+
+        return (StateUpdateEventSource<TState>)_stateEventStream[stateName];
+    }
 
     private static IStateUpdatedEventSource MakeEventSource(Type stateType) =>
         (IStateUpdatedEventSource)typeof(StateUpdateEventSource<>).MakeGenericType(stateType).GetConstructor([])!.Invoke([]);
@@ -187,18 +206,35 @@ public class GameStateStore(ILogger<GameStateStore> logger) : IGameStateStore
         return implicitEvents;
     }
 
-    private interface IStateUpdatedEventSource;
+    private interface IStateUpdatedEventSource
+    {
+        bool NotifyOnStateChange { get; set; }
+
+        void InvokeStateUpdated(object state);
+    }
+
     private class StateUpdateEventSource<TState> : IStateUpdatedEventSource
     {
         public event EventHandler<StateUpdatedEventArgs>? StateUpdated;
+
+        public bool NotifyOnStateChange { get; set; } = true;
 
         public class StateUpdatedEventArgs(TState state) : EventArgs
         {
             public TState State { get; } = state;
         }
 
+        public void InvokeStateUpdated(object state)
+        {
+            if (state is not TState typedState) return;
+
+            StateUpdated?.Invoke(this, new StateUpdatedEventArgs(typedState));
+        }
+
         internal void Update(TState state)
         {
+            if (!NotifyOnStateChange) return;
+
             StateUpdated?.Invoke(this, new StateUpdatedEventArgs(state));
         }
     }

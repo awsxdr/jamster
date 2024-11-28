@@ -10,8 +10,7 @@ public class EventIntegrationTests : EventBusIntegrationTest
     [TestCase(typeof(TestGameEventsSource), nameof(TestGameEventsSource.SingleJamStartedWithoutEndingIntermission))]
     public async Task EventSources_UpdateStatesAsExpected(Type eventSourceType, string eventSourceName)
     {
-        var events = eventSourceType.GetProperty(eventSourceName)?.GetValue(null) as Event[] 
-            ?? throw new ArgumentException();
+        var events = GetEvents(eventSourceType, eventSourceName);
 
         await AddEvents(events);
 
@@ -30,4 +29,8 @@ public class EventIntegrationTests : EventBusIntegrationTest
         Console.WriteLine(GetState<TeamTimeoutsState>("Home"));
         Console.WriteLine(GetState<TeamTimeoutsState>("Away"));
     }
+
+    private static Event[] GetEvents(Type eventSourceType, string eventSourceName) =>
+        eventSourceType.GetProperty(eventSourceName)?.GetValue(null) as Event[]
+        ?? throw new ArgumentException();
 }

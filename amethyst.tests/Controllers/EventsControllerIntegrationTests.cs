@@ -6,8 +6,10 @@ using System.Net;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using amethyst.Domain;
+using amethyst.Hubs;
 using FluentAssertions;
 using Func;
+using Microsoft.AspNetCore.SignalR.Client;
 
 namespace amethyst.tests.Controllers;
 
@@ -120,6 +122,35 @@ public class EventsControllerIntegrationTests : ControllerIntegrationTest
 
         homeTeamScore = await GetState<TeamScoreState>(TeamSide.Home);
         homeTeamScore.Score.Should().Be(5);
+    }
+
+    [Test]
+    public async Task DeleteEvent_NotifiesStateWatchers()
+    {
+        _ = await AddEvent(new ScoreModifiedRelative(Guid.Empty, new(TeamSide.Home, 1)));
+        _ = await AddEvent(new JamStarted(Guid.Empty));
+        _ = await AddEvent(new ScoreModifiedRelative(Guid.Empty, new(TeamSide.Home, 2)));
+        var scoreEvent = await AddEvent(new ScoreModifiedRelative(Guid.Empty, new(TeamSide.Home, 3)));
+
+        var homeTeamScore = await GetState<TeamScoreState>(TeamSide.Home);
+        homeTeamScore.Score.Should().Be(6);
+
+        var hub = await GetHubConnection($"api/Hubs/Game/{_game.Id}");
+        await hub.InvokeAsync(nameof(GameStatesHub.WatchState), $"{nameof(TeamScoreState)}_{nameof(TeamSide.Home)}");
+
+        var taskCompletionSource = new TaskCompletionSource<TeamScoreState>();
+
+        hub.On("StateChanged", (string _, TeamScoreState state) =>
+        {
+            taskCompletionSource.SetResult(state);
+        });
+
+        await DeleteEvent(scoreEvent.Id);
+
+        var passedState = await Wait(taskCompletionSource.Task);
+
+        passedState.Should().NotBeNull();
+        passedState.Score.Should().Be(3);
     }
 
     [Test]

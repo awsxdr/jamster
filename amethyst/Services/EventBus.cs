@@ -79,8 +79,7 @@ public class EventBus(
         return RemoveEventFromDatabase(game, eventId)
             .Then(() =>
             {
-                contextFactory.UnloadGame(game.Id);
-                _ = contextFactory.GetGame(game);
+                contextFactory.ReloadGame(game);
                 return Result.Succeed();
             });
     }

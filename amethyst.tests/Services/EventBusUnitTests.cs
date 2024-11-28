@@ -110,7 +110,7 @@ public class EventBusUnitTests : UnitTest<EventBus>
     }
 
     [Test]
-    public async Task RemoveEvent_WhenEventExists_UnloadsGame()
+    public async Task RemoveEvent_WhenEventExists_ReloadsGame()
     {
         var eventId = Guid.NewGuid();
 
@@ -121,7 +121,7 @@ public class EventBusUnitTests : UnitTest<EventBus>
         await Subject.RemoveEvent(_game, eventId);
 
         GetMock<IGameContextFactory>()
-            .Verify(mock => mock.UnloadGame(_game.Id), Times.Once);
+            .Verify(mock => mock.ReloadGame(_game), Times.Once);
     }
 
     [Test]
