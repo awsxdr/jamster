@@ -73,6 +73,7 @@ public class TeamsDataStore(ConnectionFactory connectionFactory, ISystemTime sys
 
     protected override void ApplyUpgrade(int version)
     {
+        #region Database upgrades
         switch (version)
         {
             case 1:
@@ -133,6 +134,7 @@ public class TeamsDataStore(ConnectionFactory connectionFactory, ISystemTime sys
                     break;
             }
         }
+        #endregion
     }
 
     private IEnumerable<JsonObject> GetAllItemsAsJsonObjects() =>

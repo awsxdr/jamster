@@ -48,7 +48,8 @@ public abstract class DataStore<TData, TKey> : IDataStore
                 ApplyUpgrade(i);
             }
 
-            Connection.Execute("INSERT INTO __version (version) VALUES (?) ON CONFLICT DO UPDATE SET version = ?", version, version);
+            Connection.Execute("DELETE FROM __version");
+            Connection.Execute("INSERT INTO __version (version) VALUES (?)", version);
         }
     }
 
