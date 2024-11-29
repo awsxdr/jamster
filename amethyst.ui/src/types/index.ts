@@ -1,6 +1,7 @@
 export * from './GameInfo';
 export * from './GameStageState';
 export * from './GameTeam';
+export * from './JamLineupState';
 export * from './ReviewStatus';
 export * from './SetCurrentGameModel';
 export * from './Skater';

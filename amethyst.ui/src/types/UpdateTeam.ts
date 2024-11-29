@@ -3,5 +3,5 @@ import { StringMap } from "./StringMap"
 
 export type UpdateTeam = {
     names: StringMap<string>,
-    colors: StringMap<StringMap<TeamColor>>,
+    colors: StringMap<TeamColor>,
 }

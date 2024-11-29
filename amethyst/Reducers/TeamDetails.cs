@@ -1,6 +1,7 @@
 ﻿using amethyst.DataStores;
 using amethyst.Domain;
 using amethyst.Events;
+using amethyst.Extensions;
 using amethyst.Services;
 using Func;
 
@@ -20,7 +21,7 @@ public abstract class TeamDetails(TeamSide teamSide, ReducerGameContext context,
     public override Option<string> GetStateKey() =>
         Option.Some(teamSide.ToString());
 
-    public IEnumerable<Event> Handle(TeamSet @event) => HandleIfTeam(@event, () =>
+    public IEnumerable<Event> Handle(TeamSet @event) => @event.HandleIfTeam(teamSide, () =>
     {
         if (!@event.Body.Team.Names.TryGetValue("default", out var defaultName))
             defaultName = @event.Body.Team.Names.FirstOrDefault().Value ?? "";
@@ -31,14 +32,6 @@ public abstract class TeamDetails(TeamSide teamSide, ReducerGameContext context,
 
         return [];
     });
-
-    private IEnumerable<Event> HandleIfTeam<TEvent>(TEvent @event, Func<IEnumerable<Event>> handler) where TEvent : Event
-    {
-        if (@event.HasBody && @event.GetBodyObject() is TeamEventBody teamEventBody && teamEventBody.TeamSide != teamSide)
-            return [];
-
-        return handler();
-    }
 }
 
 public sealed record TeamDetailsState(GameTeam Team);

@@ -1,5 +1,6 @@
 ﻿using amethyst.Domain;
 using amethyst.Events;
+using amethyst.Extensions;
 using amethyst.Services;
 using Func;
 
@@ -16,7 +17,7 @@ public abstract class TeamScore(TeamSide teamSide, ReducerGameContext gameContex
     public override Option<string> GetStateKey() =>
         Option.Some(teamSide.ToString());
 
-    public IEnumerable<Event> Handle(ScoreModifiedRelative @event) => HandleIfTeam(@event, () =>
+    public IEnumerable<Event> Handle(ScoreModifiedRelative @event) => @event.HandleIfTeam(teamSide, () =>
     {
         logger.LogDebug("Changing {teamSide} score by {points} points", teamSide, @event.Body.Value);
 
@@ -29,7 +30,7 @@ public abstract class TeamScore(TeamSide teamSide, ReducerGameContext gameContex
         return [];
     });
 
-    public IEnumerable<Event> Handle(ScoreSet @event) => HandleIfTeam(@event, () =>
+    public IEnumerable<Event> Handle(ScoreSet @event) => @event.HandleIfTeam(teamSide, () =>
     {
         logger.LogDebug("Setting {teamSide} score to {points} points", teamSide, @event.Body.Value);
 
@@ -48,14 +49,6 @@ public abstract class TeamScore(TeamSide teamSide, ReducerGameContext gameContex
         SetState(GetState() with { JamScore = 0 });
 
         return [];
-    }
-
-    private IEnumerable<Event> HandleIfTeam<TEvent>(TEvent @event, Func<IEnumerable<Event>> handler) where TEvent : Event
-    {
-        if (@event.HasBody && @event.GetBodyObject() is TeamEventBody teamEventBody && teamEventBody.TeamSide != teamSide)
-            return [];
-
-        return handler();
     }
 }
 

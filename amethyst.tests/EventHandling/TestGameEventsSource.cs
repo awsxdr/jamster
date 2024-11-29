@@ -8,12 +8,12 @@ namespace amethyst.tests.EventHandling;
 public static class TestGameEventsSource
 {
     public static Event[] TwoJamsWithScores => new EventsBuilder(0, [])
-        .Event<TeamSet>(0).WithBody(new TeamSetBody(TeamSide.Home, new GameTeam(new() { ["default"] = "Black" }, new TeamColor(Color.Black, Color.White), [])))
-        .Event<TeamSet>(0).WithBody(new TeamSetBody(TeamSide.Away, new GameTeam(new() { ["default"] = "White" }, new TeamColor(Color.White, Color.Black), [])))
+        .Event<TeamSet>(0).WithBody(new TeamSetBody(TeamSide.Home, new GameTeam(HomeTeam.Names, HomeTeam.Colors["Black"], HomeTeam.Roster)))
+        .Event<TeamSet>(0).WithBody(new TeamSetBody(TeamSide.Away, new GameTeam(AwayTeam.Names, AwayTeam.Colors["White"], AwayTeam.Roster)))
         .Validate(
             new GameStageState(Stage.BeforeGame, 0, 0, false),
-            ("Home", new TeamDetailsState(new GameTeam(new() { ["default"] = "Black" }, new TeamColor(Color.Black, Color.White), []))),
-            ("Away", new TeamDetailsState(new GameTeam(new() { ["default"] = "White" }, new TeamColor(Color.White, Color.Black), [])))
+            ("Home", new TeamDetailsState(new GameTeam(HomeTeam.Names, HomeTeam.Colors["Black"], HomeTeam.Roster))),
+            ("Away", new TeamDetailsState(new GameTeam(AwayTeam.Names, AwayTeam.Colors["White"], AwayTeam.Roster)))
         )
         .Event<IntermissionEnded>(15)
         .Validate(new GameStageState(Stage.Lineup, 1, 0, false))
@@ -83,12 +83,25 @@ public static class TestGameEventsSource
 
     public static Event[] FullGame => new EventsBuilder(0, [])
         .Validate(new GameStageState(Stage.BeforeGame, 0, 0, false))
+        .Event<TeamSet>(0).WithBody(new TeamSetBody(TeamSide.Home, new GameTeam(HomeTeam.Names, HomeTeam.Colors["Black"], HomeTeam.Roster)))
+        .Event<TeamSet>(0).WithBody(new TeamSetBody(TeamSide.Away, new GameTeam(AwayTeam.Names, AwayTeam.Colors["White"], AwayTeam.Roster)))
+        .Validate(
+            new GameStageState(Stage.BeforeGame, 0, 0, false),
+            ("Home", new TeamDetailsState(new GameTeam(HomeTeam.Names, HomeTeam.Colors["Black"], HomeTeam.Roster))),
+            ("Away", new TeamDetailsState(new GameTeam(AwayTeam.Names, AwayTeam.Colors["White"], AwayTeam.Roster)))
+        )
         .Event<IntermissionEnded>(15)
         .Validate(new GameStageState(Stage.Lineup, 1, 0, false))
+        .Event<SkaterOnTrack>(1).WithBody(new SkaterOnTrackBody(TeamSide.Home, HomeTeam.Roster[3].Number, SkaterPosition.Jammer))
+        .Event<SkaterOnTrack>(1).WithBody(new SkaterOnTrackBody(TeamSide.Home, HomeTeam.Roster[6].Number, SkaterPosition.Pivot))
+        .Event<SkaterOnTrack>(1).WithBody(new SkaterOnTrackBody(TeamSide.Away, AwayTeam.Roster[2].Number, SkaterPosition.Jammer))
+        .Event<SkaterOnTrack>(1).WithBody(new SkaterOnTrackBody(TeamSide.Away, AwayTeam.Roster[7].Number, SkaterPosition.Pivot))
         .Event<JamStarted>(120 + 30) // Jam that runs for full duration
         .Validate(
             ("Home", new TeamTimeoutsState(3, ReviewStatus.Unused, TimeoutInUse.None)),
-            ("Away", new TeamTimeoutsState(3, ReviewStatus.Unused, TimeoutInUse.None))
+            ("Away", new TeamTimeoutsState(3, ReviewStatus.Unused, TimeoutInUse.None)),
+            ("Home", new JamLineupState(HomeTeam.Roster[3].Number, HomeTeam.Roster[6].Number)),
+            ("Away", new JamLineupState(AwayTeam.Roster[2].Number, AwayTeam.Roster[7].Number))
         )
         .Wait(0)
         .Event<JamStarted>(57) // Jam that is called
@@ -271,4 +284,54 @@ public static class TestGameEventsSource
         .Event<PeriodFinalized>(1)
         .Validate(new GameStageState(Stage.AfterGame, 2, 19, true))
         .Build();
+
+    private static readonly Team HomeTeam = new(
+        Guid.NewGuid(),
+        new()
+        {
+            ["default"] = "Test Home Team"
+        },
+        new()
+        {
+            ["Black"] = new TeamColor(Color.Black, Color.White),
+            ["White"] = new TeamColor(Color.White, Color.Black),
+        },
+        [
+            new("0", "Test Skater 1", "", SkaterRole.Skater),
+            new("12", "Test Skater 2", "", SkaterRole.Skater),
+            new("267", "Test Skater 3", "", SkaterRole.Skater),
+            new("3876", "Test Skater 4", "", SkaterRole.Skater),
+            new("4", "Test Skater 5", "", SkaterRole.Skater),
+            new("52", "Test Skater 6", "", SkaterRole.Skater),
+            new("697", "Test Skater 7", "", SkaterRole.Skater),
+            new("7293", "Test Skater 8", "", SkaterRole.Skater),
+            new("8", "Test Skater 9", "", SkaterRole.Skater),
+            new("90", "Test Skater 10", "", SkaterRole.Skater),
+        ],
+        DateTimeOffset.UtcNow);
+
+    private static readonly Team AwayTeam = new(
+        Guid.NewGuid(),
+        new()
+        {
+            ["default"] = "Test Away Team"
+        },
+        new()
+        {
+            ["Black"] = new TeamColor(Color.Black, Color.White),
+            ["White"] = new TeamColor(Color.White, Color.Black),
+        },
+        [
+            new("0583", "Test Skater 1", "", SkaterRole.Skater),
+            new("183", "Test Skater 2", "", SkaterRole.Skater),
+            new("28", "Test Skater 3", "", SkaterRole.Skater),
+            new("3", "Test Skater 4", "", SkaterRole.Skater),
+            new("4957", "Test Skater 5", "", SkaterRole.Skater),
+            new("572", "Test Skater 6", "", SkaterRole.Skater),
+            new("60", "Test Skater 7", "", SkaterRole.Skater),
+            new("7", "Test Skater 8", "", SkaterRole.Skater),
+            new("8273", "Test Skater 9", "", SkaterRole.Skater),
+            new("984", "Test Skater 10", "", SkaterRole.Skater),
+        ],
+        DateTimeOffset.UtcNow);
 }

@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { useTeamDetailsState, useTripScoreState } from "@/hooks";
+import { useJamLineupState, useTeamDetailsState, useTripScoreState } from "@/hooks";
 import { TeamSide } from "@/types"
 import { useMemo } from "react";
 import { TeamScore } from "./TeamScore";
@@ -11,6 +11,8 @@ import { ScoreModifiedRelative } from "@/types/events/Scores";
 import { useHotkeys } from "react-hotkeys-hook";
 import { cn } from "@/lib/utils";
 import { JamScore } from "./JamScore";
+import { RadioButtonGroup } from "@/components/RadioButtonGroup";
+import { SkaterOnTrack, SkaterPosition } from "@/types/events/JamLineup";
 
 type TeamControlsProps = {
     gameId?: string;
@@ -68,6 +70,12 @@ export const TeamControls = ({ gameId, side, disabled }: TeamControlsProps) => {
     useHotkeys(side === TeamSide.Home ? 's' : '#', incrementScore, { preventDefault: true });
     useHotkeys(side === TeamSide.Home ? 'shift+s' : 'shift+#', () => setTripScore(4), { preventDefault: true });
 
+    const skaterNumbers = ["0", "01", "123", "17", "29", "404", "49", "52", "77", "89" ];
+
+    const lineup = useJamLineupState(side);
+    const handleLineupSelected = (position: SkaterPosition, number: string | null) =>
+        sendEventIfIdSet(new SkaterOnTrack(side, position, number));
+
     return (
         <Card className={cn("grow inline-block mt-5", side === TeamSide.Home ? "mr-2.5" : "ml-2.5")}>
             <CardHeader className="p-2">
@@ -92,37 +100,25 @@ export const TeamControls = ({ gameId, side, disabled }: TeamControlsProps) => {
                 <Separator />
                 <div className="flex justify-center items-center self-center">
                     <div className="flex flex-col items-end">
-                        <div className="flex flex-wrap gap-2 pt-5 pb-1 items-baseline">
+                        <div className="flex flex-wrap justify-center items-center gap-2 pt-5 pb-1 items-baseline">
                             <span>Jammer</span>
-                            <span className="flex gap-0.5">
-                                <Button size="sm" variant="secondary" className="border-2 border-lime-600">?</Button>
-                                <Button size="sm" variant="secondary" className="border-2">0</Button>
-                                <Button size="sm" variant="secondary" className="border-2">01</Button>
-                                <Button size="sm" variant="secondary" className="border-2">123</Button>
-                                <Button size="sm" variant="secondary" className="border-2">17</Button>
-                                <Button size="sm" variant="secondary" className="border-2">29</Button>
-                                <Button size="sm" variant="secondary" className="border-2">404</Button>
-                                <Button size="sm" variant="secondary" className="border-2">49</Button>
-                                <Button size="sm" variant="secondary" className="border-2">52</Button>
-                                <Button size="sm" variant="secondary" className="border-2">77</Button>
-                                <Button size="sm" variant="secondary" className="border-2">89</Button>
-                            </span>
+                            <RadioButtonGroup
+                                items={[{value: null, name: "?"}, ...skaterNumbers.map(s => ({ value: s, name: s}))]}
+                                value={lineup?.jammerNumber}
+                                rowClassName="gap-0.5"
+                                size="sm"
+                                onItemSelected={v => handleLineupSelected(SkaterPosition.Jammer, v)}
+                            />
                         </div>
                         <div className="flex flex-wrap justify-center items-center gap-2 pb-5 items-baseline">
                             <span>Pivot</span>
-                            <span className="flex gap-0.5">
-                                <Button size="sm" variant="secondary" className="border-2 border-lime-600">?</Button>
-                                <Button size="sm" variant="secondary" className="border-2">0</Button>
-                                <Button size="sm" variant="secondary" className="border-2">01</Button>
-                                <Button size="sm" variant="secondary" className="border-2">123</Button>
-                                <Button size="sm" variant="secondary" className="border-2">17</Button>
-                                <Button size="sm" variant="secondary" className="border-2">29</Button>
-                                <Button size="sm" variant="secondary" className="border-2">404</Button>
-                                <Button size="sm" variant="secondary" className="border-2">49</Button>
-                                <Button size="sm" variant="secondary" className="border-2">52</Button>
-                                <Button size="sm" variant="secondary" className="border-2">77</Button>
-                                <Button size="sm" variant="secondary" className="border-2">89</Button>
-                            </span>
+                            <RadioButtonGroup
+                                items={[{value: null, name: "?"}, ...skaterNumbers.map(s => ({ value: s, name: s}))]}
+                                value={lineup?.pivotNumber}
+                                rowClassName="gap-0.5"
+                                size="sm"
+                                onItemSelected={v => handleLineupSelected(SkaterPosition.Pivot, v)}
+                            />
                         </div>
                     </div>
                 </div>

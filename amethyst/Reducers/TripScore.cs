@@ -1,5 +1,6 @@
 ﻿using amethyst.Domain;
 using amethyst.Events;
+using amethyst.Extensions;
 using amethyst.Services;
 using Func;
 
@@ -20,7 +21,7 @@ public abstract class TripScore(TeamSide teamSide, ReducerGameContext context, I
     public override Option<string> GetStateKey() =>
         Option.Some(teamSide.ToString());
 
-    public IEnumerable<Event> Handle(ScoreModifiedRelative @event) => HandleIfTeam(@event, () =>
+    public IEnumerable<Event> Handle(ScoreModifiedRelative @event) => @event.HandleIfTeam(teamSide, () =>
     {
         var state = GetState();
         var jamClock = GetState<JamClockState>();
@@ -38,7 +39,7 @@ public abstract class TripScore(TeamSide teamSide, ReducerGameContext context, I
         return [];
     });
 
-    public IEnumerable<Event> Handle(ScoreSet @event) => HandleIfTeam(@event, () =>
+    public IEnumerable<Event> Handle(ScoreSet @event) => @event.HandleIfTeam(teamSide, () =>
     {
         logger.LogDebug("Resetting trip score due to absolute score being set");
 
@@ -71,14 +72,6 @@ public abstract class TripScore(TeamSide teamSide, ReducerGameContext context, I
         SetState(new (Score: 0, LastChangeTick: state.LastChangeTick + TripScoreResetTimeInTicks));
 
         return [];
-    }
-
-    private IEnumerable<Event> HandleIfTeam<TEvent>(TEvent @event, Func<IEnumerable<Event>> handler) where TEvent : Event
-    {
-        if (@event.HasBody && @event.GetBodyObject() is TeamEventBody teamEventBody && teamEventBody.TeamSide != teamSide)
-            return [];
-
-        return handler();
     }
 }
 

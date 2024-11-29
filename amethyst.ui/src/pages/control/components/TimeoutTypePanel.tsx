@@ -1,4 +1,5 @@
-import { Button, Card, CardContent } from "@/components/ui";
+import { RadioButtonGroup, RadioItem } from "@/components/RadioButtonGroup";
+import { Card, CardContent } from "@/components/ui";
 import { useCurrentTimeoutTypeState, useGameStageState } from "@/hooks";
 import { useEvents } from "@/hooks/EventsApiHook";
 import { useI18n } from "@/hooks/I18nHook";
@@ -36,64 +37,50 @@ export const TimeoutTypePanel = ({ gameId }: TimeoutTypePanelProps) => {
         : 'Untyped'
     , [timeoutType]);
 
-    const handleHomeTeamTimeout = () => {
-        if (!gameId) return;
+    const timeoutTypes: RadioItem<CompoundTimeoutType>[] = [
+        { value: 'HomeTeamTimeout', name: translate("TimeoutType.HomeTeam") },
+        { value: 'HomeTeamReview', name: translate("TimeoutType.HomeTeamReview") },
+        { value: 'Official', name: translate("TimeoutType.Official") },
+        { value: 'AwayTeamTimeout', name: translate("TimeoutType.AwayTeam") },
+        { value: 'AwayTeamTimeout', name: translate("TimeoutType.AwayTeamReview") },
+    ];
 
-        if(compoundType === 'HomeTeamTimeout') {
-            sendEvent(gameId, new TimeoutTypeSet({ type: "Untyped" }));
-        } else {
-            sendEvent(gameId, new TimeoutTypeSet({ type: "Team", side: TeamSide.Home }));
+    const handleTimeoutSelected = (selectedType: CompoundTimeoutType) => {
+        if(!gameId) {
+            return;
         }
+        
+        sendEvent(
+            gameId, 
+            new TimeoutTypeSet(
+                selectedType === 'HomeTeamTimeout' ? { type: 'Team', side: TeamSide.Home }
+                : selectedType === 'HomeTeamReview' ? { type: 'Review', side: TeamSide.Home }
+                : selectedType === 'Official' ? { type: 'Official' }
+                : selectedType === 'AwayTeamTimeout' ? { type: 'Team', side: TeamSide.Away }
+                : selectedType === 'AwayTeamReview' ? { type: 'Review', side: TeamSide.Away }
+                : { type: 'Untyped' }
+            ));
     }
 
-    const handleHomeTeamReview = () => {
-        if (!gameId) return;
-
-        if(compoundType === 'HomeTeamReview') {
-            sendEvent(gameId, new TimeoutTypeSet({ type: "Untyped" }));
-        } else {
-            sendEvent(gameId, new TimeoutTypeSet({ type: "Review", side: TeamSide.Home }));
+    const handleTimeoutDeselected = () => {
+        if(!gameId) {
+            return;
         }
-    }
 
-    const handleAwayTeamTimeout = () => {
-        if (!gameId) return;
-
-        if(compoundType === 'AwayTeamTimeout') {
-            sendEvent(gameId, new TimeoutTypeSet({ type: "Untyped" }));
-        } else {
-            sendEvent(gameId, new TimeoutTypeSet({ type: "Team", side: TeamSide.Away }));
-        }
-    }
-
-    const handleAwayTeamReview = () => {
-        if (!gameId) return;
-
-        if(compoundType === 'AwayTeamReview') {
-            sendEvent(gameId, new TimeoutTypeSet({ type: "Untyped" }));
-        } else {
-            sendEvent(gameId, new TimeoutTypeSet({ type: "Review", side: TeamSide.Away }));
-        }
-    }
-
-    const handleOfficialTimeout = () => {
-        if (!gameId) return;
-
-        if(compoundType === 'Official') {
-            sendEvent(gameId, new TimeoutTypeSet({ type: "Untyped" }));
-        } else {
-            sendEvent(gameId, new TimeoutTypeSet({ type: "Official" }));
-        }
+        sendEvent(gameId, new TimeoutTypeSet({ type: "Untyped" }));
     }
 
     return (
-        <Card className={cn("grow scale-0 transition-all duration-500 h-0 m-0 p-0", stage === Stage.Timeout ? "scale-100 block h-auto  mt-5 pt-6" : "")}>
-            <CardContent className="flex flex-wrap gap-2 justify-evenly">
-                <Button variant={compoundType === 'HomeTeamTimeout' ? 'default' : 'secondary'} onClick={handleHomeTeamTimeout}>{translate("TimeoutType.HomeTeam")}</Button>
-                <Button variant={compoundType === 'HomeTeamReview' ? 'default' : 'secondary'} onClick={handleHomeTeamReview}>{translate("TimeoutType.HomeTeamReview")}</Button>
-                <Button variant={compoundType === 'Official' ? 'default' : 'secondary'} onClick={handleOfficialTimeout}>{translate("TimeoutType.Official") }</Button>
-                <Button variant={compoundType === 'AwayTeamTimeout' ? 'default' : 'secondary'} onClick={handleAwayTeamTimeout}>{translate("TimeoutType.AwayTeam")}</Button>
-                <Button variant={compoundType === 'AwayTeamReview' ? 'default' : 'secondary'} onClick={handleAwayTeamReview}>{translate("TimeoutType.AwayTeamReview")}</Button>
+        <Card className={cn("grow scale-0 transition-all duration-500 h-0 m-0 p-0", stage === Stage.Timeout ? "scale-100 block h-auto mt-5 p-0" : "")}>
+            <CardContent className="p-5">
+                <RadioButtonGroup
+                    items={timeoutTypes}
+                    value={compoundType}
+                    toggle
+                    rowClassName="justify-evenly"
+                    onItemSelected={handleTimeoutSelected}
+                    onItemDeselected={handleTimeoutDeselected}
+                />
             </CardContent>
         </Card>
     );
