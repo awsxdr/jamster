@@ -115,7 +115,7 @@ public class TeamsDataStore(ConnectionFactory connectionFactory, ISystemTime sys
                                 Names = i["Names"]!.AsObject().ToDictionary(k => k.Key, v => v.Value!.GetValue<string>()),
                                 Colors = i["Colors"]!.AsObject().ToDictionary(
                                     k => k.Key,
-                                    v => v.Value!.AsObject()["default"]!.AsObject().Map(c => new
+                                    v => v.Value!.AsObject()[v.Key]!.AsObject().Map(c => new
                                     {
                                         ShirtColor = c["Background"]!.GetValue<string>(),
                                         ComplementaryColor = c["Foreground"]!.GetValue<string>(),
