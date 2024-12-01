@@ -33,11 +33,13 @@ export const ComboBox = ({ value, onValueChanged, items, placeholder, className,
                     aria-expanded={isOpen}
                     className={cn("justify-between", className)}
                 >
+                    <span className="overflow-hidden text-ellipsis">
                     {
                         value
                             ? items.find(item => item.value === value)?.text
                             : placeholder
                     }
+                    </span>
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
             </PopoverTrigger>
