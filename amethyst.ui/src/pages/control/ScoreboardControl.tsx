@@ -10,6 +10,7 @@ import { useEvents } from "@/hooks/EventsApiHook";
 import { TeamSet } from "@/types/events";
 import { Team, TeamSide } from "@/types";
 import { useTeamApi } from "@/hooks/TeamApiHook";
+import { UserSettingsProvider } from "@/hooks/UserSettings";
 
 export const ScoreboardControl = () => {
     const games = useGamesList();
@@ -93,27 +94,29 @@ export const ScoreboardControl = () => {
 
     return (
         <>
-            <NewGameDialogContainer open={newGameDialogOpen} onOpenChange={setNewGameDialogOpen}>
-                <GameToolbar 
-                    games={games} 
-                    currentGame={currentGame} 
-                    onCurrentGameIdChanged={setCurrentGame} 
-                    selectedGameId={selectedGameId} 
-                    onSelectedGameIdChanged={updateSelectedGameId} 
-                />
-                <Separator />
-                <div className="px-5">
-                    <GameStateContextProvider gameId={selectedGameId}>
-                        <ControlPanel 
-                            gameId={selectedGameId}
-                        />
-                    </GameStateContextProvider>
-                    <NewGameDialog 
-                        onNewGameCreated={handleNewGameCreated}
-                        onCancelled={handleNewGameCancelled}
+            <UserSettingsProvider>
+                <NewGameDialogContainer open={newGameDialogOpen} onOpenChange={setNewGameDialogOpen}>
+                    <GameToolbar 
+                        games={games} 
+                        currentGame={currentGame} 
+                        onCurrentGameIdChanged={setCurrentGame} 
+                        selectedGameId={selectedGameId} 
+                        onSelectedGameIdChanged={updateSelectedGameId} 
                     />
-                </div>
-            </NewGameDialogContainer>
+                    <Separator />
+                    <div className="px-5">
+                        <GameStateContextProvider gameId={selectedGameId}>
+                            <ControlPanel 
+                                gameId={selectedGameId}
+                            />
+                        </GameStateContextProvider>
+                        <NewGameDialog 
+                            onNewGameCreated={handleNewGameCreated}
+                            onCancelled={handleNewGameCancelled}
+                        />
+                    </div>
+                </NewGameDialogContainer>
+            </UserSettingsProvider>
         </>
     );
 }

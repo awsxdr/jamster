@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 import { JamScore } from "./JamScore";
 import { RadioButtonGroup } from "@/components/RadioButtonGroup";
 import { SkaterOnTrack, SkaterPosition } from "@/types/events/JamLineup";
+import { useUserSettings } from "@/hooks/UserSettings";
 
 type TeamControlsProps = {
     gameId?: string;
@@ -23,6 +24,8 @@ type TeamControlsProps = {
 export const TeamControls = ({ gameId, side, disabled }: TeamControlsProps) => {
 
     const { sendEvent } = useEvents();
+
+    const userSettings = useUserSettings();
 
     const team = useTeamDetailsState(side);
     const teamName = useMemo(() => {
@@ -83,45 +86,57 @@ export const TeamControls = ({ gameId, side, disabled }: TeamControlsProps) => {
             </CardHeader>
             <CardContent className="py-0">
                 <Separator />
-                <JamScore side={side} />
-                <div className="flex w-full justify-center items-center">
-                    <Button onClick={decrementScore} variant="secondary" disabled={disabled} className="text-md lg:text-xl">-1 [{side === TeamSide.Home ? 'a' : '\''}]</Button>
-                    <TeamScore side={side} />
-                    <Button onClick={incrementScore} variant="secondary" disabled={disabled} className="text-md lg:text-xl" >+1 [{side === TeamSide.Home ? 's' : '#'}]</Button>
-                </div>
-                <Separator />
-                <TripScore tripScore={tripScore?.score ?? 0} disabled={disabled} scoreShortcutKeys={tripShortcutKeys} onTripScoreSet={setTripScore} />
-                <Separator />
-                <div className="flex w-full justify-center items-center gap-2 p-5">
-                    <Button variant="default">Initial trip [{side === TeamSide.Home ? "d" : ";"}]</Button>
-                    <Button variant="secondary">Lost [{side === TeamSide.Home ? "🠅d" : "🠅;"}]</Button>
-                    <Button variant="secondary">Star pass [{side === TeamSide.Home ? "x" : "/"}]</Button>
-                </div>
-                <Separator />
-                <div className="flex justify-center items-center self-center">
-                    <div className="flex flex-col items-end">
-                        <div className="flex flex-wrap justify-center items-center gap-2 pt-5 pb-1 items-baseline">
-                            <span>Jammer</span>
-                            <RadioButtonGroup
-                                items={[{value: null, name: "?"}, ...skaterNumbers.map(s => ({ value: s, name: s}))]}
-                                value={lineup?.jammerNumber}
-                                rowClassName="gap-0.5"
-                                size="sm"
-                                onItemSelected={v => handleLineupSelected(SkaterPosition.Jammer, v)}
-                            />
+                { userSettings.showScoreControls && (
+                    <>
+                        <JamScore side={side} />
+                        <div className="flex w-full justify-center items-center">
+                            <Button onClick={decrementScore} variant="secondary" disabled={disabled} className="text-md lg:text-xl">-1 [{side === TeamSide.Home ? 'a' : '\''}]</Button>
+                            <TeamScore side={side} />
+                            <Button onClick={incrementScore} variant="secondary" disabled={disabled} className="text-md lg:text-xl" >+1 [{side === TeamSide.Home ? 's' : '#'}]</Button>
                         </div>
-                        <div className="flex flex-wrap justify-center items-center gap-2 pb-5 items-baseline">
-                            <span>Pivot</span>
-                            <RadioButtonGroup
-                                items={[{value: null, name: "?"}, ...skaterNumbers.map(s => ({ value: s, name: s}))]}
-                                value={lineup?.pivotNumber}
-                                rowClassName="gap-0.5"
-                                size="sm"
-                                onItemSelected={v => handleLineupSelected(SkaterPosition.Pivot, v)}
-                            />
+                        <Separator />
+                        <TripScore tripScore={tripScore?.score ?? 0} disabled={disabled} scoreShortcutKeys={tripShortcutKeys} onTripScoreSet={setTripScore} />
+                        <Separator />
+                    </>
+                )}
+                { userSettings.showStatsControls && (
+                    <>
+                        <div className="flex w-full justify-center items-center gap-2 p-5">
+                            <Button variant="default">Initial trip [{side === TeamSide.Home ? "d" : ";"}]</Button>
+                            <Button variant="secondary">Lost [{side === TeamSide.Home ? "🠅d" : "🠅;"}]</Button>
+                            <Button variant="secondary">Star pass [{side === TeamSide.Home ? "x" : "/"}]</Button>
                         </div>
-                    </div>
-                </div>
+                        <Separator />
+                    </>
+                )}
+                { userSettings.showLineupControls && (
+                    <>
+                        <div className="flex justify-center items-center self-center">
+                            <div className="flex flex-col items-end">
+                                <div className="flex flex-wrap justify-center items-center gap-2 pt-5 pb-1 items-baseline">
+                                    <span>Jammer</span>
+                                    <RadioButtonGroup
+                                        items={[{value: null, name: "?"}, ...skaterNumbers.map(s => ({ value: s, name: s}))]}
+                                        value={lineup?.jammerNumber}
+                                        rowClassName="gap-0.5"
+                                        size="sm"
+                                        onItemSelected={v => handleLineupSelected(SkaterPosition.Jammer, v)}
+                                    />
+                                </div>
+                                <div className="flex flex-wrap justify-center items-center gap-2 pb-5 items-baseline">
+                                    <span>Pivot</span>
+                                    <RadioButtonGroup
+                                        items={[{value: null, name: "?"}, ...skaterNumbers.map(s => ({ value: s, name: s}))]}
+                                        value={lineup?.pivotNumber}
+                                        rowClassName="gap-0.5"
+                                        size="sm"
+                                        onItemSelected={v => handleLineupSelected(SkaterPosition.Pivot, v)}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    </>
+                )}
             </CardContent>
         </Card>
     )
