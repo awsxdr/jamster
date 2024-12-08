@@ -1,3 +1,4 @@
+export * from './Color';
 export * from './GameInfo';
 export * from './GameStageState';
 export * from './GameTeam';
