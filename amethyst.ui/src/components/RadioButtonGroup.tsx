@@ -6,6 +6,7 @@ export type RadioItem<TValue> = { value: TValue, name: string };
 type RadioButtonGroupProps<TValue> = {
     items: RadioItem<TValue>[];
     value?: TValue;
+    variant?: "default" | "secondary" | "ghost";
     size?: 'lg' | 'sm' | 'default';
     rowClassName?: string;
     buttonClassName?: string;
@@ -15,7 +16,7 @@ type RadioButtonGroupProps<TValue> = {
     onItemDeselected?: () => void;
 }
 
-export const RadioButtonGroup = <TValue,>({ items, value, size, rowClassName, buttonClassName, disabled, toggle, onItemSelected, onItemDeselected }: RadioButtonGroupProps<TValue>) => {
+export const RadioButtonGroup = <TValue,>({ items, value, variant, size, rowClassName, buttonClassName, disabled, toggle, onItemSelected, onItemDeselected }: RadioButtonGroupProps<TValue>) => {
     
     const handleButtonClick = (buttonValue: TValue) => {
         if(buttonValue === value && toggle) {
@@ -31,7 +32,7 @@ export const RadioButtonGroup = <TValue,>({ items, value, size, rowClassName, bu
                 items.map(item => (
                     <Button 
                         size={size}
-                        variant="secondary"
+                        variant={variant ?? "secondary"}
                         className={cn("border-2", value === item.value ? "border-primary" : "", buttonClassName)}
                         disabled={disabled}
                         onClick={() => handleButtonClick(item.value)}

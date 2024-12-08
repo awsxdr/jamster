@@ -24,6 +24,7 @@ export const TeamLineup = ({ side, onLineupSelected, disabled }: TeamLineupProps
                             items={[{value: null, name: "?"}, ...skaterNumbers.map(s => ({ value: s, name: s}))]}
                             value={lineup?.jammerNumber}
                             rowClassName="gap-0.5"
+                            variant="ghost"
                             size="sm"
                             disabled={disabled}
                             onItemSelected={v => onLineupSelected?.(SkaterPosition.Jammer, v)}
@@ -36,6 +37,7 @@ export const TeamLineup = ({ side, onLineupSelected, disabled }: TeamLineupProps
                             value={lineup?.pivotNumber}
                             rowClassName="gap-0.5"
                             size="sm"
+                            variant="ghost"
                             disabled={disabled}
                             onItemSelected={v => onLineupSelected?.(SkaterPosition.Pivot, v)}
                         />
