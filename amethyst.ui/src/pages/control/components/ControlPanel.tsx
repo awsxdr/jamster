@@ -16,14 +16,16 @@ export const ControlPanel = ({ gameId }: ControlPanelProps) => {
 
     const userSettings = useUserSettings();
 
+    const teamControlsDisabled = stage === Stage.BeforeGame || stage === Stage.AfterGame && periodIsFinalized;
+
     return (
         <>
             { userSettings.showClockControls && <MainControls gameId={gameId} /> }
             { userSettings.showClockControls && <TimeoutTypePanel gameId={gameId} /> }
             { (userSettings.showLineupControls || userSettings.showScoreControls || userSettings.showStatsControls) && (
                 <div className="w-full flex">
-                    <TeamControls side={TeamSide.Home} gameId={gameId} disabled={stage === Stage.AfterGame && periodIsFinalized} />
-                    <TeamControls side={TeamSide.Away} gameId={gameId} disabled={stage === Stage.AfterGame && periodIsFinalized} />
+                    <TeamControls side={TeamSide.Home} gameId={gameId} disabled={teamControlsDisabled} />
+                    <TeamControls side={TeamSide.Away} gameId={gameId} disabled={teamControlsDisabled} />
                 </div>
             )}
             { userSettings.showClocks && <ClocksContainer /> }
