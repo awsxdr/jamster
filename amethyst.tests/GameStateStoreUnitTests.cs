@@ -1,4 +1,5 @@
-﻿using amethyst.Reducers;
+﻿using amethyst.Domain;
+using amethyst.Reducers;
 using amethyst.Services;
 using FluentAssertions;
 using Func;
@@ -10,7 +11,7 @@ public class GameStateStoreUnitTests : UnitTest<GameStateStore>
     [Test]
     public void GetState_ReturnsPreviouslySetState()
     {
-        var state = new TestState(Guid.NewGuid());
+        var state = new TestState(Guid.NewGuid(), 1);
         Subject.LoadDefaultStates([new TestReducer()]);
         Subject.SetState(state);
 
@@ -31,16 +32,35 @@ public class GameStateStoreUnitTests : UnitTest<GameStateStore>
             return Task.CompletedTask;
         });
 
-        Subject.SetState(new TestState(Guid.NewGuid()));
+        Subject.SetState(new TestState(Guid.NewGuid(), 1));
 
         hasBeenCalled.Should().BeTrue();
     }
 
-    private record TestState(Guid Id);
+    [Test]
+    public void SetState_IgnoresChangesToAppropriatelyTaggedProperties()
+    {
+        Subject.LoadDefaultStates([new TestReducer()]);
+        var initialState = Subject.GetState<TestState>();
+
+        var callCount = 0;
+        Subject.WatchState<TestState>("TestState", _ =>
+        {
+            ++callCount;
+            return Task.CompletedTask;
+        });
+
+        Subject.SetState(initialState with { Ignored = 2 });
+        Subject.SetState(initialState with { Ignored = 3 });
+
+        callCount.Should().Be(0);
+    }
+
+    private record TestState(Guid Id, [property: IgnoreChange] int Ignored);
 
     private class TestReducer : IReducer<TestState>
     {
-        public object GetDefaultState() => new TestState(Guid.NewGuid());
+        public object GetDefaultState() => new TestState(Guid.NewGuid(), 1);
         public Option<string> GetStateKey() => Option.None<string>();
     }
 }
