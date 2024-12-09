@@ -19,15 +19,15 @@ export const GameSelectMenu = ({ games, currentGame, selectedGameId, onSelectedG
         [games, currentGame, language]);
 
     return (
-        <>
+        <div className="flex grow w-full">
             <ComboBox 
                 items={items}
                 value={selectedGameId ?? ""}
                 placeholder={translate("GameSelectMenu.SelectGame")}
                 onValueChanged={onSelectedGameIdChanged}
-                className="sm:w-[200px] md:w-[250px] lg:w-[400px]"
-                dropdownClassName="sm:w-[200px] md:w-[250px] lg:w-[400px]"
+                className="grow"
+                dropdownClassName="w-[200px] md:w-[250px] lg:w-[400px]"
             />
-        </>
+        </div>
     );
 }

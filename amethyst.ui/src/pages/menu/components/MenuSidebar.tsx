@@ -47,16 +47,18 @@ const sidebarItems: SidebarItemList = {
 export const MenuSidebar = () => {
     const location = useLocation();
 
-    const { open: sidebarOpen, toggleSidebar } = useSidebar();
+    const { open: sidebarOpen, toggleSidebar, isMobile } = useSidebar();
     const { translate } = useI18n();
 
     return (
         <Sidebar collapsible="icon">
-            <SidebarHeader className="w-full items-end">
-                <Button onClick={toggleSidebar} variant="ghost" size="sm">
-                    { sidebarOpen ? <ChevronLeft /> : <ChevronRight /> }
-                </Button>
-            </SidebarHeader>
+            { !isMobile &&
+                <SidebarHeader className="w-full items-end">
+                    <Button onClick={toggleSidebar} variant="ghost" size="sm">
+                        { sidebarOpen ? <ChevronLeft /> : <ChevronRight /> }
+                    </Button>
+                </SidebarHeader>
+            }
             <SidebarContent>
                 {
                     Object.keys(sidebarItems).map(groupName => {

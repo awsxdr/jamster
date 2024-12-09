@@ -1,5 +1,11 @@
 import { createContext, PropsWithChildren, useContext, useState } from "react";
 
+export enum DisplaySide {
+    Home = 'Home',
+    Away = 'Away',
+    Both = 'Both',
+}
+
 type UserSettingsProviderState = {
     showClockControls: boolean;
     setShowClockControls: (value: boolean) => void;
@@ -11,6 +17,8 @@ type UserSettingsProviderState = {
     setShowLineupControls: (value: boolean) => void;
     showClocks: boolean;
     setShowClocks: (value: boolean) => void;
+    displaySide: DisplaySide;
+    setDisplaySide: (value: DisplaySide) => void;
 }
 
 const initialState: UserSettingsProviderState = {
@@ -19,11 +27,13 @@ const initialState: UserSettingsProviderState = {
     showStatsControls: true,
     showLineupControls: true,
     showClocks: true,
+    displaySide: DisplaySide.Both,
     setShowClockControls: () => {},
     setShowScoreControls: () => {},
     setShowStatsControls: () => {},
     setShowLineupControls: () => {},
     setShowClocks: () => {},
+    setDisplaySide: () => {},
 }
 
 const UserSettingsProviderContext = createContext<UserSettingsProviderState>(initialState);
@@ -35,6 +45,7 @@ export const UserSettingsProvider = ({ children }: PropsWithChildren) => {
     const [showStatsControls, setShowStatsControls] = useState(initialState.showStatsControls);
     const [showLineupControls, setShowLineupControls] = useState(initialState.showLineupControls);
     const [showClocks, setShowClocks] = useState(initialState.showClocks);
+    const [displaySide, setDisplaySide] = useState(initialState.displaySide);
 
     return (
         <UserSettingsProviderContext.Provider value={{
@@ -43,6 +54,7 @@ export const UserSettingsProvider = ({ children }: PropsWithChildren) => {
             showStatsControls, setShowStatsControls,
             showLineupControls, setShowLineupControls,
             showClocks, setShowClocks,
+            displaySide, setDisplaySide,
         }}>
             {children}
         </UserSettingsProviderContext.Provider>

@@ -1,4 +1,4 @@
-import { CSSProperties, MouseEvent, MouseEventHandler, useEffect, useRef, useState } from "react";
+import { CSSProperties, MouseEvent, MouseEventHandler, TouchEvent, useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { Color, HslColor } from "@/types";
 
@@ -34,6 +34,12 @@ export const ColorSpace = ({ color, className, onColorChanged }: ColorSpaceProps
 
     const pickerRef = useRef<HTMLDivElement>(null);
 
+    const calculateColorFromOffset = (xOffset: number, yOffset: number) => ({
+        ...hsvColor,
+        saturation: xOffset / pickerRef.current!.clientWidth,
+        value: 1 - yOffset / pickerRef.current!.clientHeight,
+    })
+
     useEffect(() => {
         if(!pickerRef.current) {
             return;
@@ -47,16 +53,25 @@ export const ColorSpace = ({ color, className, onColorChanged }: ColorSpaceProps
             const xOffset = event.clientX - boundingBox.left;
             const yOffset = event.clientY - boundingBox.top;
 
-            const newColor = {
-                ...hsvColor,
-                saturation: xOffset / pickerRef.current!.clientWidth,
-                value: 1 - yOffset / pickerRef.current!.clientHeight,
-            };
+            const newColor = calculateColorFromOffset(xOffset, yOffset);
 
             onColorChanged?.(Color.hsvToHsl(newColor));
         }
 
-        const handleMouseUp = (event: globalThis.MouseEvent) => {
+        const handleTouchMove = (event: globalThis.TouchEvent) => {
+            event.preventDefault();
+
+            const boundingBox = pickerRef.current!.getBoundingClientRect();
+            
+            const xOffset = event.touches[0].clientX - boundingBox.left;
+            const yOffset = event.touches[0].clientY - boundingBox.top;
+
+            const newColor = calculateColorFromOffset(xOffset, yOffset);
+
+            onColorChanged?.(Color.hsvToHsl(newColor));
+        }
+
+        const handleDragEnd = (event: globalThis.MouseEvent | globalThis.TouchEvent) => {
             event.preventDefault();
 
             setIsDragging(false);
@@ -64,24 +79,28 @@ export const ColorSpace = ({ color, className, onColorChanged }: ColorSpaceProps
 
         if(isDragging) {
             document.addEventListener('mousemove', handleMouseMove);
-            document.addEventListener('mouseup', handleMouseUp);
+            document.addEventListener('mouseup', handleDragEnd);
+            document.addEventListener('touchmove', handleTouchMove);
+            document.addEventListener('touchend', handleDragEnd);
         }
 
         return () => {
             document.removeEventListener('mousemove', handleMouseMove);
-            document.removeEventListener('mouseup', handleMouseUp);
+            document.removeEventListener('mouseup', handleDragEnd);
+            document.removeEventListener('touchmove', handleTouchMove);
+            document.removeEventListener('touchend', handleDragEnd);
         }
 
     }, [isDragging]);
 
-    const handleMouseDown = (event: MouseEvent<HTMLDivElement>) => {
+    const handleDragStart = (event: MouseEvent<HTMLDivElement> | TouchEvent<HTMLDivElement>) => {
         event.preventDefault();
 
         setIsDragging(true);
     }
 
     return (
-        <div className={cn("w-full h-full relative", className)} onMouseDown={handleMouseDown} ref={pickerRef}>
+        <div className={cn("w-full h-full relative", className)} onMouseDown={handleDragStart} onTouchStart={handleDragStart} ref={pickerRef}>
             <ColorSpaceGradient color={color} />
             <div 
                 className="w-[11px] h-[11px] border border-black rounded-[100%] absolute top-[calc(var(--cursor-top)-5px)] left-[calc(var(--cursor-left)-5px)]"

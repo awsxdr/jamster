@@ -1,12 +1,20 @@
-import { Button, DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui"
-import { useUserSettings } from "@/hooks/UserSettings"
-import { Check, Clock, Eye, NotebookPen, Play, Table, Tally5, UsersRound } from "lucide-react"
+import { Button, DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui"
+import { DisplaySide, useUserSettings } from "@/hooks/UserSettings"
+import { Check, Clock, Eye, Maximize2, NotebookPen, Play, Table, Tally5, UsersRound } from "lucide-react"
 
 export const ViewMenu = () => {
 
     const userSettings = useUserSettings();
 
     const IconSpacer = () => (<span className="w-[16px]"></span>);
+
+    const handleFullScreenClick = () => {
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen();
+        } else if (document.exitFullscreen) {
+            document.exitFullscreen();
+        }
+    }
 
     return (
         <DropdownMenu>
@@ -46,6 +54,18 @@ export const ViewMenu = () => {
                         <span className="w-[16px]"></span>
                         <Table />
                         <span>Score sheet</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuRadioGroup value={userSettings.displaySide} onValueChange={v => userSettings.setDisplaySide(DisplaySide[v as keyof typeof DisplaySide])}>
+                        <DropdownMenuRadioItem value={DisplaySide.Both}>Both teams</DropdownMenuRadioItem>
+                        <DropdownMenuRadioItem value={DisplaySide.Home}>Home team</DropdownMenuRadioItem>
+                        <DropdownMenuRadioItem value={DisplaySide.Away}>Away team</DropdownMenuRadioItem>
+                    </DropdownMenuRadioGroup>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleFullScreenClick}>
+                        <IconSpacer />
+                        <Maximize2 />
+                        Full screen
                     </DropdownMenuItem>
                 </DropdownMenuGroup>
             </DropdownMenuContent>

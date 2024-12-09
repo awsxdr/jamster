@@ -1,6 +1,6 @@
 import { Button, Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, Input, Label, TooltipProvider } from "@/components/ui";
 import { Color, HslColor, StringMap, TeamColor } from "@/types";
-import { ChangeEvent, PropsWithChildren, useEffect, useMemo, useState } from "react";
+import { ChangeEvent, PropsWithChildren, useEffect, useState } from "react";
 import { ColorSelectButton } from "./ColorSelectButton";
 import { Loader2 } from "lucide-react";
 import { useI18n } from "@/hooks/I18nHook";
@@ -20,7 +20,7 @@ export const NewTeamDialogContainer = ({ children, ...props }: PropsWithChildren
 
 export const NewTeamDialogTrigger = ({ children }: PropsWithChildren) => {
     return (
-        <DialogTrigger>
+        <DialogTrigger asChild>
             {children}
         </DialogTrigger>
     );

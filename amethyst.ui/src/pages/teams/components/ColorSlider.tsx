@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, MouseEvent, CSSProperties } from "react";
+import { useEffect, useRef, useState, MouseEvent, TouchEvent, CSSProperties } from "react";
 
 type ColorSliderProps = {
     hue: number;
@@ -9,11 +9,10 @@ export const ColorSlider = ({ hue, onHueChanged }: ColorSliderProps) => {
 
     const pickerRef = useRef<HTMLDivElement>(null);
 
-    const sliderLeft = useMemo(() =>
-        (pickerRef.current?.clientWidth ?? 0) / 360 * Math.min(Math.max(hue, 0), 359) - 3,
-        [pickerRef, hue]);
-
     const [isDragging, setIsDragging] = useState(false);
+
+    const calculateHueFromXOffset = (xOffset: number) =>
+        Math.min(Math.max(xOffset, 0), pickerRef.current!.clientWidth) / pickerRef.current!.clientWidth * 359;
 
     useEffect(() => {
         if(!pickerRef.current) {
@@ -22,14 +21,23 @@ export const ColorSlider = ({ hue, onHueChanged }: ColorSliderProps) => {
 
         const handleMouseMove = (event: globalThis.MouseEvent) => {
             event.preventDefault();
-            
+
             const xOffset = event.clientX - pickerRef.current!.getBoundingClientRect().left;
-            const newHue = Math.min(Math.max(xOffset, 0), pickerRef.current!.clientWidth) / pickerRef.current!.clientWidth * 359;
+            const newHue = calculateHueFromXOffset(xOffset);
 
             onHueChanged?.(newHue);
         }
 
-        const handleMouseUp = (event: globalThis.MouseEvent) => {
+        const handleTouchMove = (event: globalThis.TouchEvent) => {
+            event.preventDefault();
+
+            const xOffset = event.touches[0].clientX - pickerRef.current!.getBoundingClientRect().left;
+            const newHue = calculateHueFromXOffset(xOffset);
+
+            onHueChanged?.(newHue);
+        }
+
+        const handleDragEnd = (event: globalThis.MouseEvent | globalThis.TouchEvent) => {
             event.preventDefault();
 
             setIsDragging(false);
@@ -37,17 +45,21 @@ export const ColorSlider = ({ hue, onHueChanged }: ColorSliderProps) => {
 
         if(isDragging) {
             document.addEventListener('mousemove', handleMouseMove);
-            document.addEventListener('mouseup', handleMouseUp);
+            document.addEventListener('mouseup', handleDragEnd);
+            document.addEventListener('touchmove', handleTouchMove);
+            document.addEventListener('touchend', handleDragEnd);
         }
 
         return () => {
             document.removeEventListener('mousemove', handleMouseMove);
-            document.removeEventListener('mouseup', handleMouseUp);
+            document.removeEventListener('mouseup', handleDragEnd);
+            document.removeEventListener('touchmove', handleTouchMove);
+            document.removeEventListener('touchend', handleDragEnd);
         }
 
     }, [isDragging]);
 
-    const handleSliderMouseDown = (event: MouseEvent<HTMLDivElement>) => {
+    const handleSliderDragStart = (event: MouseEvent<HTMLDivElement> | TouchEvent<HTMLDivElement>) => {
         event.preventDefault();
 
         setIsDragging(true);
@@ -57,7 +69,8 @@ export const ColorSlider = ({ hue, onHueChanged }: ColorSliderProps) => {
         <div className="h-[30px] w-full relative">
             <div 
                 className="flex h-[20px] w-full" 
-                onMouseDown={handleSliderMouseDown}
+                onMouseDown={handleSliderDragStart}
+                onTouchStart={handleSliderDragStart}
                 ref={pickerRef}
             >
                 <div className="bg-gradient-to-r from-[#ff0000] to-[#ffff00] grow"></div>
@@ -70,7 +83,8 @@ export const ColorSlider = ({ hue, onHueChanged }: ColorSliderProps) => {
                 <div 
                     className="w-[7px] h-[30px] border border-black rounded-[2px] absolute top-[-5px] left-[calc(var(--slider-value)-3px)]" 
                     style={{ '--slider-value': `${hue / 360 * 100}%` } as CSSProperties}
-                    onMouseDown={handleSliderMouseDown}
+                    onMouseDown={handleSliderDragStart}
+                    onTouchStart={handleSliderDragStart}
                 >
                     <div className="w-[5px] h-[28px] border border-white rounded-[1px]">
                         <div className="w-[3px] h-[26px] border border-black">

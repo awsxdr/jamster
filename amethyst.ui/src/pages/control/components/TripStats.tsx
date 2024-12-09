@@ -9,7 +9,7 @@ type TripStatsProps = {
 export const TripStats = ({ side, disabled }: TripStatsProps) => {
     return (
         <>
-            <div className="flex w-full justify-center items-center gap-2 p-5">
+            <div className="flex flex-wrap w-full justify-center items-center gap-2 p-5">
                 <Button variant="default" disabled={disabled}>Initial trip [{side === TeamSide.Home ? "d" : ";"}]</Button>
                 <Button variant="secondary" disabled={disabled}>Lost [{side === TeamSide.Home ? "🠅d" : "🠅;"}]</Button>
                 <Button variant="secondary" disabled={disabled}>Star pass [{side === TeamSide.Home ? "x" : "/"}]</Button>

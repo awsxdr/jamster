@@ -8,7 +8,6 @@ import { TripScore } from "./TripScore";
 import { Event, useEvents } from "@/hooks/EventsApiHook";
 import { ScoreModifiedRelative } from "@/types/events/Scores";
 import { useHotkeys } from "react-hotkeys-hook";
-import { cn } from "@/lib/utils";
 import { JamScore } from "./JamScore";
 import { SkaterOnTrack, SkaterPosition } from "@/types/events/JamLineup";
 import { useUserSettings } from "@/hooks/UserSettings";
@@ -78,7 +77,7 @@ export const TeamControls = ({ gameId, side, disabled }: TeamControlsProps) => {
     useHotkeys(side === TeamSide.Home ? 'shift+s' : 'shift+#', () => setTripScore(4), { preventDefault: true });
 
     return (
-        <Card className={cn("grow inline-block mt-5", side === TeamSide.Home ? "mr-2.5" : "ml-2.5")}>
+        <Card className="grow inline-block mt-5">
             <CardContent className="py-0">
                 <SeparatedCollection>
                     { teamName && <div className="text-center text-xl">{teamName}</div> }

@@ -78,13 +78,15 @@ export const MainControls = ({ gameId }: MainControlsProps) => {
     useHotkeys('y', handleEnd);
     useHotkeys('t', handleTimeout);
 
+    const buttonClass = "w-full py-8 md:w-auto md:px-4 md:py-2";
+
     return (
         <Card className="grow mt-5 pt-6">
             <CardContent className="flex flex-wrap gap-2 justify-evenly">
-                <Button onClick={handleStart} variant={startButtonEnabled ? 'default' : 'secondary'} disabled={!startButtonEnabled}><Play /> { startText } [`]</Button>
-                <Button onClick={handleEnd} variant={endButtonEnabled ? 'default' : 'secondary'} disabled={!endButtonEnabled}><Square /> { endText } [y,r,i]</Button>
-                <Button onClick={handleTimeout} variant={timeoutButtonEnabled ? 'default' : 'secondary'} disabled={!timeoutButtonEnabled}><Pause /> { timeoutText } [t]</Button>
-                <Button variant={undoButtonEnabled ? 'default' : 'secondary'} disabled={!undoButtonEnabled}><Undo /> {undoText} [g]</Button>
+                <Button className={buttonClass} onClick={handleStart} variant={startButtonEnabled ? 'default' : 'secondary'} disabled={!startButtonEnabled}><Play /> { startText } [`]</Button>
+                <Button className={buttonClass} onClick={handleEnd} variant={endButtonEnabled ? 'default' : 'secondary'} disabled={!endButtonEnabled}><Square /> { endText } [y,r,i]</Button>
+                <Button className={buttonClass} onClick={handleTimeout} variant={timeoutButtonEnabled ? 'default' : 'secondary'} disabled={!timeoutButtonEnabled}><Pause /> { timeoutText } [t]</Button>
+                <Button className={buttonClass} variant={undoButtonEnabled ? 'default' : 'secondary'} disabled={!undoButtonEnabled}><Undo /> {undoText} [g]</Button>
             </CardContent>
         </Card>
     );
