@@ -25,7 +25,7 @@ export const GameSelectMenu = ({ games, currentGame, selectedGameId, onSelectedG
                 value={selectedGameId ?? ""}
                 placeholder={translate("GameSelectMenu.SelectGame")}
                 onValueChanged={onSelectedGameIdChanged}
-                className="grow"
+                className="grow w-full sm:w-auto"
                 dropdownClassName="w-[200px] md:w-[250px] lg:w-[400px]"
             />
         </div>

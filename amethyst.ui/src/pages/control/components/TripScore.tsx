@@ -17,7 +17,7 @@ export const TripScore = ({ tripScore, scoreShortcutKeys, disabled, onTripScoreS
             <span className={disabled ? "opacity-50" : ""}>{translate("TripScore.TripScore")}</span>
             <RadioButtonGroup
                 items={[0, 1, 2, 3, 4].map(i => ({ value: i, name: `${i}${ scoreShortcutKeys?.[i] ? ` [${scoreShortcutKeys[i]}]` : ''}`}))}
-                rowClassName="flex-nowrap"
+                rowClassName="flex-wrap sm:flex-nowrap"
                 value={tripScore}
                 disabled={disabled}
                 onItemSelected={onTripScoreSet}

@@ -71,8 +71,8 @@ export const TimeoutTypePanel = ({ gameId }: TimeoutTypePanelProps) => {
     }
 
     return (
-        <Card className={cn("grow scale-0 transition-all duration-500 h-0 m-0 p-0", stage === Stage.Timeout ? "scale-100 block h-auto mt-5 p-0" : "")}>
-            <CardContent className="p-5">
+        <Card className={cn("grow scale-0 transition-all duration-500 h-0 m-0 -mb-2 p-0", stage === Stage.Timeout ? "scale-100 block h-auto mb-0 p-0" : "")}>
+            <CardContent className="p-2">
                 <RadioButtonGroup
                     items={timeoutTypes}
                     value={compoundType}

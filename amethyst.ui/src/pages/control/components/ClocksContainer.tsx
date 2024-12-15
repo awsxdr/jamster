@@ -9,7 +9,7 @@ export const ClocksContainer = () => {
     const { translate } = useI18n();
 
     return (
-        <div className="w-full flex mt-5 flex-wrap md:flex-nowrap gap-5 justify-between">
+        <div className="w-full flex flex-wrap md:flex-nowrap gap-2 justify-between">
             <Clock name={`${translate('ClocksContainer.Jam')} ${gameStage?.jamNumber ?? 0}`} clock={c => <JamClock textClassName={c} />} />
             <Clock name={`${translate('ClocksContainer.Period')} ${gameStage?.periodNumber ?? 0}`} clock={c => <PeriodClock textClassName={c} />} />
             <Clock name={translate('ClocksContainer.Lineup')} clock={c => <LineupClock textClassName={c} />} />
