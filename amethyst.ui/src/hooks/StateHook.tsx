@@ -4,6 +4,7 @@ import { HubConnection } from "@microsoft/signalr";
 import { useGameApi } from "./GameApiHook";
 import { GameStageState, TripScoreState, TeamDetailsState, TeamScoreState, TeamSide, TeamTimeoutsState, JamLineupState } from "@/types";
 import { CurrentTimeoutTypeState } from "@/types/CurrentTimeoutTypeState";
+import { TeamJamStatsState } from "@/types/TeamJamStatsState";
 
 type StateChanged<TState> = (state: TState) => void;
 type StateWatch = <TState,>(stateName: string, onStateChange: StateChanged<TState>) => CallbackHandle;
@@ -32,6 +33,7 @@ type StateNotifierMap = { [key: string]: StateNotifier };
 export const useCurrentTimeoutTypeState = () => useGameState<CurrentTimeoutTypeState>("CurrentTimeoutTypeState");
 export const useGameStageState = () => useGameState<GameStageState>("GameStageState");
 export const useJamLineupState = (side: TeamSide) => useGameState<JamLineupState>(`JamLineupState_${TeamSide[side]}`);
+export const useJamStatsState = (side: TeamSide) => useGameState<TeamJamStatsState>(`TeamJamStatsState_${TeamSide[side]}`);
 export const useTeamDetailsState = (side: TeamSide) => useGameState<TeamDetailsState>(`TeamDetailsState_${TeamSide[side]}`);
 export const useTeamScoreState = (side: TeamSide) => useGameState<TeamScoreState>(`TeamScoreState_${TeamSide[side]}`);
 export const useTeamTimeoutsState = (side: TeamSide) => useGameState<TeamTimeoutsState>(`TeamTimeoutsState_${TeamSide[side]}`);
@@ -67,8 +69,7 @@ type CallbackHandle = number;
 export const GameStateContextProvider = ({ gameId, children }: PropsWithChildren<GameStateContextProviderProps>) => {
     const [stateNotifiers, setStateNotifiers] = useState<StateNotifierMap>({});
 
-    const connection = useHubConnection(`game/${gameId}`);
-    
+    const connection = useHubConnection(gameId && `game/${gameId}`);
 
     const watchState = <TState,>(stateName: string, onStateChange: StateChanged<TState>): CallbackHandle => {
         

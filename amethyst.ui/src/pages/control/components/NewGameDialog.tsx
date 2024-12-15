@@ -22,7 +22,7 @@ export const NewGameDialogContainer = ({ children, ...props }: PropsWithChildren
 
 export const NewGameDialogTrigger = ({children}: PropsWithChildren) => {
     return (
-        <DialogTrigger>
+        <DialogTrigger asChild>
             {children}
         </DialogTrigger>
     )
@@ -228,7 +228,7 @@ export const NewGameDialog = ({ onNewGameCreated, onCancelled }: NewGameDialogPr
                     <div className="flex">
                         <Input value={gameName} onChange={handleTeamNameChanged} />
                         <Tooltip>
-                            <TooltipTrigger>
+                            <TooltipTrigger asChild>
                                 <Button variant="ghost" size="icon" onClick={handleResetTeamName} disabled={!gameNameDirty}>
                                     <RefreshCcw />
                                 </Button>

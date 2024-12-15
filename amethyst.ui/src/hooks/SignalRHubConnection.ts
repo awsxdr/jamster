@@ -2,13 +2,17 @@ import * as SignalR from '@microsoft/signalr';
 import { useEffect, useMemo, useState } from "react";
 import { API_URL } from "@/constants";
 
-export const useHubConnection = (hubPath: string) => {
+export const useHubConnection = (hubPath?: string) => {
 
     const [connection, setConnection] = useState<SignalR.HubConnection>();
     const hubUrl = useMemo(() => `${API_URL}/api/Hubs/${hubPath}`, [hubPath]);
 
     const hubConnection = useMemo(() => {
         console.debug("Connecting to hub", hubUrl);
+
+        if(!hubPath) {
+            return;
+        }
 
         return new SignalR.HubConnectionBuilder()
             .withUrl(hubUrl, { withCredentials: false })
@@ -28,6 +32,10 @@ export const useHubConnection = (hubPath: string) => {
         (async () => {
             console.debug("Starting connection", hubUrl);
             try {
+                if(hubConnection?.state !== "Disconnected") {
+                    return;
+                }
+
                 await hubConnection.start();
                 console.debug("Hub connected", hubUrl);
                 setConnection(hubConnection);
@@ -35,12 +43,6 @@ export const useHubConnection = (hubPath: string) => {
                 console.error("Error while starting hub connection", hubUrl, error);
             }
         })();
-
-        // return () => {
-        //     console.debug("Stopping connection", hubUrl);
-        //     hubConnection.stop();
-        //     setReconnect(r => r += 1);
-        // }
     }, [hubConnection, setConnection]);
 
     return connection;

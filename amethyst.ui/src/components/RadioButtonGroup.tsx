@@ -35,6 +35,7 @@ export const RadioButtonGroup = <TValue,>({ items, value, variant, size, rowClas
                         variant={variant ?? "secondary"}
                         className={cn("border-2", value === item.value ? "border-primary" : "", buttonClassName)}
                         disabled={disabled}
+                        key={item.name}
                         onClick={() => handleButtonClick(item.value)}
                     >
                         {item.name}

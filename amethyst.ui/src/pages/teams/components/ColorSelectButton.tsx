@@ -43,7 +43,7 @@ export const ColorSelectButton = ({ color, title, description, onColorChanged }:
             <Tooltip>
                 <Popover>
                     <TooltipTrigger asChild>
-                        <PopoverTrigger>
+                        <PopoverTrigger asChild>
                             <Button 
                                 className="transition-[filter] contrast-100 hover:contrast-75" 
                                 style={{ backgroundColor: colorString }}
