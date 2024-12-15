@@ -14,21 +14,21 @@ export const ControlPanel = ({ gameId }: ControlPanelProps) => {
 
     const { stage, periodIsFinalized } = useGameStageState() ?? { stage: Stage.BeforeGame, periodIsFinalized: false };
 
-    const userSettings = useUserSettings();
+    const { userSettings } = useUserSettings();
 
     const teamControlsDisabled = stage === Stage.BeforeGame || stage === Stage.AfterGame && periodIsFinalized;
 
     return (
-        <>
+        <div className="flex flex-col gap-2 pt-2">
             { userSettings.showClockControls && <MainControls gameId={gameId} /> }
             { userSettings.showClockControls && <TimeoutTypePanel gameId={gameId} /> }
             { (userSettings.showLineupControls || userSettings.showScoreControls || userSettings.showStatsControls) && (
-                <div className="w-full flex flex-wrap lg:flex-nowrap gap-5">
+                <div className="w-full flex flex-wrap lg:flex-nowrap gap-2">
                     { userSettings.displaySide !== DisplaySide.Away && <TeamControls side={TeamSide.Home} gameId={gameId} disabled={teamControlsDisabled} /> }
                     { userSettings.displaySide !== DisplaySide.Home && <TeamControls side={TeamSide.Away} gameId={gameId} disabled={teamControlsDisabled} /> }
                 </div>
             )}
             { userSettings.showClocks && <ClocksContainer /> }
-        </>
+        </div>
     )
 }

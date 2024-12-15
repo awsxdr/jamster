@@ -9,6 +9,7 @@ import { ViewMenu } from "./ViewMenu";
 import { MobileSidebarTrigger } from "@/components/MobileSidebarTrigger";
 import { useSidebar } from "@/components/ui";
 import { useState } from "react";
+import { UserMenu } from "./UserMenu";
 
 type GameToolbarProps = {
     games: GameInfo[];
@@ -30,6 +31,7 @@ export const GameToolbar = ({ games, currentGame, onCurrentGameIdChanged, select
                 <MobileSidebarTrigger />
                 { isMobile &&
                     <div className="flex grow justify-end gap-2">
+                        <UserMenu />
                         <ViewMenu />
                         <Button size="icon" variant="ghost">
                             <Settings />
@@ -67,6 +69,7 @@ export const GameToolbar = ({ games, currentGame, onCurrentGameIdChanged, select
                         </div>
                         { !isMobile &&
                             <div className="flex grow justify-end gap-2">
+                                <UserMenu />
                                 <ViewMenu />
                                 <Button size="icon" variant="ghost">
                                     <Settings />

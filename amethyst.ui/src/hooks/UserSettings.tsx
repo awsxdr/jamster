@@ -1,4 +1,5 @@
-import { createContext, PropsWithChildren, useContext, useState } from "react";
+import { StringMap } from "@/types";
+import { createContext, PropsWithChildren, useContext, useEffect, useMemo, useState } from "react";
 
 export enum DisplaySide {
     Home = 'Home',
@@ -6,56 +7,96 @@ export enum DisplaySide {
     Both = 'Both',
 }
 
-type UserSettingsProviderState = {
+export type UserSettings = {
     showClockControls: boolean;
-    setShowClockControls: (value: boolean) => void;
     showScoreControls: boolean;
-    setShowScoreControls: (value: boolean) => void;
     showStatsControls: boolean;
-    setShowStatsControls: (value: boolean) => void;
     showLineupControls: boolean;
-    setShowLineupControls: (value: boolean) => void;
     showClocks: boolean;
-    setShowClocks: (value: boolean) => void;
     displaySide: DisplaySide;
-    setDisplaySide: (value: DisplaySide) => void;
+    shortcuts: StringMap<string>;
 }
 
-const initialState: UserSettingsProviderState = {
+type SettingsMap = StringMap<UserSettings>;
+
+const DEFAULT_SETTINGS: UserSettings = {
     showClockControls: true,
     showScoreControls: true,
     showStatsControls: true,
     showLineupControls: true,
     showClocks: true,
     displaySide: DisplaySide.Both,
-    setShowClockControls: () => {},
-    setShowScoreControls: () => {},
-    setShowStatsControls: () => {},
-    setShowLineupControls: () => {},
-    setShowClocks: () => {},
-    setDisplaySide: () => {},
+    shortcuts: {},
 }
 
-const UserSettingsProviderContext = createContext<UserSettingsProviderState>(initialState);
+type UserSettingsProviderState = {
+    userSettings: UserSettings;
+    userName?: string;
+    setUserSettings: (settingsFactory: (currentSettings: UserSettings) => UserSettings) => void;
+    login: (userName: string) => void;
+    logout: () => void;
+}
+
+const DEFAULT_STATE: UserSettingsProviderState = {
+    userSettings: DEFAULT_SETTINGS,
+    setUserSettings: () => {},
+    login: () => {},
+    logout: () => {},
+}
+
+const getStoredSettings = (): SettingsMap => {
+    const settingsJson = localStorage.getItem('amethyst.userSettings');
+
+    if(!settingsJson) {
+        return { [""]: DEFAULT_SETTINGS };
+    }
+
+    const settings = JSON.parse(settingsJson) as SettingsMap;
+
+    if (!settings) {
+        return { [""]: DEFAULT_SETTINGS };
+    }
+
+    return settings;
+}
+
+const UserSettingsProviderContext = createContext<UserSettingsProviderState>(DEFAULT_STATE);
 
 export const UserSettingsProvider = ({ children }: PropsWithChildren) => {
 
-    const [showClockControls, setShowClockControls] = useState(initialState.showClockControls);
-    const [showScoreControls, setShowScoreControls] = useState(initialState.showScoreControls);
-    const [showStatsControls, setShowStatsControls] = useState(initialState.showStatsControls);
-    const [showLineupControls, setShowLineupControls] = useState(initialState.showLineupControls);
-    const [showClocks, setShowClocks] = useState(initialState.showClocks);
-    const [displaySide, setDisplaySide] = useState(initialState.displaySide);
+    const [userName, setUserName] = useState<string>();
+    const [settings, setSettings] = useState<SettingsMap>();
+
+    const userSettings = useMemo(() => settings?.[userName ?? ""] ?? DEFAULT_SETTINGS, [settings, userName]);
+
+    const setUserSettings = (settingsFactory: (currentSettings: UserSettings) => UserSettings) => {
+        setSettings(current => ({ ...current, [userName ?? ""]: settingsFactory(current?.[userName ?? ""] ?? DEFAULT_SETTINGS) }));
+    }
+
+    const login = (userName: string) => {
+        setUserName(userName);
+    }
+
+    const logout = () => {
+        setUserName(undefined);
+    }
+
+    useEffect(() => {
+        setSettings(getStoredSettings());
+    }, []);
+
+    useEffect(() => {
+        if(!settings) {
+            return;
+        }
+
+        localStorage.setItem(
+            'amethyst.userSettings',
+             JSON.stringify(settings));
+    }, [settings]);
 
     return (
-        <UserSettingsProviderContext.Provider value={{
-            showClockControls, setShowClockControls,
-            showScoreControls, setShowScoreControls,
-            showStatsControls, setShowStatsControls,
-            showLineupControls, setShowLineupControls,
-            showClocks, setShowClocks,
-            displaySide, setDisplaySide,
-        }}>
+        <UserSettingsProviderContext.Provider value={{ userSettings, userName, setUserSettings, login, logout }}>
             {children}
         </UserSettingsProviderContext.Provider>
     );
