@@ -1,6 +1,7 @@
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useI18n } from "@/hooks/I18nHook";
 import { useTeamApi } from "@/hooks/TeamApiHook";
 import { useTeam } from "@/hooks/TeamsHook";
 import { ChangeEvent, useEffect, useMemo, useState } from "react";
@@ -12,26 +13,28 @@ export const TeamEdit = () => {
     const team = useTeam(teamId!);
     const { setTeam } = useTeamApi();
 
-    const [teamName, setTeamName] = useState(team?.names["team"] ?? "");
+    const { translate } = useI18n();
 
-    const displayName = useMemo(() => team?.names["team"] || team?.names["league"] || team?.names["default"] || "", [team]);
+    const [defaultName, setDefaultName] = useState(team?.names["default"] ?? "");
+
+    const displayName = useMemo(() => team?.names["default"] ?? "", [team]);
 
     useEffect(() => {
-        setTeamName(team?.names["team"] ?? "");
+        setDefaultName(team?.names["default"] ?? "");
     }, [team]);
 
     const onTeamNameChanged = (event: ChangeEvent<HTMLInputElement>) => {
-        setTeamName(event.target.value);
+        setDefaultName(event.target.value);
     }
 
     const onTeamNameBlur = () => {
-        if (teamId && team?.names["team"] !== teamName) {
+        if (teamId && team?.names["default"] !== defaultName) {
             setTeam(
                 teamId,
                 {
                     names: {
                         ...team?.names,
-                        "team": teamName
+                        "default": defaultName
                     },
                     colors: team?.colors ?? {}
                 }
@@ -45,7 +48,7 @@ export const TeamEdit = () => {
                 <BreadcrumbList>
                     <BreadcrumbItem>
                         <BreadcrumbLink asChild>
-                            <Link to="/teams">Teams</Link>
+                            <Link to="/teams">{translate("TeamEdit.Teams")}</Link>
                         </BreadcrumbLink>
                     </BreadcrumbItem>
                     <BreadcrumbSeparator />
@@ -55,8 +58,8 @@ export const TeamEdit = () => {
                 </BreadcrumbList>
             </Breadcrumb>
             <div className="grid max-w-sm items-center gap-1.5">
-                <Label htmlFor="teamName">Team name</Label>
-                <Input value={teamName} id="teamName" onChange={onTeamNameChanged} onBlur={onTeamNameBlur} />
+                <Label htmlFor="teamName">{ translate("TeamEdit.TeamName") }</Label>
+                <Input value={defaultName} id="teamName" onChange={onTeamNameChanged} onBlur={onTeamNameBlur} />
             </div>
         </>
     );

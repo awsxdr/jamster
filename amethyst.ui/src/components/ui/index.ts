@@ -1,6 +1,7 @@
 export * from './alert-dialog';
 export * from './button';
 export * from './card';
+export * from './checkbox';
 export * from './combobox';
 export * from './command';
 export * from './dialog';
@@ -12,4 +13,5 @@ export * from './separator';
 export * from './sheet';
 export * from './sidebar';
 export * from './skeleton';
+export * from './table';
 export * from './tooltip';

@@ -4,6 +4,7 @@ import { ChangeEvent, PropsWithChildren, useEffect, useState } from "react";
 import { ColorSelectButton } from "./ColorSelectButton";
 import { Loader2 } from "lucide-react";
 import { useI18n } from "@/hooks/I18nHook";
+import { DialogDescription } from "@radix-ui/react-dialog";
 
 type NewTeamDialogContainerProps = {
     open?: boolean;
@@ -116,6 +117,7 @@ export const NewTeamDialog = ({ onNewTeamCreated, onCancelled }: NewTeamDialogPr
             <DialogContent>
                 <DialogHeader>
                     <DialogTitle>{translate("NewTeamDialog.Title")}</DialogTitle>
+                    <DialogDescription>{translate("NewTeamDialog.Description")}</DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
                     <Label>{translate("NewTeamDialog.TeamName")}</Label>

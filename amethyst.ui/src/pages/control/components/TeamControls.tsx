@@ -14,6 +14,7 @@ import { useUserSettings } from "@/hooks/UserSettings";
 import { TripStats } from "./TripStats";
 import { TeamLineup } from "./TeamLineup";
 import { SeparatedCollection } from "@/components/SeparatedCollection";
+import { CallMarked, InitialTripCompleted, LeadMarked, LostMarked, StarPassMarked } from "@/types/events/JamStats";
 
 type TeamControlsProps = {
     gameId?: string;
@@ -25,7 +26,7 @@ export const TeamControls = ({ gameId, side, disabled }: TeamControlsProps) => {
 
     const { sendEvent } = useEvents();
 
-    const userSettings = useUserSettings();
+    const { userSettings } = useUserSettings();
 
     const team = useTeamDetailsState(side);
     const teamName = useMemo(() => {
@@ -69,6 +70,26 @@ export const TeamControls = ({ gameId, side, disabled }: TeamControlsProps) => {
     const handleLineupSelected = (position: SkaterPosition, number: string | null) =>
         sendEventIfIdSet(new SkaterOnTrack(side, position, number));
 
+    const handleLeadChanged = (side: TeamSide, value: boolean) => {
+        sendEventIfIdSet(new LeadMarked(side, value));
+    }
+
+    const handleLostChanged = (side: TeamSide, value: boolean) => {
+        sendEventIfIdSet(new LostMarked(side, value));
+    }
+
+    const handleCallChanged = (side: TeamSide, value: boolean) => {
+        sendEventIfIdSet(new CallMarked(side, value));
+    }
+
+    const handleStarPassChanged = (side: TeamSide, value: boolean) => {
+        sendEventIfIdSet(new StarPassMarked(side, value));
+    }
+
+    const handleInitialCompletedChanged = (side: TeamSide, value: boolean) => {
+        sendEventIfIdSet(new InitialTripCompleted(side, value));
+    }
+
     const tripShortcutKeys: string[] = [];
     tripShortcutKeys[4] = side === TeamSide.Home ? "🠅s" : "🠅#";
 
@@ -77,7 +98,7 @@ export const TeamControls = ({ gameId, side, disabled }: TeamControlsProps) => {
     useHotkeys(side === TeamSide.Home ? 'shift+s' : 'shift+#', () => setTripScore(4), { preventDefault: true });
 
     return (
-        <Card className="grow inline-block mt-5">
+        <Card className="grow inline-block">
             <CardContent className="py-0">
                 <SeparatedCollection>
                     { teamName && <div className="text-center text-xl">{teamName}</div> }
@@ -96,7 +117,15 @@ export const TeamControls = ({ gameId, side, disabled }: TeamControlsProps) => {
                     )}
                     { userSettings.showStatsControls && (
                         <>
-                            <TripStats side={side} disabled={disabled} />
+                            <TripStats 
+                                side={side} 
+                                disabled={disabled} 
+                                onLeadChanged={handleLeadChanged} 
+                                onLostChanged={handleLostChanged} 
+                                onCallChanged={handleCallChanged} 
+                                onStarPassChanged={handleStarPassChanged}
+                                onInitialPassChanged={handleInitialCompletedChanged}
+                            />
                         </>
                     )}
                     { userSettings.showLineupControls && (
