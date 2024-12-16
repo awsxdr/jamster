@@ -1,4 +1,4 @@
-import { createContext, PropsWithChildren, useCallback, useContext, useEffect, useState } from "react"
+import { createContext, PropsWithChildren, useCallback, useContext, useEffect, useMemo, useState } from "react"
 import { useHubConnection } from "./SignalRHubConnection";
 import { HubConnection } from "@microsoft/signalr";
 import { useGameApi } from "./GameApiHook";
@@ -15,12 +15,14 @@ type GameStateContextProps = {
     watchState: StateWatch;
     unwatchState: (stateName: string, handle: CallbackHandle) => void;
     connection?: HubConnection;
+    hasConnection: boolean;
 };
 
 const GameStateContext = createContext<GameStateContextProps>({
     stateNotifiers: {},
     watchState: () => { throw new Error('watchState called before context created'); },
     unwatchState: () => { throw new Error('unwatchState called before context created'); },
+    hasConnection: false,
 });
 
 type GameStateContextProviderProps = {
@@ -64,12 +66,22 @@ export const useGameState = <TState,>(stateName: string) => {
     return value;
 }
 
+export const useHasServerConnection = () => {
+    const { hasConnection } = useContext(GameStateContext);
+
+    useEffect(() => {
+        console.log("hasConnection", hasConnection);
+    }, [hasConnection]);
+    
+    return useMemo(() => hasConnection, [hasConnection]);
+}
+
 type CallbackHandle = number;
 
 export const GameStateContextProvider = ({ gameId, children }: PropsWithChildren<GameStateContextProviderProps>) => {
     const [stateNotifiers, setStateNotifiers] = useState<StateNotifierMap>({});
 
-    const connection = useHubConnection(gameId && `game/${gameId}`);
+    const { connection, isConnected } = useHubConnection(gameId && `game/${gameId}`);
 
     const watchState = <TState,>(stateName: string, onStateChange: StateChanged<TState>): CallbackHandle => {
         
@@ -122,8 +134,10 @@ export const GameStateContextProvider = ({ gameId, children }: PropsWithChildren
         connection?.on("StateChanged", notify);
     }, [connection, notify]);
 
+    const hasConnection = isConnected;
+
     return (
-        <GameStateContext.Provider value={{ gameId, stateNotifiers, watchState, unwatchState, connection  }}>
+        <GameStateContext.Provider value={{ gameId, stateNotifiers, watchState, unwatchState, connection, hasConnection  }}>
             { children }
         </GameStateContext.Provider>
     )

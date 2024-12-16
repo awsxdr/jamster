@@ -46,7 +46,7 @@ export const useCurrentGame = () => {
 export const SystemStateContextProvider = ({ children }: PropsWithChildren) => {
     const [currentGameNotifiers, setCurrentGameNotifiers] = useState<CurrentGameChanged[]>([]);
 
-    const connection = useHubConnection(`System`);
+    const { connection } = useHubConnection(`System`);
 
     const watchCurrentGame = (onStateChange: CurrentGameChanged) => {
         setCurrentGameNotifiers(notifiers => [

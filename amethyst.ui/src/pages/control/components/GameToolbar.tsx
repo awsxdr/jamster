@@ -17,9 +17,10 @@ type GameToolbarProps = {
     onCurrentGameIdChanged: (gameId: string) => void;
     selectedGameId?: string;
     onSelectedGameIdChanged: (gameId: string) => void;
+    disabled?: boolean;
 }
 
-export const GameToolbar = ({ games, currentGame, onCurrentGameIdChanged, selectedGameId, onSelectedGameIdChanged }: GameToolbarProps) => {
+export const GameToolbar = ({ games, currentGame, onCurrentGameIdChanged, selectedGameId, onSelectedGameIdChanged, disabled }: GameToolbarProps) => {
 
     const { translate } = useI18n();
     const { isMobile } = useSidebar();
@@ -31,12 +32,12 @@ export const GameToolbar = ({ games, currentGame, onCurrentGameIdChanged, select
                 <MobileSidebarTrigger />
                 { isMobile &&
                     <div className="flex grow justify-end gap-2">
-                        <UserMenu />
-                        <ViewMenu />
-                        <Button size="icon" variant="ghost">
+                        <UserMenu disabled={disabled} />
+                        <ViewMenu disabled={disabled} />
+                        <Button size="icon" variant="ghost" disabled={disabled}>
                             <Settings />
                         </Button>
-                        <Button variant="ghost" className="inline" onClick={() => setShowGameSelect(v => !v)}>
+                        <Button variant="ghost" className="inline" disabled={disabled} onClick={() => setShowGameSelect(v => !v)}>
                             { showGameSelect ? <ChevronUp /> : <ChevronDown /> }
                         </Button>
                     </div>
@@ -50,18 +51,19 @@ export const GameToolbar = ({ games, currentGame, onCurrentGameIdChanged, select
                             currentGame={currentGame} 
                             selectedGameId={selectedGameId} 
                             onSelectedGameIdChanged={onSelectedGameIdChanged} 
+                            disabled={disabled}
                         />
                     </div>
                     <div className="flex grow">
                         <div className="flex flex-wrap bg-card gap-2">
                             <ConfirmMakeCurrentDialog onAccept={() => selectedGameId && onCurrentGameIdChanged(selectedGameId)}>
-                                <Button variant="secondary" disabled={selectedGameId === currentGame?.id}>
+                                <Button variant="secondary" disabled={disabled || selectedGameId === currentGame?.id}>
                                     <Repeat />
                                     <span className="hidden lg:inline">{translate("GameToolbar.MakeCurrent")}</span>
                                 </Button>
                             </ConfirmMakeCurrentDialog>
                             <NewGameDialogTrigger>
-                                <Button variant="creative">
+                                <Button variant="creative" disabled={disabled}>
                                     <SquarePlus />
                                     <span className="hidden lg:inline">{translate("GameToolbar.NewGame")}</span>
                                 </Button>
@@ -69,9 +71,9 @@ export const GameToolbar = ({ games, currentGame, onCurrentGameIdChanged, select
                         </div>
                         { !isMobile &&
                             <div className="flex grow justify-end gap-2">
-                                <UserMenu />
-                                <ViewMenu />
-                                <Button size="icon" variant="ghost">
+                                <UserMenu disabled={disabled} />
+                                <ViewMenu disabled={disabled} />
+                                <Button size="icon" variant="ghost" disabled={disabled}>
                                     <Settings />
                                 </Button>
                             </div>

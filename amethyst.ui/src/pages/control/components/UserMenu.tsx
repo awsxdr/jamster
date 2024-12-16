@@ -3,7 +3,11 @@ import { useI18n, useUserSettings } from "@/hooks";
 import { LogOut, UserRound } from "lucide-react";
 import { LoginDialog, LoginDialogContainer, LoginDialogTrigger } from "./LoginDialog";
 
-export const UserMenu = () => {
+type UserMenuProps = {
+    disabled?: boolean;
+}
+
+export const UserMenu = ({ disabled }: UserMenuProps) => {
 
     const { userName, logout } = useUserSettings();
     const { translate } = useI18n();
@@ -16,7 +20,7 @@ export const UserMenu = () => {
         return (
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <Button variant="ghost">
+                    <Button variant="ghost" disabled={disabled}>
                         <UserRound />
                         <span className="hidden lg:inline">
                             {translate("UserMenu.Welcome").replace("{userName}", userName)}
@@ -29,7 +33,7 @@ export const UserMenu = () => {
                         <DropdownMenuSeparator />
                     </DropdownMenuGroup>
                     <DropdownMenuGroup>
-                        <DropdownMenuItem onClick={handleLogOut}>
+                        <DropdownMenuItem disabled={disabled} onClick={handleLogOut}>
                             <LogOut />
                             {translate("UserMenu.Logout")}
                         </DropdownMenuItem>
@@ -41,7 +45,7 @@ export const UserMenu = () => {
         return (
             <LoginDialogContainer>
                 <LoginDialogTrigger>
-                    <Button variant="secondary">
+                    <Button variant="secondary" disabled={disabled}>
                         <UserRound />
                         {translate("UserMenu.Login")}
                     </Button>

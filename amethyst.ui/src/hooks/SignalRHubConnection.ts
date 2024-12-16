@@ -5,6 +5,7 @@ import { API_URL } from "@/constants";
 export const useHubConnection = (hubPath?: string) => {
 
     const [connection, setConnection] = useState<SignalR.HubConnection>();
+    const [isConnected, setIsConnected] = useState(false);
     const hubUrl = useMemo(() => `${API_URL}/api/Hubs/${hubPath}`, [hubPath]);
 
     const hubConnection = useMemo(() => {
@@ -13,7 +14,7 @@ export const useHubConnection = (hubPath?: string) => {
         if(!hubPath) {
             return;
         }
-
+        
         return new SignalR.HubConnectionBuilder()
             .withUrl(hubUrl, { withCredentials: false })
             .withAutomaticReconnect({ nextRetryDelayInMilliseconds: context => {
@@ -39,11 +40,16 @@ export const useHubConnection = (hubPath?: string) => {
                 await hubConnection.start();
                 console.debug("Hub connected", hubUrl);
                 setConnection(hubConnection);
+                setIsConnected(true);
+
+                hubConnection.onclose(() => setIsConnected(false));
+                hubConnection.onreconnecting(() => setIsConnected(false));
+                hubConnection.onreconnected(() => setIsConnected(true));
             } catch(error) {
                 console.error("Error while starting hub connection", hubUrl, error);
             }
         })();
-    }, [hubConnection, setConnection]);
+    }, [hubConnection, setConnection, setIsConnected]);
 
-    return connection;
+    return { connection, isConnected };
 }

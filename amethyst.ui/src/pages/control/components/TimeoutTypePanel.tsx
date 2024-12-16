@@ -10,6 +10,7 @@ import { useMemo } from "react";
 
 type TimeoutTypePanelProps = {
     gameId?: string;
+    disabled?: boolean;
 }
 
 type CompoundTimeoutType =
@@ -20,7 +21,7 @@ type CompoundTimeoutType =
     | "AwayTeamReview"
     | "Official";
 
-export const TimeoutTypePanel = ({ gameId }: TimeoutTypePanelProps) => {
+export const TimeoutTypePanel = ({ gameId, disabled }: TimeoutTypePanelProps) => {
 
     const { translate } = useI18n();
 
@@ -78,6 +79,7 @@ export const TimeoutTypePanel = ({ gameId }: TimeoutTypePanelProps) => {
                     value={compoundType}
                     toggle
                     rowClassName="justify-evenly"
+                    disabled={disabled}
                     onItemSelected={handleTimeoutSelected}
                     onItemDeselected={handleTimeoutDeselected}
                 />

@@ -41,7 +41,7 @@ export const useGamesList = () => {
 export const GamesListContextProvider = ({ children }: PropsWithChildren) => {
     const [gamesListNotifiers, setGamesListNotifiers] = useState<GamesListChanged[]>([]);
 
-    const connection = useHubConnection('games');
+    const { connection } = useHubConnection('games');
 
     const watchGamesList = (onStateChange: GamesListChanged) => {
         setGamesListNotifiers(notifiers => [

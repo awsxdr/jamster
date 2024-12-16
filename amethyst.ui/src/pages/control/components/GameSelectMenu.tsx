@@ -7,10 +7,11 @@ type GameSelectMenuProps = {
     games: GameInfo[];
     currentGame?: GameInfo;
     selectedGameId?: string;
+    disabled?: boolean;
     onSelectedGameIdChanged: (gameId: string) => void;
 };
 
-export const GameSelectMenu = ({ games, currentGame, selectedGameId, onSelectedGameIdChanged }: GameSelectMenuProps) => {
+export const GameSelectMenu = ({ games, currentGame, selectedGameId, disabled, onSelectedGameIdChanged }: GameSelectMenuProps) => {
 
     const { translate, language } = useI18n();
 
@@ -27,6 +28,7 @@ export const GameSelectMenu = ({ games, currentGame, selectedGameId, onSelectedG
                 onValueChanged={onSelectedGameIdChanged}
                 className="grow w-full sm:w-auto"
                 dropdownClassName="w-[200px] md:w-[250px] lg:w-[400px]"
+                disabled={disabled}
             />
         </div>
     );

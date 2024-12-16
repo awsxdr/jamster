@@ -50,7 +50,7 @@ export const TeamListContextProvider = ({ children }: PropsWithChildren) => {
     const [teamNotifiers, setTeamNotifiers] = useState<StringMap<StringMap<TeamChanged>>>({});
     const [teams, setTeams] = useState<StringMap<Team>>({});
 
-    const connection = useHubConnection('teams');
+    const { connection } = useHubConnection('teams');
 
     const teamApi = useTeamApi();
 
