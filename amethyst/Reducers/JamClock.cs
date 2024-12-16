@@ -9,6 +9,7 @@ public sealed class JamClock(ReducerGameContext gameContext, IEventBus eventBus,
     , IHandlesEvent<JamStarted>
     , IHandlesEvent<JamEnded>
     , IHandlesEvent<TimeoutStarted>
+    , IHandlesEvent<CallMarked>
     , ITickReceiver
 {
     protected override JamClockState DefaultState => new(false, 0, 0, 0);
@@ -74,6 +75,15 @@ public sealed class JamClock(ReducerGameContext gameContext, IEventBus eventBus,
 
         return [];
 
+    }
+
+    public IEnumerable<Event> Handle(CallMarked @event)
+    {
+        var state = GetState();
+
+        if (!@event.Body.Call || !state.IsRunning) return [];
+
+        return [new JamEnded(@event.Tick)];
     }
 }
 

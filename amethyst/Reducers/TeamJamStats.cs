@@ -1,4 +1,5 @@
-﻿using amethyst.Domain;
+﻿using amethyst.DataStores;
+using amethyst.Domain;
 using amethyst.Events;
 using amethyst.Extensions;
 using amethyst.Services;
@@ -14,6 +15,7 @@ public abstract class TeamJamStats(TeamSide teamSide, ReducerGameContext gameCon
     , IHandlesEvent<StarPassMarked>
     , IHandlesEvent<InitialTripCompleted>
     , IHandlesEvent<JamStarted>
+    , IHandlesEvent<JamEnded>
 {
     protected override TeamJamStatsState DefaultState => new(false, false, false, false, false);
 
@@ -27,10 +29,8 @@ public abstract class TeamJamStats(TeamSide teamSide, ReducerGameContext gameCon
         var lead =
             @event.Body switch
             {
-                (TeamSide.Home, _) when teamSide == TeamSide.Home => @event.Body.Lead,
-                (TeamSide.Away, _) when teamSide == TeamSide.Away => @event.Body.Lead,
-                (TeamSide.Home, true) when teamSide == TeamSide.Away => false,
-                (TeamSide.Away, true) when teamSide == TeamSide.Home => false,
+                _ when teamSide == @event.Body.Side => @event.Body.Lead,
+                (_, true) when teamSide != @event.Body.Side => false,
                 _ => state.Lead
             };
 
@@ -46,12 +46,22 @@ public abstract class TeamJamStats(TeamSide teamSide, ReducerGameContext gameCon
         return [];
     });
 
-    public IEnumerable<Event> Handle(CallMarked @event) => @event.HandleIfTeam(teamSide, () =>
+    public IEnumerable<Event> Handle(CallMarked @event)
     {
-        SetState(GetState() with { Called = @event.Body.Call });
+        var state = GetState();
+
+        var call =
+            @event.Body switch
+            {
+                _ when teamSide == @event.Body.Side => @event.Body.Call,
+                (_, true) when teamSide != @event.Body.Side => false,
+                _ => state.Called
+            };
+
+        SetState(state with { Called = call });
 
         return [];
-    });
+    }
 
     public IEnumerable<Event> Handle(StarPassMarked @event) => @event.HandleIfTeam(teamSide, () =>
     {
@@ -70,6 +80,16 @@ public abstract class TeamJamStats(TeamSide teamSide, ReducerGameContext gameCon
     public IEnumerable<Event> Handle(JamStarted @event)
     {
         SetState((TeamJamStatsState) GetDefaultState());
+
+        return [];
+    }
+
+    public IEnumerable<Event> Handle(JamEnded @event)
+    {
+        var state = GetState();
+
+        if (state is { Lead: true, Called: false })
+            return [new CallMarked(@event.Tick, new(teamSide, true))];
 
         return [];
     }

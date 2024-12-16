@@ -1,6 +1,7 @@
 ﻿using amethyst.Domain;
 using amethyst.Events;
 using amethyst.Reducers;
+using amethyst.Services;
 using FluentAssertions;
 
 namespace amethyst.tests.Reducers;
@@ -12,6 +13,7 @@ public class TeamJamStatsUnitTests : ReducerUnitTest<HomeTeamJamStats, TeamJamSt
     [TestCase(true, TeamSide.Home, true, true)]
     [TestCase(true, TeamSide.Home, false, false)]
     [TestCase(true, TeamSide.Away, false, true)]
+    [TestCase(true, TeamSide.Away, true, false)]
     [TestCase(false, TeamSide.Home, false, false)]
     public async Task LeadMarked_UpdatesStateAsExpected(bool initialLead, TeamSide side, bool lead, bool expectedLead)
     {
@@ -20,26 +22,6 @@ public class TeamJamStatsUnitTests : ReducerUnitTest<HomeTeamJamStats, TeamJamSt
         await Subject.Handle(new LeadMarked(0, new(side, lead)));
 
         State.Lead.Should().Be(expectedLead);
-    }
-
-    [Test]
-    public async Task LeadMarked_WhenTrueAndForOpponent_ClearsLead()
-    {
-        State = State with { Lead = true };
-
-        await Subject.Handle(new LeadMarked(0, new(TeamSide.Away, true)));
-
-        State.Lead.Should().Be(false);
-    }
-
-    [Test]
-    public async Task LeadMarked_WhenFalseAndForOpponent_DoesNotClearLead()
-    {
-        State = State with { Lead = true };
-
-        await Subject.Handle(new LeadMarked(0, new(TeamSide.Away, false)));
-
-        State.Lead.Should().Be(true);
     }
 
     [TestCase(false, TeamSide.Home, true, true)]
@@ -62,6 +44,7 @@ public class TeamJamStatsUnitTests : ReducerUnitTest<HomeTeamJamStats, TeamJamSt
     [TestCase(true, TeamSide.Home, true, true)]
     [TestCase(true, TeamSide.Home, false, false)]
     [TestCase(true, TeamSide.Away, false, true)]
+    [TestCase(true, TeamSide.Away, true, false)]
     [TestCase(false, TeamSide.Home, false, false)]
     public async Task CallMarked_UpdatesStateAsExpected(bool initialCall, TeamSide side, bool call, bool expectedCall)
     {
@@ -102,6 +85,7 @@ public class TeamJamStatsUnitTests : ReducerUnitTest<HomeTeamJamStats, TeamJamSt
         State.HasCompletedInitial.Should().Be(expectedCompleted);
     }
 
+
     [Test]
     public async Task JamStarted_ResetsJamStats()
     {
@@ -110,5 +94,28 @@ public class TeamJamStatsUnitTests : ReducerUnitTest<HomeTeamJamStats, TeamJamSt
         await Subject.Handle(new JamStarted(0));
 
         State.Should().Be(Subject.GetDefaultState());
+    }
+
+    [Test]
+    public async Task JamEnded_WhenLead_MarksJammerAsCall()
+    {
+        State = new(true, false, false, false, false);
+
+        var implicitEvents = await Subject.Handle(new JamEnded(0));
+
+        implicitEvents
+            .OfType<CallMarked>()
+            .Should().HaveCount(1)
+            .And.Subject.Single().Body.Should().Be(new CallMarkedBody(TeamSide.Home, true));
+    }
+
+    [Test]
+    public async Task JamEnded_WhenNotLead_DoesNotMarkJammerAsCall()
+    {
+        State = new(false, false, false, false, false);
+
+        var implicitEvents = await Subject.Handle(new JamEnded(0));
+
+        implicitEvents.Where(e => e is CallMarked { Body.TeamSide: TeamSide.Home }).Should().BeEmpty();
     }
 }

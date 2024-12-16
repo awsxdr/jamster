@@ -96,12 +96,18 @@ public static class TestGameEventsSource
         .Event<SkaterOnTrack>(1).WithBody(new SkaterOnTrackBody(TeamSide.Home, HomeTeam.Roster[6].Number, SkaterPosition.Pivot))
         .Event<SkaterOnTrack>(1).WithBody(new SkaterOnTrackBody(TeamSide.Away, AwayTeam.Roster[2].Number, SkaterPosition.Jammer))
         .Event<SkaterOnTrack>(1).WithBody(new SkaterOnTrackBody(TeamSide.Away, AwayTeam.Roster[7].Number, SkaterPosition.Pivot))
-        .Event<JamStarted>(120 + 30) // Jam that runs for full duration
         .Validate(
             ("Home", new TeamTimeoutsState(3, ReviewStatus.Unused, TimeoutInUse.None)),
             ("Away", new TeamTimeoutsState(3, ReviewStatus.Unused, TimeoutInUse.None)),
             ("Home", new JamLineupState(HomeTeam.Roster[3].Number, HomeTeam.Roster[6].Number)),
             ("Away", new JamLineupState(AwayTeam.Roster[2].Number, AwayTeam.Roster[7].Number))
+        )
+        .Event<JamStarted>(120 + 30) // Jam that runs for full duration
+        .Validate(
+            ("Home", new TeamTimeoutsState(3, ReviewStatus.Unused, TimeoutInUse.None)),
+            ("Away", new TeamTimeoutsState(3, ReviewStatus.Unused, TimeoutInUse.None)),
+            ("Home", new JamLineupState(null, null)),
+            ("Away", new JamLineupState(null, null))
         )
         .Wait(0)
         .Event<JamStarted>(57) // Jam that is called

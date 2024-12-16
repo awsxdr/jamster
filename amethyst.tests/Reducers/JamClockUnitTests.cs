@@ -1,4 +1,5 @@
 ﻿using amethyst.DataStores;
+using amethyst.Domain;
 using amethyst.Events;
 using amethyst.Reducers;
 using amethyst.Services;
@@ -95,6 +96,38 @@ public class JamClockUnitTests : ReducerUnitTest<JamClock, JamClockState>
         await Subject.Handle(new TimeoutStarted(secondRandomTick));
 
         State.IsRunning.Should().BeFalse();
+    }
+
+    [Test]
+    public async Task CallMarked_WhenJamRunning_AndCallTrue_EndsJam()
+    {
+        State = new(true, 0, 10000, 10);
+
+        var implicitEvents = await Subject.Handle(new CallMarked(20000, new(TeamSide.Home, true)));
+
+        implicitEvents.Should().HaveCount(1)
+            .And.Subject.Single().Should().BeOfType<JamEnded>()
+            .Which.Tick.Should().Be(20000);
+    }
+
+    [Test]
+    public async Task CallMarked_WhenJamNotRunning_DoesNotEndJam()
+    {
+        State = new(false, 0, 10000, 10);
+
+        var implicitEvents = await Subject.Handle(new CallMarked(20000, new(TeamSide.Home, true)));
+
+        implicitEvents.Should().BeEmpty();
+    }
+
+    [Test]
+    public async Task CallMarked_WhenJamRunning_AndCallFalse_DoesNotEndJam()
+    {
+        State = new(true, 0, 10000, 10);
+
+        var implicitEvents = await Subject.Handle(new CallMarked(20000, new(TeamSide.Home, false)));
+
+        implicitEvents.Should().BeEmpty();
     }
 
     [Test]
