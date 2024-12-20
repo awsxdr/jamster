@@ -14,8 +14,8 @@ export const TeamScore = ({ side, textClassName }: TeamScoreProps) => {
     const score = useTeamScoreState(side);
 
     return (
-        <ScoreboardComponent className="grow-[8]">
-            <ScaledText text={(score?.score ?? 0).toString()} className={cn("font-bold flex justify-center items-center h-full m-2 overflow-hidden", textClassName)} />
+        <ScoreboardComponent className="grow-[8] p-2">
+            <ScaledText text={(score?.score ?? 0).toString()} className={cn("font-bold flex justify-center items-center h-full overflow-hidden", textClassName)} />
         </ScoreboardComponent>
     );
 }

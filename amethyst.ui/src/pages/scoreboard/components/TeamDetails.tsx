@@ -12,9 +12,9 @@ type TeamDetailsProps = {
 
 export const TeamDetails = ({ side }: TeamDetailsProps) => {
     return (
-        <div className={cn("flex flex-col grow w-1/2", side === TeamSide.Home ? "ml-5" : "mr-5")}>
-            <div className="h-[40%] mb-5">
-                <TeamName side={side} textClassName={side === TeamSide.Home ? "" : "text-black bg-white"} />
+        <div className="flex flex-col grow w-1/2 gap-5">
+            <div className="h-[40%]">
+                <TeamName side={side} />
             </div>
             <div className={cn("flex h-[calc(60%-1.4rem)] gap-5", side === TeamSide.Home ? "flex-row" : "flex-row-reverse")}>
                 <TeamTimeouts side={side} />

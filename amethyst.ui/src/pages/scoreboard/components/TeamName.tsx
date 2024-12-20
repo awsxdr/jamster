@@ -30,15 +30,17 @@ export const TeamName = ({ side, textClassName }: TeamScoreProps) => {
         [team]);
 
     return (
-        <>
+        <div 
+            className="flex justify-center h-full p-5 overflow-hidden rounded-3xl"
+            style={{ color: foreground, backgroundColor: background }}
+        >
             <ScaledText 
                 text={teamName || ''} 
                 className={cn(
-                    "flex justify-center items-center text-center font-bold h-full m-2 overflow-hidden",
+                    "flex items-center text-center font-bold h-full",
                     textClassName
                 )} 
-                style={{ color: foreground, backgroundColor: background }}
             />
-        </>
+        </div>
     );
 }
