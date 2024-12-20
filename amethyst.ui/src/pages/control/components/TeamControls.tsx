@@ -11,10 +11,11 @@ import { useHotkeys } from "react-hotkeys-hook";
 import { JamScore } from "./JamScore";
 import { SkaterOnTrack, SkaterPosition } from "@/types/events/JamLineup";
 import { useUserSettings } from "@/hooks/UserSettings";
-import { TripStats } from "./TripStats";
+import { JamStats } from "./JamStats";
 import { TeamLineup } from "./TeamLineup";
 import { SeparatedCollection } from "@/components/SeparatedCollection";
 import { CallMarked, InitialTripCompleted, LeadMarked, LostMarked, StarPassMarked } from "@/types/events/JamStats";
+import { LastTripDeleted } from "@/types/events";
 
 type TeamControlsProps = {
     gameId?: string;
@@ -63,8 +64,13 @@ export const TeamControls = ({ gameId, side, disabled }: TeamControlsProps) => {
         if(disabled) {
             return;
         }
-        const scoreDelta = score - (tripScore?.score ?? 0);
-        sendEventIfIdSet(new ScoreModifiedRelative({ teamSide: side, value: scoreDelta }));
+
+        if (score === -1) { // -1 signals clearing the trip score
+            sendEventIfIdSet(new LastTripDeleted(side));
+        } else {
+            const scoreDelta = score - (tripScore?.score ?? 0);
+            sendEventIfIdSet(new ScoreModifiedRelative({ teamSide: side, value: scoreDelta }));
+        }
     }
 
     const handleLineupSelected = (position: SkaterPosition, number: string | null) =>
@@ -91,10 +97,12 @@ export const TeamControls = ({ gameId, side, disabled }: TeamControlsProps) => {
     }
 
     const tripShortcutKeys: string[] = [];
+    tripShortcutKeys[0] = side === TeamSide.Home ? "🠅a" : "🠅'";
     tripShortcutKeys[4] = side === TeamSide.Home ? "🠅s" : "🠅#";
 
     useHotkeys(side === TeamSide.Home ? 'a' : '\'', decrementScore, { preventDefault: true });
     useHotkeys(side === TeamSide.Home ? 's' : '#', incrementScore, { preventDefault: true });
+    useHotkeys(side === TeamSide.Home ? 'shift+a' : 'shift+quote', () => setTripScore(0), { preventDefault: true });
     useHotkeys(side === TeamSide.Home ? 'shift+s' : 'shift+#', () => setTripScore(4), { preventDefault: true });
 
     return (
@@ -112,12 +120,12 @@ export const TeamControls = ({ gameId, side, disabled }: TeamControlsProps) => {
                                     <Button onClick={incrementScore} variant="secondary" disabled={disabled} className="text-md lg:text-xl" >+1 [{side === TeamSide.Home ? 's' : '#'}]</Button>
                                 </div>
                             </div>
-                            <TripScore tripScore={tripScore?.score ?? 0} disabled={disabled} scoreShortcutKeys={tripShortcutKeys} onTripScoreSet={setTripScore} />
+                            <TripScore tripScore={tripScore?.score ?? -1} disabled={disabled} scoreShortcutKeys={tripShortcutKeys} onTripScoreSet={setTripScore} />
                         </>
                     )}
                     { userSettings.showStatsControls && (
                         <>
-                            <TripStats 
+                            <JamStats 
                                 side={side} 
                                 disabled={disabled} 
                                 onLeadChanged={handleLeadChanged} 
