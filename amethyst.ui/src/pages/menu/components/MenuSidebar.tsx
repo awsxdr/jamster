@@ -1,6 +1,5 @@
-import { Button } from "@/components/ui/button";
-import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from "@components/ui/sidebar"
-import { ChevronLeft, ChevronRight, Keyboard, List, TvMinimal, Users } from "lucide-react"
+import { Button, Collapsible, CollapsibleContent, CollapsibleTrigger, Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from "@components/ui"
+import { Captions, ChartNoAxesCombined, ChevronDown, ChevronLeft, ChevronRight, Keyboard, List, MonitorCog, TvMinimal, Users } from "lucide-react"
 import { ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { LanguageMenu } from "./LanguageMenu";
@@ -13,35 +12,77 @@ type SidebarItem = {
     icon?: ReactNode;
 };
 
-type SidebarItemList = {
-    [group: string]: SidebarItem[];
+type SidebarGroup = {
+    collapsible?: boolean;
+    defaultOpen?: boolean;
+    items: SidebarItem[];
+}
+
+type SidebarGroupList = {
+    [group: string]: SidebarGroup;
 };
 
-const sidebarItems: SidebarItemList = {
-    "MenuSidebar.MainGroup": [
-        {
-            title: "MenuSidebar.ScoreboardDisplay",
-            href: "/scoreboard",
-            icon: <TvMinimal />
-        },
-        {
-            title: "MenuSidebar.ScoreboardControl",
-            href: "/control",
-            icon: <Keyboard />
-        }
-    ],
-    "MenuSidebar.DataGroup": [
-        {
-            title: "MenuSidebar.Teams",
-            href: "/teams",
-            icon: <Users />
-        },
-        {
-            title: "MenuSidebar.Games",
-            href: "/games",
-            icon: <List />
-        }
-    ],
+const sidebarItems: SidebarGroupList = {
+    "MenuSidebar.MainGroup": {
+        items: [
+            {
+                title: "MenuSidebar.ScoreboardDisplay",
+                href: "/scoreboard",
+                icon: <TvMinimal />
+            },
+            {
+                title: "MenuSidebar.ScoreboardControl",
+                href: "/control",
+                icon: <Keyboard />
+            }
+        ],
+    },
+    "MenuSidebar.DataGroup": {
+        collapsible: false,
+        defaultOpen: true,
+        items: [
+            {
+                title: "MenuSidebar.Teams",
+                href: "/teams",
+                icon: <Users />
+            },
+            {
+                title: "MenuSidebar.Games",
+                href: "/games",
+                icon: <List />
+            }
+        ],
+    },
+    "MenuSidebar.ScreensGroup": {
+        collapsible: false,
+        items: [
+            {
+                title: "MenuSidebar.Overlay",
+                href: "/overlay",
+                icon: <Captions />
+            },
+            {
+                title: "MenuSidebar.Stats",
+                href: "/stats",
+                icon: <ChartNoAxesCombined />
+            },
+        ],
+    },
+    "MenuSidebar.SettingsGroup": {
+        collapsible: false,
+        items: [
+            {
+                title: "MenuSidebar.DisplaySettings",
+                href: "/settings/display",
+                icon: <MonitorCog />
+            },
+            {
+                title: "MenuSidebar.OverlaySettings",
+                href: "/settings/overlay",
+                icon: <Captions />
+            }
+        ],
+    },
 }
 
 export const MenuSidebar = () => {
@@ -62,27 +103,51 @@ export const MenuSidebar = () => {
             <SidebarContent>
                 {
                     Object.keys(sidebarItems).map(groupName => {
-                        const items = sidebarItems[groupName];
+                        const group = sidebarItems[groupName];
 
-                        return (
-                            <SidebarGroup key={groupName}>
-                                <SidebarGroupLabel>{translate(groupName)}</SidebarGroupLabel>
-                                <SidebarGroupContent>
-                                    <SidebarMenu>
-                                        {items.map(item =>
-                                            <SidebarMenuItem key={item.title}>
-                                                <SidebarMenuButton asChild isActive={location.pathname.startsWith(item.href)}>
-                                                    <Link to={item.href}>
-                                                        {item.icon}
-                                                        <span>{translate(item.title)}</span>
-                                                    </Link>
-                                                </SidebarMenuButton>
-                                            </SidebarMenuItem>
-                                        )}
-                                    </SidebarMenu>
-                                </SidebarGroupContent>
-                            </SidebarGroup>
+                        const GroupContent = () => (
+                            <SidebarGroupContent>
+                                <SidebarMenu>
+                                    {group.items.map(item =>
+                                        <SidebarMenuItem key={item.title}>
+                                            <SidebarMenuButton asChild isActive={location.pathname.startsWith(item.href)}>
+                                                <Link to={item.href}>
+                                                    {item.icon}
+                                                    <span>{translate(item.title)}</span>
+                                                </Link>
+                                            </SidebarMenuButton>
+                                        </SidebarMenuItem>
+                                    )}
+                                </SidebarMenu>
+                            </SidebarGroupContent>
                         );
+
+                        if(!!group.collapsible) {
+                            return (
+                                <Collapsible defaultOpen={group.defaultOpen} className="group/collapsible">
+                                    <SidebarGroup key={groupName}>
+                                        <SidebarGroupLabel asChild>
+                                            <CollapsibleTrigger>
+                                                {translate(groupName)}
+                                                <ChevronDown className="ml-auto transition-transform group-data-[state=open]/collapsible:rotate-180" />
+                                            </CollapsibleTrigger>
+                                        </SidebarGroupLabel>
+                                        <CollapsibleContent>
+                                            <GroupContent />
+                                        </CollapsibleContent>
+                                    </SidebarGroup>
+                                </Collapsible>
+                            );
+                        } else {
+                            return (
+                                <SidebarGroup key={groupName}>
+                                    <SidebarGroupLabel>
+                                        {translate(groupName)}
+                                    </SidebarGroupLabel>
+                                    <GroupContent />
+                                </SidebarGroup>
+                            );
+                        }
                     })
                 }
            </SidebarContent>
