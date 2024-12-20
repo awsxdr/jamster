@@ -1,5 +1,4 @@
-﻿using amethyst.DataStores;
-using amethyst.Domain;
+﻿using amethyst.Domain;
 using amethyst.Events;
 using amethyst.Extensions;
 using amethyst.Services;
@@ -16,6 +15,7 @@ public abstract class TeamJamStats(TeamSide teamSide, ReducerGameContext gameCon
     , IHandlesEvent<InitialTripCompleted>
     , IHandlesEvent<JamStarted>
     , IHandlesEvent<JamEnded>
+    , IHandlesEvent<ScoreModifiedRelative>
 {
     protected override TeamJamStatsState DefaultState => new(false, false, false, false, false);
 
@@ -36,7 +36,9 @@ public abstract class TeamJamStats(TeamSide teamSide, ReducerGameContext gameCon
 
         SetState(state with { Lead = lead });
 
-        return [];
+        if (state.HasCompletedInitial) return [];
+
+        return [new InitialTripCompleted(@event.Tick, new(teamSide, true))];
     }
 
     public IEnumerable<Event> Handle(LostMarked @event) => @event.HandleIfTeam(teamSide, () =>
@@ -93,6 +95,15 @@ public abstract class TeamJamStats(TeamSide teamSide, ReducerGameContext gameCon
 
         return [];
     }
+
+    public IEnumerable<Event> Handle(ScoreModifiedRelative @event) => @event.HandleIfTeam(teamSide, () =>
+    {
+        var state = GetState();
+
+        if (state.HasCompletedInitial) return [];
+
+        return [new InitialTripCompleted(@event.Tick, new(teamSide, true))];
+    });
 }
 
 public record TeamJamStatsState(bool Lead, bool Lost, bool Called, bool StarPass, bool HasCompletedInitial);

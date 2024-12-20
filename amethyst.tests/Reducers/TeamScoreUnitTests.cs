@@ -33,4 +33,19 @@ public class TeamScoreUnitTests : ReducerUnitTest<HomeTeamScore, TeamScoreState>
 
         State.Should().Be(new TeamScoreState(expectedScore, expectedJamScore));
     }
+
+    [TestCase(10, 5, TeamSide.Home, 3, 7, 2)]
+    [TestCase(3, 3, TeamSide.Home, 4, 0, 0)]
+    [TestCase(10, 5, TeamSide.Home, null, 10, 5)]
+    [TestCase(10, 5, TeamSide.Away, 4, 10, 5)]
+    [TestCase(10, 2, TeamSide.Home, 4, 6, 0)]
+    public async Task LastTripDeleted_WhenTeamMatches_RemovesPointsFromTrip(int totalScore, int jamScore, TeamSide teamSide, int? tripScore, int expectedTotalScore, int expectedJamScore)
+    {
+        State = new(totalScore, jamScore);
+        MockKeyedState("Home", new TripScoreState(tripScore, 0));
+
+        await Subject.Handle(new LastTripDeleted(0, new(teamSide)));
+
+        State.Should().Be(new TeamScoreState(expectedTotalScore, expectedJamScore));
+    }
 }

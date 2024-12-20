@@ -11,6 +11,8 @@ public abstract class TeamScore(TeamSide teamSide, ReducerGameContext gameContex
     , IHandlesEvent<ScoreModifiedRelative>
     , IHandlesEvent<ScoreSet>
     , IHandlesEvent<JamStarted>
+    , IHandlesEvent<LastTripDeleted>
+    , IDependsOnState<TripScoreState>
 {
     protected override TeamScoreState DefaultState => new(0, 0);
 
@@ -46,10 +48,26 @@ public abstract class TeamScore(TeamSide teamSide, ReducerGameContext gameContex
 
     public IEnumerable<Event> Handle(JamStarted _)
     {
+        logger.LogDebug("Settings jam score to 0 due to jam start");
+
         SetState(GetState() with { JamScore = 0 });
 
         return [];
     }
+
+    public IEnumerable<Event> Handle(LastTripDeleted @event) => @event.HandleIfTeam(teamSide, () =>
+    {
+        var tripScore = GetCachedKeyedState<TripScoreState>(teamSide.ToString());
+
+        var state = GetState();
+
+        var newScoreValue = Math.Max(0, state.Score - (tripScore.Score ?? 0));
+        var newJamScoreValue = Math.Max(0, state.JamScore - (tripScore.Score ?? 0));
+
+        SetState(new (newScoreValue, newJamScoreValue));
+
+        return [];
+    });
 }
 
 public record TeamScoreState(int Score, int JamScore);

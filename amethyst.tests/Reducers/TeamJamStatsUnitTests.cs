@@ -24,6 +24,17 @@ public class TeamJamStatsUnitTests : ReducerUnitTest<HomeTeamJamStats, TeamJamSt
         State.Lead.Should().Be(expectedLead);
     }
 
+    [Test]
+    public async Task LeadMarked_MarksInitialTrip()
+    {
+        var implicitEvents = await Subject.Handle(new LeadMarked(0, new LeadMarkedBody(TeamSide.Home, true)));
+
+        implicitEvents
+            .OfType<InitialTripCompleted>()
+            .Should().HaveCount(1)
+            .And.ContainSingle(e => e.Body == new InitialTripCompletedBody(TeamSide.Home, true));
+    }
+
     [TestCase(false, TeamSide.Home, true, true)]
     [TestCase(false, TeamSide.Away, true, false)]
     [TestCase(true, TeamSide.Home, true, true)]
@@ -85,7 +96,6 @@ public class TeamJamStatsUnitTests : ReducerUnitTest<HomeTeamJamStats, TeamJamSt
         State.HasCompletedInitial.Should().Be(expectedCompleted);
     }
 
-
     [Test]
     public async Task JamStarted_ResetsJamStats()
     {
@@ -117,5 +127,16 @@ public class TeamJamStatsUnitTests : ReducerUnitTest<HomeTeamJamStats, TeamJamSt
         var implicitEvents = await Subject.Handle(new JamEnded(0));
 
         implicitEvents.Where(e => e is CallMarked { Body.TeamSide: TeamSide.Home }).Should().BeEmpty();
+    }
+
+    [Test]
+    public async Task ScoreModifiedRelative_WhenTeamMatches_MarksInitialCompleted()
+    {
+        var implicitEvents = await Subject.Handle(new ScoreModifiedRelative(0, new(TeamSide.Home, 4)));
+
+        implicitEvents
+            .OfType<InitialTripCompleted>()
+            .Should().HaveCount(1)
+            .And.ContainSingle(e => e.Body == new InitialTripCompletedBody(TeamSide.Home, true));
     }
 }

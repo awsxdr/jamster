@@ -23,15 +23,15 @@ public static class TestGameEventsSource
         .Validate(
             ("Home", new TeamScoreState(0, 0)),
             ("Away", new TeamScoreState(0, 0)),
-            ("Home", new TripScoreState(0, 0)),
-            ("Away", new TripScoreState(0, 0))
+            ("Home", new TripScoreState(null, 0)),
+            ("Away", new TripScoreState(null, 0))
         )
         .Event<ScoreModifiedRelative>(0).WithBody(new ScoreModifiedRelativeBody(TeamSide.Home, 4))
         .Validate(tick => [
             ("Home", new TeamScoreState(4, 4)),
             ("Away", new TeamScoreState(0, 0)),
             ("Home", new TripScoreState(4, tick)),
-            ("Away", new TripScoreState(0, 0))
+            ("Away", new TripScoreState(null, 0))
         ])
         .Wait(2)
         .Event<ScoreModifiedRelative>(0).WithBody(new ScoreModifiedRelativeBody(TeamSide.Away, 4))
@@ -45,15 +45,15 @@ public static class TestGameEventsSource
         .Validate(tick => [
             ("Home", new TeamScoreState(4, 4)),
             ("Away", new TeamScoreState(4, 4)),
-            ("Home", new TripScoreState(0, tick - 1000)),
+            ("Home", new TripScoreState(null, tick - 1000)),
             ("Away", new TripScoreState(4, tick - 2000))
         ])
         .Wait(2)
         .Validate(tick => [
             ("Home", new TeamScoreState(4, 4)),
             ("Away", new TeamScoreState(4, 4)),
-            ("Home", new TripScoreState(0, tick - 3000)),
-            ("Away", new TripScoreState(0, tick - 1000))
+            ("Home", new TripScoreState(null, tick - 3000)),
+            ("Away", new TripScoreState(null, tick - 1000))
         ])
         .Wait(15)
         .Event<JamEnded>(2)

@@ -173,6 +173,15 @@ public abstract class ControllerIntegrationTest
         return connection;
     }
 
+    protected async Task Wait(Task task, TimeSpan? delay = null) =>
+        await await Task.WhenAny(
+            task,
+            Task.Run(async () =>
+            {
+                await Task.Delay(delay ?? TimeSpan.FromSeconds(4));
+                throw new TimeoutException();
+            }));
+
     protected async Task<TResult> Wait<TResult>(Task<TResult> task, TimeSpan? delay = null) =>
         await await Task.WhenAny(
             task,

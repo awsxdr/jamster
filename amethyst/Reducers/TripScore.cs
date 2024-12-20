@@ -11,10 +11,11 @@ public abstract class TripScore(TeamSide teamSide, ReducerGameContext context, I
     , IHandlesEvent<ScoreModifiedRelative>
     , IHandlesEvent<ScoreSet>
     , IHandlesEvent<JamEnded>
+    , IHandlesEvent<LastTripDeleted>
     , IDependsOnState<JamClockState>
     , ITickReceiver
 {
-    protected override TripScoreState DefaultState => new(0, 0);
+    protected override TripScoreState DefaultState => new(null, 0);
 
     public static readonly Tick TripScoreResetTimeInTicks = 3000;
 
@@ -31,7 +32,7 @@ public abstract class TripScore(TeamSide teamSide, ReducerGameContext context, I
         SetState(new(
             Math.Min(4, Math.Max(0,
                 keepCurrentValue
-                ? state.Score + @event.Body.Value
+                ? (state.Score ?? 0) + @event.Body.Value
                 : @event.Body.Value)),
             @event.Tick
         ));
@@ -43,7 +44,7 @@ public abstract class TripScore(TeamSide teamSide, ReducerGameContext context, I
     {
         logger.LogDebug("Resetting trip score due to absolute score being set");
 
-        SetState(new(0, @event.Tick));
+        SetState(new(null, @event.Tick));
 
         return [];
     });
@@ -52,15 +53,24 @@ public abstract class TripScore(TeamSide teamSide, ReducerGameContext context, I
     {
         logger.LogDebug("Resetting trip score due to jam end");
 
-        SetState(new (0, @event.Tick));
+        SetState(new (null, @event.Tick));
 
         return [];
     }
 
+    public IEnumerable<Event> Handle(LastTripDeleted @event) => @event.HandleIfTeam(teamSide, () =>
+    {
+        logger.LogDebug("Resetting trip score due to trip deleted");
+
+        SetState(new(null, @event.Tick));
+
+        return [];
+    });
+
     public IEnumerable<Event> Tick(Tick tick)
     {
         var state = GetState();
-        if (state.Score == 0) return [];
+        if (state.Score == null) return [];
 
         var jamClock = GetState<JamClockState>();
         if (!jamClock.IsRunning) return [];
@@ -69,13 +79,13 @@ public abstract class TripScore(TeamSide teamSide, ReducerGameContext context, I
 
         logger.LogDebug("Resetting trip score due to trip time expiring");
 
-        SetState(new (Score: 0, LastChangeTick: state.LastChangeTick + TripScoreResetTimeInTicks));
+        SetState(new (Score: null, LastChangeTick: state.LastChangeTick + TripScoreResetTimeInTicks));
 
         return [];
     }
 }
 
-public sealed record TripScoreState(int Score, Tick LastChangeTick);
+public sealed record TripScoreState(int? Score, Tick LastChangeTick);
 
 public sealed class HomeTripScore(ReducerGameContext context, ILogger<HomeTripScore> logger) : TripScore(TeamSide.Home, context, logger);
 public sealed class AwayTripScore(ReducerGameContext context, ILogger<AwayTripScore> logger) : TripScore(TeamSide.Away, context, logger);

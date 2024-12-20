@@ -12,7 +12,8 @@ public class TripScoreUnitTests : ReducerUnitTest<HomeTripScore, TripScoreState>
     [TestCase(1, 3, 8000, 10000, TeamSide.Away, 1, 8000)]
     [TestCase(2, -3, 8000, 10000, TeamSide.Home, 0, 10000)]
     [TestCase(2, 3, 8000, 10000, TeamSide.Home, 4, 10000)]
-    public async Task ScoreModifiedRelative_WhenJamRunning_SetsTripScoreAsExpected(int startScore, int value, long lastUpdateTick, long eventTick, TeamSide teamSide, int expectedScore, long expectedTick)
+    [TestCase(null, 0, 0, 1000, TeamSide.Home, 0, 1000)]
+    public async Task ScoreModifiedRelative_WhenJamRunning_SetsTripScoreAsExpected(int? startScore, int value, long lastUpdateTick, long eventTick, TeamSide teamSide, int expectedScore, long expectedTick)
     {
         State = new(startScore, lastUpdateTick);
         MockState(new JamClockState(true, 0, 0, 0));
@@ -35,14 +36,14 @@ public class TripScoreUnitTests : ReducerUnitTest<HomeTripScore, TripScoreState>
     }
 
     [Test]
-    public async Task ScoreSet_SetsTripScoreTo0()
+    public async Task ScoreSet_SetsTripScoreToNull()
     {
         State = new(3, 0);
         MockState(new JamClockState(true, 0, 0, 0));
 
         await Subject.Handle(new ScoreSet(1000, new(TeamSide.Home, 20)));
 
-        State.Score.Should().Be(0);
+        State.Score.Should().Be(null);
         State.LastChangeTick.Should().Be(1000);
     }
 
@@ -66,8 +67,32 @@ public class TripScoreUnitTests : ReducerUnitTest<HomeTripScore, TripScoreState>
 
         await Subject.Handle(new JamEnded(1000));
 
-        State.Score.Should().Be(0);
+        State.Score.Should().Be(null);
         State.LastChangeTick.Should().Be(1000);
+    }
+
+    [Test]
+    public async Task LastTripDeleted_WhenTeamMatches_ClearsTripScore()
+    {
+        State = new(2, 0);
+        MockState(new JamClockState(true, 0, 0, 0));
+
+        await Subject.Handle(new LastTripDeleted(0, new(TeamSide.Home)));
+
+        State.Score.Should().Be(null);
+    }
+
+    [Test]
+    public async Task LastTripDeleted_WhenTeamDoesNotMatch_DoesNotChangeState()
+    {
+        State = new(2, 0);
+        MockState(new JamClockState(true, 0, 0, 0));
+
+        var originalState = State;
+
+        await Subject.Handle(new LastTripDeleted(1000, new(TeamSide.Away)));
+
+        State.Should().Be(originalState);
     }
 
     [Test]
@@ -83,7 +108,7 @@ public class TripScoreUnitTests : ReducerUnitTest<HomeTripScore, TripScoreState>
 
         await Tick(TripScore.TripScoreResetTimeInTicks);
 
-        State.Score.Should().Be(0);
+        State.Score.Should().Be(null);
         State.LastChangeTick.Should().Be(TripScore.TripScoreResetTimeInTicks);
     }
 
@@ -102,12 +127,13 @@ public class TripScoreUnitTests : ReducerUnitTest<HomeTripScore, TripScoreState>
     }
 
     [Test]
-    public async Task Tick_WhenTripScoreIs0_DoesNotUpdateState()
+    public async Task Tick_WhenJamRunning_AndTripScoreClear_DoesNotChangeState()
     {
-        State = new(0, 123);
+        State = new(null, 0);
+        MockState(new JamClockState(true, 0, 0, 0));
 
-        await Tick(TripScore.TripScoreResetTimeInTicks + State.LastChangeTick);
+        await Tick(TripScore.TripScoreResetTimeInTicks + 1);
 
-        State.LastChangeTick.Should().Be(123);
+        State.LastChangeTick.Should().Be(0);
     }
 }
