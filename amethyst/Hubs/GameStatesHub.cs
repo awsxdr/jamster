@@ -25,7 +25,9 @@ public class GameStatesNotifier(IGameDiscoveryService gameDiscoveryService, IHub
                 stateName,
                 async state =>
                 {
-                    await hubContext.Clients.Group($"{gameId}_{stateName}").SendAsync("StateChanged", stateName, state);
+                    var group = hubContext.Clients.Group($"{gameId}_{stateName}");
+                    
+                    await group.SendAsync("StateChanged", stateName, state);
                 });
         }
 
@@ -55,6 +57,13 @@ public class GameStatesHub(
         await Groups.AddToGroupAsync(Context.ConnectionId, $"{gameId}_{stateName}");
 
         notifier.WatchStateName(gameId, stateName);
+    }
+
+    public async Task UnwatchState(string stateName)
+    {
+        var gameId = GetGameId();
+
+        await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"{gameId}_{stateName}");
     }
 
     private Guid GetGameId()

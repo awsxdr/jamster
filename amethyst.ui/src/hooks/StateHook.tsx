@@ -69,10 +69,6 @@ export const useGameState = <TState,>(stateName: string) => {
 export const useHasServerConnection = () => {
     const { hasConnection } = useContext(GameStateContext);
 
-    useEffect(() => {
-        console.log("hasConnection", hasConnection);
-    }, [hasConnection]);
-    
     return useMemo(() => hasConnection, [hasConnection]);
 }
 
@@ -81,7 +77,15 @@ type CallbackHandle = number;
 export const GameStateContextProvider = ({ gameId, children }: PropsWithChildren<GameStateContextProviderProps>) => {
     const [stateNotifiers, setStateNotifiers] = useState<StateNotifierMap>({});
 
-    const { connection, isConnected } = useHubConnection(gameId && `game/${gameId}`);
+    const handleConnectionDisconnect = async () => {
+        if(!connection) return;
+
+        Object.keys(stateNotifiers).forEach(stateName => {
+            connection.invoke("UnwatchState", stateName);
+        });
+    }
+
+    const { connection, isConnected } = useHubConnection(gameId && `game/${gameId}`, handleConnectionDisconnect);
 
     const watchState = <TState,>(stateName: string, onStateChange: StateChanged<TState>): CallbackHandle => {
         
@@ -100,6 +104,11 @@ export const GameStateContextProvider = ({ gameId, children }: PropsWithChildren
 
     const unwatchState = (stateName: string, handle: CallbackHandle) => {
         setStateNotifiers(sn => {
+
+            if (!sn[stateName]?.[handle]) {
+                console.warn("Attempt to unwatch state with invalid handle", handle);
+            }
+
             const { [handle]: _, ...newNotifier } = sn[stateName] ?? {};
             return {
                 ...sn,
@@ -114,7 +123,7 @@ export const GameStateContextProvider = ({ gameId, children }: PropsWithChildren
         }
 
         Object.keys(stateNotifiers).forEach(stateName => {
-            connection?.invoke("WatchState", stateName);
+            connection!.invoke("WatchState", stateName);
         });
     }, [connection, stateNotifiers]);
 
@@ -128,7 +137,7 @@ export const GameStateContextProvider = ({ gameId, children }: PropsWithChildren
 
     const notify = useCallback((stateName: string, state: object) => {
         Object.values(stateNotifiers[stateName])?.forEach(n => n(state));
-    }, [stateNotifiers]);
+    }, [gameId, stateNotifiers]);
 
     useEffect(() => {
         connection?.on("StateChanged", notify);

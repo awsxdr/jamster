@@ -2,7 +2,7 @@ import * as SignalR from '@microsoft/signalr';
 import { useEffect, useMemo, useState } from "react";
 import { API_URL } from "@/constants";
 
-export const useHubConnection = (hubPath?: string) => {
+export const useHubConnection = (hubPath?: string, onDisconnect?: () => Promise<void>) => {
 
     const [connection, setConnection] = useState<SignalR.HubConnection>();
     const [isConnected, setIsConnected] = useState(false);
@@ -30,26 +30,43 @@ export const useHubConnection = (hubPath?: string) => {
     }, [hubUrl]);
 
     useEffect(() => {
+
+        if(!hubConnection) {
+            return () => {};
+        }
+
+        if(hubConnection.state !== "Disconnected") {
+            return () => {};
+        }
+
         (async () => {
-            console.debug("Starting connection", hubUrl);
-            try {
-                if(hubConnection?.state !== "Disconnected") {
-                    return;
-                }
+            await hubConnection.start();
 
-                await hubConnection.start();
-                console.debug("Hub connected", hubUrl);
-                setConnection(hubConnection);
-                setIsConnected(true);
+            console.debug("Hub connected", hubUrl);
 
-                hubConnection.onclose(() => setIsConnected(false));
-                hubConnection.onreconnecting(() => setIsConnected(false));
-                hubConnection.onreconnected(() => setIsConnected(true));
-            } catch(error) {
-                console.error("Error while starting hub connection", hubUrl, error);
-            }
+            setConnection(hubConnection);
+            setIsConnected(true);
+
+            hubConnection.onclose(() => setIsConnected(false));
+            hubConnection.onreconnecting(() => setIsConnected(false));
+            hubConnection.onreconnected(() => setIsConnected(true));
         })();
-    }, [hubConnection, setConnection, setIsConnected]);
+
+    }, [hubConnection]);
+
+    useEffect(() => {
+
+        if(!connection) {
+            return;
+        }
+
+        return () => {
+            (async () => {
+                await onDisconnect?.();
+            })();
+        }
+
+    }, [connection]);
 
     return { connection, isConnected };
 }
