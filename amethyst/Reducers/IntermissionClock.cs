@@ -8,7 +8,7 @@ public class IntermissionClock(ReducerGameContext context, ILogger<IntermissionC
     : Reducer<IntermissionClockState>(context)
     , IHandlesEvent<JamStarted>
     , IHandlesEvent<IntermissionStarted>
-    , IHandlesEvent<IntermissionLengthSet>
+    , IHandlesEvent<IntermissionClockSet>
     , IHandlesEvent<IntermissionEnded>
     , ITickReceiver
 {
@@ -33,17 +33,17 @@ public class IntermissionClock(ReducerGameContext context, ILogger<IntermissionC
 
         SetState(GetState() with { IsRunning = true });
 
-        return [new IntermissionLengthSet(@event.Tick, new(@event.Body.DurationInSeconds))];
+        return [new IntermissionClockSet(@event.Tick, new(@event.Body.DurationInSeconds))];
     }
 
-    public IEnumerable<Event> Handle(IntermissionLengthSet @event)
+    public IEnumerable<Event> Handle(IntermissionClockSet @event)
     {
-        logger.LogDebug("Intermission length set to {length} seconds", @event.Body.DurationInSeconds);
+        logger.LogDebug("Intermission length set to {length} seconds", @event.Body.SecondsRemaining);
         SetState(GetState() with
         {
-            HasExpired = @event.Body.DurationInSeconds <= 0,
-            SecondsRemaining = @event.Body.DurationInSeconds,
-            TargetTick = @event.Tick + @event.Body.DurationInSeconds * 1000,
+            HasExpired = @event.Body.SecondsRemaining <= 0,
+            SecondsRemaining = @event.Body.SecondsRemaining,
+            TargetTick = @event.Tick + @event.Body.SecondsRemaining * 1000,
         });
 
         return [];

@@ -10,6 +10,7 @@ public sealed class JamClock(ReducerGameContext gameContext, IEventBus eventBus,
     , IHandlesEvent<JamEnded>
     , IHandlesEvent<TimeoutStarted>
     , IHandlesEvent<CallMarked>
+    , IHandlesEvent<JamClockSet>
     , ITickReceiver
 {
     protected override JamClockState DefaultState => new(false, 0, 0, 0);
@@ -52,6 +53,32 @@ public sealed class JamClock(ReducerGameContext gameContext, IEventBus eventBus,
         return [];
     }
 
+    public IEnumerable<Event> Handle(CallMarked @event)
+    {
+        var state = GetState();
+
+        if (!@event.Body.Call || !state.IsRunning) return [];
+
+        return [new JamEnded(@event.Tick)];
+    }
+
+    public IEnumerable<Event> Handle(JamClockSet @event)
+    {
+        var state = GetState();
+
+        var ticksRemaining = Domain.Tick.FromSeconds(@event.Body.SecondsRemaining);
+        var ticksPassed = JamLengthInTicks - ticksRemaining;
+
+        SetState(state with
+        {
+            StartTick = @event.Tick - ticksPassed,
+            TicksPassed = ticksPassed,
+            SecondsPassed = ticksPassed.Seconds,
+        });
+
+        return [];
+    }
+
     public IEnumerable<Event> Tick(Tick tick)
     {
         var state = GetState();
@@ -75,15 +102,6 @@ public sealed class JamClock(ReducerGameContext gameContext, IEventBus eventBus,
 
         return [];
 
-    }
-
-    public IEnumerable<Event> Handle(CallMarked @event)
-    {
-        var state = GetState();
-
-        if (!@event.Body.Call || !state.IsRunning) return [];
-
-        return [new JamEnded(@event.Tick)];
     }
 }
 

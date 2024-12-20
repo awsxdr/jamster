@@ -1,127 +1,116 @@
 ﻿using amethyst.Events;
 using amethyst.Reducers;
-using amethyst.Services;
 using FluentAssertions;
-using Moq;
 
 namespace amethyst.tests.Reducers;
 
-public class TimeoutClockUnitTests : UnitTest<TimeoutClock>
+public class TimeoutClockUnitTests : ReducerUnitTest<TimeoutClock, TimeoutClockState>
 {
-    private TimeoutClockState _state;
-
-    protected override void Setup()
-    {
-        base.Setup();
-
-        _state = (TimeoutClockState)Subject.GetDefaultState();
-
-        GetMock<IGameStateStore>()
-            .Setup(mock => mock.GetState<TimeoutClockState>())
-            .Returns(() => _state);
-
-        GetMock<IGameStateStore>()
-            .Setup(mock => mock.SetState(It.IsAny<TimeoutClockState>()))
-            .Callback((TimeoutClockState s) => _state = s);
-    }
-
     [Test]
-    public void JamStarted_WhenLineupClockIsRunning_StopsClock()
+    public async Task JamStarted_WhenLineupClockIsRunning_StopsClock()
     {
         var randomTick = Random.Shared.Next(0, 100000);
 
-        _state = new(true, randomTick, 0, 0, 0);
+        State = new(true, randomTick, 0, 0, 0);
 
         var secondRandomTick = randomTick + Random.Shared.Next(1, 10000);
 
-        Subject.Handle(new JamStarted(secondRandomTick));
+        await Subject.Handle(new JamStarted(secondRandomTick));
 
-        _state.IsRunning.Should().BeFalse();
-        _state.StartTick.Should().Be(randomTick);
-        _state.EndTick.Should().Be(secondRandomTick);
-        _state.TicksPassed.Should().Be(secondRandomTick - randomTick);
+        State.IsRunning.Should().BeFalse();
+        State.StartTick.Should().Be(randomTick);
+        State.EndTick.Should().Be(secondRandomTick);
+        State.TicksPassed.Should().Be(secondRandomTick - randomTick);
     }
 
     [Test]
-    public void JamStarted_WhenLineupClockNotRunning_DoesNotChangeState()
+    public async Task JamStarted_WhenLineupClockNotRunning_DoesNotChangeState()
     {
-        _state = (TimeoutClockState)Subject.GetDefaultState();
+        State = (TimeoutClockState)Subject.GetDefaultState();
 
-        var initialState = _state;
+        var initialState = State;
 
-        Subject.Handle(new JamStarted(10000));
+        await Subject.Handle(new JamStarted(10000));
 
-        _state.Should().Be(initialState);
+        State.Should().Be(initialState);
     }
 
     [Test]
-    public void TimeoutStarted_StartsNewTimeout()
+    public async Task TimeoutStarted_StartsNewTimeout()
     {
-        _state = new(false, 0, 0, 0, 0);
+        State = new(false, 0, 0, 0, 0);
 
         var randomTick = Random.Shared.Next(10000, 200000);
 
-        Subject.Handle(new TimeoutStarted(randomTick));
+        await Subject.Handle(new TimeoutStarted(randomTick));
 
-        _state.StartTick.Should().Be(randomTick);
+        State.StartTick.Should().Be(randomTick);
     }
 
     [Test]
-    public void TimeoutEnded_WhenClockRunningAndEndTickIsZero_SetsEndTick()
+    public async Task TimeoutEnded_WhenClockRunningAndEndTickIsZero_SetsEndTick()
     {
-        _state = new(true, Random.Shared.Next(0, 100000), 0, 0, 0);
-        var initialState = _state;
+        State = new(true, 10000, 0, 20000, 20);
+        var initialState = State;
+
+        await Subject.Handle(new TimeoutEnded(30000));
+
+        State.Should().Be(initialState with { EndTick = 30000 });
+    }
+
+    [Test]
+    public async Task TimeoutEnded_WhenClockRunningAndEndTickIsNonZero_DoesNotChangeState()
+    {
+        State = new(true, 10000, 30000, 40000, 40);
+        var initialState = State;
+
+        await Subject.Handle(new TimeoutEnded(50000));
+
+        State.Should().Be(initialState);
+    }
+
+    [Test]
+    public async Task TimeoutEnded_WhenClockNotRunning_DoesNotChangeState()
+    {
+        State = new(false, 0, 0, 0, 0);
+        var initialState = State;
 
         var randomTick = Random.Shared.Next((int)initialState.StartTick + 10000, (int)initialState.StartTick + 100000);
 
-        Subject.Handle(new TimeoutEnded(randomTick));
+        await Subject.Handle(new TimeoutEnded(randomTick));
 
-        _state.Should().Be(initialState with { EndTick = randomTick });
+        State.Should().Be(initialState);
     }
 
     [Test]
-    public void TimeoutEnded_WhenClockRunningAndEndTickIsNonZero_DoesNotChangeState()
+    public async Task TimeoutClockSet_SetsTimeoutClock()
     {
-        _state = new(true, Random.Shared.Next(0, 100000), Random.Shared.Next(100001, 200000), 0, 0);
-        var initialState = _state;
+        State = new TimeoutClockState(true, 0, 0, 10000, 10);
 
-        var randomTick = Random.Shared.Next((int)initialState.StartTick + 10000, (int)initialState.StartTick + 100000);
+        await Subject.Handle(new TimeoutClockSet(20000, new(30)));
 
-        Subject.Handle(new TimeoutEnded(randomTick));
-
-        _state.Should().Be(initialState);
+        State.StartTick.Should().Be(20000 - 30000);
+        State.TicksPassed.Should().Be(30000);
+        State.SecondsPassed.Should().Be(30);
     }
 
     [Test]
-    public void TimeoutEnded_WhenClockNotRunning_DoesNotChangeState()
+    public async Task Tick_WhenClockRunning_UpdatesTicksPassed()
     {
-        _state = new(false, 0, 0, 0, 0);
-        var initialState = _state;
+        State = new(true, 0, 0, 0, 0);
+        await Tick(10000);
 
-        var randomTick = Random.Shared.Next((int)initialState.StartTick + 10000, (int)initialState.StartTick + 100000);
-
-        Subject.Handle(new TimeoutEnded(randomTick));
-
-        _state.Should().Be(initialState);
+        State.TicksPassed.Should().Be(10000);
     }
 
     [Test]
-    public void Tick_WhenClockRunning_UpdatesTicksPassed()
+    public async Task Tick_ClockStopped_DoesNotChangeState()
     {
-        _state = new(true, 0, 0, 0, 0);
-        Subject.Tick(10000);
+        State = new(false, 0, 0, 0, 0);
+        await Tick(130 * 1000);
 
-        _state.TicksPassed.Should().Be(10000);
-    }
-
-    [Test]
-    public void Tick_ClockStopped_DoesNotChangeState()
-    {
-        _state = new(false, 0, 0, 0, 0);
-        Subject.Tick(130 * 1000);
-
-        _state.IsRunning.Should().BeFalse();
-        _state.StartTick.Should().Be(0);
-        _state.TicksPassed.Should().Be(0);
+        State.IsRunning.Should().BeFalse();
+        State.StartTick.Should().Be(0);
+        State.TicksPassed.Should().Be(0);
     }
 }

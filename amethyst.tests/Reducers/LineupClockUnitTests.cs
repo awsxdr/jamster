@@ -72,6 +72,18 @@ public class LineupClockUnitTests : ReducerUnitTest<LineupClock, LineupClockStat
     }
 
     [Test]
+    public async Task LineupClockSet_SetsLineupClock()
+    {
+        State = new LineupClockState(true, 0, 10000, 10);
+
+        await Subject.Handle(new LineupClockSet(20000, new(30)));
+
+        State.StartTick.Should().Be(20000 - 30000);
+        State.TicksPassed.Should().Be(30000);
+        State.SecondsPassed.Should().Be(30);
+    }
+
+    [Test]
     public async Task Tick_WhenClockRunning_UpdatesTicksPassed()
     {
         State = new(true, 0, 0, 0);

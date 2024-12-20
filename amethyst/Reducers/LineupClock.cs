@@ -9,6 +9,7 @@ public sealed class LineupClock(ReducerGameContext gameContext, ILogger<LineupCl
     , IHandlesEvent<JamEnded>
     , IHandlesEvent<TimeoutStarted>
     , IHandlesEvent<PeriodEnded>
+    , IHandlesEvent<LineupClockSet>
     , IDependsOnState<TimeoutClockState>
     , ITickReceiver
 {
@@ -52,6 +53,22 @@ public sealed class LineupClock(ReducerGameContext gameContext, ILogger<LineupCl
 
         logger.LogDebug("Stopping lineup clock due to period end");
         SetState(GetState() with { IsRunning = false });
+
+        return [];
+    }
+
+    public IEnumerable<Event> Handle(LineupClockSet @event)
+    {
+        var state = GetState();
+
+        var ticksPassed = Domain.Tick.FromSeconds(@event.Body.SecondsPassed);
+
+        SetState(state with
+        {
+            StartTick = @event.Tick - ticksPassed,
+            TicksPassed = ticksPassed,
+            SecondsPassed = @event.Body.SecondsPassed,
+        });
 
         return [];
     }

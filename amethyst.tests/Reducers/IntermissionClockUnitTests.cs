@@ -1,6 +1,5 @@
 ﻿using amethyst.Events;
 using amethyst.Reducers;
-using amethyst.Services;
 using FluentAssertions;
 
 namespace amethyst.tests.Reducers;
@@ -62,17 +61,17 @@ public class IntermissionClockUnitTests : ReducerUnitTest<IntermissionClock, Int
     {
         var result = await Subject.Handle(new IntermissionStarted(0, new(15 * 60)));
 
-        var implicitEvent = result.Should().ContainSingle().Which.Should().BeAssignableTo<IntermissionLengthSet>().Which;
+        var implicitEvent = result.Should().ContainSingle().Which.Should().BeAssignableTo<IntermissionClockSet>().Which;
         implicitEvent.Tick.Should().Be(0);
-        implicitEvent.Body.DurationInSeconds.Should().Be(15 * 60);
+        implicitEvent.Body.SecondsRemaining.Should().Be(15 * 60);
     }
 
     [Test]
-    public async Task IntermissionLengthSet_SetsClock()
+    public async Task IntermissionClockSet_SetsClock()
     {
         State = new(true, false, 15000, 15);
 
-        await Subject.Handle(new IntermissionLengthSet(10000, new(20)));
+        await Subject.Handle(new IntermissionClockSet(10000, new(20)));
 
         State.IsRunning.Should().BeTrue();
         State.HasExpired.Should().BeFalse();

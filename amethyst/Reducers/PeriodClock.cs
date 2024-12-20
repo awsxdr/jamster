@@ -11,13 +11,14 @@ public class PeriodClock(ReducerGameContext context, ILogger<PeriodClock> logger
     , IHandlesEvent<TimeoutStarted>
     , IHandlesEvent<TimeoutEnded>
     , IHandlesEvent<PeriodFinalized>
+    , IHandlesEvent<PeriodClockSet>
     , IDependsOnState<JamClockState>
     , IDependsOnState<LineupClockState>
     , ITickReceiver
 {
     protected override PeriodClockState DefaultState => new(false, false, 0, 0, 0, 0);
 
-    public static readonly Tick PeriodLengthInTicks = 30 * 60 * 1000;
+    public static readonly Tick PeriodLengthInTicks = Domain.Tick.FromSeconds(30 * 60);
 
     public IEnumerable<Event> Handle(JamStarted @event)
     {
@@ -106,6 +107,25 @@ public class PeriodClock(ReducerGameContext context, ILogger<PeriodClock> logger
             return [new PeriodEnded(@event.Tick)];
 
         SetState(DefaultState);
+
+        return [];
+    }
+
+    public IEnumerable<Event> Handle(PeriodClockSet @event)
+    {
+        var state = GetState();
+
+        var ticksRemaining = Domain.Tick.FromSeconds(@event.Body.SecondsRemaining);
+        var ticksPassed = PeriodLengthInTicks - ticksRemaining;
+
+        SetState(state with
+        {
+            LastStartTick = @event.Tick,
+            TicksPassedAtLastStart = ticksPassed,
+            TicksPassed = ticksPassed,
+            SecondsPassed = ticksPassed.Seconds,
+            HasExpired = ticksRemaining <= 0,
+        });
 
         return [];
     }

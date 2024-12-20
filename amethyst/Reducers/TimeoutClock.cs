@@ -9,6 +9,7 @@ public class TimeoutClock(ReducerGameContext context, ILogger<TimeoutClock> logg
     , IHandlesEvent<JamStarted>
     , IHandlesEvent<TimeoutStarted>
     , IHandlesEvent<TimeoutEnded>
+    , IHandlesEvent<TimeoutClockSet>
     , ITickReceiver
 {
     protected override TimeoutClockState DefaultState => new(false, 0, 0, 0, 0);
@@ -52,6 +53,22 @@ public class TimeoutClock(ReducerGameContext context, ILogger<TimeoutClock> logg
         {
             logger.LogDebug("Timeout ended but timeout has already ended at {tick}", @event.Tick);
         }
+
+        return [];
+    }
+
+    public IEnumerable<Event> Handle(TimeoutClockSet @event)
+    {
+        var state = GetState();
+
+        var ticksPassed = Domain.Tick.FromSeconds(@event.Body.SecondsPassed);
+
+        SetState(state with
+        {
+            StartTick = @event.Tick - ticksPassed,
+            TicksPassed = ticksPassed,
+            SecondsPassed = @event.Body.SecondsPassed,
+        });
 
         return [];
     }

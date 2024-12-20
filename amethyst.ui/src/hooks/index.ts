@@ -1,3 +1,4 @@
+export * from './EventsApiHook';
 export * from './GameApiHook';
 export * from './GamesListHook';
 export * from './I18nHook';
@@ -5,6 +6,8 @@ export * from './SignalRHubConnection';
 export * from './StateHook';
 export * from './SystemStateHook';
 export * from './TeamApiHook';
+export * from './TeamsHook';
 export * from './ThemeHook';
 export * from './use-mobile';
 export * from './UserSettings';
+export * from './WakeLock';

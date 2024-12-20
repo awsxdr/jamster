@@ -131,6 +131,18 @@ public class JamClockUnitTests : ReducerUnitTest<JamClock, JamClockState>
     }
 
     [Test]
+    public async Task JamClockSet_SetsJamClock()
+    {
+        State = new JamClockState(true, 0, 10000, 10);
+
+        await Subject.Handle(new JamClockSet(20000, new(30)));
+
+        State.StartTick.Should().Be(20000 - (JamClock.JamLengthInTicks - 30000));
+        State.TicksPassed.Should().Be(JamClock.JamLengthInTicks - 30000);
+        State.SecondsPassed.Should().Be((int)((JamClock.JamLengthInTicks - 30000) / 1000));
+    }
+
+    [Test]
     public async Task Tick_WhenStillTimeInJam_UpdatesTicksPassed()
     {
         State = new(true, 0, 0, 0);

@@ -4,6 +4,7 @@ using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using amethyst.Services;
 using Func;
+using amethyst.Domain;
 
 namespace amethyst.Events;
 
@@ -110,3 +111,5 @@ public sealed class EventTypeDoesNotMatchException : ArgumentException;
 public sealed class EventTypeIncludesUnexpectedBodyException : ArgumentException;
 public sealed class EventTypeDoesNotIncludeBodyException : ArgumentException;
 public sealed class BodyFormatIncorrectError : ResultError;
+
+public abstract record TeamEventBody(TeamSide TeamSide);
