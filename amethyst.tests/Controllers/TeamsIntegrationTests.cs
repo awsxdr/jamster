@@ -50,6 +50,13 @@ public class TeamsIntegrationTests : ControllerIntegrationTest
 
         var createResponse = (await Post<TeamModel>("api/Teams", team, HttpStatusCode.Created))!;
 
+        var roster = new RosterModel([
+            new("123", "Test Skater 1", "", SkaterRole.Skater),
+            new("321", "Test Skater 2", "", SkaterRole.Skater),
+        ]);
+
+        await Put($"/api/Teams/{createResponse.Id}/roster", roster, HttpStatusCode.OK);
+
         var updateRequest = new UpdateTeamModel(
             new() { ["default"] = "Edited team", ["new"] = "New name" },
             new()
@@ -63,6 +70,10 @@ public class TeamsIntegrationTests : ControllerIntegrationTest
         var getResponse = (await Get<TeamModel>($"api/Teams/{createResponse.Id}", HttpStatusCode.OK))!;
 
         getResponse.Should().Be((TeamModel)(Team)updateRequest with { Id = createResponse.Id, LastUpdateTime = getResponse.LastUpdateTime });
+
+        var getRosterResponse = (await Get<RosterModel>($"api/Teams/{createResponse.Id}/roster", HttpStatusCode.OK))!;
+
+        getRosterResponse.Should().BeEquivalentTo(roster);
     }
 
     [Test]

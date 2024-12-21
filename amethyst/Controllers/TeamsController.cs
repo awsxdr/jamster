@@ -49,12 +49,14 @@ public class TeamsController(
     {
         logger.LogDebug("Updating team with ID: {id}", id);
 
-        return await teamsStore.UpdateTeam(((Team)team) with { Id = id }) switch
-        {
-            Success => Ok(),
-            Failure<TeamNotFoundError> => NotFound(),
-            _ => throw new UnexpectedResultException()
-        };
+        return await teamsStore.GetTeam(id)
+                .Then(storedTeam => teamsStore.UpdateTeam((Team)team with { Id = id, Roster = storedTeam.Roster }))
+            switch
+            {
+                Success => Ok(),
+                Failure<TeamNotFoundError> => NotFound(),
+                _ => throw new UnexpectedResultException()
+            };
     }
 
     [HttpDelete("{id:guid}")]

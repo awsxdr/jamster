@@ -1,45 +1,30 @@
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { useI18n } from "@/hooks/I18nHook";
-import { useTeamApi } from "@/hooks/TeamApiHook";
 import { useTeam } from "@/hooks/TeamsHook";
-import { ChangeEvent, useEffect, useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { useMemo } from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import { TeamNames } from "./components/TeamNames";
+import { TeamColors } from "./components/TeamColors";
+import { TeamRoster } from "./components/TeamRoster";
 
 export const TeamEdit = () => {
 
     const { teamId } = useParams();
-    const team = useTeam(teamId!);
-    const { setTeam } = useTeamApi();
+    const navigate = useNavigate();
+
+    if(!teamId) {
+        navigate('/teams');
+        return (<></>);
+    }
+
+    const team = useTeam(teamId);
 
     const { translate } = useI18n();
 
-    const [defaultName, setDefaultName] = useState(team?.names["default"] ?? "");
-
     const displayName = useMemo(() => team?.names["default"] ?? "", [team]);
 
-    useEffect(() => {
-        setDefaultName(team?.names["default"] ?? "");
-    }, [team]);
-
-    const onTeamNameChanged = (event: ChangeEvent<HTMLInputElement>) => {
-        setDefaultName(event.target.value);
-    }
-
-    const onTeamNameBlur = () => {
-        if (teamId && team?.names["default"] !== defaultName) {
-            setTeam(
-                teamId,
-                {
-                    names: {
-                        ...team?.names,
-                        "default": defaultName
-                    },
-                    colors: team?.colors ?? {}
-                }
-            );
-        }
+    if(!team) {
+        return (<></>);
     }
 
     return (
@@ -57,9 +42,12 @@ export const TeamEdit = () => {
                     </BreadcrumbItem>
                 </BreadcrumbList>
             </Breadcrumb>
-            <div className="grid max-w-sm items-center gap-1.5">
-                <Label htmlFor="teamName">{ translate("TeamEdit.TeamName") }</Label>
-                <Input value={defaultName} id="teamName" onChange={onTeamNameChanged} onBlur={onTeamNameBlur} />
+            <div className="flex flex-col p-4 gap-2 w-full">
+                <div className="flex gap-2 w-full">
+                    <TeamNames teamId={teamId} className="w-1/2" />
+                    <TeamColors team={team} className="w-1/2" />
+                </div>
+                <TeamRoster team={team} />
             </div>
         </>
     );

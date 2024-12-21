@@ -6,6 +6,7 @@ export * from './SignalRHubConnection';
 export * from './StateHook';
 export * from './SystemStateHook';
 export * from './TeamApiHook';
+export * from './TeamColorMap';
 export * from './TeamsHook';
 export * from './ThemeHook';
 export * from './use-mobile';

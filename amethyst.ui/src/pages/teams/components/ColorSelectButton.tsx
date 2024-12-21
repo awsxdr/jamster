@@ -4,15 +4,18 @@ import { ColorSlider } from "./ColorSlider";
 import { Color, HslColor } from "@/types";
 import { ColorSpace } from "./ColorSpace";
 import { useI18n } from "@/hooks/I18nHook";
+import { cn } from "@/lib/utils";
 
 type ColorSelectButtonProps = {
     color: HslColor;
     title?: string;
     description?: string;
-    onColorChanged: (color: HslColor) => void;
+    disabled?: boolean;
+    className?: string;
+    onColorChanged?: (color: HslColor) => void;
 }
 
-export const ColorSelectButton = ({ color, title, description, onColorChanged }: ColorSelectButtonProps) => {
+export const ColorSelectButton = ({ color, title, description, disabled, className, onColorChanged }: ColorSelectButtonProps) => {
 
     const { translate } = useI18n();
 
@@ -32,7 +35,7 @@ export const ColorSelectButton = ({ color, title, description, onColorChanged }:
         const newColor = Color.parseRgb(newValue);
 
         if(newColor) {
-            onColorChanged(Color.rgbToHsl(newColor));
+            onColorChanged?.(Color.rgbToHsl(newColor));
         }
 
         setColorInputString(newValue);
@@ -43,9 +46,9 @@ export const ColorSelectButton = ({ color, title, description, onColorChanged }:
             <Tooltip>
                 <Popover>
                     <TooltipTrigger asChild>
-                        <PopoverTrigger asChild>
+                        <PopoverTrigger asChild disabled={disabled}>
                             <Button 
-                                className="transition-[filter] contrast-100 hover:contrast-75" 
+                                className={cn("transition-[filter] contrast-100 hover:contrast-75", className)} 
                                 style={{ backgroundColor: colorString }}
                             />
                         </PopoverTrigger>
@@ -59,7 +62,7 @@ export const ColorSelectButton = ({ color, title, description, onColorChanged }:
                     <PopoverContent className="w-[400px]">
                         {title && <p className="font-bold">{title}</p>}
                         {description && <p className="pb-2">{description}</p>}
-                        <ColorSlider hue={clampedColor.hue} onHueChanged={h => onColorChanged({ ...color, hue: h })} />
+                        <ColorSlider hue={clampedColor.hue} onHueChanged={h => onColorChanged?.({ ...color, hue: h })} />
                         <ColorSpace color={clampedColor} className="h-[200px]" onColorChanged={onColorChanged} />
                         <div>
                             <Label>{translate("ColorSelectButton.Hex")}</Label>

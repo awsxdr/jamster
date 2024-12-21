@@ -1,10 +1,11 @@
 import { Button, Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, Input, Label, TooltipProvider } from "@/components/ui";
-import { Color, HslColor, StringMap, TeamColor } from "@/types";
+import { Color, HslColor, TeamColor } from "@/types";
 import { ChangeEvent, PropsWithChildren, useEffect, useState } from "react";
 import { ColorSelectButton } from "./ColorSelectButton";
 import { Loader2 } from "lucide-react";
 import { useI18n } from "@/hooks/I18nHook";
 import { DialogDescription } from "@radix-ui/react-dialog";
+import { useTeamColorMap } from "@/hooks";
 
 type NewTeamDialogContainerProps = {
     open?: boolean;
@@ -27,25 +28,6 @@ export const NewTeamDialogTrigger = ({ children }: PropsWithChildren) => {
     );
 }
 
-const colorMap: StringMap<TeamColor> = [
-    [["red"], ["#ff0000", "#ffffff"]],
-    [["pink"], ["#ff8888", "#000000"]],
-    [["orange"], ["#ff8800", "#000000"]],
-    [["yellow"], ["#ffff00", "#000000"]],
-    [["gold"], ["#888800", "#000000"]],
-    [["brown"], ["#884400", "#ffffff"]],
-    [["lime"], ["#88ff00", "#000000"]],
-    [["green"], ["#00aa00", "#ffffff"]],
-    [["teal", "turquoise"], ["#008888", "#000000"]],
-    [["blue"], ["#0000ff", "#ffffff"]],
-    [["purple"], ["#8800ff", "#ffffff"]],
-    [["black"], ["#000000", "#ffffff"]],
-    [["grey", "gray"], ["#666666", "#ffffff"]],
-    [["white"], ["#ffffff", "#000000"]],
-]
-.flatMap(x => x[0].map(name => ({ name, shirtColor: x[1][0], complementaryColor: x[1][1] })))
-.reduce((map, { name, ...current }) => ({ ...map, [name]: current}), {});
-
 type NewTeamCreated = (name: string, colorName: string, colors: TeamColor) => void;
 
 type NewTeamDialogProps = {
@@ -56,6 +38,7 @@ type NewTeamDialogProps = {
 export const NewTeamDialog = ({ onNewTeamCreated, onCancelled }: NewTeamDialogProps) => {
 
     const { translate } = useI18n();
+    const colorMap = useTeamColorMap();
 
     const [teamName, setTeamName] = useState("");
     const [shirtColor, setShirtColor] = useState<HslColor>({ hue: 0, saturation: 0, lightness: 0 });
