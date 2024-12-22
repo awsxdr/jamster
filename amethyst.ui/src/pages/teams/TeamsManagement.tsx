@@ -42,6 +42,7 @@ export const TeamsManagement = () => {
             .forEach(teamId => {
                 deleteTeam(teamId);
             });
+        setSelectedTeamIds([]);
     }
 
     return (
