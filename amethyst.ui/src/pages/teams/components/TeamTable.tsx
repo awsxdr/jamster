@@ -9,6 +9,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { DateTime } from 'luxon';
 import { CheckedState } from '@radix-ui/react-checkbox';
+import { useIsMobile } from '@/hooks';
 
 type TeamTableProps = {
     teams: Team[];
@@ -43,22 +44,31 @@ export const TeamTable = ({ teams, selectedTeamIds, onSelectedTeamIdsChanged }: 
 
     const { translate } = useI18n();
     const [sorting, setSorting] = useState<SortingState>([]);
+    const isMobile = useIsMobile();
 
     const columns: ColumnDef<Team, string>[] = [
         {
             id: 'teamName',
-            accessorFn: t => t.names["team"] || t.names["league"] || t.names["default"] || "Team",
+            accessorFn: t => t.names["team"] ?? "",
             header: ({column})=> (<SortableColumnHeader column={column} header={translate("TeamTable.TeamName")} />),
             sortingFn: 'alphanumeric',
             cell: ({cell, row}) => (<Link to={`/teams/${row.original.id}`}>{cell.renderValue()}</Link>)
         },
+        {
+            id: 'leagueName',
+            accessorFn: t => t.names["league"] ?? "",
+            header: ({column})=> (<SortableColumnHeader column={column} header={translate("TeamTable.LeagueName")} />),
+            sortingFn: 'alphanumeric',
+            cell: ({cell, row}) => (<Link to={`/teams/${row.original.id}`}>{cell.renderValue()}</Link>)
+        },
+        ...(isMobile ? [] : [
         {
             id: 'lastUpdated',
             accessorKey: 'lastUpdateTime',
             header: ({column}) => (<SortableColumnHeader column={column} header={translate("TeamTable.LastUpdated")} />),
             sortingFn: 'datetime',
             cell: ({cell}) => (<span>{DateTime.fromISO(cell.getValue()).toLocaleString(DateTime.DATETIME_SHORT_WITH_SECONDS, { locale: navigator.language })}</span>)
-        },
+        } as ColumnDef<Team, string>]),
     ];
     
     const table = useReactTable({

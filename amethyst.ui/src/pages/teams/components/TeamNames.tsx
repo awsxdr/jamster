@@ -9,7 +9,8 @@ type TeamNamesProps = {
 
 export const TeamNames = ({ teamId, className }: TeamNamesProps) => {
     const team = useTeam(teamId);
-    const [defaultName, setDefaultName] = useState("");
+    const [teamName, setTeamName] = useState("");
+    const [leagueName, setLeagueName] = useState("");
     const [scoreboardName, setScoreboardName] = useState("");
     const [overlayName, setOverlayName] = useState("");
 
@@ -17,13 +18,17 @@ export const TeamNames = ({ teamId, className }: TeamNamesProps) => {
     const { translate } = useI18n();
 
     useEffect(() => {
-        setDefaultName(team?.names["default"] ?? "");
+        setTeamName(team?.names["team"] ?? "");
         setScoreboardName(team?.names["scoreboard"] ?? "");
         setOverlayName(team?.names["overlay"] ?? "");
     }, [team]);
 
     const onTeamNameChanged = (event: ChangeEvent<HTMLInputElement>) => {
-        setDefaultName(event.target.value);
+        setTeamName(event.target.value);
+    }
+
+    const onLeagueNameChanged = (event: ChangeEvent<HTMLInputElement>) => {
+        setLeagueName(event.target.value);
     }
 
     const onScoreboardNameChanged = (event: ChangeEvent<HTMLInputElement>) => {
@@ -35,11 +40,21 @@ export const TeamNames = ({ teamId, className }: TeamNamesProps) => {
     }
 
     const onTeamNameBlur = () => {
-        if (teamId && team?.names["default"] !== defaultName) {
+        if (teamId && team?.names["team"] !== teamName) {
             setTeam(teamId, {
                     ...team,
-                    names: { ...team?.names, "default": defaultName },
+                    names: { ...team?.names, "team": teamName },
                     colors: team?.colors ?? {}
+            });
+        }
+    }
+
+    const onLeagueNameBlur = () => {
+        if (teamId && team?.names["league"] !== leagueName) {
+            setTeam(teamId, {
+                ...team,
+                names: { ...team?.names, "league": leagueName },
+                colors: team?.colors ?? {}
             });
         }
     }
@@ -72,17 +87,22 @@ export const TeamNames = ({ teamId, className }: TeamNamesProps) => {
             <CardContent className="flex flex-col grid items-center gap-4">
                 <div className="flex flex-col gap-1.5">
                     <Label htmlFor="teamName">{ translate("TeamNames.TeamName") }</Label>
-                    <Input value={defaultName} id="teamName" onChange={onTeamNameChanged} onBlur={onTeamNameBlur} />
+                    <Input value={teamName} id="teamName" onChange={onTeamNameChanged} onBlur={onTeamNameBlur} />
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="leagueName">{ translate("TeamNames.LeagueName") }</Label>
+                    <Input value={leagueName} id="leagueName" onChange={onLeagueNameChanged} onBlur={onLeagueNameBlur} />
                 </div>
 
                 <div className="flex flex-col gap-1.5">
                     <Label htmlFor="scoreboardName">{ translate("TeamNames.ScoreboardName") }</Label>
-                    <Input value={scoreboardName} id="scoreboardName" placeholder={defaultName} onChange={onScoreboardNameChanged} onBlur={onScoreboardNameBlur} />
+                    <Input value={scoreboardName} id="scoreboardName" placeholder={teamName} onChange={onScoreboardNameChanged} onBlur={onScoreboardNameBlur} />
                 </div>
 
                 <div className="flex flex-col gap-1.5">
                     <Label htmlFor="overlayName">{ translate("TeamNames.OverlayName") }</Label>
-                    <Input value={overlayName} id="overlayName" placeholder={defaultName} onChange={onOverlayNameChanged} onBlur={onOverlayNameBlur} />
+                    <Input value={overlayName} id="overlayName" placeholder={teamName} onChange={onOverlayNameChanged} onBlur={onOverlayNameBlur} />
                 </div>
 
             </CardContent>
