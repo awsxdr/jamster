@@ -47,6 +47,7 @@ const ColorRow = ({ color, disableEdit, disableSelect, existingColors, onEditSta
     }, [isEditing]);
 
     useEffect(() => {
+        form.setValue('name', color.name);
         setShirtColor(Color.rgbToHsl(Color.parseRgb(color.shirtColor) ?? { red: 0, green: 0, blue: 0 }));
         setComplementaryColor(Color.rgbToHsl(Color.parseRgb(color.complementaryColor) ?? { red: 0, green: 0, blue: 0 }));
     }, [color]);
