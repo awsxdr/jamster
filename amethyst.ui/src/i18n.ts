@@ -87,6 +87,7 @@ const languages: Languages = {
         "RosterTable.Name": "Name",
         "RosterTable.NoSkaters": "Roster is empty",
         "RosterTable.Number": "Number",
+        "RosterTable.NumberSymbol": "#",
         "TeamColors.Title": "Colors",
         "TeamEdit.Teams": "Teams",
         "TeamLineup.Jammer": "Jammer",

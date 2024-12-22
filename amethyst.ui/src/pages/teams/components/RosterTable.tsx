@@ -1,6 +1,6 @@
 import { MouseEvent, ReactNode, useEffect, useMemo, useState } from "react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger, Button, buttonVariants, Card, CardContent, Checkbox, Form, FormControl, FormField, FormItem, FormMessage, Input, Separator } from "@/components/ui"
-import { useI18n, useTeamApi } from "@/hooks";
+import { useI18n, useIsMobile, useTeamApi } from "@/hooks";
 import { cn } from "@/lib/utils";
 import { SkaterRole, Team } from "@/types";
 import { Check, Pencil, Trash, X } from "lucide-react";
@@ -168,10 +168,9 @@ type RosterTableProps = {
 export const RosterTable = ({ team }: RosterTableProps) => {
 
     const [isEditing, setIsEditing] = useState(false);
-
     const { translate } = useI18n();
-
     const { setRoster } = useTeamApi();
+    const isMobile = useIsMobile();
 
     const handleEditStart = () => {
         setIsEditing(true);
@@ -264,9 +263,12 @@ export const RosterTable = ({ team }: RosterTableProps) => {
                     </AlertDialog>
                 </div>
                 <RowLayout
-                    className="pb-2"
+                    className="py-2"
                     selectContent={<Checkbox checked={allSelected} onCheckedChange={handleSelectAllChanged} onClick={handleSelectAllClicked} />}
-                    numberContent={<span className="inline-block nowrap font-bold">{ translate("RosterTable.Number") }</span>}
+                    numberContent={
+                        <span className="inline-block nowrap font-bold">
+                            { isMobile ? translate("RosterTable.NumberSymbol") : translate("RosterTable.Number") }
+                        </span>}
                     nameContent={<span className="inline-block nowrap font-bold">{ translate("RosterTable.Name") }</span>}
                 />
                 <Separator />

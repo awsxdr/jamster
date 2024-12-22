@@ -43,9 +43,9 @@ export const TeamEdit = () => {
                 </BreadcrumbList>
             </Breadcrumb>
             <div className="flex flex-col p-4 gap-2 w-full">
-                <div className="flex gap-2 w-full">
-                    <TeamNames teamId={teamId} className="w-1/2" />
-                    <TeamColors team={team} className="w-1/2" />
+                <div className="flex flex-wrap lg:flex-nowrap gap-2 w-full">
+                    <TeamNames teamId={teamId} className="w-full lg:w-1/2" />
+                    <TeamColors team={team} className="w-full lg:w-1/2" />
                 </div>
                 <TeamRoster team={team} />
             </div>

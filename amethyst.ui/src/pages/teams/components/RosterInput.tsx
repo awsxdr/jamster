@@ -51,7 +51,7 @@ export const RosterInput = ({ existingNumbers, onSkaterAdded }: RosterRowProps) 
     return (
         <div className="flex w-full">
             <Form {...form}>
-                <form onSubmit={form.handleSubmit(handleSubmit)} className="flex w-full">
+                <form onSubmit={form.handleSubmit(handleSubmit)} className="flex flex-col w-full">
                     <div className="flex gap-2 w-full">
                         <div className="flex gap-2 w-full">
                             <FormField control={form.control} name="number" render={({field}) => (
@@ -61,9 +61,6 @@ export const RosterInput = ({ existingNumbers, onSkaterAdded }: RosterRowProps) 
                                         <Input {...field} />
                                     </FormControl>
                                     <FormMessage />
-                                    <FormDescription>
-                                        { translate("RosterInput.PasteRosterTip") }
-                                    </FormDescription>
                                 </FormItem>
                             )} />
                             <FormField control={form.control} name="name" render={({field}) => (
@@ -81,6 +78,9 @@ export const RosterInput = ({ existingNumbers, onSkaterAdded }: RosterRowProps) 
                             <Button type="submit" variant="creative"><Plus /> { translate("RosterInput.AddSkater") }</Button>
                         </FormItem>
                     </div>
+                    <FormDescription>
+                        { translate("RosterInput.PasteRosterTip") }
+                    </FormDescription>
                 </form>
             </Form>
         </div>
