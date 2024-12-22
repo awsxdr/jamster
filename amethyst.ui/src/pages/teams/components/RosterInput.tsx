@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Plus } from "lucide-react";
 import { useI18n } from "@/hooks";
-import { useMemo } from "react";
+import { useMemo, ClipboardEvent } from "react";
 import { useForm } from "react-hook-form";
 import { Skater } from "@/types";
 
@@ -49,6 +49,41 @@ export const RosterInput = ({ existingNumbers, onSkatersAdded }: RosterRowProps)
         form.reset();
     }
 
+    function handlePaste(event: ClipboardEvent<HTMLInputElement>): void {
+        /* Regex searches for either: 
+            * 1-4 digits with an optional trailing * followed by whitespace followed by at least 1 character that isn't a newline
+            * Any number of characters followed by one non-whitespace character followed by whitespace followed by 1-4 digits with an optional trailing *
+        */
+        const rosterRegex = /(?<skater>(?:(?<number>\d{1,4})(?<ns>\*)?[\s\r\n]+(?<name>[^\r\n]+))|(?:(?<name2>.*[^\s\r\n])[\s\r\n]+(?<number2>\d{1,4})(?<ns2>\*)?))/gm;
+
+        const pastedText = event.clipboardData.getData("text/plain");
+
+        if(!pastedText.includes("\n")) {
+            return;
+        }
+
+        const matches = [...pastedText.matchAll(rosterRegex)];
+
+        const pastedSkaters = matches.map(match => {
+                const name = match.groups?.["name"] || match.groups?.["name2"];
+                const number = match.groups?.["number"] || match.groups?.["number2"];
+
+                return name && number
+                    ? { number, name } as Skater
+                    : undefined;
+            }).filter(skater =>
+                skater !== undefined
+            );
+
+        if(pastedSkaters.length == 0) {
+            return;
+        }
+
+        event.preventDefault();
+
+        onSkatersAdded?.(pastedSkaters);
+    }
+
     return (
         <div className="flex w-full">
             <Form {...form}>
@@ -59,7 +94,7 @@ export const RosterInput = ({ existingNumbers, onSkatersAdded }: RosterRowProps)
                                 <FormItem className="w-1/3">
                                     <FormLabel>{ translate("RosterInput.Number") }</FormLabel>
                                     <FormControl>
-                                        <Input {...field} />
+                                        <Input {...field} onPaste={handlePaste} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -68,7 +103,7 @@ export const RosterInput = ({ existingNumbers, onSkatersAdded }: RosterRowProps)
                                 <FormItem className="w-2/3">
                                     <FormLabel>{ translate("RosterInput.Name") }</FormLabel>
                                     <FormControl>
-                                        <Input {...field} />
+                                        <Input {...field} onPaste={handlePaste} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
