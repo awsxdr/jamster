@@ -1,6 +1,6 @@
 import { useTeamList } from "@/hooks/TeamsHook";
 import { TeamTable } from "./components/TeamTable";
-import { Button, Separator } from "@/components/ui";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger, Button, buttonVariants, Separator } from "@/components/ui";
 import { Plus, Trash } from "lucide-react";
 import { NewTeamDialog, NewTeamDialogContainer, NewTeamDialogTrigger } from "./components/NewTeamDialog";
 import { useState } from "react";
@@ -12,7 +12,7 @@ import { useI18n } from "@/hooks/I18nHook";
 export const TeamsManagement = () => {
 
     const teams = useTeamList();
-    const { createTeam } = useTeamApi();
+    const { createTeam, deleteTeam } = useTeamApi();
 
     const { translate } = useI18n();
     
@@ -22,7 +22,7 @@ export const TeamsManagement = () => {
     const handleNewTeamCreated = (name: string, colorName: string, colors: TeamColor) => {
         createTeam({
             names: {
-                default: name,
+                team: name,
             },
             colors: {
                 [colorName]: colors,
@@ -34,6 +34,14 @@ export const TeamsManagement = () => {
 
     const handleNewTeamCancelled = () => {
         setNewTeamDialogOpen(false);
+    }
+
+    const handleDeleteSelected = () => {
+        selectedTeamIds
+            .map(rowId => teams[parseInt(rowId)].id)
+            .forEach(teamId => {
+                deleteTeam(teamId);
+            });
     }
 
     return (
@@ -50,10 +58,26 @@ export const TeamsManagement = () => {
                                 { translate("TeamsManagement.AddTeam") }
                             </Button>
                         </NewTeamDialogTrigger>
-                        <Button variant="destructive" disabled={selectedTeamIds.length === 0}>
-                            <Trash />
-                            { translate("TeamsManagement.DeleteTeam") }
-                        </Button>
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button variant="destructive" disabled={selectedTeamIds.length === 0}>
+                                    <Trash />
+                                    { translate("TeamsManagement.DeleteTeam") }
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>{ translate("TeamManagement.DeleteTeamDialog.Title") }</AlertDialogTitle>
+                                    <AlertDialogDescription>{ translate("TeamManagement.DeleteTeamDialog.Description") }</AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>{ translate("TeamManagement.DeleteTeamDialog.Cancel") }</AlertDialogCancel>
+                                    <AlertDialogAction className={buttonVariants({ variant: "destructive" })} onClick={handleDeleteSelected}>
+                                        { translate("TeamManagement.DeleteTeamDialog.Confirm") }
+                                    </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
                     </div>
                 </div>
                 <Separator />

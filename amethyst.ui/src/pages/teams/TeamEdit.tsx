@@ -21,7 +21,7 @@ export const TeamEdit = () => {
 
     const { translate } = useI18n();
 
-    const displayName = useMemo(() => team?.names["default"] ?? "", [team]);
+    const displayName = useMemo(() => team?.names["team"] || team?.names["league"] || "", [team]);
 
     if(!team) {
         return (<></>);

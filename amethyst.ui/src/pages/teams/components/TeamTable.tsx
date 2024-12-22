@@ -52,7 +52,7 @@ export const TeamTable = ({ teams, selectedTeamIds, onSelectedTeamIdsChanged }: 
             accessorFn: t => t.names["team"] ?? "",
             header: ({column})=> (<SortableColumnHeader column={column} header={translate("TeamTable.TeamName")} />),
             sortingFn: 'alphanumeric',
-            cell: ({cell, row}) => (<Link to={`/teams/${row.original.id}`}>{cell.renderValue()}</Link>)
+            cell: ({cell, row}) => (<Link to={`/teams/${row.original.id}`}>{cell.renderValue() || <span className='italic'>{ translate("TeamTable.NoName") }</span>}</Link>)
         },
         {
             id: 'leagueName',
