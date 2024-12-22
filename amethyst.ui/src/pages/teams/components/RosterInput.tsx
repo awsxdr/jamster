@@ -5,6 +5,7 @@ import { Plus } from "lucide-react";
 import { useI18n } from "@/hooks";
 import { useMemo } from "react";
 import { useForm } from "react-hook-form";
+import { Skater } from "@/types";
 
 export const useRosterInputSchema = (existingNumbers: string[]) => {
     const { translate } = useI18n();
@@ -25,10 +26,10 @@ export const useRosterInputSchema = (existingNumbers: string[]) => {
 
 type RosterRowProps = {
     existingNumbers: string[];
-    onSkaterAdded?: (number: string, name: string) => void;
+    onSkatersAdded?: (skaters: Skater[]) => void;
 }
 
-export const RosterInput = ({ existingNumbers, onSkaterAdded }: RosterRowProps) => {
+export const RosterInput = ({ existingNumbers, onSkatersAdded }: RosterRowProps) => {
 
     const { translate } = useI18n();
 
@@ -42,9 +43,9 @@ export const RosterInput = ({ existingNumbers, onSkaterAdded }: RosterRowProps) 
         }
     });
     
-    const handleSubmit = ({number, name}: { number: string, name: string }) => {
+    const handleSubmit = ({number, name}: Skater) => {
         form.setFocus('number');
-        onSkaterAdded?.(number, name);
+        onSkatersAdded?.([{number, name}]);
         form.reset();
     }
 

@@ -18,7 +18,7 @@ public class TeamDetailsUnitTests : ReducerUnitTest<HomeTeamDetails, TeamDetails
                 ["test"] = "Test Team",
             },
             new(Color.White, Color.Black),
-            Enumerable.Range(1, 15).Select(i => new Skater(i.ToString(), $"Skater {i}", "test/test", SkaterRole.Skater)).ToList());
+            Enumerable.Range(1, 15).Select(i => new Skater(i.ToString(), $"Skater {i}")).ToList());
 
         State = new(new GameTeam([], new(Color.White, Color.Black), []));
 

@@ -156,7 +156,7 @@ public record Team(
     }
 }
 
-public record Skater(string Number, string Name, string Pronouns, SkaterRole Role);
+public record Skater(string Number, string Name);
 
 public enum SkaterRole
 {

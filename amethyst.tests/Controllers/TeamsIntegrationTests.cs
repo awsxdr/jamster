@@ -51,8 +51,8 @@ public class TeamsIntegrationTests : ControllerIntegrationTest
         var createResponse = (await Post<TeamModel>("api/Teams", team, HttpStatusCode.Created))!;
 
         var roster = new RosterModel([
-            new("123", "Test Skater 1", "", SkaterRole.Skater),
-            new("321", "Test Skater 2", "", SkaterRole.Skater),
+            new("123", "Test Skater 1"),
+            new("321", "Test Skater 2"),
         ]);
 
         await Put($"/api/Teams/{createResponse.Id}/roster", roster, HttpStatusCode.OK);
@@ -141,10 +141,10 @@ public class TeamsIntegrationTests : ControllerIntegrationTest
         var createResponse = (await Post<TeamModel>("api/Teams", team, HttpStatusCode.Created))!;
 
         var roster = new RosterModel([
-            new Skater("1", "One", "he/him", SkaterRole.Skater),
-            new Skater("2", "Two", "she/her", SkaterRole.NotSkating),
-            new Skater("3", "Three", "they/them", SkaterRole.BenchStaff),
-            new Skater("4", "Four", "", SkaterRole.Captain),
+            new Skater("1", "One"),
+            new Skater("2", "Two"),
+            new Skater("3", "Three"),
+            new Skater("4", "Four"),
         ]);
 
         var rosterPath = $"api/Teams/{createResponse.Id}/roster";
@@ -239,10 +239,10 @@ public class TeamsIntegrationTests : ControllerIntegrationTest
         var createResponse = (await Post<TeamModel>("api/Teams", team, HttpStatusCode.Created))!;
 
         var roster = new RosterModel([
-            new Skater("1", "One", "he/him", SkaterRole.Skater),
-            new Skater("2", "Two", "she/her", SkaterRole.NotSkating),
-            new Skater("3", "Three", "they/them", SkaterRole.BenchStaff),
-            new Skater("4", "Four", "", SkaterRole.Captain),
+            new Skater("1", "One"),
+            new Skater("2", "Two"),
+            new Skater("3", "Three"),
+            new Skater("4", "Four"),
         ]);
 
         await Put($"api/Teams/{createResponse.Id}/roster", roster, HttpStatusCode.OK);

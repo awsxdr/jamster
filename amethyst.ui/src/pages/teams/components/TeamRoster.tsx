@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui"
 import { RosterInput } from "./RosterInput";
 import { RosterTable } from "./RosterTable";
 import { useI18n, useTeamApi } from "@/hooks";
-import { SkaterRole, Team } from "@/types";
+import { Skater, Team } from "@/types";
 import { useMemo } from "react";
 
 type TeamRosterProps = {
@@ -18,10 +18,10 @@ export const TeamRoster = ({ team, className }: TeamRosterProps) => {
 
     const skaterNumbers = useMemo(() => team.roster.map(s => s.number), [team]);
 
-    const handleSkaterAdded = (number: string, name: string) => {
+    const handleSkatersAdded = (skaters: Skater[]) => {
         setRoster(team.id, [
             ...team.roster,
-            { number, name, pronouns: '', role: SkaterRole.Skater },
+            ...skaters,
         ])
     }
 
@@ -31,7 +31,7 @@ export const TeamRoster = ({ team, className }: TeamRosterProps) => {
                 <CardTitle>{ translate("TeamRoster.Title") }</CardTitle>
             </CardHeader>
             <CardContent className="flex flex-col gap-4">
-                <RosterInput existingNumbers={skaterNumbers} onSkaterAdded={handleSkaterAdded} />
+                <RosterInput existingNumbers={skaterNumbers} onSkatersAdded={handleSkatersAdded} />
                 <RosterTable team={team} />
             </CardContent>
         </Card>
