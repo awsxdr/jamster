@@ -48,11 +48,11 @@ export const TeamsManagement = () => {
     return (
         <>
             <NewTeamDialogContainer open={newTeamDialogOpen} onOpenChange={setNewTeamDialogOpen}>
-                <div className="flex w-full">
+                <div className="flex w-full items-center mt-1 mb-2 pr-2">
                     <div className="grow">
-                        <MobileSidebarTrigger className="m-5" />
+                        <MobileSidebarTrigger className="mx-5" />
                     </div>
-                    <div className="flex gap-5 m-5">
+                    <div className="flex gap-2">
                         <NewTeamDialogTrigger>
                             <Button variant="creative">
                                 <Plus />
