@@ -23,7 +23,10 @@ export const ControlPanel = ({ gameId, disabled }: ControlPanelProps) => {
 
     const { userSettings } = useUserSettings();
 
-    const teamControlsDisabled = disabled || stage === Stage.BeforeGame || stage === Stage.AfterGame && periodIsFinalized;
+    const teamControlsDisabled = 
+        disabled  || stage === Stage.AfterGame && periodIsFinalized ? true
+        : stage === Stage.BeforeGame ? 'allExceptLineup'
+        : false;
 
     return (
         <div className="flex flex-col gap-2 pt-2">

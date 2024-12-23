@@ -35,6 +35,27 @@ public class GamesController(
         return Created($"api/games/{game.Id}", game);
     }
 
+    [HttpPost]
+    public async Task<ActionResult<GameModel>> UploadGame(
+        IFormFile statsBookFile, 
+        [FromServices] IStatsBookSerializer statsBookSerializer,
+        [FromServices] IGameImporter gameImporter)
+    {
+        if (statsBookFile.ContentType != "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+            return new UnsupportedMediaTypeResult();
+
+        await using var readStream = statsBookFile.OpenReadStream();
+
+        var statsBookDeserializeResult = await statsBookSerializer.DeserializeStream(readStream);
+
+        if (statsBookDeserializeResult is not Success<StatsBook> statsBook)
+            return BadRequest();
+
+        var game = gameImporter.Import(statsBook.Value);
+
+        return Created($"api/games/{game.Id}", (GameModel) game);
+    }
+
     [HttpGet("{gameId:guid}")]
     public ActionResult<GameModel> GetGame(Guid gameId)
     {

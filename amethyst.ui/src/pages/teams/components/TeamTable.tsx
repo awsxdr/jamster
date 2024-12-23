@@ -1,43 +1,19 @@
-import { Column, ColumnDef, flexRender, getCoreRowModel, getSortedRowModel, SortingState, useReactTable } from '@tanstack/react-table';
+import { ColumnDef, flexRender, getCoreRowModel, getSortedRowModel, SortingState, useReactTable } from '@tanstack/react-table';
 
 import { Team } from "@/types";
 import { Checkbox, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui';
 import { useI18n } from '@/hooks/I18nHook';
-import { Button } from '@/components/ui/button';
-import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { DateTime } from 'luxon';
 import { CheckedState } from '@radix-ui/react-checkbox';
 import { useIsMobile } from '@/hooks';
+import { SortableColumnHeader } from '@/components/SortableColumnHeader';
 
 type TeamTableProps = {
     teams: Team[];
     selectedTeamIds?: string[];
     onSelectedTeamIdsChanged?: (selectedTeamIds: string[]) => void;
-}
-
-type SortableColumnHeaderProps = {
-    column: Column<Team, string>;
-    header: string;
-}
-
-const SortableColumnHeader = ({ column, header }: SortableColumnHeaderProps) => {
-
-    const handleClick = () => {
-        column.toggleSorting(column.getIsSorted() === 'asc')
-    }
-
-    return (
-        <Button variant="ghost" onClick={handleClick}>
-            { header }
-            { 
-                column.getIsSorted() === 'asc' ? <ArrowUp />
-                : column.getIsSorted() === 'desc' ? <ArrowDown />
-                : <ArrowUpDown />
-            }
-        </Button>
-    );
 }
 
 export const TeamTable = ({ teams, selectedTeamIds, onSelectedTeamIdsChanged }: TeamTableProps) => {

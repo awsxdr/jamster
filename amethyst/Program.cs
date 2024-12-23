@@ -7,9 +7,12 @@ using amethyst.Reducers;
 using amethyst.Services;
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
+using DotNext.Collections.Generic;
 using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.AspNetCore.Mvc.ApiExplorer;
 using Microsoft.AspNetCore.SignalR;
 using SQLite;
+using Swashbuckle.AspNetCore.Swagger;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -39,6 +42,8 @@ builder.Host.UseServiceProviderFactory(new AutofacServiceProviderFactory(contain
     container.RegisterType<GameDataStore>().As<IGameDataStore>().ExternallyOwned().InstancePerDependency();
     container.RegisterType<GameClock>().As<IGameClock>();
     container.RegisterType<TeamStore>().As<ITeamStore>().SingleInstance();
+    container.RegisterType<GameImporter>().As<IGameImporter>().SingleInstance();
+    container.RegisterType<StatsBookSerializer>().As<IStatsBookSerializer>().SingleInstance();
 
     container.RegisterType<GameStatesNotifier>().AsSelf().SingleInstance();
     container.RegisterType<GameStoreNotifier>().AsSelf().SingleInstance();
@@ -78,7 +83,55 @@ builder.Services.AddSignalR().AddJsonProtocol(options =>
 });
 
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.ResolveConflictingActions(apiDescriptions =>
+    {
+        apiDescriptions = apiDescriptions.ToArray();
+        var firstDescription = apiDescriptions.First();
+
+        var combinedDescription = new ApiDescription()
+        {
+            ActionDescriptor = firstDescription.ActionDescriptor,
+            GroupName = firstDescription.GroupName,
+            HttpMethod = firstDescription.HttpMethod,
+            RelativePath = firstDescription.RelativePath,
+        };
+
+        combinedDescription.ParameterDescriptions.AddAll(apiDescriptions.SelectMany(d => d.ParameterDescriptions));
+        combinedDescription.SupportedRequestFormats.AddAll(apiDescriptions.SelectMany(d => d.SupportedRequestFormats));
+        combinedDescription.SupportedResponseTypes.AddAll(
+            apiDescriptions.SelectMany(d => d.SupportedResponseTypes)
+                .GroupBy(r => r.StatusCode)
+                .Select(g =>
+                {
+                    var firstResponse = g.First();
+
+                    var responseType = new ApiResponseType
+                    {
+                        IsDefaultResponse = firstResponse.IsDefaultResponse,
+                        ModelMetadata = firstResponse.ModelMetadata,
+                        StatusCode = g.Key,
+                        Type = firstResponse.Type,
+                    };
+
+                    responseType.ApiResponseFormats.AddAll(g.SelectMany(r => r.ApiResponseFormats));
+
+                    return responseType;
+                })
+        );
+
+        foreach (var description in apiDescriptions.Reverse())
+        {
+            foreach (var property in description.Properties)
+            {
+                combinedDescription.Properties[property.Key] = property.Value;
+            }
+        }
+
+        return combinedDescription;
+    });
+});
 builder.Services.AddSpaStaticFiles(config =>
 {
     config.RootPath = Path.Combine(Path.GetDirectoryName(Assembly.GetEntryAssembly()!.Location)!, "wwwroot");

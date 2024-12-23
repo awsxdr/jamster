@@ -1,6 +1,6 @@
-import { Button, Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, Form, FormControl, FormField, FormItem, FormLabel, FormMessage, Input, Label, TooltipProvider } from "@/components/ui";
+import { Button, Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, Form, FormControl, FormField, FormItem, FormLabel, FormMessage, Input, TooltipProvider } from "@/components/ui";
 import { Color, HslColor, TeamColor } from "@/types";
-import { ChangeEvent, PropsWithChildren, useEffect, useMemo, useState } from "react";
+import { PropsWithChildren, useEffect, useState } from "react";
 import { ColorSelectButton } from "./ColorSelectButton";
 import { Loader2 } from "lucide-react";
 import { useI18n } from "@/hooks/I18nHook";

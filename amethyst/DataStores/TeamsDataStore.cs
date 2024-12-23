@@ -143,21 +143,6 @@ public class TeamsDataStore(ConnectionFactory connectionFactory, ISystemTime sys
             .Cast<JsonObject>();
 }
 
-public record Team(
-    Guid Id, 
-    Dictionary<string, string> Names,
-    Dictionary<string, TeamColor> Colors,
-    List<Skater> Roster,
-    DateTimeOffset LastUpdateTime
-)
-{
-    public Team() : this(Guid.NewGuid(), [], [], [], DateTimeOffset.MinValue)
-    {
-    }
-}
-
-public record Skater(string Number, string Name);
-
 public enum SkaterRole
 {
     Skater,
@@ -165,8 +150,6 @@ public enum SkaterRole
     NotSkating,
     BenchStaff,
 }
-
-public record TeamColor(Color ShirtColor, Color ComplementaryColor);
 
 public record DisplayColor(Color Foreground, Color Background);
 

@@ -5,6 +5,7 @@ type GameApi = {
     getGames: () => Promise<GameInfo[]>,
     getGame: (gameId: string) => Promise<GameInfo>,
     createGame: (name: string) => Promise<string>,
+    uploadGame: (statsBookFile: File) => Promise<string>,
     getCurrentGame: () => Promise<GameInfo>,
     setCurrentGame: (gameId: string) => Promise<void>,
     getGameState: <TState,>(gameId: string, stateName: string) => Promise<TState>,
@@ -30,6 +31,23 @@ export const useGameApi: () => GameApi = () => {
                 headers: {
                     "Content-Type": "application/json; charset=utf-8"
                 }
+            });
+        
+        const { id: gameId } = (await response.json()) as { id: string };
+
+        return gameId;
+    }
+
+    const uploadGame = async (statsBookFile: File) => {
+
+        const formData = new FormData();
+        formData.append('statsBookFile', statsBookFile);
+
+        const response = await fetch(
+            `${API_URL}/api/games`,
+            {
+                method: 'POST',
+                body: formData,
             });
         
         const { id: gameId } = (await response.json()) as { id: string };
@@ -63,6 +81,7 @@ export const useGameApi: () => GameApi = () => {
         getGames,
         getGame,
         createGame,
+        uploadGame,
         getCurrentGame,
         setCurrentGame,
         getGameState,

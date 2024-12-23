@@ -4,7 +4,7 @@ import { ChevronDown, ChevronUp, Repeat, Settings, SquarePlus } from "lucide-rea
 import { ConfirmMakeCurrentDialog } from "./ConfirmMakeCurrentDialog";
 import { GameInfo } from "@/types";
 import { useI18n } from "@/hooks/I18nHook";
-import { NewGameDialogTrigger } from "./NewGameDialog";
+import { NewGameDialogTrigger } from "../../../components/NewGameDialog";
 import { ViewMenu } from "./ViewMenu";
 import { MobileSidebarTrigger } from "@/components/MobileSidebarTrigger";
 import { useSidebar } from "@/components/ui";

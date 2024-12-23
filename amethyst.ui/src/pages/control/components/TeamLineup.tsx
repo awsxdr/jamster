@@ -1,5 +1,5 @@
 import { RadioButtonGroup } from "@/components/RadioButtonGroup";
-import { useI18n, useJamLineupState } from "@/hooks";
+import { useI18n, useJamLineupState, useTeamDetailsState } from "@/hooks";
 import { TeamSide } from "@/types";
 import { SkaterPosition } from "@/types/events/JamLineup";
 
@@ -10,9 +10,11 @@ type TeamLineupProps = {
 }
 
 export const TeamLineup = ({ side, onLineupSelected, disabled }: TeamLineupProps) => {
-    const skaterNumbers = ["0", "01", "123", "17", "29", "404", "49", "52", "77", "89" ];
-
     const lineup = useJamLineupState(side);
+    const team = useTeamDetailsState(side);
+    
+    const skaterNumbers = team?.team.roster.map(s => s.number) ?? [];
+
     const { translate } = useI18n();
 
     return (

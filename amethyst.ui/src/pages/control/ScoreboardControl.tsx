@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { GameStateContextProvider, useCurrentGame, useGamesList } from "@/hooks";
 import { useSearchParams } from "react-router-dom";
 import { ControlPanel } from "./components/ControlPanel";
-import { NewGameDialog, NewGameDialogContainer } from "./components/NewGameDialog";
+import { NewGameDialog, NewGameDialogContainer } from "../../components/NewGameDialog";
 import { useGameApi } from "@/hooks/GameApiHook";
 import { useEvents } from "@/hooks/EventsApiHook";
 import { TeamSet } from "@/types/events";

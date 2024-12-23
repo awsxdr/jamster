@@ -6,7 +6,7 @@ import { ScoreboardControl } from "./pages/control";
 import { TeamsManagement } from "./pages/teams/TeamsManagement";
 import { TeamEdit } from "./pages/teams/TeamEdit";
 import { WorkInProgress } from "./pages/WorkInProgress/WorkInProgress";
-import { GameManagement } from "./pages/games/GameManagement";
+import { GamesManagement } from "./pages/games/GamesManagement";
 
 export const Routes = () => {
     const router = createBrowserRouter([
@@ -32,7 +32,7 @@ export const Routes = () => {
         },
         {
             path: '/games',
-            element: <MainMenu content={<GameManagement />} />
+            element: <MainMenu content={<GamesManagement />} />
         },
         {
             path: '/overlay',

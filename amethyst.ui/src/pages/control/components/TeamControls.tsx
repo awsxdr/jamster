@@ -20,7 +20,7 @@ import { LastTripDeleted } from "@/types/events";
 type TeamControlsProps = {
     gameId?: string;
     side: TeamSide;
-    disabled?: boolean;
+    disabled?: boolean | 'allExceptLineup';
 }
 
 export const TeamControls = ({ gameId, side, disabled }: TeamControlsProps) => {
@@ -115,19 +115,19 @@ export const TeamControls = ({ gameId, side, disabled }: TeamControlsProps) => {
                             <div>
                                 <JamScore side={side} />
                                 <div className="flex w-full justify-center items-center">
-                                    <Button onClick={decrementScore} variant="secondary" disabled={disabled} className="text-md lg:text-xl">-1 [{side === TeamSide.Home ? 'a' : '\''}]</Button>
+                                    <Button onClick={decrementScore} variant="secondary" disabled={!!disabled} className="text-md lg:text-xl">-1 [{side === TeamSide.Home ? 'a' : '\''}]</Button>
                                     <TeamScore side={side} />
-                                    <Button onClick={incrementScore} variant="secondary" disabled={disabled} className="text-md lg:text-xl" >+1 [{side === TeamSide.Home ? 's' : '#'}]</Button>
+                                    <Button onClick={incrementScore} variant="secondary" disabled={!!disabled} className="text-md lg:text-xl" >+1 [{side === TeamSide.Home ? 's' : '#'}]</Button>
                                 </div>
                             </div>
-                            <TripScore tripScore={tripScore?.score ?? -1} disabled={disabled} scoreShortcutKeys={tripShortcutKeys} onTripScoreSet={setTripScore} />
+                            <TripScore tripScore={tripScore?.score ?? -1} disabled={!!disabled} scoreShortcutKeys={tripShortcutKeys} onTripScoreSet={setTripScore} />
                         </>
                     )}
                     { userSettings.showStatsControls && (
                         <>
                             <JamStats 
                                 side={side} 
-                                disabled={disabled} 
+                                disabled={!!disabled} 
                                 onLeadChanged={handleLeadChanged} 
                                 onLostChanged={handleLostChanged} 
                                 onCallChanged={handleCallChanged} 
@@ -137,7 +137,7 @@ export const TeamControls = ({ gameId, side, disabled }: TeamControlsProps) => {
                         </>
                     )}
                     { userSettings.showLineupControls && (
-                        <TeamLineup side={side} disabled={disabled} onLineupSelected={handleLineupSelected} />
+                        <TeamLineup side={side} disabled={disabled === true} onLineupSelected={handleLineupSelected} />
                     )}
                 </SeparatedCollection>
             </CardContent>
