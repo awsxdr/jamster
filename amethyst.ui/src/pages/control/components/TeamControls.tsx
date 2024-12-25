@@ -35,7 +35,7 @@ export const TeamControls = ({ gameId, side, disabled }: TeamControlsProps) => {
             return '';
         }
 
-        return team.team.names['controls'] || team.team.names['default'] || '';
+        return team.team.names['controls'] || team.team.names['color'] ||  team.team.names['team'] || team.team.names['league'] || '';
     }, [team]);
 
     const tripScore = useTripScoreState(side);

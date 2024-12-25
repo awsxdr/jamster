@@ -213,6 +213,7 @@ export const ColorsTable = ({ team }: ColorsTableProps) => {
                 </div>
                 { colorItems.map((color, i) => 
                     <ColorRow 
+                        key={i}
                         color={color} 
                         existingColors={Object.keys(team.colors).filter(c => c !== color.name)} 
                         disableEdit={isEditing}

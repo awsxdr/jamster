@@ -17,8 +17,8 @@ export const SortableColumnHeader = <TColumn,>({ column, header }: SortableColum
         <Button variant="ghost" onClick={handleClick}>
             { header }
             { 
-                column.getIsSorted() === 'asc' ? <ArrowUp />
-                : column.getIsSorted() === 'desc' ? <ArrowDown />
+                column.getIsSorted() === 'asc' ? <ArrowDown />
+                : column.getIsSorted() === 'desc' ? <ArrowUp />
                 : <ArrowUpDown />
             }
         </Button>

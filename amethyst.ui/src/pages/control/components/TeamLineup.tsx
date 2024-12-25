@@ -13,7 +13,7 @@ export const TeamLineup = ({ side, onLineupSelected, disabled }: TeamLineupProps
     const lineup = useJamLineupState(side);
     const team = useTeamDetailsState(side);
     
-    const skaterNumbers = team?.team.roster.map(s => s.number) ?? [];
+    const skaterNumbers = team?.team.roster.filter(s => s.isSkating).map(s => s.number).sort() ?? [];
 
     const { translate } = useI18n();
 

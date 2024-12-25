@@ -80,7 +80,7 @@ export const UploadDialog = ({ onGameUploaded, onCancelled }: UploadDialogProps)
                         <DialogTitle>{translate("UploadDialog.Title")}</DialogTitle>
                         <DialogDescription>{translate("UploadDialog.Description")}</DialogDescription>
                     </DialogHeader>
-                    <div>
+                    <div className="pt-4">
                         <FormField control={form.control} name="statsBookFile" render={({ field: { value, onChange, ...fieldProps }}) => (
                             <FormItem>
                                 <FormControl>

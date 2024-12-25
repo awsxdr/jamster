@@ -1,8 +1,6 @@
-﻿using amethyst.DataStores;
-using amethyst.Domain;
+﻿using amethyst.Domain;
 using amethyst.Events;
 using amethyst.Reducers;
-using amethyst.Services;
 using FluentAssertions;
 
 namespace amethyst.tests.Reducers;
@@ -18,7 +16,7 @@ public class TeamDetailsUnitTests : ReducerUnitTest<HomeTeamDetails, TeamDetails
                 ["test"] = "Test Team",
             },
             new(Color.White, Color.Black),
-            Enumerable.Range(1, 15).Select(i => new Skater(i.ToString(), $"Skater {i}")).ToList());
+            Enumerable.Range(1, 15).Select(i => new GameSkater(i.ToString(), $"Skater {i}", true)).ToList());
 
         State = new(new GameTeam([], new(Color.White, Color.Black), []));
 

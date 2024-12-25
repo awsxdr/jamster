@@ -71,13 +71,13 @@ export const ScoreboardControl = () => {
         const homeGameTeam = {
             names: homeTeam.names,
             color: homeTeamColor,
-            roster: homeTeam.roster,
+            roster: homeTeam.roster.map(s => ({ ...s, isSkating: true })),
         };
 
         const awayGameTeam = {
             names: awayTeam.names,
             color: awayTeamColor,
-            roster: awayTeam.roster,
+            roster: awayTeam.roster.map(s => ({ ...s, isSkating: true })),
         };
         
         await sendEvent(gameId, new TeamSet(TeamSide.Home, homeGameTeam));

@@ -8,12 +8,12 @@ namespace amethyst.tests.EventHandling;
 public static class TestGameEventsSource
 {
     public static Event[] TwoJamsWithScores => new EventsBuilder(0, [])
-        .Event<TeamSet>(0).WithBody(new TeamSetBody(TeamSide.Home, new GameTeam(HomeTeam.Names, HomeTeam.Colors["Black"], HomeTeam.Roster)))
-        .Event<TeamSet>(0).WithBody(new TeamSetBody(TeamSide.Away, new GameTeam(AwayTeam.Names, AwayTeam.Colors["White"], AwayTeam.Roster)))
+        .Event<TeamSet>(0).WithBody(new TeamSetBody(TeamSide.Home, new GameTeam(HomeTeam.Names, HomeTeam.Color, HomeTeam.Roster)))
+        .Event<TeamSet>(0).WithBody(new TeamSetBody(TeamSide.Away, new GameTeam(AwayTeam.Names, AwayTeam.Color, AwayTeam.Roster)))
         .Validate(
             new GameStageState(Stage.BeforeGame, 0, 0, false),
-            ("Home", new TeamDetailsState(new GameTeam(HomeTeam.Names, HomeTeam.Colors["Black"], HomeTeam.Roster))),
-            ("Away", new TeamDetailsState(new GameTeam(AwayTeam.Names, AwayTeam.Colors["White"], AwayTeam.Roster)))
+            ("Home", new TeamDetailsState(new GameTeam(HomeTeam.Names, HomeTeam.Color, HomeTeam.Roster))),
+            ("Away", new TeamDetailsState(new GameTeam(AwayTeam.Names, AwayTeam.Color, AwayTeam.Roster)))
         )
         .Event<IntermissionEnded>(15)
         .Validate(new GameStageState(Stage.Lineup, 1, 0, false))
@@ -83,12 +83,12 @@ public static class TestGameEventsSource
 
     public static Event[] FullGame => new EventsBuilder(0, [])
         .Validate(new GameStageState(Stage.BeforeGame, 0, 0, false))
-        .Event<TeamSet>(0).WithBody(new TeamSetBody(TeamSide.Home, new GameTeam(HomeTeam.Names, HomeTeam.Colors["Black"], HomeTeam.Roster)))
-        .Event<TeamSet>(0).WithBody(new TeamSetBody(TeamSide.Away, new GameTeam(AwayTeam.Names, AwayTeam.Colors["White"], AwayTeam.Roster)))
+        .Event<TeamSet>(0).WithBody(new TeamSetBody(TeamSide.Home, new GameTeam(HomeTeam.Names, HomeTeam.Color, HomeTeam.Roster)))
+        .Event<TeamSet>(0).WithBody(new TeamSetBody(TeamSide.Away, new GameTeam(AwayTeam.Names, AwayTeam.Color, AwayTeam.Roster)))
         .Validate(
             new GameStageState(Stage.BeforeGame, 0, 0, false),
-            ("Home", new TeamDetailsState(new GameTeam(HomeTeam.Names, HomeTeam.Colors["Black"], HomeTeam.Roster))),
-            ("Away", new TeamDetailsState(new GameTeam(AwayTeam.Names, AwayTeam.Colors["White"], AwayTeam.Roster)))
+            ("Home", new TeamDetailsState(new GameTeam(HomeTeam.Names, HomeTeam.Color, HomeTeam.Roster))),
+            ("Away", new TeamDetailsState(new GameTeam(AwayTeam.Names, AwayTeam.Color, AwayTeam.Roster)))
         )
         .Event<IntermissionEnded>(15)
         .Validate(new GameStageState(Stage.Lineup, 1, 0, false))
@@ -291,53 +291,35 @@ public static class TestGameEventsSource
         .Validate(new GameStageState(Stage.AfterGame, 2, 19, true))
         .Build();
 
-    private static readonly Team HomeTeam = new(
-        Guid.NewGuid(),
-        new()
-        {
-            ["default"] = "Test Home Team"
-        },
-        new()
-        {
-            ["Black"] = new TeamColor(Color.Black, Color.White),
-            ["White"] = new TeamColor(Color.White, Color.Black),
-        },
+    private static readonly GameTeam HomeTeam = new(
+        new() { ["team"] =  "Test Home Team" },
+        new TeamColor(Color.Black, Color.White),
         [
-            new("0", "Test Skater 1"),
-            new("12", "Test Skater 2"),
-            new("267", "Test Skater 3"),
-            new("3876", "Test Skater 4"),
-            new("4", "Test Skater 5"),
-            new("52", "Test Skater 6"),
-            new("697", "Test Skater 7"),
-            new("7293", "Test Skater 8"),
-            new("8", "Test Skater 9"),
-            new("90", "Test Skater 10"),
-        ],
-        DateTimeOffset.UtcNow);
+            new("0", "Test Skater 1", true),
+            new("12", "Test Skater 2", true),
+            new("267", "Test Skater 3", true),
+            new("3876", "Test Skater 4", true),
+            new("4", "Test Skater 5", true),
+            new("52", "Test Skater 6", true),
+            new("697", "Test Skater 7", true),
+            new("7293", "Test Skater 8", true),
+            new("8", "Test Skater 9", true),
+            new("90", "Test Skater 10", true),
+        ]);
 
-    private static readonly Team AwayTeam = new(
-        Guid.NewGuid(),
-        new()
-        {
-            ["default"] = "Test Away Team"
-        },
-        new()
-        {
-            ["Black"] = new TeamColor(Color.Black, Color.White),
-            ["White"] = new TeamColor(Color.White, Color.Black),
-        },
+    private static readonly GameTeam AwayTeam = new(
+        new() { ["team"] = "Test Away Team" },
+        new TeamColor(Color.White, Color.Black),
         [
-            new("0583", "Test Skater 1"),
-            new("183", "Test Skater 2"),
-            new("28", "Test Skater 3"),
-            new("3", "Test Skater 4"),
-            new("4957", "Test Skater 5"),
-            new("572", "Test Skater 6"),
-            new("60", "Test Skater 7"),
-            new("7", "Test Skater 8"),
-            new("8273", "Test Skater 9"),
-            new("984", "Test Skater 10"),
-        ],
-        DateTimeOffset.UtcNow);
+            new("0583", "Test Skater 1", true),
+            new("183", "Test Skater 2", true),
+            new("28", "Test Skater 3", true),
+            new("3", "Test Skater 4", true),
+            new("4957", "Test Skater 5", true),
+            new("572", "Test Skater 6", true),
+            new("60", "Test Skater 7", true),
+            new("7", "Test Skater 8", true),
+            new("8273", "Test Skater 9", true),
+            new("984", "Test Skater 10", true),
+        ]);
 }

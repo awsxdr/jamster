@@ -1,7 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
 using amethyst.Controllers;
-using amethyst.DataStores;
 using amethyst.Domain;
 using amethyst.Hubs;
 using FluentAssertions;

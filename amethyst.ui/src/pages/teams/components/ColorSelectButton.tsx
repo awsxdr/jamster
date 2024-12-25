@@ -13,9 +13,11 @@ type ColorSelectButtonProps = {
     disabled?: boolean;
     className?: string;
     onColorChanged?: (color: HslColor) => void;
+    onOpen?: () => void;
+    onClose?: () => void;
 }
 
-export const ColorSelectButton = ({ color, title, description, disabled, className, onColorChanged }: ColorSelectButtonProps) => {
+export const ColorSelectButton = ({ color, title, description, disabled, className, onColorChanged, onOpen, onClose }: ColorSelectButtonProps) => {
 
     const { translate } = useI18n();
 
@@ -41,10 +43,18 @@ export const ColorSelectButton = ({ color, title, description, disabled, classNa
         setColorInputString(newValue);
     }
 
+    const handleOpenChange = (open: boolean) => {
+        if(open) {
+            onOpen?.();
+        } else {
+            onClose?.();
+        }
+    }
+
     return (
         <TooltipProvider>
             <Tooltip>
-                <Popover>
+                <Popover onOpenChange={handleOpenChange}>
                     <TooltipTrigger asChild>
                         <PopoverTrigger asChild disabled={disabled}>
                             <Button 

@@ -1,5 +1,6 @@
 export * from './Color';
 export * from './GameInfo';
+export * from './GameSkater';
 export * from './GameStageState';
 export * from './GameTeam';
 export * from './JamClockState';

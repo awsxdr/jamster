@@ -22,7 +22,7 @@ export const TeamRoster = ({ team, className }: TeamRosterProps) => {
         setRoster(team.id, [
             ...team.roster,
             ...skaters,
-        ])
+        ]);
     }
 
     return (

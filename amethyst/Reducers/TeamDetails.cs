@@ -1,5 +1,4 @@
-﻿using amethyst.DataStores;
-using amethyst.Domain;
+﻿using amethyst.Domain;
 using amethyst.Events;
 using amethyst.Extensions;
 using amethyst.Services;
@@ -12,7 +11,7 @@ public abstract class TeamDetails(TeamSide teamSide, ReducerGameContext context,
     , IHandlesEvent<TeamSet>
 {
     protected override TeamDetailsState DefaultState => new(new GameTeam(
-        new() { ["default"] = teamSide == TeamSide.Home ? "Black" : "White" },
+        new() { ["color"] = teamSide == TeamSide.Home ? "Black" : "White" },
         teamSide == TeamSide.Home
             ? new TeamColor(Color.Black, Color.White)
             : new TeamColor(Color.White, Color.Black),
