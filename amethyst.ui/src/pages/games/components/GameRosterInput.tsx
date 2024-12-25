@@ -7,18 +7,18 @@ import { useMemo, ClipboardEvent } from "react";
 import { useForm } from "react-hook-form";
 import { GameSkater } from "@/types";
 
-export const useRosterInputSchema = (existingNumbers: string[]) => {
+const useRosterInputSchema = (existingNumbers: string[]) => {
     const { translate } = useI18n();
 
     const notExistingNumberRegex = useMemo(() => new RegExp(`^(?!(${existingNumbers.join('|')})$).*$`), [existingNumbers]);
 
     return z.object({
         number: z.string().min(1, {
-            message: translate('RosterInput.NumberMissing'),
+            message: translate('GameRosterInput.NumberMissing'),
         }).regex(/^\d{1,4}$/, {
-            message: translate('RosterInput.NumberInvalid'),
+            message: translate('GameRosterInput.NumberInvalid'),
         }).regex(notExistingNumberRegex, {
-            message: translate("RosterInput.NumberExists"),
+            message: translate("GameRosterInput.NumberExists"),
         }),
         name: z.string(),
     });
@@ -29,7 +29,7 @@ type RosterRowProps = {
     onSkatersAdded?: (skaters: GameSkater[]) => void;
 }
 
-export const RosterInput = ({ existingNumbers, onSkatersAdded }: RosterRowProps) => {
+export const GameRosterInput = ({ existingNumbers, onSkatersAdded }: RosterRowProps) => {
 
     const { translate } = useI18n();
 
@@ -92,7 +92,7 @@ export const RosterInput = ({ existingNumbers, onSkatersAdded }: RosterRowProps)
                         <div className="flex gap-2 w-full">
                             <FormField control={form.control} name="number" render={({field}) => (
                                 <FormItem className="w-1/3">
-                                    <FormLabel>{ translate("RosterInput.Number") }</FormLabel>
+                                    <FormLabel>{ translate("GameRosterInput.Number") }</FormLabel>
                                     <FormControl>
                                         <Input {...field} onPaste={handlePaste} />
                                     </FormControl>
@@ -101,7 +101,7 @@ export const RosterInput = ({ existingNumbers, onSkatersAdded }: RosterRowProps)
                             )} />
                             <FormField control={form.control} name="name" render={({field}) => (
                                 <FormItem className="w-2/3">
-                                    <FormLabel>{ translate("RosterInput.Name") }</FormLabel>
+                                    <FormLabel>{ translate("GameRosterInput.Name") }</FormLabel>
                                     <FormControl>
                                         <Input {...field} onPaste={handlePaste} />
                                     </FormControl>
@@ -111,7 +111,7 @@ export const RosterInput = ({ existingNumbers, onSkatersAdded }: RosterRowProps)
                         </div>
                         <FormItem>
                             <div className="h-6"></div>
-                            <Button type="submit" variant="creative"><Plus /> { translate("RosterInput.AddSkater") }</Button>
+                            <Button type="submit" variant="creative"><Plus /> { translate("GameRosterInput.AddSkater") }</Button>
                         </FormItem>
                     </div>
                 </form>

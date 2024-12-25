@@ -39,9 +39,9 @@ export const GameTable = ({ games, selectedGameIds, onSelectedGameIdsChanged }: 
     const getTeamName = (names: StringMap<string>) => names["team"] ?? names["league"] ?? "";
 
     const getStageName = ({ stage: { stage, homeScore, awayScore }}: GameItem) =>
-        stage === "0" ? "Upcoming"
-        : stage === "2" ? `Finished (${homeScore} - ${awayScore})`
-        : `In progress (${homeScore} - ${awayScore})`
+        stage === "0" ? translate("GameTable.Status.Upcoming")
+        : stage === "2" ? translate("GameTable.Status.Finished").replace("{homeScore}", homeScore.toString()).replace("{awayScore}", awayScore.toString())
+        : translate("GameTable.Status.InProgress").replace("{homeScore}", homeScore.toString()).replace("{awayScore}", awayScore.toString());
 
     const getStageValue = (stage: Stage) => 
         stage === Stage.BeforeGame ? 0

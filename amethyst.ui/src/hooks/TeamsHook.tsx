@@ -88,8 +88,6 @@ export const TeamListContextProvider = ({ children }: PropsWithChildren) => {
             [teamId]: { ...notifiers[teamId], [watchId]: onTeamChanged }
         }));
 
-        console.log("Watch team", watchId, teamNotifiers);
-
         return watchId;
     }
 
@@ -98,8 +96,6 @@ export const TeamListContextProvider = ({ children }: PropsWithChildren) => {
             ...notifiers,
             [teamId]: { ...notifiers[teamId], [watchId]: undefined }
         }));
-
-        console.log("Unwatch team", watchId, teamNotifiers);
     }
 
     useEffect(() => {
@@ -120,7 +116,6 @@ export const TeamListContextProvider = ({ children }: PropsWithChildren) => {
 
     const notify = useCallback((teamId: string, team?: Team) => {
         Object.values(teamNotifiers[teamId] ?? {}).forEach(n => n?.(team));
-        console.log("Notify", teamNotifiers);
     }, [teamNotifiers, setTeamNotifiers]);
 
     useEffect(() => {

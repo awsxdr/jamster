@@ -48,6 +48,9 @@ type RosterTableRowDropdownMenuProps = {
 }
 
 const RosterTableRowDropdownMenu = ({ disabled, onDelete }: RosterTableRowDropdownMenuProps) => {
+
+    const { translate } = useI18n();
+
     return (
         <AlertDialog>
             <DropdownMenu>
@@ -60,20 +63,20 @@ const RosterTableRowDropdownMenu = ({ disabled, onDelete }: RosterTableRowDropdo
                     <AlertDialogTrigger asChild>
                         <DropdownMenuItem>
                             <Trash />
-                            Delete
+                            {translate("GameRosterTable.Delete")}
                         </DropdownMenuItem>
                     </AlertDialogTrigger>
                 </DropdownMenuContent>
             </DropdownMenu>
             <AlertDialogContent>
                 <AlertDialogHeader>
-                    <AlertDialogTitle>Delete skater</AlertDialogTitle>
-                    <AlertDialogDescription>Are you sure you wish to permanently remove this skater? This action cannot be undone.</AlertDialogDescription>
+                    <AlertDialogTitle>{translate("GameRosterTable.DeleteTitle")}</AlertDialogTitle>
+                    <AlertDialogDescription>{translate("GameRosterTable.DeleteDescription")}</AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogCancel>{translate("GameRosterTable.DeleteCancel")}</AlertDialogCancel>
                     <AlertDialogAction className={buttonVariants({ variant: "destructive" })} onClick={onDelete}>
-                        Delete
+                        {translate("GameRosterTable.DeleteConfirm")}
                     </AlertDialogAction>
                 </AlertDialogFooter>
             </AlertDialogContent>
@@ -88,11 +91,11 @@ export const useRosterTableInputSchema = (existingNumbers: string[]) => {
 
     return z.object({
         number: z.string().min(1, {
-            message: translate('RosterInput.NumberMissing'),
+            message: translate('GameRosterInput.NumberMissing'),
         }).regex(/^\d{1,4}$/, {
-            message: translate('RosterInput.NumberInvalid'),
+            message: translate('GameRosterInput.NumberInvalid'),
         }).regex(notExistingNumberRegex, {
-            message: translate("RosterInput.NumberExists"),
+            message: translate("GameRosterInput.NumberExists"),
         }),
         name: z.string(),
         isSkating: z.boolean(),
@@ -231,7 +234,7 @@ type RosterTableProps = {
     onSkaterDeleted?: (rosterIndex: number) => void;
 }
 
-export const RosterTable = ({ roster, className, onSkaterChanged, onSkaterDeleted }: RosterTableProps) => {
+export const GameRosterTable = ({ roster, className, onSkaterChanged, onSkaterDeleted }: RosterTableProps) => {
 
     const [isEditing, setIsEditing] = useState(false);
     const { translate } = useI18n();
