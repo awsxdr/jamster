@@ -140,6 +140,7 @@ builder.Services.AddSpaStaticFiles(config =>
 var databasesPath = Path.Combine(RunningEnvironment.RootPath, "db");
 Directory.CreateDirectory(databasesPath);
 Directory.CreateDirectory(Path.Combine(databasesPath, GameDataStore.GamesFolderName));
+Directory.CreateDirectory(Path.Combine(databasesPath, GameDataStore.GamesFolderName, GameDataStore.ArchiveFolderName));
 
 var app = builder.Build();
 

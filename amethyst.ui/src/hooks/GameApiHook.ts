@@ -2,13 +2,14 @@ import { GameInfo } from "@/types"
 import { API_URL } from "@/constants";
 
 type GameApi = {
-    getGames: () => Promise<GameInfo[]>,
-    getGame: (gameId: string) => Promise<GameInfo>,
-    createGame: (name: string) => Promise<string>,
-    uploadGame: (statsBookFile: File) => Promise<string>,
-    getCurrentGame: () => Promise<GameInfo>,
-    setCurrentGame: (gameId: string) => Promise<void>,
-    getGameState: <TState,>(gameId: string, stateName: string) => Promise<TState>,
+    getGames: () => Promise<GameInfo[]>;
+    getGame: (gameId: string) => Promise<GameInfo>;
+    deleteGame: (gameId: string) => Promise<void>;
+    createGame: (name: string) => Promise<string>;
+    uploadGame: (statsBookFile: File) => Promise<string>;
+    getCurrentGame: () => Promise<GameInfo>;
+    setCurrentGame: (gameId: string) => Promise<void>;
+    getGameState: <TState,>(gameId: string, stateName: string) => Promise<TState>;
 }
 
 export const useGameApi: () => GameApi = () => {
@@ -20,6 +21,14 @@ export const useGameApi: () => GameApi = () => {
     const getGame = async (gameId: string) => {
         const response = await fetch(`${API_URL}/api/games/${gameId}`);
         return (await response.json()) as GameInfo;
+    }
+
+    const deleteGame = async (gameId: string) => {
+        await fetch(
+            `${API_URL}/api/games/${gameId}`,
+            {
+                method: 'DELETE',
+            });
     }
 
     const createGame = async (name: string) => {
@@ -80,6 +89,7 @@ export const useGameApi: () => GameApi = () => {
     return {
         getGames,
         getGame,
+        deleteGame,
         createGame,
         uploadGame,
         getCurrentGame,

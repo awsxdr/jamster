@@ -78,13 +78,24 @@ public class GamesIntegrationTests : ControllerIntegrationTest
         await GetGame(gameId: Guid.NewGuid(), expectedResult: HttpStatusCode.NotFound);
     }
 
+    [Test]
+    public async Task DeleteGame_WhenGameFound_DeletesGame()
+    {
+        File.Exists(Path.Combine(GameDataStore.GamesFolder, $"Testgame_{_game.Id}.db")).Should().BeTrue();
+
+        await Delete($"/api/games/{_game.Id}", HttpStatusCode.NoContent);
+
+        File.Exists(Path.Combine(GameDataStore.GamesFolder, $"Testgame_{_game.Id}.db")).Should().BeFalse();
+        File.Exists(Path.Combine(GameDataStore.ArchiveFolder, $"Testgame_{_game.Id}.db")).Should().BeTrue();
+    }
+
     private async Task<GamesController.GameModel> GetGame(Guid? gameId = null, HttpStatusCode expectedResult = HttpStatusCode.OK) =>
         (await Get<GamesController.GameModel>($"/api/games/{gameId ?? _game.Id}", expectedResult))!;
 
 
     protected override void CleanDatabase()
     {
-        GameDataStoreFactory?.ReleaseConnections();
+        GameDataStoreFactory?.ReleaseConnections().Wait();
         GC.Collect(); // Force SQLite to release database files
 
         foreach (var databaseFile in Directory.GetFiles(GameDataStore.GamesFolder, "*.db"))

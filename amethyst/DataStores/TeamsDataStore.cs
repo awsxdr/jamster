@@ -29,7 +29,7 @@ public class TeamsDataStore(ConnectionFactory connectionFactory, ISystemTime sys
         {
             Success<Team> s => s,
             Failure<NotFoundError> => Result<Team>.Fail<TeamNotFoundError>(),
-            _ => throw new UnexpectedResultException()
+            var r => throw new UnexpectedResultException(r)
         };
 
     public Result<Team> GetTeamIncludingArchived(Guid teamId) =>
@@ -37,7 +37,7 @@ public class TeamsDataStore(ConnectionFactory connectionFactory, ISystemTime sys
         {
             Success<Team> s => s,
             Failure<NotFoundError> => Result<Team>.Fail<TeamNotFoundError>(),
-            _ => throw new UnexpectedResultException()
+            var r => throw new UnexpectedResultException(r)
         };
 
     public Team CreateTeam(Team team)
@@ -57,7 +57,7 @@ public class TeamsDataStore(ConnectionFactory connectionFactory, ISystemTime sys
         {
             Success s => s,
             Failure<NotFoundError> => Result.Fail<TeamNotFoundError>(),
-            _ => throw new UnexpectedResultException()
+            var r => throw new UnexpectedResultException(r)
         };
 
     public Result SetRoster(Guid teamId, IEnumerable<Skater> skaters) =>
@@ -68,7 +68,7 @@ public class TeamsDataStore(ConnectionFactory connectionFactory, ISystemTime sys
             {
                 Success s => s,
                 Failure<NotFoundError> => Result.Fail<TeamNotFoundError>(),
-                _ => throw new UnexpectedResultException()
+                var r => throw new UnexpectedResultException(r)
             };
 
     protected override void ApplyUpgrade(int version)

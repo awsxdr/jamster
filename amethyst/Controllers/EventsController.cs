@@ -19,13 +19,13 @@ public class EventsController(
     ) : Controller
 {
     [HttpGet("")]
-    public ActionResult<IEnumerable<EventModel>> GetEvents(Guid gameId)
+    public async Task<ActionResult<IEnumerable<EventModel>>> GetEvents(Guid gameId)
     {
         logger.LogDebug("Getting events for game {gameId}", gameId);
 
-        return gameDiscoveryService.GetExistingGame(gameId)
-                .Then(game =>
-                    gameDataStoreFactory.GetDataStore(IGameDiscoveryService.GetGameFileName(game))
+        return await gameDiscoveryService.GetExistingGame(gameId)
+                .Then(async game =>
+                    (await gameDataStoreFactory.GetDataStore(IGameDiscoveryService.GetGameFileName(game)))
                         .GetEvents()
                         .Select(e => (EventModel)e)
                         .Map(Result.Succeed))
@@ -34,7 +34,7 @@ public class EventsController(
                 Success<IEnumerable<EventModel>> s => Ok(s.Value),
                 Failure<GameFileNotFoundForIdError> => NotFound(),
                 Failure<MultipleGameFilesFoundForIdError> => StatusCode(500),
-                _ => throw new UnexpectedResultException()
+                var r => throw new UnexpectedResultException(r)
             };
     }
 
@@ -45,7 +45,7 @@ public class EventsController(
 
         return
             (await eventConverter.DecodeEvent(model.AsUntypedEvent())
-                    .And(gameDiscoveryService.GetExistingGame(gameId))
+                    .And(await gameDiscoveryService.GetExistingGame(gameId))
                     .ThenMap(x => eventBus.AddEventAtCurrentTick(x.Item2, x.Item1)))
                 switch
                 {
@@ -54,7 +54,7 @@ public class EventsController(
                     Failure<BodyFormatIncorrectError> => BadRequest(),
                     Failure<GameFileNotFoundForIdError> => NotFound(),
                     Failure<MultipleGameFilesFoundForIdError> => StatusCode(500),
-                    _ => throw new UnexpectedResultException()
+                    var r => throw new UnexpectedResultException(r)
                 };
     }
 
@@ -72,7 +72,7 @@ public class EventsController(
                 Failure<GameFileNotFoundForIdError> => NotFound(),
                 Failure<MultipleGameFilesFoundForIdError> => StatusCode(500),
                 Failure<EventBus.EventDeletionFailedError> => StatusCode(500),
-                _ => throw new UnexpectedResultException()
+                var r => throw new UnexpectedResultException(r)
             };
     }
 

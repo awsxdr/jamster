@@ -15,7 +15,7 @@ public class SystemStateStoreUnitTests : UnitTest<SystemStateStore>
 
         GetMock<IGameDiscoveryService>()
             .Setup(mock => mock.GetExistingGame(It.IsAny<Guid>()))
-            .Returns(Result<GameInfo>.Fail<GameFileNotFoundForIdError>());
+            .ReturnsAsync(Result<GameInfo>.Fail<GameFileNotFoundForIdError>());
     }
 
     [Test]
@@ -36,7 +36,7 @@ public class SystemStateStoreUnitTests : UnitTest<SystemStateStore>
 
         GetMock<IGameDiscoveryService>()
             .Setup(mock => mock.GetExistingGame(gameId))
-            .Returns(Result.Succeed(new GameInfo(gameId, "Test Game")));
+            .ReturnsAsync(Result.Succeed(new GameInfo(gameId, "Test Game")));
 
         await Subject.SetCurrentGame(gameId);
 
@@ -60,7 +60,7 @@ public class SystemStateStoreUnitTests : UnitTest<SystemStateStore>
 
         GetMock<IGameDiscoveryService>()
             .Setup(mock => mock.GetExistingGame(gameId))
-            .Returns(Result.Succeed(gameInfo));
+            .ReturnsAsync(Result.Succeed(gameInfo));
 
         var result = await Subject.SetCurrentGame(gameId);
         result.Should().BeSuccess<GameInfo>().Which.Value.Should().Be(gameInfo);

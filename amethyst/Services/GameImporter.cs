@@ -6,7 +6,7 @@ namespace amethyst.Services;
 
 public interface IGameImporter
 {
-    GameInfo Import(StatsBook statsBook);
+    Task<GameInfo> Import(StatsBook statsBook);
 }
 
 public class GameImporter(IGameDiscoveryService gameDiscoveryService, IEventBus eventBus) : IGameImporter
@@ -31,16 +31,16 @@ public class GameImporter(IGameDiscoveryService gameDiscoveryService, IEventBus 
     .SelectMany(x => x.Keys.Select(key => (Key: key, x.Colors.ShirtColor, x.Colors.ComplementaryColor)))
     .ToDictionary(x => x.Key, x => new TeamColor(x.ShirtColor, x.ComplementaryColor));
 
-    public GameInfo Import(StatsBook statsBook)
+    public async Task<GameInfo> Import(StatsBook statsBook)
     {
         var gameName = $"{statsBook.Igrf.GameDetails.GameStart.Date:yyyy-MM-dd} - {GetTeamName(statsBook.Igrf.Teams.HomeTeam)} vs {GetTeamName(statsBook.Igrf.Teams.AwayTeam)}";
         if (!string.IsNullOrWhiteSpace(statsBook.Igrf.GameDetails.GameNumber))
             gameName += $" ({statsBook.Igrf.GameDetails.GameNumber})";
 
-        var game = gameDiscoveryService.GetGame(new(Guid.NewGuid(), gameName));
+        var game = await gameDiscoveryService.GetGame(new(Guid.NewGuid(), gameName));
 
-        eventBus.AddEvent(game, new TeamSet(0, new TeamSetBody(TeamSide.Home, StatsBookTeamToGameTeam(statsBook.Igrf.Teams.HomeTeam))));
-        eventBus.AddEvent(game, new TeamSet(0, new TeamSetBody(TeamSide.Away, StatsBookTeamToGameTeam(statsBook.Igrf.Teams.AwayTeam))));
+        await eventBus.AddEvent(game, new TeamSet(0, new TeamSetBody(TeamSide.Home, StatsBookTeamToGameTeam(statsBook.Igrf.Teams.HomeTeam))));
+        await eventBus.AddEvent(game, new TeamSet(0, new TeamSetBody(TeamSide.Away, StatsBookTeamToGameTeam(statsBook.Igrf.Teams.AwayTeam))));
 
         return game;
 
@@ -53,9 +53,10 @@ public class GameImporter(IGameDiscoveryService gameDiscoveryService, IEventBus 
                 {
                     ["league"] = team.LeagueName,
                     ["team"] = team.TeamName,
+                    ["color"] = team.ColorName,
                 },
                 ParseColor(team.ColorName),
-                team.Skaters.Select(skater => new Skater(skater.Number, skater.Name)).ToList()
+                team.Skaters.Select(skater => new GameSkater(skater.Number, skater.Name, skater.IsSkating)).ToList()
             );
 
         TeamColor ParseColor(string colorName)

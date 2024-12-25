@@ -7,10 +7,11 @@ using Domain;
 
 public interface IGameDiscoveryService
 {
-    IEnumerable<GameInfo> GetGames();
-    GameInfo GetGame(GameInfo gameInfo);
-    Result<GameInfo> GetExistingGame(Guid gameId);
+    Task<GameInfo[]> GetGames();
+    Task<GameInfo> GetGame(GameInfo gameInfo);
+    Task<Result<GameInfo>> GetExistingGame(Guid gameId);
     bool GameExists(Guid gameId);
+    Task<Result> ArchiveGame(Guid gameId);
 
     public static string GetGameFileName(GameInfo game) =>
         $"{CleanFileName(game.Name)}_{game.Id}";
@@ -25,26 +26,43 @@ public interface IGameDiscoveryService
 
 public class GameDiscoveryService(IGameDataStoreFactory gameStoreFactory) : IGameDiscoveryService
 {
-    public IEnumerable<GameInfo> GetGames() =>
+    public Task<GameInfo[]> GetGames() =>
+        Task.WhenAll(
         Directory.GetFiles(GameDataStore.GamesFolder, "*.db")
-            .Select(GetGameInfo);
+            .Select(GetGameInfo));
 
-    public GameInfo GetGame(GameInfo gameInfo)
+    public async Task<GameInfo> GetGame(GameInfo gameInfo)
     {
-        var gameStore = gameStoreFactory.GetDataStore(IGameDiscoveryService.GetGameFileName(gameInfo));
+        var gameStore = await gameStoreFactory.GetDataStore(IGameDiscoveryService.GetGameFileName(gameInfo));
         gameStore.SetInfo(gameInfo);
 
         return gameStore.GetInfo();
     }
 
     public bool GameExists(Guid gameId) =>
-        GetGameNameForId(gameId) is Success;
+        GetGameDatabasePathForId(gameId) is Success;
 
-    public Result<GameInfo> GetExistingGame(Guid gameId) =>
-        GetGameNameForId(gameId)
+    public Task<Result<GameInfo>> GetExistingGame(Guid gameId) =>
+        GetGameDatabasePathForId(gameId)
             .ThenMap(GetGameInfo);
 
-    private static Result<string> GetGameNameForId(Guid gameId) =>
+
+    public Task<Result> ArchiveGame(Guid gameId) =>
+        GetExistingGame(gameId)
+            .ThenMap(IGameDiscoveryService.GetGameFileName)
+            .Then(async gameFileName =>
+            {
+                using var @lock = await gameStoreFactory.AcquireLock();
+                await gameStoreFactory.ReleaseConnection(gameFileName);
+
+                var gameFileNameWithExtension = gameFileName + ".db";
+
+                File.Move(Path.Combine(GameDataStore.GamesFolder, gameFileNameWithExtension), Path.Combine(GameDataStore.ArchiveFolder, gameFileNameWithExtension));
+
+                return Result.Succeed();
+            });
+
+    private static Result<string> GetGameDatabasePathForId(Guid gameId) =>
         Directory.GetFiles(GameDataStore.GamesFolder, $"*_{gameId}.db") switch
         {
             { Length: >1 } => Result<string>.Fail<MultipleGameFilesFoundForIdError>(),
@@ -52,9 +70,9 @@ public class GameDiscoveryService(IGameDataStoreFactory gameStoreFactory) : IGam
             [var file] => Result.Succeed(file)
         };
 
-    private GameInfo GetGameInfo(string gamePath)
+    private async Task<GameInfo> GetGameInfo(string gamePath)
     {
-        var gameStore = gameStoreFactory.GetDataStore(Path.GetFileNameWithoutExtension(gamePath));
+        var gameStore = await gameStoreFactory.GetDataStore(Path.GetFileNameWithoutExtension(gamePath));
 
         var gameInfo = gameStore.GetInfo();
 

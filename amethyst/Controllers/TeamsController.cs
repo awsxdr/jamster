@@ -40,7 +40,7 @@ public class TeamsController(
         {
             Success<Team> s => Ok((TeamWithRosterModel)s.Value),
             Failure<TeamNotFoundError> => NotFound(),
-            _ => throw new UnexpectedResultException()
+            var r => throw new UnexpectedResultException(r)
         };
     }
 
@@ -55,7 +55,7 @@ public class TeamsController(
             {
                 Success => Ok(),
                 Failure<TeamNotFoundError> => NotFound(),
-                _ => throw new UnexpectedResultException()
+                var r => throw new UnexpectedResultException(r)
             };
     }
 
@@ -68,7 +68,7 @@ public class TeamsController(
         {
             Success => NoContent(),
             Failure<TeamNotFoundError> => NotFound(),
-            _ => throw new UnexpectedResultException()
+            var r => throw new UnexpectedResultException(r)
         };
     }
 
@@ -81,7 +81,7 @@ public class TeamsController(
         {
             Success<Team> s => Ok((RosterModel) s.Value.Roster),
             Failure<TeamNotFoundError> => NotFound(),
-            _ => throw new UnexpectedResultException()
+            var r => throw new UnexpectedResultException(r)
         };
     }
 
@@ -94,7 +94,7 @@ public class TeamsController(
         {
             Success => Ok(),
             Failure<TeamNotFoundError> => NotFound(),
-            _ => throw new UnexpectedResultException()
+            var r => throw new UnexpectedResultException(r)
         };
     }
 }

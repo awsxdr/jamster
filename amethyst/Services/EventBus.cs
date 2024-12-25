@@ -52,7 +52,7 @@ public class EventBus(
             }
         }
 
-        if (PersistEventToDatabase(game, @event) is not Success<Guid> persistResult)
+        if (await PersistEventToDatabase(game, @event) is not Success<Guid> persistResult)
             return @event;
 
         @event.Id = persistResult.Value;
@@ -76,7 +76,7 @@ public class EventBus(
     {
         using var @lock = await AcquireLock(game.Id);
 
-        return RemoveEventFromDatabase(game, eventId)
+        return await RemoveEventFromDatabase(game, eventId)
             .Then(() =>
             {
                 contextFactory.ReloadGame(game);
@@ -91,13 +91,13 @@ public class EventBus(
         return await eventLock.AcquireLockAsync();
     }
 
-    private Result<Guid> PersistEventToDatabase(GameInfo game, Event @event)
+    private async Task<Result<Guid>> PersistEventToDatabase(GameInfo game, Event @event)
     {
         var databaseName = IGameDiscoveryService.GetGameFileName(game);
 
         try
         {
-            var dataStore = gameStoreFactory.GetDataStore(databaseName);
+            var dataStore = await gameStoreFactory.GetDataStore(databaseName);
             var eventId = dataStore.AddEvent(@event);
             return Result.Succeed(eventId);
         }
@@ -108,13 +108,13 @@ public class EventBus(
         }
     }
 
-    private Result RemoveEventFromDatabase(GameInfo game, Guid eventId)
+    private async Task<Result> RemoveEventFromDatabase(GameInfo game, Guid eventId)
     {
         var databaseName = IGameDiscoveryService.GetGameFileName(game);
 
         try
         {
-            var dataStore = gameStoreFactory.GetDataStore(databaseName);
+            var dataStore = await gameStoreFactory.GetDataStore(databaseName);
             return dataStore.GetEvent(eventId).Then(_ =>
             {
                 dataStore.DeleteEvent(eventId);

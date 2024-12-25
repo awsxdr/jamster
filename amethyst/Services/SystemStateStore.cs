@@ -9,7 +9,7 @@ public delegate Task AsyncEventHandler<in TEventArgs>(object sender, TEventArgs 
 public interface ISystemStateStore
 {
     event AsyncEventHandler<SystemStateStore.SystemStateChangedEventArgs<Guid>>? CurrentGameChanged;
-    Result<GameInfo> GetCurrentGame();
+    Task<Result<GameInfo>> GetCurrentGame();
     Task<Result<GameInfo>> SetCurrentGame(Guid gameId);
 }
 
@@ -17,7 +17,7 @@ public class SystemStateStore(ISystemStateDataStore dataStore, IGameDiscoverySer
 {
     public event AsyncEventHandler<SystemStateChangedEventArgs<Guid>>? CurrentGameChanged;
 
-    public Result<GameInfo> GetCurrentGame() =>
+    public Task<Result<GameInfo>> GetCurrentGame() =>
         dataStore.GetCurrentGame()
             .Then(gameDiscoveryService.GetExistingGame);
 

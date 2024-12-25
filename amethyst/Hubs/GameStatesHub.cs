@@ -1,5 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using amethyst.Services;
+using DotNext.Threading;
 using Func;
 using Microsoft.AspNetCore.SignalR;
 
@@ -8,33 +9,32 @@ namespace amethyst.Hubs;
 public class GameStatesNotifier(IGameDiscoveryService gameDiscoveryService, IHubContext<GameStatesHub> hubContext, IGameContextFactory contextFactory)
 {
     private readonly ConcurrentDictionary<Guid, List<string>> _watchedStatesByGame = new();
+    private readonly AsyncManualResetEvent _watchedStatesLock = new(false);
 
-    public void WatchStateName(Guid gameId, string stateName)
+    public async Task WatchStateName(Guid gameId, string stateName)
     {
         var watchedStates = _watchedStatesByGame.GetOrAdd(gameId, _ => new());
 
-        lock (watchedStates)
-        {
-            if (watchedStates.Contains(stateName)) return;
+        using var @lock = await _watchedStatesLock.AcquireLockAsync();
 
-            watchedStates.Add(stateName);
+        if (watchedStates.Contains(stateName)) return;
 
-            var gameContext = GetGameContext(gameId);
+        watchedStates.Add(stateName);
 
-            gameContext.StateStore.WatchStateByName(
-                stateName,
-                async state =>
-                {
-                    var group = hubContext.Clients.Group($"{gameId}_{stateName}");
-                    
-                    await group.SendAsync("StateChanged", stateName, state);
-                });
-        }
+        var gameContext = await GetGameContext(gameId);
 
+        gameContext.StateStore.WatchStateByName(
+            stateName,
+            async state =>
+            {
+                var group = hubContext.Clients.Group($"{gameId}_{stateName}");
+                
+                await group.SendAsync("StateChanged", stateName, state);
+            });
     }
 
-    private GameContext GetGameContext(Guid gameId) =>
-        gameDiscoveryService.GetExistingGame(gameId)
+    private async Task<GameContext> GetGameContext(Guid gameId) =>
+        await gameDiscoveryService.GetExistingGame(gameId)
                 .ThenMap(contextFactory.GetGame)
             switch
             {
@@ -56,7 +56,7 @@ public class GameStatesHub(
 
         await Groups.AddToGroupAsync(Context.ConnectionId, $"{gameId}_{stateName}");
 
-        notifier.WatchStateName(gameId, stateName);
+        await notifier.WatchStateName(gameId, stateName);
     }
 
     public async Task UnwatchState(string stateName)

@@ -1,7 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using System.Diagnostics;
 using amethyst.Extensions;
-using Func;
 
 namespace amethyst.Services;
 
@@ -13,7 +12,7 @@ public interface IGameContextFactory : IDisposable
 {
     GameContext GetGame(GameInfo gameInfo);
     void UnloadGame(Guid gameId);
-    public void ReloadGame(GameInfo gameInfo);
+    Task ReloadGame(GameInfo gameInfo);
 }
 
 public class GameContextFactory(
@@ -38,7 +37,7 @@ public class GameContextFactory(
         context.Value.Dispose();
     }
 
-    public void ReloadGame(GameInfo gameInfo)
+    public async Task ReloadGame(GameInfo gameInfo)
     {
         if (!_gameContexts.ContainsKey(gameInfo.Id) || !_gameContexts[gameInfo.Id].IsValueCreated)
             return;
@@ -48,9 +47,9 @@ public class GameContextFactory(
         stateStore.DisableNotifications();
         stateStore.LoadDefaultStates(context.Reducers);
 
-        var game = gameStoreFactory.GetDataStore(IGameDiscoveryService.GetGameFileName(gameInfo));
+        var game = await gameStoreFactory.GetDataStore(IGameDiscoveryService.GetGameFileName(gameInfo));
         var events = game.GetEvents().ToArray();
-        stateStore.ApplyEvents(context.Reducers, events);
+        await stateStore.ApplyEvents(context.Reducers, events);
 
         stateStore.EnableNotifications();
         stateStore.ForceNotify();
@@ -62,7 +61,7 @@ public class GameContextFactory(
 
         var loadTimer = Stopwatch.StartNew();
 
-        var game = gameStoreFactory.GetDataStore(IGameDiscoveryService.GetGameFileName(gameInfo));
+        var game = gameStoreFactory.GetDataStore(IGameDiscoveryService.GetGameFileName(gameInfo)).Result;
 
         var events = game.GetEvents().ToArray();
 

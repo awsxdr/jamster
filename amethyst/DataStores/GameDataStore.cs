@@ -25,7 +25,10 @@ public class GameDataStore : EventStore, IGameDataStore
     public delegate IGameDataStore Factory(string databaseName);
 
     public const string GamesFolderName = "games";
+    public const string ArchiveFolderName = "archive";
+
     public static string GamesFolder => Path.Combine(RunningEnvironment.RootPath, "db", GamesFolderName);
+    public static string ArchiveFolder => Path.Combine(RunningEnvironment.RootPath, "db", GamesFolderName, ArchiveFolderName);
 
     public GameDataStore(
         string databaseName,

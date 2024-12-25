@@ -37,7 +37,7 @@ public class EventBusIntegrationTests
 
         _mocker.Mock<IGameDataStoreFactory>()
             .Setup(mock => mock.GetDataStore(It.IsAny<string>()))
-            .Returns(() => _mocker.Mock<IGameDataStore>().Object);
+            .ReturnsAsync(() => _mocker.Mock<IGameDataStore>().Object);
 
         _stateStore = _mocker.Create<IGameStateStore>();
         _reducerFactories = [];

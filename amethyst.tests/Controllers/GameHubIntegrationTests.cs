@@ -26,7 +26,7 @@ public class GameHubIntegrationTests : ControllerIntegrationTest
 
     protected override void CleanDatabase()
     {
-        GameDataStoreFactory?.ReleaseConnections();
+        GameDataStoreFactory?.ReleaseConnections().Wait();
         GC.Collect(); // Force SQLite to release database files
 
         foreach (var databaseFile in Directory.GetFiles(GameDataStore.GamesFolder, "*.db"))

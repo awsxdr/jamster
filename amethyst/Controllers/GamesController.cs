@@ -15,11 +15,11 @@ public class GamesController(
     ) : Controller
 {
     [HttpGet]
-    public ActionResult<GameModel[]> GetGames()
+    public async Task<ActionResult<GameModel[]>> GetGames()
     {
         logger.LogDebug("Getting games");
 
-        var games = gameDiscoveryService.GetGames()
+        var games = (await gameDiscoveryService.GetGames())
             .Select(g => (GameModel) g)
             .ToArray();
 
@@ -27,11 +27,11 @@ public class GamesController(
     }
 
     [HttpPost]
-    public ActionResult<GameModel> CreateGame([FromBody] CreateGameModel model)
+    public async Task<ActionResult<GameModel>> CreateGame([FromBody] CreateGameModel model)
     {
         logger.LogInformation("Creating game with name: {name}", model.Name);
 
-        var game = (GameModel) gameDiscoveryService.GetGame(new(Guid.NewGuid(), model.Name));
+        var game = (GameModel) await gameDiscoveryService.GetGame(new(Guid.NewGuid(), model.Name));
         return Created($"api/games/{game.Id}", game);
     }
 
@@ -51,52 +51,65 @@ public class GamesController(
         if (statsBookDeserializeResult is not Success<StatsBook> statsBook)
             return BadRequest();
 
-        var game = gameImporter.Import(statsBook.Value);
+        var game = await gameImporter.Import(statsBook.Value);
 
         return Created($"api/games/{game.Id}", (GameModel) game);
     }
 
     [HttpGet("{gameId:guid}")]
-    public ActionResult<GameModel> GetGame(Guid gameId)
+    public async Task<ActionResult<GameModel>> GetGame(Guid gameId)
     {
         logger.LogDebug("Getting game {gameId}", gameId);
 
-        return gameDiscoveryService.GetExistingGame(gameId) switch
+        return await gameDiscoveryService.GetExistingGame(gameId) switch
         {
             Success<GameInfo> s => (GameModel)s.Value,
             Failure<GameFileNotFoundForIdError> => NotFound(),
-            _ => throw new UnexpectedResultException()
+            var r => throw new UnexpectedResultException(r)
+        };
+    }
+
+    [HttpDelete("{gameId:guid}")]
+    public async Task<ActionResult> DeleteGame(Guid gameId)
+    {
+        logger.LogInformation("Archiving game {gameId}", gameId);
+
+        return await gameDiscoveryService.ArchiveGame(gameId) switch
+        {
+            Success => NoContent(),
+            Failure<GameFileNotFoundForIdError> => NotFound(),
+            var r => throw new UnexpectedResultException(r)
         };
     }
 
     [HttpGet("{gameId:guid}/state/{stateName}")]
-    public ActionResult GetState(Guid gameId, string stateName)
+    public async Task<ActionResult> GetState(Guid gameId, string stateName)
     {
         logger.LogDebug("Retrieving state {stateName} for game {gameId}", stateName, gameId);
 
-        return gameDiscoveryService.GetExistingGame(gameId)
+        return await gameDiscoveryService.GetExistingGame(gameId)
                 .ThenMap(contextFactory.GetGame)
                 .Then(c => c.StateStore.GetStateByName(stateName))
             switch
             {
                 Success<object> s => Ok(s.Value),
                 Failure<StateNotFoundError> => NotFound(),
-                _ => throw new UnexpectedResultException()
+                var r => throw new UnexpectedResultException(r)
             };
     }
 
     [HttpGet("current")]
-    public ActionResult<GameModel> GetCurrentGame()
+    public async Task<ActionResult<GameModel>> GetCurrentGame()
     {
         logger.LogDebug("Getting current game");
 
         return
-            systemStateStore.GetCurrentGame() switch
+            await systemStateStore.GetCurrentGame() switch
             {
                 Success<GameInfo> s => (GameModel) s.Value,
                 Failure<GameFileNotFoundForIdError> => NotFound(),
                 Failure<SystemStateDataStore.CurrentGameNotFoundError> => NotFound(),
-                _ => throw new UnexpectedResultException()
+                var r => throw new UnexpectedResultException(r)
             };
     }
 
@@ -109,7 +122,7 @@ public class GamesController(
         {
             Success<GameInfo> s => (GameModel) s.Value,
             Failure<GameFileNotFoundForIdError> => NotFound(),
-            _ => throw new UnexpectedResultException()
+            var r => throw new UnexpectedResultException(r)
         };
     }
 

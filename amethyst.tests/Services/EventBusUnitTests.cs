@@ -30,7 +30,7 @@ public class EventBusUnitTests : UnitTest<EventBus>
 
         GetMock<IGameDataStoreFactory>()
             .Setup(mock => mock.GetDataStore($"TestGame_{_game.Id}"))
-            .Returns(() => GetMock<IGameDataStore>().Object);
+            .ReturnsAsync(() => GetMock<IGameDataStore>().Object);
 
         _persistedEventId = Guid.NewGuid();
         GetMock<IGameDataStore>()

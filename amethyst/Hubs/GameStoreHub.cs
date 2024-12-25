@@ -22,16 +22,16 @@ public class GameStoreNotifier : IDisposable
     private void RunWatchThread()
     {
         new TaskFactory(_cancellationTokenSource.Token, TaskCreationOptions.LongRunning, TaskContinuationOptions.None, TaskScheduler.Current)
-            .StartNew(async () =>
+            .StartNew<Task>(async () =>
             {
                 var cancellationToken = _cancellationTokenSource.Token;
-                var games = _gameDiscoveryService.GetGames().ToArray();
+                var games = await _gameDiscoveryService.GetGames();
 
                 while (!cancellationToken.IsCancellationRequested)
                 {
                     await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken);
 
-                    var updatedGames = _gameDiscoveryService.GetGames().ToArray();
+                    var updatedGames = await _gameDiscoveryService.GetGames();
 
                     if (!games.SequenceEqual(updatedGames))
                     {

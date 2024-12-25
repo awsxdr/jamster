@@ -67,7 +67,7 @@ public abstract class EventBusIntegrationTest
 
         GetMock<IGameDataStoreFactory>()
             .Setup(mock => mock.GetDataStore(It.IsAny<string>()))
-            .Returns(() => GetMock<IGameDataStore>().Object);
+            .ReturnsAsync(() => GetMock<IGameDataStore>().Object);
 
         EventBus = Mocker.Create<IEventBus>();
 
