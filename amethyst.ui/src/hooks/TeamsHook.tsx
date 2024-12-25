@@ -1,10 +1,10 @@
 import { StringMap, Team } from "@/types";
-import { createContext, PropsWithChildren, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, PropsWithChildren, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useTeamApi } from "./TeamApiHook";
 import { useHubConnection } from "./SignalRHubConnection";
 import { v4 as uuidv4 } from 'uuid';
 
-type TeamChanged = (team: Team) => void;
+type TeamChanged = (team?: Team) => void;
 
 type TeamListContextProps = {
     watchTeam: (teamId: string, onTeamChanged: TeamChanged) => string;
@@ -36,12 +36,20 @@ export const useTeam = (teamId: string) => {
         return await getTeam(teamId);
     }, [teamId]);
 
+    const setTeamRef = useRef(setTeam);
+
     useEffect(() => {
         getInitialState().then(setTeam);
-        const watchId = context.watchTeam(teamId, team => setTeam(team));
+        const watchId = context.watchTeam(teamId, team => {
+            setTeamRef.current?.(team);
+        });
 
         return () => context.unwatchTeam(teamId, watchId);
     }, []);
+
+    useEffect(() => {
+        setTeamRef.current = setTeam;
+    }, [setTeam]);
 
     return team;
 }
@@ -80,6 +88,8 @@ export const TeamListContextProvider = ({ children }: PropsWithChildren) => {
             [teamId]: { ...notifiers[teamId], [watchId]: onTeamChanged }
         }));
 
+        console.log("Watch team", watchId, teamNotifiers);
+
         return watchId;
     }
 
@@ -88,6 +98,8 @@ export const TeamListContextProvider = ({ children }: PropsWithChildren) => {
             ...notifiers,
             [teamId]: { ...notifiers[teamId], [watchId]: undefined }
         }));
+
+        console.log("Unwatch team", watchId, teamNotifiers);
     }
 
     useEffect(() => {
@@ -106,18 +118,25 @@ export const TeamListContextProvider = ({ children }: PropsWithChildren) => {
         });
     }, [connection]);
 
+    const notify = useCallback((teamId: string, team?: Team) => {
+        Object.values(teamNotifiers[teamId] ?? {}).forEach(n => n?.(team));
+        console.log("Notify", teamNotifiers);
+    }, [teamNotifiers, setTeamNotifiers]);
+
     useEffect(() => {
         connection?.on("TeamCreated", (team: Team) => {
             setTeams(t => ({ ...t, [team.id]: team }));
+            notify(team.id, team);
         });
 
         connection?.on("TeamArchived", (teamId: string) => {
             setTeams(t => Object.keys(t).filter(k => k !== teamId).reduce((l, k) => ({ ...l, [k]: t[k] }), {}));
+            notify(teamId);
         });
 
         connection?.on("TeamChanged", (team: Team) => {
             setTeams(t => ({ ...t, [team.id]: team }));
-            Object.values(teamNotifiers[team.id] ?? {}).forEach(n => n?.(team));
+            notify(team.id, team);
         });
 
         return () => {
@@ -125,7 +144,7 @@ export const TeamListContextProvider = ({ children }: PropsWithChildren) => {
             connection?.off("TeamArchived");
             connection?.off("TeamChanged");
         };
-    }, [connection]);
+    }, [connection, notify]);
 
     return (
         <TeamListContext.Provider value={{ watchTeam, unwatchTeam, teams }}>

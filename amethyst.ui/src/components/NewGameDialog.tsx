@@ -89,6 +89,7 @@ export const NewGameDialog = ({ onNewGameCreated, onCancelled }: NewGameDialogPr
         setHomeTeamId(undefined);
         setAwayTeamId(undefined);
         setGameNameDirty(false);
+        setIsCreating(false);
     }
 
     const handleNewGameClicked = () => {

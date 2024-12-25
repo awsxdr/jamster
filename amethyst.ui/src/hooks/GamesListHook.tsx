@@ -62,11 +62,15 @@ export const GamesListContextProvider = ({ children }: PropsWithChildren) => {
         })();
     }, [connection]);
 
+    const notify = useCallback((games: GameInfo[]) => {
+        gamesListNotifiers.forEach(n => n(games));
+    }, [gamesListNotifiers]);
+
     useEffect(() => {
         connection?.on("GamesListChanged", (games: GameInfo[]) => {
-            gamesListNotifiers.forEach(n => n(games));
+            notify(games);
         });
-    }, [connection]);
+    }, [connection, notify]);
 
     return (
         <GamesListContext.Provider value={{ gamesListNotifiers, watchGamesList, connection  }}>

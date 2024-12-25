@@ -5,6 +5,7 @@ import { useGameApi } from "./GameApiHook";
 import { GameStageState, TripScoreState, TeamDetailsState, TeamScoreState, TeamSide, TeamTimeoutsState, JamLineupState } from "@/types";
 import { CurrentTimeoutTypeState } from "@/types/CurrentTimeoutTypeState";
 import { TeamJamStatsState } from "@/types/TeamJamStatsState";
+import { v4 as uuidv4 } from 'uuid';
 
 type StateChanged<TState> = (state: TState) => void;
 type StateWatch = <TState,>(stateName: string, onStateChange: StateChanged<TState>) => CallbackHandle;
@@ -72,7 +73,7 @@ export const useHasServerConnection = () => {
     return useMemo(() => hasConnection, [hasConnection]);
 }
 
-type CallbackHandle = number;
+type CallbackHandle = string;
 
 export const GameStateContextProvider = ({ gameId, children }: PropsWithChildren<GameStateContextProviderProps>) => {
     const [stateNotifiers, setStateNotifiers] = useState<StateNotifierMap>({});
@@ -89,7 +90,7 @@ export const GameStateContextProvider = ({ gameId, children }: PropsWithChildren
 
     const watchState = <TState,>(stateName: string, onStateChange: StateChanged<TState>): CallbackHandle => {
         
-        const newId = Math.floor(Math.random() * (1 << 31));
+        const newId = uuidv4();
 
         setStateNotifiers(sn => ({
                 ...sn,
