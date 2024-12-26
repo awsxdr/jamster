@@ -15,7 +15,7 @@ export const JamScore = ({ side, textClassName }: JamScoreProps) => {
     const { jamScore } = useTeamScoreState(side) ?? { jamScore: 0 };
     
     return (
-        <ScoreboardComponent className="grow w-[20%] h-[40%] max-w-[15%] p-2">
+        <ScoreboardComponent className="h-2/5 w-full p-2">
             <ScaledText 
                 text={jamScore.toString()} 
                 className={cn("flex justify-center items-center h-full overflow-hidden", textClassName)} 

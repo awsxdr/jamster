@@ -72,7 +72,7 @@ export const Scoreboard = () => {
                 <div className="flex w-full h-full justify-center">
                     <div className="inline-flex flex-col max-w-[140vh] w-full">
                         <div className="h-screen flex flex-col justify-center gap-5">
-                            <div className="flex justify-around items-stretch h-[55vh] gap-5">
+                            <div className="flex justify-around items-stretch h-[45vh] gap-5">
                                 <TeamDetails side={TeamSide.Home} />
                                 <TeamDetails side={TeamSide.Away} />
                             </div>

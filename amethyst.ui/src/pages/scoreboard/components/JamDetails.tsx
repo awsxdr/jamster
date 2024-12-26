@@ -1,6 +1,6 @@
 import { JamClock, PeriodClock } from "@/components/clocks"
 import { ScoreboardComponent } from "./ScoreboardComponent"
-import { GameStageState, TeamSide } from "@/types"
+import { GameSkater, GameStageState, TeamSide } from "@/types"
 import { ClocksBar } from "./ClocksBar";
 import { useJamLineupState, useJamStatsState, useTeamDetailsState } from "@/hooks";
 import { useMemo } from "react";
@@ -14,22 +14,31 @@ type JamDetailsProps = {
 
 export const JamDetails = ({ gameStage, visible }: JamDetailsProps) => {
 
-    const { jammerNumber: homeJammerNumber } = useJamLineupState(TeamSide.Home) ?? {};
-    const { jammerNumber: awayJammerNumber } = useJamLineupState(TeamSide.Away) ?? {};
+    const { jammerNumber: homeJammerNumber, pivotNumber: homePivotNumber } = useJamLineupState(TeamSide.Home) ?? {};
+    const { jammerNumber: awayJammerNumber, pivotNumber: awayPivotNumber } = useJamLineupState(TeamSide.Away) ?? {};
 
     const { team: homeTeam } = useTeamDetailsState(TeamSide.Home) ?? {};
     const { team: awayTeam } = useTeamDetailsState(TeamSide.Away) ?? {};
 
+    const { starPass: homeTeamStarPass} = useJamStatsState(TeamSide.Home) ?? { starPass: false };
+    const { starPass: awayTeamStarPass} = useJamStatsState(TeamSide.Away) ?? { starPass: false };
+
     const homeStats = useJamStatsState(TeamSide.Home);
-    const awayStats = useJamStatsState(TeamSide.Away);    
+    const awayStats = useJamStatsState(TeamSide.Away);
+
+    const getJammerText = (jammerNumber: string | undefined, pivotNumber: string | undefined, starPass: boolean, roster?: GameSkater[]) => {
+        const skaterNumber = starPass ? pivotNumber : jammerNumber;
+
+        return roster?.find(s => s.number === skaterNumber)?.name ?? skaterNumber ?? "";
+    }
 
     const homeJammerText = useMemo(
-        () => homeTeam?.roster.find(s => s.number === homeJammerNumber)?.name ?? homeJammerNumber ?? "", 
-        [homeTeam, homeJammerNumber]);
+        () => getJammerText(homeJammerNumber, homePivotNumber, homeTeamStarPass, homeTeam?.roster),
+        [homeTeam, homeJammerNumber, homePivotNumber, homeTeamStarPass]);
 
     const awayJammerText = useMemo(
-        () => awayTeam?.roster.find(s => s.number === awayJammerNumber)?.name ?? awayJammerNumber ?? "", 
-        [awayTeam, awayJammerNumber]);
+        () => getJammerText(awayJammerNumber, awayPivotNumber, awayTeamStarPass, awayTeam?.roster),
+        [homeTeam, awayJammerNumber, awayPivotNumber, awayTeamStarPass]);
 
     const homeIsLead = useMemo(() => homeStats?.lead && !homeStats?.lost, [homeStats]);
     const awayIsLead = useMemo(() => awayStats?.lead && !awayStats?.lost, [awayStats]);
@@ -47,10 +56,10 @@ export const JamDetails = ({ gameStage, visible }: JamDetailsProps) => {
                 </div>
             </div>
             <div className="h-[60%] flex gap-5">
-                <ScoreboardComponent className="w-1/2 h-full" header={`Period ${gameStage.periodNumber}`} headerClassName="text-3xl p-1">
+                <ScoreboardComponent className="w-1/2 h-full" header={`Period ${gameStage.periodNumber}`}>
                     <PeriodClock textClassName="flex justify-center items-center h-full m-2 overflow-hidden" autoScale />
                 </ScoreboardComponent>
-                <ScoreboardComponent className="w-1/2 h-full" header={`Jam ${gameStage.jamNumber}`} headerClassName="text-3xl p-1">
+                <ScoreboardComponent className="w-1/2 h-full" header={`Jam ${gameStage.jamNumber}`}>
                     <JamClock textClassName="flex justify-center items-center h-full m-2 overflow-hidden" autoScale />
                 </ScoreboardComponent>
             </div>

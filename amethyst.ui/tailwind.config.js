@@ -87,7 +87,7 @@ export default {
 					transform: "scale(1)",
 				},
 				'20%': {
-					transform: "scale(1.2)",
+					transform: "scale(1.1)",
 				},
 			},
 		}

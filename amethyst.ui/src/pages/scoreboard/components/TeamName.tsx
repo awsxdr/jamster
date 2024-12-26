@@ -18,7 +18,7 @@ export const TeamName = ({ side, textClassName }: TeamScoreProps) => {
             return '';
         }
 
-        return team.team.names['scoreboard'] || team.team.names['default'] || '';
+        return team.team.names['scoreboard'] || team.team.names['team'] || team.team.names['league'] || team.team.names['color'] || (side === TeamSide.Home ? 'Home' : 'Away');
     }, [team]);
 
     const foreground = useMemo(
@@ -37,7 +37,7 @@ export const TeamName = ({ side, textClassName }: TeamScoreProps) => {
             <ScaledText 
                 text={teamName || ''} 
                 className={cn(
-                    "flex items-center text-center font-bold h-full",
+                    "flex flex-col justify-center text-center font-bold w-full h-full overflow-show",
                     textClassName
                 )} 
             />
