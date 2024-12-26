@@ -69,7 +69,7 @@ public class EventBusIntegrationTests
     [Test]
     public async Task EventBus_HandlesMultipleSimultaneousRequests()
     {
-        _reducerFactories = [_ => _mocker.Create<ComplexStateTestReducer>()];
+        _reducerFactories = [_ => _mocker.Create<ComplexStateTestReducer>(), ctx => new MockPeriodClock(ctx)];
 
         var gameInfo = new GameInfo(Guid.NewGuid(), "test");
         const int testCount = 10000;
@@ -112,4 +112,9 @@ public class EventBusIntegrationTests
 
     private sealed class TestIncremented(Guid7 id, TestIncrementedBody body) : Event<TestIncrementedBody>(id, body);
     private sealed record TestIncrementedBody(int Value);
+
+    private sealed class MockPeriodClock(ReducerGameContext context) : Reducer<PeriodClockState>(context)
+    {
+        protected override PeriodClockState DefaultState => new (false, false, 0, 0, 0, 0);
+    }
 }
