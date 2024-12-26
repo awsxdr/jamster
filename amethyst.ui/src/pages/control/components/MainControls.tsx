@@ -30,12 +30,16 @@ export const MainControls = ({ gameId, disabled }: MainControlsProps) => {
 
     const [endText, endButtonEnabled] = useMemo(() => {
         switch (gameStage?.stage) {
-            case Stage.Jam: return [translate("MainControls.EndJam"), true];
-            case Stage.Timeout: return [translate("MainControls.EndTimeout"), true];
-            case Stage.BeforeGame: return [translate("MainControls.StartLineup"), true];
-            case Stage.Intermission: return [translate("MainControls.FinalizePeriod"), !gameStage.periodIsFinalized];
-            case Stage.AfterGame: return [translate("MainControls.FinalizeGame"), !gameStage.periodIsFinalized];
-            default: return ["---", false];
+            case Stage.Jam: 
+                return [translate("MainControls.EndJam"), true];
+            case Stage.Timeout: 
+                return [translate("MainControls.EndTimeout"), true];
+            case Stage.Intermission: 
+                return gameStage.periodIsFinalized ? ["---", false] : [translate("MainControls.FinalizePeriod"), true];
+            case Stage.AfterGame: 
+                return gameStage.periodIsFinalized ? ["---", false] : [translate("MainControls.FinalizeGame"), true];
+            default: 
+                return ["---", false];
         }
     }, [gameStage?.stage, language]);
 
