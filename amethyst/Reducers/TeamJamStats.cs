@@ -36,7 +36,7 @@ public abstract class TeamJamStats(TeamSide teamSide, ReducerGameContext gameCon
 
         SetState(state with { Lead = lead });
 
-        if (state.HasCompletedInitial) return [];
+        if (state.HasCompletedInitial || !lead) return [];
 
         return [new InitialTripCompleted(@event.Tick, new(teamSide, true))];
     }

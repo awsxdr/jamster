@@ -190,12 +190,23 @@ public class GameStateStore(ILogger<GameStateStore> logger) : IGameStateStore
         logger.BeginScope("Handling {event}", @event);
 
         var implicitEvents = new List<Event>();
+        var periodClock = GetState<PeriodClockState>();
 
         foreach (var reducer in reducers)
         {
             try
             {
-                implicitEvents.AddRange(await reducer.HandleUntyped(@event));
+                var newImplicitEvents = (await reducer.HandleUntyped(@event)).ToArray();
+
+                if (periodClock.IsRunning)
+                {
+                    foreach (var implicitEvent in newImplicitEvents.Where(e => e is IPeriodClockAligned))
+                    {
+                        implicitEvent.Id = Guid7.FromTick(GetAlignedTick(implicitEvent));
+                    }
+                }
+
+                implicitEvents.AddRange(newImplicitEvents);
             }
             catch (Exception ex)
             {
@@ -204,6 +215,9 @@ public class GameStateStore(ILogger<GameStateStore> logger) : IGameStateStore
         }
 
         return implicitEvents;
+
+        Tick GetAlignedTick(Event alignEvent) =>
+            (long)(Math.Round((alignEvent.Tick - periodClock.LastStartTick) / 1000.0) * 1000) + periodClock.LastStartTick;
     }
 
     private interface IStateUpdatedEventSource

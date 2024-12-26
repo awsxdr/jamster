@@ -35,6 +35,16 @@ public class TeamJamStatsUnitTests : ReducerUnitTest<HomeTeamJamStats, TeamJamSt
             .And.ContainSingle(e => e.Body == new InitialTripCompletedBody(TeamSide.Home, true));
     }
 
+    [Test]
+    public async Task LeadMarked_WhenLeadFalse_DoesNotMarkInitialTrip()
+    {
+        var implicitEvents = await Subject.Handle(new LeadMarked(0, new LeadMarkedBody(TeamSide.Home, false)));
+
+        implicitEvents
+            .OfType<InitialTripCompleted>()
+            .Should().BeEmpty();
+    }
+
     [TestCase(false, TeamSide.Home, true, true)]
     [TestCase(false, TeamSide.Away, true, false)]
     [TestCase(true, TeamSide.Home, true, true)]
