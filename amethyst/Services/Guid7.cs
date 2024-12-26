@@ -1,7 +1,10 @@
-﻿using amethyst.Domain;
+﻿using System.Text.Json;
+using System.Text.Json.Serialization;
+using amethyst.Domain;
 
 namespace amethyst.Services;
 
+[JsonConverter(typeof(Guid7JsonConverter))]
 public class Guid7 : IComparable<Guid>, IComparable<Guid7>
 {
     private static readonly Random Random = new();
@@ -81,4 +84,13 @@ public class Guid7 : IComparable<Guid>, IComparable<Guid7>
     public override int GetHashCode() => ((Guid) this).GetHashCode();
 
     public class InvalidDataSizeException : ArgumentException;
+}
+
+internal class Guid7JsonConverter : JsonConverter<Guid7>
+{
+    public override Guid7? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
+        Guid.TryParse(reader.GetString() ?? "", out var value) ? value : null;
+
+    public override void Write(Utf8JsonWriter writer, Guid7 value, JsonSerializerOptions options) =>
+        writer.WriteStringValue(value.ToString());
 }

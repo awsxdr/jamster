@@ -22,3 +22,15 @@ export class TimeoutEnded extends EventWithoutBody {
         super("TimeoutEnded");
     }
 }
+
+export class TeamReviewRetained extends EventWithBody {
+    constructor(side: TeamSide, timeoutEventId: string) {
+        super("TeamReviewRetained", { side, timeoutEventId });
+    }
+}
+
+export class TeamReviewLost extends EventWithBody {
+    constructor(side: TeamSide, timeoutEventId: string) {
+        super("TeamReviewLost", { side, timeoutEventId });
+    }
+}

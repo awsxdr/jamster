@@ -43,7 +43,7 @@ export const TimeoutTypePanel = ({ gameId, disabled }: TimeoutTypePanelProps) =>
         { value: 'HomeTeamReview', name: translate("TimeoutType.HomeTeamReview") },
         { value: 'Official', name: translate("TimeoutType.Official") },
         { value: 'AwayTeamTimeout', name: translate("TimeoutType.AwayTeam") },
-        { value: 'AwayTeamTimeout', name: translate("TimeoutType.AwayTeamReview") },
+        { value: 'AwayTeamReview', name: translate("TimeoutType.AwayTeamReview") },
     ];
 
     const handleTimeoutSelected = (selectedType: CompoundTimeoutType) => {

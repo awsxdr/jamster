@@ -1,6 +1,7 @@
 ﻿using amethyst.Domain;
 using amethyst.Events;
 using amethyst.Reducers;
+using amethyst.Services;
 using FluentAssertions;
 
 namespace amethyst.tests.Reducers;
@@ -124,6 +125,26 @@ public class TeamTimeoutsUnitTests : ReducerUnitTest<HomeTeamTimeouts, TeamTimeo
         State = new(3, ReviewStatus.Unused, TimeoutInUse.Review);
 
         await Subject.Handle(new JamStarted(0));
+
+        State.ReviewStatus.Should().Be(ReviewStatus.Used);
+    }
+
+    [Test]
+    public async Task TeamReviewRetained_SetsReviewStatusToRetained()
+    {
+        State = new(3, ReviewStatus.Used, TimeoutInUse.None);
+
+        await Subject.Handle(new TeamReviewRetained(0, new(TeamSide.Home, Guid7.Empty)));
+
+        State.ReviewStatus.Should().Be(ReviewStatus.Retained);
+    }
+
+    [Test]
+    public async Task TeamReviewLost_SetsReviewStatusToUsed()
+    {
+        State = new(3, ReviewStatus.Retained, TimeoutInUse.None);
+
+        await Subject.Handle(new TeamReviewLost(0, new(TeamSide.Home, Guid7.Empty)));
 
         State.ReviewStatus.Should().Be(ReviewStatus.Used);
     }

@@ -20,6 +20,7 @@ export * from './TeamScoreState';
 export * from './TeamSide';
 export * from './TeamTimeoutsState';
 export * from './TimeoutClockState';
+export * from './TimeoutListState';
 export * from './TimeoutType';
 export * from './TimeoutInUse';
 export * from './TripScoreState';

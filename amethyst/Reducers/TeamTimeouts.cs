@@ -1,5 +1,6 @@
 ﻿using amethyst.Domain;
 using amethyst.Events;
+using amethyst.Extensions;
 using amethyst.Services;
 using Func;
 
@@ -12,6 +13,8 @@ public abstract class TeamTimeouts(TeamSide teamSide, ReducerGameContext context
     , IHandlesEvent<TimeoutEnded>
     , IHandlesEvent<TimeoutStarted>
     , IHandlesEvent<JamStarted>
+    , IHandlesEvent<TeamReviewRetained>
+    , IHandlesEvent<TeamReviewLost>
 {
     protected override TeamTimeoutsState DefaultState => new(3, ReviewStatus.Unused, TimeoutInUse.None);
 
@@ -83,6 +86,20 @@ public abstract class TeamTimeouts(TeamSide teamSide, ReducerGameContext context
 
         return [];
     }
+
+    public IEnumerable<Event> Handle(TeamReviewRetained @event) => @event.HandleIfTeam(teamSide, () =>
+    {
+        SetState(GetState() with { ReviewStatus = ReviewStatus.Retained });
+
+        return [];
+    });
+
+    public IEnumerable<Event> Handle(TeamReviewLost @event) => @event.HandleIfTeam(teamSide, () =>
+    {
+        SetState(GetState() with { ReviewStatus = ReviewStatus.Used });
+
+        return [];
+    });
 
     private void EndTimeout()
     {

@@ -5,8 +5,9 @@ import { ClocksContainer } from "./ClocksContainer";
 import { TimeoutTypePanel } from "./TimeoutTypePanel";
 import { useGameStageState, useHasServerConnection } from "@/hooks";
 import { DisplaySide, useUserSettings } from "@/hooks/UserSettings";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui";
+import { Alert, AlertDescription, AlertTitle, Card, CardContent, CardHeader, CardTitle } from "@/components/ui";
 import { WifiOff } from "lucide-react";
+import { ScoreStats } from "./ScoreStats";
 
 type ControlPanelProps = {
     gameId?: string;
@@ -29,7 +30,7 @@ export const ControlPanel = ({ gameId, disabled }: ControlPanelProps) => {
         : false;
 
     return (
-        <div className="flex flex-col gap-2 pt-2">
+        <div className="flex flex-col gap-2 pt-2 pb-2">
             { !hasConnection &&
                 <Alert className="rounded-none" variant="destructive">
                     <WifiOff />
@@ -46,6 +47,12 @@ export const ControlPanel = ({ gameId, disabled }: ControlPanelProps) => {
                 </div>
             )}
             { userSettings.showClocks && <ClocksContainer /> }
+            <Card>
+                <CardContent className="w-full flex flex-wrap lg:flex-nowrap gap-2 p-2">
+                    <ScoreStats side={TeamSide.Home} gameId={gameId} className="w-1/2" />
+                    <ScoreStats side={TeamSide.Away} gameId={gameId} className="w-1/2" />
+                </CardContent>
+            </Card>
         </div>
     )
 }
