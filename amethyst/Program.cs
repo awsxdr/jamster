@@ -1,4 +1,7 @@
+using System.Net;
+using System.Net.Sockets;
 using System.Reflection;
+using System.Text;
 using System.Text.Json.Serialization;
 using amethyst;
 using amethyst.DataStores;
@@ -7,14 +10,29 @@ using amethyst.Reducers;
 using amethyst.Services;
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
+using CommandLine;
 using DotNext.Collections.Generic;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc.ApiExplorer;
 using Microsoft.AspNetCore.SignalR;
 using SQLite;
-using Swashbuckle.AspNetCore.Swagger;
+
+var parseCommandLineResult = Parser.Default.ParseArguments<CommandLineOptions>(SkipCommandLineParse ? [] : args);
+
+if (parseCommandLineResult.Errors.Any() && !SkipCommandLineParse) return;
+
+var commandLineOptions = parseCommandLineResult.Value;
 
 var builder = WebApplication.CreateBuilder(args);
+
+var hostUrl = GetHostUrl();
+
+builder.WebHost.UseUrls(hostUrl);
+
+builder.Logging
+    .SetMinimumLevel(commandLineOptions.LoggingLevel)
+    .AddFilter("Microsoft", LogLevel.Warning)
+    .AddConsole();
 
 builder.Configuration.AddJsonFile(Path.Combine(RunningEnvironment.RootPath, "appsettings.json"), true);
 if (builder.Environment.IsDevelopment())
@@ -132,6 +150,7 @@ builder.Services.AddSwaggerGen(options =>
         return combinedDescription;
     });
 });
+
 builder.Services.AddSpaStaticFiles(config =>
 {
     config.RootPath = Path.Combine(Path.GetDirectoryName(Assembly.GetEntryAssembly()!.Location)!, "wwwroot");
@@ -155,7 +174,8 @@ app.UseCors(policyBuilder =>
     policyBuilder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
 });
 
-app.UseHttpsRedirection();
+if(commandLineOptions.UseSsl)
+    app.UseHttpsRedirection();
 
 app.UseExceptionHandler(options =>
 {
@@ -199,6 +219,72 @@ _ = app.Services.GetService<GameStoreNotifier>();
 MapHub<TeamsHub>("/api/hubs/teams");
 _ = app.Services.GetService<TeamsNotifier>();
 
+if (commandLineOptions.Hostname == "0.0.0.0" || commandLineOptions.Hostname == "::")
+{
+    Console.WriteLine("Application starting. Use a web browser to go to one of these addresses:");
+
+    var urls = GetLocalAddresses(commandLineOptions.Hostname == "::").Select(GetHostUrl);
+
+    foreach (var url in urls)
+    {
+        Console.WriteLine($"\t{url}");
+    }
+}
+else
+{
+    Console.WriteLine($"Application starting. Use a web browser to go to {hostUrl}");
+}
+
 app.Run();
 
-public partial class Program;
+IEnumerable<string> GetLocalAddresses(bool includeIpv6)
+{
+    var hostName = Dns.GetHostName();
+    yield return hostName;
+    yield return "127.0.0.1";
+    yield return "localhost";
+
+    var entries = Dns.GetHostEntry(hostName)
+        .AddressList
+        .Where(a =>
+            a.AddressFamily == AddressFamily.InterNetwork
+            || (a.AddressFamily == AddressFamily.InterNetworkV6 && includeIpv6));
+    
+    foreach (var entry in entries)
+    {
+        var encodedEntry = entry.ToString().Split('%').First();
+        yield return entry.AddressFamily == AddressFamily.InterNetwork ? encodedEntry : $"[{encodedEntry}]";
+    }
+}
+
+string GetHostUrl(string? hostName = null)
+{
+    var hostUrlBuilder = new StringBuilder();
+    hostUrlBuilder.Append(commandLineOptions.UseSsl ? "https://" : "http://");
+    hostUrlBuilder.Append(hostName ?? commandLineOptions.Hostname);
+    hostUrlBuilder.Append(':');
+    hostUrlBuilder.Append(commandLineOptions.Port);
+    hostUrlBuilder.Append('/');
+
+    return hostUrlBuilder.ToString();
+}
+
+public partial class Program
+{
+    public static bool SkipCommandLineParse { get; set; } = false;
+}
+
+public sealed class CommandLineOptions
+{
+    [Option('p', "port", Required = false, Default = (ushort)8000, HelpText = "Set the host to expose the application on. Value must be between 1 and 65535.")]
+    public ushort Port { get; set; }
+
+    [Option('h', "hostname", Required = false, Default = "::", HelpText = "Set the IP address or host name to use to host the application.")]
+    public string Hostname { get; set; } = string.Empty;
+
+    [Option('s', "ssl", Required = false, Default = false, HelpText = "Set to 'true' to use secure communications; otherwise 'false'.")]
+    public bool UseSsl { get; set; }
+
+    [Option('l', "log", Required = false, Default = LogLevel.Warning, HelpText = "Set the logging level. Options are 'Trace', 'Debug', 'Information', 'Warning', 'Error', 'Critical', and 'None'.")]
+    public LogLevel LoggingLevel { get; set; }
+}

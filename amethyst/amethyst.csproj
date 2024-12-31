@@ -9,11 +9,12 @@
 
   <ItemGroup>
     <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="10.0.0" />
-    <PackageReference Include="DotNext.Threading" Version="5.13.0" />
+    <PackageReference Include="CommandLineParser" Version="2.9.1" />
+    <PackageReference Include="DotNext.Threading" Version="5.16.1" />
     <PackageReference Include="Func" Version="0.3.2" />
     <PackageReference Include="Microsoft.AspNetCore.SpaServices.Extensions" Version="8.0.11" />
     <PackageReference Include="sqlite-net-pcl" Version="1.9.172" />
-    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.7.3" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="7.2.0" />
   </ItemGroup>
 
   <ItemGroup>

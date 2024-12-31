@@ -38,6 +38,8 @@ public abstract class ControllerIntegrationTest
         Directory.CreateDirectory(_runPath);
         RunningEnvironment.RootPath = _runPath;
 
+        Program.SkipCommandLineParse = true;
+
         _applicationFactory = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
         {
             builder.ConfigureLogging(logOptions =>

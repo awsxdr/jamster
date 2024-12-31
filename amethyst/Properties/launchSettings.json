@@ -11,10 +11,11 @@
   "profiles": {
     "http": {
       "commandName": "Project",
+      "commandLineArgs": "-p 5000",
       "dotnetRunMessages": true,
       "launchBrowser": true,
       "launchUrl": "",
-      "applicationUrl": "http://localhost:5249",
+      "applicationUrl": "http://*:5249",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       },
