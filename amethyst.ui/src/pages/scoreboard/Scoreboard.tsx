@@ -60,7 +60,7 @@ export const Scoreboard = () => {
     return (
         <>
             <TeamColorGradients />
-            <div className="absolute left-0 top-0 h-full w-full select-none" onMouseMove={handleUserInteracting} onTouchStart={handleUserInteracting}>
+            <div className="absolute left-0 top-0 h-full w-full select-none overflow-hidden px-2" onMouseMove={handleUserInteracting} onTouchStart={handleUserInteracting}>
                 <Button 
                     size="icon" 
                     variant="ghost" 
@@ -76,10 +76,12 @@ export const Scoreboard = () => {
                                 <TeamDetails side={TeamSide.Home} />
                                 <TeamDetails side={TeamSide.Away} />
                             </div>
-                            <JamDetails gameStage={gameStage} visible={gameStage.stage === Stage.Jam} />
-                            <TimeoutDetails gameStage={gameStage} visible={gameStage.stage === Stage.Timeout || gameStage.stage === Stage.AfterTimeout} />
-                            <LineupDetails gameStage={gameStage} visible={gameStage.stage === Stage.Lineup} />
-                            <IntermissionDetails gameStage={gameStage} visible={gameStage.stage === Stage.BeforeGame || gameStage.stage === Stage.Intermission || gameStage.stage === Stage.AfterGame} />
+                            <div className="flex flex-col h-[35vh] w-full relative">
+                                <JamDetails gameStage={gameStage} visible={gameStage.stage === Stage.Jam} />
+                                <TimeoutDetails gameStage={gameStage} visible={gameStage.stage === Stage.Timeout || gameStage.stage === Stage.AfterTimeout} />
+                                <LineupDetails gameStage={gameStage} visible={gameStage.stage === Stage.Lineup} />
+                                <IntermissionDetails gameStage={gameStage} visible={gameStage.stage === Stage.BeforeGame || gameStage.stage === Stage.Intermission || gameStage.stage === Stage.AfterGame} />
+                            </div>
                         </div>
                     </div>
                 </div>

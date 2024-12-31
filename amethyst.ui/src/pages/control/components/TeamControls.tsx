@@ -16,14 +16,16 @@ import { TeamLineup } from "./TeamLineup";
 import { SeparatedCollection } from "@/components/SeparatedCollection";
 import { CallMarked, InitialTripCompleted, LeadMarked, LostMarked, StarPassMarked } from "@/types/events/JamStats";
 import { LastTripDeleted } from "@/types/events";
+import { cn } from "@/lib/utils";
 
 type TeamControlsProps = {
     gameId?: string;
     side: TeamSide;
     disabled?: boolean | 'allExceptLineup';
+    className?: string;
 }
 
-export const TeamControls = ({ gameId, side, disabled }: TeamControlsProps) => {
+export const TeamControls = ({ gameId, side, disabled, className }: TeamControlsProps) => {
 
     const { sendEvent } = useEvents();
 
@@ -106,7 +108,7 @@ export const TeamControls = ({ gameId, side, disabled }: TeamControlsProps) => {
     useHotkeys(side === TeamSide.Home ? 'shift+s' : 'shift+#', () => setTripScore(4), { preventDefault: true });
 
     return (
-        <Card className="grow inline-block">
+        <Card className={cn("w-full inline-block", className)}>
             <CardContent className="py-0">
                 <SeparatedCollection>
                     { teamName && <div className="text-center text-xl">{teamName}</div> }

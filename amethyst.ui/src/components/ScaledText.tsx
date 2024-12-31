@@ -130,7 +130,7 @@ export const ScaledText = ({ text, className, style }: ScaledTextProps) => {
         const minDifference = Math.min(...iterationAspectRatioDifferences);
         const bestFitIndex = iterationAspectRatioDifferences.indexOf(minDifference);
 
-        setTextChunks(iterations[bestFitIndex]);
+        setTextChunks(iterations[bestFitIndex] ?? iterations.reverse()[0] ?? []);
 
     }, [font, text, aspectRatio])
 

@@ -11,6 +11,7 @@ import { useSidebar } from "@/components/ui";
 import { useState } from "react";
 import { UserMenu } from "./UserMenu";
 import { SettingsMenu } from "./SettingsMenu";
+import { cn } from "@/lib/utils";
 
 type GameToolbarProps = {
     games: GameInfo[];
@@ -28,10 +29,10 @@ export const GameToolbar = ({ games, currentGame, onCurrentGameIdChanged, select
     const [showGameSelect, setShowGameSelect] = useState(true);
 
     return (
-        <div className="flex flex-wrap flex-col justify-center md:flex-nowrap md:flex-row w-full gap-2.5 p-2">
-            <div className="flex grow justify-between">
-                <MobileSidebarTrigger />
-                { isMobile &&
+        <div className="flex flex-wrap flex-col justify-center md:flex-row md:flex-nowrap w-full gap-2.5 p-2">
+            { isMobile &&
+                <div className="flex grow justify-between">
+                    <MobileSidebarTrigger />
                     <div className="flex grow justify-end gap-2">
                         <UserMenu disabled={disabled} />
                         <ViewMenu disabled={disabled} />
@@ -42,42 +43,42 @@ export const GameToolbar = ({ games, currentGame, onCurrentGameIdChanged, select
                             { showGameSelect ? <ChevronUp /> : <ChevronDown /> }
                         </Button>
                     </div>
-                }
-            </div>
+                </div>
+            }
             { (!isMobile || showGameSelect) &&
                 <>
-                    <div className="flex w-full md:w-auto">
-                        <GameSelectMenu 
-                            games={games} 
-                            currentGame={currentGame} 
-                            selectedGameId={selectedGameId} 
-                            onSelectedGameIdChanged={onSelectedGameIdChanged} 
-                            disabled={disabled}
-                        />
-                    </div>
-                    <div className="flex grow">
-                        <div className="flex flex-wrap bg-card gap-2">
+                    <div className={cn("flex flex-wrap w-full justify-center bg-card gap-2", isMobile && "flex-nowrap")}>
+                        <div className="w-full xl:w-1/2 overflow-hidden">
+                            <GameSelectMenu 
+                                games={games} 
+                                currentGame={currentGame} 
+                                selectedGameId={selectedGameId} 
+                                onSelectedGameIdChanged={onSelectedGameIdChanged} 
+                                disabled={disabled}
+                            />
+                        </div>
+                        <div className="flex gap-2">
                             <ConfirmMakeCurrentDialog onAccept={() => selectedGameId && onCurrentGameIdChanged(selectedGameId)}>
                                 <Button variant="secondary" disabled={disabled || selectedGameId === currentGame?.id}>
                                     <Repeat />
-                                    <span className="hidden lg:inline">{translate("GameToolbar.MakeCurrent")}</span>
+                                    <span className="hidden sm:inline">{translate("GameToolbar.MakeCurrent")}</span>
                                 </Button>
                             </ConfirmMakeCurrentDialog>
                             <NewGameDialogTrigger>
                                 <Button variant="creative" disabled={disabled}>
                                     <SquarePlus />
-                                    <span className="hidden lg:inline">{translate("GameToolbar.NewGame")}</span>
+                                    <span className="hidden sm:inline">{translate("GameToolbar.NewGame")}</span>
                                 </Button>
                             </NewGameDialogTrigger>
                         </div>
-                        { !isMobile &&
-                            <div className="flex grow justify-end gap-2">
-                                <UserMenu disabled={disabled} />
-                                <ViewMenu disabled={disabled} />
-                                <SettingsMenu disabled={disabled} />
-                            </div>
-                        }
                     </div>
+                    { !isMobile &&
+                        <div className="flex justify-end gap-2">
+                            <UserMenu disabled={disabled} />
+                            <ViewMenu disabled={disabled} />
+                            <SettingsMenu disabled={disabled} />
+                        </div>
+                    }
                 </>
             }
         </div>

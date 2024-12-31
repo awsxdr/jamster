@@ -38,17 +38,17 @@ export const JamDetails = ({ gameStage, visible }: JamDetailsProps) => {
 
     const awayJammerText = useMemo(
         () => getJammerText(awayJammerNumber, awayPivotNumber, awayTeamStarPass, awayTeam?.roster),
-        [homeTeam, awayJammerNumber, awayPivotNumber, awayTeamStarPass]);
+        [awayTeam, awayJammerNumber, awayPivotNumber, awayTeamStarPass]);
 
     const homeIsLead = useMemo(() => homeStats?.lead && !homeStats?.lost, [homeStats]);
     const awayIsLead = useMemo(() => awayStats?.lead && !awayStats?.lost, [awayStats]);
 
-    const jammerNameClassName = "w-full h-full justify-center text-center text-white";
+    const jammerNameClassName = "w-full h-full justify-center text-center [-webkit-text-stroke-color:#000] [-webkit-text-stroke-width:.1rem] text-white";
 
     return (
-        <ClocksBar visible={visible} className="flex-col">
+        <ClocksBar visible={visible} className="flex-col overflow-visible">
             <div className="h-[40%] flex">
-                <div className="w-1/2 h-full flex">
+                <div className={cn("w-1/2 h-full flex")}>
                     <ScaledText text={homeJammerText} className={cn(jammerNameClassName, homeIsLead ? "animate-pulse-scale" : "")} />
                 </div>
                 <div className="w-1/2 h-full flex">

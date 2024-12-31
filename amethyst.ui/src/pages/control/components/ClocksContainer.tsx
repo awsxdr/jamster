@@ -18,7 +18,7 @@ export const ClocksContainer = () => {
 
     return (
         <div className="w-full flex gap-2 items-center">
-            <div className="w-full flex flex-wrap md:flex-nowrap gap-2 justify-between">
+            <div className="w-full flex flex-wrap lg:flex-nowrap gap-2 justify-between">
                 <PeriodClock
                     editing={isEditing} 
                     name={`${translate('ClocksContainer.Period')} ${gameStage?.periodNumber ?? 0}`} 

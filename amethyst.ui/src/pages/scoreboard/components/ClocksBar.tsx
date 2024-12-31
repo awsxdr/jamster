@@ -8,7 +8,7 @@ type ClocksBarProps = {
 
 export const ClocksBar = ({ visible, className, children }: PropsWithChildren<ClocksBarProps>) => {
     return (
-        <div className={cn("flex justify-around overflow-hidden p-0 h-0 transition-all duration-250", visible ? "h-[35vh]" : "-mt-5", className)}>
+        <div className={cn("absolute left-0 right-0 top-0 bottom-0 flex justify-around overflow-hidden hidden", visible ? "block" : "", className)}>
             { children }
         </div>
     );
