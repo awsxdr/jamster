@@ -74,6 +74,25 @@ public class TimeoutListUnitTests : ReducerUnitTest<TimeoutList, TimeoutListStat
     }
 
     [Test]
+    public async Task TimeoutStarted_WhenLastTimeoutHasDuration_DoesNotSetDurationOfLastTimeout()
+    {
+        State = new([
+            new(0, TimeoutType.Team, TeamSide.Home, 12, false)
+        ]);
+
+        var eventIds = State.Timeouts.Select(t => t.EventId).ToArray();
+
+        var startEvent = new TimeoutStarted(10000);
+
+        await Subject.Handle(startEvent);
+
+        State.Timeouts.Should().BeEquivalentTo([
+            new TimeoutListItem(eventIds[0], TimeoutType.Team, TeamSide.Home, 12, false),
+            new(startEvent.Id, TimeoutType.Untyped, null, null, false),
+        ]);
+    }
+
+    [Test]
     public async Task TeamReviewRetained_SetsSpecifiedReviewAsRetained()
     {
         State = new([

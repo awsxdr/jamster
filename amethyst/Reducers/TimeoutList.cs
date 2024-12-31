@@ -117,7 +117,7 @@ public class TimeoutList(ReducerGameContext context, ILogger<TimeoutList> logger
 
         return new(
             timeouts.Take(timeouts.Length - 1)
-                .Append(lastTimeout with { DurationInSeconds = ((Tick)(eventTick - lastTimeout.EventId.Tick)).Seconds })
+                .Append(lastTimeout with { DurationInSeconds = lastTimeout.DurationInSeconds ?? (eventTick - lastTimeout.EventId.Tick).Seconds })
                 .ToArray());
     }
 }
