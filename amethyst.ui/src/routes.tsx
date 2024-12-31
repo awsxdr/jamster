@@ -8,6 +8,7 @@ import { TeamEdit } from "./pages/teams/TeamEdit";
 import { WorkInProgress } from "./pages/WorkInProgress/WorkInProgress";
 import { GamesManagement } from "./pages/games/GamesManagement";
 import { GameEdit } from "./pages/games/GameEdit";
+import { Overlay } from "./pages/overlay/Overlay";
 
 export const Routes = () => {
     const router = createBrowserRouter([
@@ -41,7 +42,7 @@ export const Routes = () => {
         },
         {
             path: '/overlay',
-            element: <MainMenu content={<WorkInProgress />} />
+            element: <Overlay />
         },
         {
             path: '/stats',
