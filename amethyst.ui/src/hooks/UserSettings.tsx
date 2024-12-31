@@ -13,6 +13,7 @@ export type UserSettings = {
     showStatsControls: boolean;
     showLineupControls: boolean;
     showClocks: boolean;
+    showTimeoutList: boolean;
     displaySide: DisplaySide;
     shortcuts: StringMap<string>;
 }
@@ -25,6 +26,7 @@ const DEFAULT_SETTINGS: UserSettings = {
     showStatsControls: true,
     showLineupControls: true,
     showClocks: true,
+    showTimeoutList: true,
     displaySide: DisplaySide.Both,
     shortcuts: {},
 }

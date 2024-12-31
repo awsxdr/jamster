@@ -5,9 +5,9 @@ import { ClocksContainer } from "./ClocksContainer";
 import { TimeoutTypePanel } from "./TimeoutTypePanel";
 import { useGameStageState, useHasServerConnection } from "@/hooks";
 import { DisplaySide, useUserSettings } from "@/hooks/UserSettings";
-import { Alert, AlertDescription, AlertTitle, Card, CardContent, CardHeader, CardTitle } from "@/components/ui";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui";
 import { WifiOff } from "lucide-react";
-import { ScoreStats } from "./ScoreStats";
+import { TimeoutList } from "./TimeoutList";
 
 type ControlPanelProps = {
     gameId?: string;
@@ -41,18 +41,44 @@ export const ControlPanel = ({ gameId, disabled }: ControlPanelProps) => {
             { userSettings.showClockControls && <MainControls gameId={gameId} disabled={disabled} /> }
             { userSettings.showClockControls && <TimeoutTypePanel gameId={gameId} disabled={disabled} /> }
             { (userSettings.showLineupControls || userSettings.showScoreControls || userSettings.showStatsControls) && (
-                <div className="w-full flex flex-wrap lg:flex-nowrap gap-2">
-                    { userSettings.displaySide !== DisplaySide.Away && <TeamControls side={TeamSide.Home} gameId={gameId} disabled={teamControlsDisabled} /> }
-                    { userSettings.displaySide !== DisplaySide.Home && <TeamControls side={TeamSide.Away} gameId={gameId} disabled={teamControlsDisabled} /> }
+                <div className="w-full flex flex-wrap xl:flex-nowrap gap-2">
+                    { userSettings.displaySide !== DisplaySide.Away && 
+                        <TeamControls 
+                            side={TeamSide.Home} 
+                            gameId={gameId} 
+                            disabled={teamControlsDisabled} 
+                            className={userSettings.displaySide == DisplaySide.Both ? "xl:w-1/2" : ""} 
+                        /> 
+                    }
+                    { userSettings.displaySide !== DisplaySide.Home && 
+                        <TeamControls 
+                            side={TeamSide.Away} 
+                            gameId={gameId} 
+                            disabled={teamControlsDisabled} 
+                            className={userSettings.displaySide == DisplaySide.Both ? "xl:w-1/2" : ""} 
+                        /> 
+                    }
                 </div>
             )}
             { userSettings.showClocks && <ClocksContainer /> }
-            <Card>
-                <CardContent className="w-full flex flex-wrap lg:flex-nowrap gap-2 p-2">
-                    <ScoreStats side={TeamSide.Home} gameId={gameId} className="w-1/2" />
-                    <ScoreStats side={TeamSide.Away} gameId={gameId} className="w-1/2" />
-                </CardContent>
-            </Card>
+            { userSettings.showTimeoutList &&
+                <div className="w-full flex flex-wrap xl:flex-nowrap gap-2">
+                    { userSettings.displaySide !== DisplaySide.Away && 
+                        <TimeoutList 
+                            side={TeamSide.Home} 
+                            gameId={gameId} 
+                            className={userSettings.displaySide == DisplaySide.Both ? "xl:w-1/2" : ""} 
+                        />
+                    }
+                    { userSettings.displaySide !== DisplaySide.Home && 
+                        <TimeoutList 
+                            side={TeamSide.Away} 
+                            gameId={gameId} 
+                            className={userSettings.displaySide == DisplaySide.Both ? "xl:w-1/2" : ""}
+                        />
+                    }
+                </div>
+            }
         </div>
     )
 }

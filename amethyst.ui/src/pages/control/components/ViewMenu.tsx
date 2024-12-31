@@ -3,7 +3,7 @@ import { useI18n } from "@/hooks";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { DisplaySide, useUserSettings } from "@/hooks/UserSettings"
 import { useWakeLock } from "@/hooks/WakeLock";
-import { Check, Clock, Eye, Maximize2, NotebookPen, Package, Play, Table, Tally5, UsersRound } from "lucide-react"
+import { Check, Clock, Eye, Maximize2, NotebookPen, Package, Play, Table, Tally5, Timer, UsersRound } from "lucide-react"
 
 type ViewMenuProps = {
     disabled?: boolean;
@@ -36,6 +36,8 @@ export const ViewMenu = ({ disabled }: ViewMenuProps) => {
             showStatsControls: true,
             showLineupControls: true,
             showClocks: true,
+            showTimeoutList: true,
+            displaySide: DisplaySide.Both,
         }));
     }
 
@@ -47,6 +49,7 @@ export const ViewMenu = ({ disabled }: ViewMenuProps) => {
             showStatsControls: true,
             showLineupControls: true,
             showClocks: true,
+            showTimeoutList: false,
         }));
     }
 
@@ -58,6 +61,8 @@ export const ViewMenu = ({ disabled }: ViewMenuProps) => {
             showStatsControls: false,
             showLineupControls: false,
             showClocks: true,
+            showTimeoutList: true,
+            displaySide: DisplaySide.Both,
         }));
     }
 
@@ -84,6 +89,11 @@ export const ViewMenu = ({ disabled }: ViewMenuProps) => {
     const toggleShowClocks = () => setUserSettings(current => ({
         ...current,
         showClocks: !current.showClocks,
+    }));
+
+    const toggleShowTimeouts = () => setUserSettings(current => ({
+        ...current,
+        showTimeoutList: !current.showTimeoutList,
     }));
 
     const setDisplaySide = (displaySide: DisplaySide) => setUserSettings(current => ({
@@ -157,6 +167,11 @@ export const ViewMenu = ({ disabled }: ViewMenuProps) => {
                         { userSettings.showClocks ? (<Check />) : (<IconSpacer />) }
                         <Clock />
                         {translate("ViewMenu.Clocks")}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem disabled={disabled} onClick={toggleShowTimeouts}>
+                        { userSettings.showTimeoutList ? (<Check />) : (<IconSpacer />) }
+                        <Timer />
+                        {translate("ViewMenu.Timeouts")}
                     </DropdownMenuItem>
                     <DropdownMenuItem disabled={disabled}>
                         <span className="w-[16px]"></span>

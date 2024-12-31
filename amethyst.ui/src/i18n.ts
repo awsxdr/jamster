@@ -156,6 +156,10 @@ const languages: Languages = {
         "ThemeMenu.Light": "Light",
         "ThemeMenu.System": "System default",
         "ThemeMenu.Title": "Theme",
+        "TimeoutList.AwayTitle": "Away timeouts",
+        "TimeoutList.HomeTitle": "Home timeouts",
+        "TimeoutList.InProgress": "In progress",
+        "TimeoutList.Retained": "Retained",
         "TimeoutType.HomeTeam": "Home team timeout",
         "TimeoutType.HomeTeamReview": "Home official review",
         "TimeoutType.Official": "Official timeout",
@@ -190,6 +194,7 @@ const languages: Languages = {
         "ViewMenu.ScorekeeperPreset": "Scorekeeper",
         "ViewMenu.ScoreSheet": "Score sheet",
         "ViewMenu.StatsControls": "Stats controls",
+        "ViewMenu.Timeouts": "Timeouts",
     },
     "es": {
         name: "Español",
