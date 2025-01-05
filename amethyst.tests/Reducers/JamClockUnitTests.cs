@@ -93,9 +93,9 @@ public class JamClockUnitTests : ReducerUnitTest<JamClock, JamClockState>
         State = new(true, randomTick, randomTick, 0);
 
         var secondRandomTick = randomTick + Random.Shared.Next(1, 100000);
-        await Subject.Handle(new TimeoutStarted(secondRandomTick));
+        var implicitEvents = await Subject.Handle(new TimeoutStarted(secondRandomTick));
 
-        State.IsRunning.Should().BeFalse();
+        implicitEvents.OfType<JamEnded>().Should().ContainSingle().Which.Tick.Should().Be(secondRandomTick);
     }
 
     [Test]

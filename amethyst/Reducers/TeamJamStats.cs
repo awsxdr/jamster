@@ -16,6 +16,7 @@ public abstract class TeamJamStats(TeamSide teamSide, ReducerGameContext gameCon
     , IHandlesEvent<JamStarted>
     , IHandlesEvent<JamEnded>
     , IHandlesEvent<ScoreModifiedRelative>
+    , IDependsOnState<TimeoutClockState>
 {
     protected override TeamJamStatsState DefaultState => new(false, false, false, false, false);
 
@@ -89,8 +90,9 @@ public abstract class TeamJamStats(TeamSide teamSide, ReducerGameContext gameCon
     public IEnumerable<Event> Handle(JamEnded @event)
     {
         var state = GetState();
+        var timeoutClock = GetState<TimeoutClockState>();
 
-        if (state is { Lead: true, Called: false })
+        if (state is { Lead: true, Called: false } && timeoutClock is { IsRunning: false })
             return [new CallMarked(@event.Tick, new(teamSide, true))];
 
         return [];
