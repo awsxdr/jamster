@@ -24,6 +24,8 @@ export const CurrentGameScoreboard = () => {
 
 export const Scoreboard = () => {
 
+    const { translate } = useI18n();
+
     const gameStage = useGameStageState() ?? { stage: Stage.BeforeGame, periodNumber: 0, jamNumber: 0, periodIsFinalized: false };
 
     const [fullScreenButtonVisible, setFullScreenButtonVisible] = useState(false);
@@ -59,6 +61,7 @@ export const Scoreboard = () => {
 
     return (
         <>
+            <title>{translate("Scoreboard.Title")} | {translate("Main.Title")}</title>
             <TeamColorGradients />
             <div className="absolute left-0 top-0 h-full w-full select-none overflow-hidden px-2" onMouseMove={handleUserInteracting} onTouchStart={handleUserInteracting}>
                 <Button 

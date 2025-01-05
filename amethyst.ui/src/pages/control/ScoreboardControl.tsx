@@ -1,7 +1,7 @@
 import { Separator } from "@/components/ui/separator";
 import { GameToolbar } from "./components/GameToolbar";
 import { useCallback, useEffect, useState } from "react";
-import { GameStateContextProvider, useCurrentGame, useGamesList } from "@/hooks";
+import { GameStateContextProvider, useCurrentGame, useGamesList, useI18n } from "@/hooks";
 import { useSearchParams } from "react-router-dom";
 import { ControlPanel } from "./components/ControlPanel";
 import { NewGameDialog, NewGameDialogContainer } from "../../components/NewGameDialog";
@@ -19,6 +19,7 @@ export const ScoreboardControl = () => {
     const { createGame } = useGameApi();
     const { sendEvent } = useEvents();
     const { getTeam } = useTeamApi();
+    const { translate }=  useI18n();
 
     const [selectedGameId, setSelectedGameId] = useState<string | undefined>(searchParams.get('gameId') ?? '');
     const [newGameDialogOpen, setNewGameDialogOpen] = useState(false);
@@ -94,6 +95,7 @@ export const ScoreboardControl = () => {
 
     return (
         <>
+            <title>{translate("ScoreboardControl.Title")} | {translate("Main.Title")}</title>
             <UserSettingsProvider>
                 <NewGameDialogContainer open={newGameDialogOpen} onOpenChange={setNewGameDialogOpen}>
                     <GameToolbar 

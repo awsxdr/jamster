@@ -47,6 +47,7 @@ export const TeamsManagement = () => {
 
     return (
         <>
+            <title>{translate("TeamsManagement.Title")} | {translate("Main.Title")}</title>
             <NewTeamDialogContainer open={newTeamDialogOpen} onOpenChange={setNewTeamDialogOpen}>
                 <div className="flex w-full items-center mt-1 mb-2 pr-2">
                     <div className="grow">
