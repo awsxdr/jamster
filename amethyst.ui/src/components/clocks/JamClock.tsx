@@ -1,11 +1,5 @@
+import { JamClockState } from "@/types";
 import { Clock, ClockProps } from "./Clock";
-
-type JamClockState = {
-    isRunning: boolean,
-    startTick: number,
-    ticksPassed: number,
-    secondsPassed: number,
-};
 
 type JamClockProps = Omit<ClockProps<JamClockState>, "secondsMapper" | "stateName" | "direction" | "startValue">;
 

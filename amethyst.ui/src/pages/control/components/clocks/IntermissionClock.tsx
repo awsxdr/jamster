@@ -1,14 +1,10 @@
-import { useCurrentGame, useGameState } from "@/hooks";
+import { useCurrentGame, useGameStageState, useGameState, useIntermissionClockState } from "@/hooks";
 import { Clock, ClockProps } from "./Clock";
 import { useEvents } from "@/hooks/EventsApiHook";
 import { IntermissionClockSet } from "@/types/events";
-
-type IntermissionClockState = {
-    isRunning: boolean;
-    hasExpired: boolean;
-    targetTick: number;
-    secondsRemaining: number;
-};
+import { IntermissionClockState } from "@/types/IntermissionClockState";
+import { Stage } from "@/types";
+import { IntermissionStarted } from "@/types/events/Intermission";
 
 type IntermissionClockProps = Omit<ClockProps, "seconds" | "isRunning" | "direction" | "startValue">
 
@@ -16,6 +12,8 @@ export const IntermissionClock = (props: IntermissionClockProps) => {
 
     const clockState = useGameState<IntermissionClockState>("IntermissionClockState");
     const { currentGame } = useCurrentGame();
+    const { stage } = useGameStageState() ?? { };
+    const intermissionClock = useIntermissionClockState();
 
     const { sendEvent } = useEvents();
 
@@ -25,6 +23,10 @@ export const IntermissionClock = (props: IntermissionClockProps) => {
         }
 
         sendEvent(currentGame.id, new IntermissionClockSet(value));
+
+        if(!intermissionClock?.isRunning && stage && [Stage.BeforeGame, Stage.Intermission, Stage.AfterGame].includes(stage)) {
+            sendEvent(currentGame.id, new IntermissionStarted());
+        }
     }
 
     return (
