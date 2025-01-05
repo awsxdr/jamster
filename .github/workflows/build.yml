@@ -53,3 +53,10 @@ jobs:
       working-directory: ./amethyst
       run: dotnet publish ./amethyst.csproj /p:PublishProfile=./Properties/PublishProfiles/OsxX64.pubxml
 
+    - name: Upload build
+      uses: actions/upload-artifact@v4
+      with:
+        name: build
+        path: |
+          ./amethyst/bin/Release/*/**
+          ./start.cmd
