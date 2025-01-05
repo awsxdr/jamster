@@ -1,16 +1,27 @@
-import { CSSProperties, useMemo } from "react";
+import { CSSProperties, PropsWithChildren, useMemo } from "react";
 import { ScoreRow } from "./components/ScoreRow";
 import { TeamSide } from "@/types";
-import { GameStateContextProvider, useCurrentGame } from "@/hooks";
+import { GameStateContextProvider, I18nContextProvider, useCurrentGame, useI18n } from "@/hooks";
 import { useSearchParams } from "react-router-dom";
 import { Clock } from "./components/Clock";
+import { LineupRow } from "./components/LineupRow";
+import languages from '@/i18n';
 
-export const Overlay = () => {
+type OverlayContextProps = {
+    gameId?: string;
+}
 
-    const [ searchParams ] = useSearchParams();
-    const { currentGame } = useCurrentGame();
+const OverlayContext = ({ children, gameId }: PropsWithChildren<OverlayContextProps>) => (
+    <I18nContextProvider defaultLanguage='en' languages={languages}>
+        <GameStateContextProvider gameId={gameId}>
+                {children}
+        </GameStateContextProvider>
+    </I18nContextProvider>
+)
 
-    const gameId = useMemo(() => searchParams.get('gameId') || currentGame?.id, [searchParams, currentGame]);
+const OverlayContent = () => {
+
+    const { translate } = useI18n();
 
     const showBackground = false;
 
@@ -34,19 +45,47 @@ export const Overlay = () => {
         '--period-clock-text-size': `${1.75 * scale}vh`,
         '--clock-footer-height': `${2.5 * scale}vh`,
         '--clock-footer-text-size': `${1.25 * scale}vh`,
+        '--intermission-clock-height': `${5 * scale}vh`,
+        '--intermission-clock-text-size': `${2 * scale}vh`,
+        '--post-game-height': `${2 * scale}vh`,
+        '--post-game-text-size': `${1.5 * scale}vh`,
+        '--lineup-row-width': `${36 * scale}vw`,
+        '--lineup-row-height': `${3 * scale}vh`,
+        '--lineup-row-top': `${2 * scale}vh`,
+        '--lineup-row-left': `${26 * scale}vw`,
+        '--lineup-row-text-size': `${1.5 * scale}vh`,
+        '--lineup-jammer-name-width': `${20 * scale}vw`,
+        '--lineup-skater-width': `${4 * scale}vw`,
     } as CSSProperties;
 
     return (
-        <GameStateContextProvider gameId={gameId}>
+        <>
+            <title>{translate("Overlay.Title")} | {translate("Main.Title")}</title>
             { showBackground && (
                 <div className="absolute left-0 top-0 right-0 bottom-0 bg-[#0f0]">
                 </div>
             )}
-            <div className="h-0 w-0 relative" style={style}>
+            <div className="h-0 w-0 relative select-none" style={style}>
+                <LineupRow side={TeamSide.Home} />
                 <ScoreRow side={TeamSide.Home} />
+                <LineupRow side={TeamSide.Away} />
                 <ScoreRow side={TeamSide.Away} />
                 <Clock />
             </div>
-        </GameStateContextProvider>
+        </>
+    );
+}
+
+export const Overlay = () => {
+
+    const [ searchParams ] = useSearchParams();
+    const { currentGame } = useCurrentGame();
+
+    const gameId = useMemo(() => searchParams.get('gameId') || currentGame?.id, [searchParams, currentGame]);
+
+    return (
+        <OverlayContext gameId={gameId}>
+            <OverlayContent />
+        </OverlayContext>
     )
 }

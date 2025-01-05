@@ -1,4 +1,4 @@
-import { GameStateContextProvider, useCurrentGame, useGameStageState } from '@/hooks';
+import { GameStateContextProvider, I18nContextProvider, useCurrentGame, useGameStageState, useI18n } from '@/hooks';
 import { Stage, TeamSide } from '@/types';
 import { TeamDetails } from './components/TeamDetails';
 import { JamDetails } from './components/JamDetails';
@@ -11,14 +11,17 @@ import { Button } from '@/components/ui';
 import { Maximize2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useWakeLock } from '@/hooks/WakeLock';
+import languages from '@/i18n';
 
 export const CurrentGameScoreboard = () => {
     const { currentGame } = useCurrentGame();
   
     return (
-      <GameStateContextProvider gameId={currentGame?.id}>
-        <Scoreboard />
-      </GameStateContextProvider>
+        <I18nContextProvider defaultLanguage='en' languages={languages}>
+            <GameStateContextProvider gameId={currentGame?.id}>
+                <Scoreboard />
+            </GameStateContextProvider>
+        </I18nContextProvider>
     );
 };
 
