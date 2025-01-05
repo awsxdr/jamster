@@ -1,0 +1,25 @@
+name: Build
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build_api:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Setup dotnet
+      uses: actions/setup-dotnet@v4
+      with:
+      - dotnet-version: 8.0.x
+    - name: Restore
+      working-directory: ./amethyst
+      run: dotnet restore
+    - name: Test
+      working-directory: ./amethyst
+      run: dotnet test
+    - name: Build win-x64
+      working-directory: ./amethyst
+      run: dotnet publish ./amethyst.csproj /p:PublishProfile=./Properties/PublishProfiles/WinX64.pubxml
