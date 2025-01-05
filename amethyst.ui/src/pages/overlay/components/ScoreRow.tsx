@@ -1,4 +1,4 @@
-import { useJamStatsState, useTeamDetailsState, useTeamScoreState, useTeamTimeoutsState } from "@/hooks";
+import { useI18n, useJamStatsState, useTeamDetailsState, useTeamScoreState, useTeamTimeoutsState } from "@/hooks";
 import { cn } from "@/lib/utils";
 import { ReviewStatus, TeamSide, TimeoutInUse } from "@/types";
 import { Star, StarOff } from "lucide-react";
@@ -11,8 +11,8 @@ type ScoreRowProps = {
 export const ScoreRow = ({ side }: ScoreRowProps) => {
 
     const sharedScoreRowClassName = "absolute flex gap-[0.3vw] items-center h-[--score-row-height] w-[--score-row-width] left-[--score-row-left] [font-size:var(--score-row-text-size)] leading-[--score-row-text-size] overflow-hidden";
-    const homeScoreRowClassName = cn(sharedScoreRowClassName, "bg-[#ff0] top-[--score-row-top] rounded-t-lg border-b-[1px] border-[#888] bg-gradient-to-b from-[#eee] to-[#ccc]");
-    const awayScoreRowClassName = cn(sharedScoreRowClassName, "bg-[#0ff] top-[calc(var(--score-row-top)_+_var(--score-row-height))] rounded-b-lg border-t-[1px] border-white bg-gradient-to-b from-[#ccc] to-[#aaa]");
+    const homeScoreRowClassName = cn(sharedScoreRowClassName, "top-[--score-row-top] rounded-t-lg border-b-[1px] border-[#888] bg-gradient-to-b from-[#eee] to-[#ccc]");
+    const awayScoreRowClassName = cn(sharedScoreRowClassName, "top-[calc(var(--score-row-top)_+_var(--score-row-height))] rounded-b-lg border-t-[1px] border-white bg-gradient-to-b from-[#ccc] to-[#aaa]");
 
     const timeoutItemClassName = "rounded-full h-[calc(var(--score-row-height)_/_4_-_2px)] w-[calc(var(--score-row-height)_/_4_-_2px)]";
 
@@ -21,7 +21,15 @@ export const ScoreRow = ({ side }: ScoreRowProps) => {
     const timeouts = useTeamTimeoutsState(side);
     const { lead, lost } = useJamStatsState(side) ?? { };
 
-    const teamName = useMemo(() => team?.names['overlay'] ?? team?.names['team'] ?? team?.names['league'] ?? team?.names['color'] ?? 'Home', [team]);
+    const { translate } = useI18n();
+
+    const teamName = useMemo(() => 
+        team?.names['overlay'] 
+        ?? team?.names['team'] 
+        ?? team?.names['league'] 
+        ?? team?.names['color'] 
+        ?? translate(side === TeamSide.Home ? "Overlay.ScoreRow.Home" : "Overlay.ScoreRow.Away")
+    , [team]);
 
     const timeoutActive = timeouts?.currentTimeout === TimeoutInUse.Timeout;
 

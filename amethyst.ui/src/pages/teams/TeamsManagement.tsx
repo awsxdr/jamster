@@ -69,13 +69,13 @@ export const TeamsManagement = () => {
                             </AlertDialogTrigger>
                             <AlertDialogContent>
                                 <AlertDialogHeader>
-                                    <AlertDialogTitle>{ translate("TeamManagement.DeleteTeamDialog.Title") }</AlertDialogTitle>
-                                    <AlertDialogDescription>{ translate("TeamManagement.DeleteTeamDialog.Description") }</AlertDialogDescription>
+                                    <AlertDialogTitle>{ translate("TeamsManagement.DeleteTeamDialog.Title") }</AlertDialogTitle>
+                                    <AlertDialogDescription>{ translate("TeamsManagement.DeleteTeamDialog.Description") }</AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
-                                    <AlertDialogCancel>{ translate("TeamManagement.DeleteTeamDialog.Cancel") }</AlertDialogCancel>
+                                    <AlertDialogCancel>{ translate("TeamsManagement.DeleteTeamDialog.Cancel") }</AlertDialogCancel>
                                     <AlertDialogAction className={buttonVariants({ variant: "destructive" })} onClick={handleDeleteSelected}>
-                                        { translate("TeamManagement.DeleteTeamDialog.Confirm") }
+                                        { translate("TeamsManagement.DeleteTeamDialog.Confirm") }
                                     </AlertDialogAction>
                                 </AlertDialogFooter>
                             </AlertDialogContent>
