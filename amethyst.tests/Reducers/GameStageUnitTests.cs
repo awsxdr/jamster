@@ -94,6 +94,8 @@ public class GameStageUnitTests : ReducerUnitTest<GameStage, GameStageState>
     [TestCase(Stage.AfterGame, Stage.AfterGame, 2)]
     public async Task PeriodEnded_SetsExpectedStage(Stage currentStage, Stage expectedStage, int period)
     {
+        MockState(new IntermissionClockState(false, false, 0, 0));
+
         State = new(currentStage, period, 1, false);
 
         await Subject.Handle(new PeriodEnded(0));
@@ -118,16 +120,28 @@ public class GameStageUnitTests : ReducerUnitTest<GameStage, GameStageState>
     }
 
     [Test]
-    public async Task PeriodEnded_WhenEnteringIntermission_StartsIntermissionClock()
+    public async Task PeriodEnded_WhenEnteringIntermission_AndIntermissionClockNotSet_StartsIntermissionClockWithDefaultValue()
     {
         State = new(Stage.Jam, 1, 15, false);
         MockState<PeriodClockState>(new(false, true, 0, 0, PeriodClock.PeriodLengthInTicks + 10000, 0));
+        MockState<IntermissionClockState>(new(false, false, 0, 0));
 
-        var result = await Subject.Handle(new PeriodEnded(123));
+        var result = (await Subject.Handle(new PeriodEnded(123))).ToArray();
 
-        var implicitEvent = result.Should().ContainSingle().Which.Should().BeAssignableTo<IntermissionStarted>().Which;
-        implicitEvent.Tick.Should().Be(123);
-        implicitEvent.Body.DurationInSeconds.Should().Be(15 * 60);
+        result[0].Should().BeAssignableTo<IntermissionClockSet>().Which.Body.SecondsRemaining.Should().Be(15 * 60);
+        result[1].Should().BeAssignableTo<IntermissionStarted>();
+    }
+
+    [Test]
+    public async Task PeriodEnded_WhenEnteringIntermission_AndIntermissionClockSet_StartsIntermissionClockWithoutChangingValue()
+    {
+        State = new(Stage.Jam, 1, 15, false);
+        MockState<PeriodClockState>(new(false, true, 0, 0, PeriodClock.PeriodLengthInTicks + 10000, 0));
+        MockState<IntermissionClockState>(new(false, false, 0, 10));
+
+        var result = (await Subject.Handle(new PeriodEnded(123))).ToArray();
+
+        result.Should().HaveCount(1).And.Subject.Single().Should().BeAssignableTo<IntermissionStarted>();
     }
 
     [TestCase(Stage.BeforeGame, 0, 0, false)]

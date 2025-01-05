@@ -33,7 +33,7 @@ public class IntermissionClock(ReducerGameContext context, ILogger<IntermissionC
 
         SetState(GetState() with { IsRunning = true });
 
-        return [new IntermissionClockSet(@event.Tick, new(@event.Body.DurationInSeconds))];
+        return [];
     }
 
     public IEnumerable<Event> Handle(IntermissionClockSet @event)
