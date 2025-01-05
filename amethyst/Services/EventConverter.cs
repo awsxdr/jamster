@@ -10,6 +10,7 @@ public interface IEventConverter
     Result<Event> DecodeEvent(IUntypedEvent @event);
 }
 
+[Singleton]
 public class EventConverter : IEventConverter
 {
     private readonly ImmutableDictionary<string, Type> _eventTypes;

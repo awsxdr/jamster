@@ -4,32 +4,32 @@ using Microsoft.AspNetCore.SignalR;
 
 namespace amethyst.Hubs;
 
-public class TeamsNotifier
+public class TeamsNotifier : Notifier<TeamsHub, ITeamsHubClient>
 {
     public TeamsNotifier(
         ITeamStore teamStore,
         IHubContext<TeamsHub, ITeamsHubClient> hubContext,
         ILogger<TeamsNotifier> logger
-    )
+    ) : base(hubContext)
     {
         teamStore.TeamChanged += async (_, e) =>
         {
             logger.LogDebug("Notifying clients of team change");
 
-            await hubContext.Clients.Group("TeamChanged").TeamChanged((TeamWithRosterModel)e.Team);
+            await HubContext.Clients.Group("TeamChanged").TeamChanged((TeamWithRosterModel)e.Team);
         };
 
         teamStore.TeamCreated += async (_, e) =>
         {
             logger.LogDebug("Notifying clients of team creation");
 
-            await hubContext.Clients.Group("TeamCreated").TeamCreated((TeamWithRosterModel) e.Team);
+            await HubContext.Clients.Group("TeamCreated").TeamCreated((TeamWithRosterModel) e.Team);
         };
 
         teamStore.TeamArchived += async (_, e) =>
         {
             logger.LogDebug("Notifying clients of team archiving");
-            await hubContext.Clients.Group("TeamArchived").TeamArchived(e.TeamId);
+            await HubContext.Clients.Group("TeamArchived").TeamArchived(e.TeamId);
         };
     }
 }

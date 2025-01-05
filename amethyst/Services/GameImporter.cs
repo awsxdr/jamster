@@ -9,6 +9,7 @@ public interface IGameImporter
     Task<GameInfo> Import(StatsBook statsBook);
 }
 
+[Singleton]
 public class GameImporter(IGameDiscoveryService gameDiscoveryService, IEventBus eventBus) : IGameImporter
 {
     private static readonly Dictionary<string, TeamColor> KnownColors = new (string[] Keys, (Color ShirtColor, Color ComplementaryColor) Colors)[]

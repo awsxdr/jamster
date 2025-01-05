@@ -15,6 +15,7 @@ public interface IGameContextFactory : IDisposable
     Task ReloadGame(GameInfo gameInfo);
 }
 
+[Singleton]
 public class GameContextFactory(
     GameStateStoreFactory stateStoreFactory, 
     IEnumerable<ReducerFactory> reducerFactories,

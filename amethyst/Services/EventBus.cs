@@ -17,6 +17,7 @@ public interface IEventBus
     Task<Result> RemoveEvent(GameInfo game, Guid eventId);
 }
 
+[Singleton]
 public class EventBus(
     IGameContextFactory contextFactory,
     IGameDataStoreFactory gameStoreFactory,

@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.SignalR;
 namespace amethyst.Hubs;
 
 public class GameStatesNotifier(IGameDiscoveryService gameDiscoveryService, IHubContext<GameStatesHub> hubContext, IGameContextFactory contextFactory)
+    : Notifier<GameStatesHub>(hubContext)
 {
     private readonly ConcurrentDictionary<Guid, List<string>> _watchedStatesByGame = new();
     private readonly AsyncManualResetEvent _watchedStatesLock = new(false);
@@ -27,7 +28,7 @@ public class GameStatesNotifier(IGameDiscoveryService gameDiscoveryService, IHub
             stateName,
             async state =>
             {
-                var group = hubContext.Clients.Group($"{gameId}_{stateName}");
+                var group = HubContext.Clients.Group($"{gameId}_{stateName}");
                 
                 await group.SendAsync("StateChanged", stateName, state);
             });

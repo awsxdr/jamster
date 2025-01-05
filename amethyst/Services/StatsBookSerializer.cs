@@ -11,6 +11,7 @@ public interface IStatsBookSerializer
     Task<Result<StatsBook>> DeserializeStream(Stream stream);
 }
 
+[Singleton]
 public class StatsBookSerializer(ILogger<StatsBookSerializer> logger) : IStatsBookSerializer
 {
     private const string IgrfSheetPath = "xl/worksheets/sheet2.xml";

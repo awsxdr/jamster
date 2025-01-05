@@ -3,18 +3,17 @@ using Microsoft.AspNetCore.SignalR;
 
 namespace amethyst.Hubs;
 
-public class GameStoreNotifier : IDisposable
+public class GameStoreNotifier : Notifier<GameStoreHub>, IDisposable
 {
     private readonly CancellationTokenSource _cancellationTokenSource = new();
     private readonly IGameDiscoveryService _gameDiscoveryService;
-    private readonly IHubContext<GameStoreHub> _hubContext;
 
     public GameStoreNotifier(
         IGameDiscoveryService gameDiscoveryService,
         IHubContext<GameStoreHub> hubContext)
+        : base(hubContext)
     {
         _gameDiscoveryService = gameDiscoveryService;
-        _hubContext = hubContext;
 
         RunWatchThread();
     }
@@ -37,7 +36,7 @@ public class GameStoreNotifier : IDisposable
                     {
                         games = updatedGames;
 
-                        await _hubContext.Clients.Group("GameList").SendAsync("GamesListChanged", games, cancellationToken);
+                        await HubContext.Clients.Group("GameList").SendAsync("GamesListChanged", games, cancellationToken);
                     }
                 }
             });

@@ -48,9 +48,7 @@ public sealed class JamClock(ReducerGameContext gameContext, IEventBus eventBus,
 
         logger.LogDebug("Stopping jam clock due to timeout start");
 
-        SetState(state with {IsRunning = false});
-
-        return [];
+        return [new JamEnded(@event.Tick)];
     }
 
     public IEnumerable<Event> Handle(CallMarked @event)

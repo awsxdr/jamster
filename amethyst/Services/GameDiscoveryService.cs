@@ -24,6 +24,7 @@ public interface IGameDiscoveryService
             .TrimEnd('.');
 }
 
+[Singleton]
 public class GameDiscoveryService(IGameDataStoreFactory gameStoreFactory) : IGameDiscoveryService
 {
     public Task<GameInfo[]> GetGames() =>

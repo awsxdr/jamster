@@ -19,6 +19,7 @@ public interface ITeamStore
     Task<Result> SetRoster(Guid teamId, IEnumerable<Skater> skaters);
 }
 
+[Singleton]
 public class TeamStore(ITeamsDataStore teamDataStore) : ITeamStore
 {
     public event AsyncEventHandler<TeamCreatedEventArgs>? TeamCreated;

@@ -6,16 +6,12 @@ using System.Text.Json.Serialization;
 using amethyst;
 using amethyst.DataStores;
 using amethyst.Hubs;
-using amethyst.Reducers;
-using amethyst.Services;
-using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using CommandLine;
 using DotNext.Collections.Generic;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc.ApiExplorer;
 using Microsoft.AspNetCore.SignalR;
-using SQLite;
 
 var parseCommandLineResult = Parser.Default.ParseArguments<CommandLineOptions>(SkipCommandLineParse ? [] : args);
 
@@ -42,50 +38,10 @@ if (builder.Environment.IsDevelopment())
 
 builder.Host.UseServiceProviderFactory(new AutofacServiceProviderFactory(container =>
 {
-    container.RegisterType<SystemStateDataStore>().As<ISystemStateDataStore>().SingleInstance();
-    container.RegisterType<SystemStateStore>().As<ISystemStateStore>().SingleInstance();
-    container.RegisterType<TeamsDataStore>().As<ITeamsDataStore>().SingleInstance();
-    container.RegisterInstance<ConnectionFactory>((connectionString, flags) => new SQLiteConnection(connectionString, flags));
-    container.Register<GameDataStore.Factory>(context =>
-    {
-        var cachedContext = context.Resolve<IComponentContext>();
-        return path => cachedContext.Resolve<Func<string, IGameDataStore>>()(path);
-    });
-    container.RegisterType<GameDataStoreFactory>().AsImplementedInterfaces().SingleInstance();
-    container.RegisterType<GameDiscoveryService>().As<IGameDiscoveryService>().SingleInstance();
-    container.RegisterType<EventConverter>().As<IEventConverter>().SingleInstance();
-    container.RegisterType<GameStateStore>().As<IGameStateStore>();
-    container.RegisterType<GameContextFactory>().As<IGameContextFactory>().SingleInstance();
-    container.RegisterType<EventBus>().As<IEventBus>().SingleInstance();
-    container.RegisterType<GameDataStore>().As<IGameDataStore>().ExternallyOwned().InstancePerDependency();
-    container.RegisterType<GameClock>().As<IGameClock>();
-    container.RegisterType<TeamStore>().As<ITeamStore>().SingleInstance();
-    container.RegisterType<GameImporter>().As<IGameImporter>().SingleInstance();
-    container.RegisterType<StatsBookSerializer>().As<IStatsBookSerializer>().SingleInstance();
-
-    container.RegisterType<GameStatesNotifier>().AsSelf().SingleInstance();
-    container.RegisterType<GameStoreNotifier>().AsSelf().SingleInstance();
-    container.RegisterType<SystemStateNotifier>().AsSelf().SingleInstance();
-    container.RegisterType<TeamsNotifier>().AsSelf().SingleInstance();
-
-    container.RegisterType<SystemTime>().AsImplementedInterfaces().SingleInstance();
-
-    var reducerTypes = AppDomain.CurrentDomain.GetAssemblies()
-        .Where(a => !a.IsDynamic)
-        .SelectMany(a => a.GetExportedTypes())
-        .Where(t => !t.IsAbstract && t.IsAssignableTo<IReducer>())
-        .ToArray();
-
-    foreach (var reducerType in reducerTypes)
-    {
-        container.RegisterType(reducerType).AsSelf();
-        container.Register<ReducerFactory>(context =>
-        {
-            var localContext = context.Resolve<IComponentContext>();
-            return gameContext =>
-                (IReducer)localContext.Resolve(reducerType, new TypedParameter(typeof(ReducerGameContext), gameContext));
-        });
-    }
+    container.RegisterServices();
+    container.RegisterDataStores();
+    container.RegisterReducers();
+    container.RegisterHubNotifiers();
 }));
 
 builder.Services
@@ -103,52 +59,7 @@ builder.Services.AddSignalR().AddJsonProtocol(options =>
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
-    options.ResolveConflictingActions(apiDescriptions =>
-    {
-        apiDescriptions = apiDescriptions.ToArray();
-        var firstDescription = apiDescriptions.First();
-
-        var combinedDescription = new ApiDescription()
-        {
-            ActionDescriptor = firstDescription.ActionDescriptor,
-            GroupName = firstDescription.GroupName,
-            HttpMethod = firstDescription.HttpMethod,
-            RelativePath = firstDescription.RelativePath,
-        };
-
-        combinedDescription.ParameterDescriptions.AddAll(apiDescriptions.SelectMany(d => d.ParameterDescriptions));
-        combinedDescription.SupportedRequestFormats.AddAll(apiDescriptions.SelectMany(d => d.SupportedRequestFormats));
-        combinedDescription.SupportedResponseTypes.AddAll(
-            apiDescriptions.SelectMany(d => d.SupportedResponseTypes)
-                .GroupBy(r => r.StatusCode)
-                .Select(g =>
-                {
-                    var firstResponse = g.First();
-
-                    var responseType = new ApiResponseType
-                    {
-                        IsDefaultResponse = firstResponse.IsDefaultResponse,
-                        ModelMetadata = firstResponse.ModelMetadata,
-                        StatusCode = g.Key,
-                        Type = firstResponse.Type,
-                    };
-
-                    responseType.ApiResponseFormats.AddAll(g.SelectMany(r => r.ApiResponseFormats));
-
-                    return responseType;
-                })
-        );
-
-        foreach (var description in apiDescriptions.Reverse())
-        {
-            foreach (var property in description.Properties)
-            {
-                combinedDescription.Properties[property.Key] = property.Value;
-            }
-        }
-
-        return combinedDescription;
-    });
+    options.ResolveConflictingActions(HandleApiDescriptionConflicts);
 });
 
 builder.Services.AddSpaStaticFiles(config =>
@@ -267,6 +178,54 @@ string GetHostUrl(string? hostName = null)
     hostUrlBuilder.Append('/');
 
     return hostUrlBuilder.ToString();
+}
+
+ApiDescription HandleApiDescriptionConflicts(IEnumerable<ApiDescription> apiDescriptions)
+{
+    apiDescriptions = apiDescriptions.ToArray();
+    var firstDescription = apiDescriptions.First();
+
+    var combinedDescription = new ApiDescription()
+    {
+        ActionDescriptor = firstDescription.ActionDescriptor,
+        GroupName = firstDescription.GroupName,
+        HttpMethod = firstDescription.HttpMethod,
+        RelativePath = firstDescription.RelativePath,
+    };
+
+    combinedDescription.ParameterDescriptions.AddAll(apiDescriptions.SelectMany(d => d.ParameterDescriptions));
+    combinedDescription.SupportedRequestFormats.AddAll(apiDescriptions.SelectMany(d => d.SupportedRequestFormats));
+    combinedDescription.SupportedResponseTypes.AddAll(
+        apiDescriptions.SelectMany(d => d.SupportedResponseTypes)
+            .GroupBy(r => r.StatusCode)
+            .Select(g =>
+            {
+                var firstResponse = g.First();
+
+                var responseType = new ApiResponseType
+                {
+                    IsDefaultResponse = firstResponse.IsDefaultResponse,
+                    ModelMetadata = firstResponse.ModelMetadata,
+                    StatusCode = g.Key,
+                    Type = firstResponse.Type,
+                };
+
+                responseType.ApiResponseFormats.AddAll(g.SelectMany(r => r.ApiResponseFormats));
+
+                return responseType;
+            })
+    );
+
+    foreach (var description in apiDescriptions.Reverse())
+    {
+        foreach (var property in description.Properties)
+        {
+            combinedDescription.Properties[property.Key] = property.Value;
+        }
+    }
+
+    return combinedDescription;
+
 }
 
 public partial class Program

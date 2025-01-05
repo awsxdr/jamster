@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.SignalR;
 
 namespace amethyst.Hubs;
 
-public class SystemStateNotifier
+public class SystemStateNotifier : Notifier<SystemStateHub>
 {
     public SystemStateNotifier(
         ISystemStateStore systemStateStore,
@@ -12,6 +12,7 @@ public class SystemStateNotifier
         IHubContext<SystemStateHub> hubContext,
         ILogger<SystemStateNotifier> logger
         )
+        : base(hubContext)
     {
         systemStateStore.CurrentGameChanged += async (_, e) =>
         {

@@ -6,6 +6,7 @@ public interface ISystemTime
     long GetTick();
 }
 
+[Singleton]
 public class SystemTime : ISystemTime
 {
     public DateTimeOffset UtcNow() => DateTimeOffset.UtcNow;
