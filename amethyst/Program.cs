@@ -9,9 +9,16 @@ using amethyst.Hubs;
 using Autofac.Extensions.DependencyInjection;
 using CommandLine;
 using DotNext.Collections.Generic;
+using Microsoft.AspNetCore.Connections;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc.ApiExplorer;
 using Microsoft.AspNetCore.SignalR;
+using NLog;
+using NLog.Web;
+using LogLevel = NLog.LogLevel;
+using MicrosoftLogLevel = Microsoft.Extensions.Logging.LogLevel;
+
+var logger = LogManager.Setup().LoadConfigurationFromFile().GetCurrentClassLogger();
 
 var parseCommandLineResult = Parser.Default.ParseArguments<CommandLineOptions>(SkipCommandLineParse ? [] : args);
 
@@ -24,11 +31,6 @@ var builder = WebApplication.CreateBuilder(args);
 var hostUrl = GetHostUrl();
 
 builder.WebHost.UseUrls(hostUrl);
-
-builder.Logging
-    .SetMinimumLevel(commandLineOptions.LoggingLevel)
-    .AddFilter("Microsoft", LogLevel.Warning)
-    .AddConsole();
 
 builder.Configuration.AddJsonFile(Path.Combine(RunningEnvironment.RootPath, "appsettings.json"), true);
 if (builder.Environment.IsDevelopment())
@@ -72,6 +74,11 @@ Directory.CreateDirectory(databasesPath);
 Directory.CreateDirectory(Path.Combine(databasesPath, GameDataStore.GamesFolderName));
 Directory.CreateDirectory(Path.Combine(databasesPath, GameDataStore.GamesFolderName, GameDataStore.ArchiveFolderName));
 
+builder.Logging.ClearProviders();
+builder.Host.UseNLog();
+
+LogManager.Configuration.FindRuleByName("console-default")?.SetLoggingLevels(MapLogLevel(commandLineOptions.LoggingLevel), LogLevel.Off);
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -92,12 +99,10 @@ app.UseExceptionHandler(options =>
 {
     options.Run(context =>
     {
-        var logger = context.RequestServices.GetService<ILogger<Program>>()!;
-
         var exceptionHandler = context.Features.Get<IExceptionHandlerFeature>();
 
         if (exceptionHandler != null)
-            logger.LogError(exceptionHandler.Error, "Uncaught exception while handling request");
+            logger.Error(exceptionHandler.Error, "Uncaught exception while handling request");
 
         return Task.CompletedTask;
     });
@@ -130,11 +135,11 @@ _ = app.Services.GetService<GameStoreNotifier>();
 MapHub<TeamsHub>("/api/hubs/teams");
 _ = app.Services.GetService<TeamsNotifier>();
 
-if (commandLineOptions.Hostname == "0.0.0.0" || commandLineOptions.Hostname == "::")
+if (commandLineOptions.Hostname is "0.0.0.0" or "::")
 {
     Console.WriteLine("Application starting. Use a web browser to go to one of these addresses:");
 
-    var urls = GetLocalAddresses(commandLineOptions.Hostname == "::").Select(GetHostUrl);
+    var urls = GetLocalAddresses(commandLineOptions.Hostname == "::").Select(x => $"{GetHostUrl(x.Address)}{(x.IsLocalOnly ? " (This machine only)" : "")}");
 
     foreach (var url in urls)
     {
@@ -146,25 +151,72 @@ else
     Console.WriteLine($"Application starting. Use a web browser to go to {hostUrl}");
 }
 
-app.Run();
+try
+{
+    app.Run();
+}
+catch (SocketException ex) when (ex.SocketErrorCode == SocketError.AccessDenied)
+{
+    logger.Error(ex);
+    WriteConsoleError("Insufficient privileges to bind to the given address or port");
+}
+catch (IOException ex) when (ex.InnerException is AddressInUseException)
+{
+    logger.Error(ex);
+    WriteConsoleError("Requested address is already in use");
+}
+catch (Exception ex)
+{
+    logger.Error(ex);
+    WriteConsoleError("Unexpected error running the application. Check logs for more details.");
+}
+finally
+{
+    LogManager.Shutdown();
+}
 
-IEnumerable<string> GetLocalAddresses(bool includeIpv6)
+return;
+
+LogLevel MapLogLevel(MicrosoftLogLevel logLevel) => LogLevel.FromOrdinal((int)logLevel);
+
+MethodInfo GetGenericMapHubMethod() => 
+    typeof(Program)
+        .GetMethod(nameof(MapHub), BindingFlags.Static | BindingFlags.NonPublic)!;
+
+void MapNotifier(INotifier notifier)
+{
+    GetGenericMapHubMethod().MakeGenericMethod(notifier.HubType).Invoke(null, [app, notifier.HubAddress]);
+}
+
+void WriteConsoleError(string error)
+{
+    Console.WriteLine();
+    Console.BackgroundColor = ConsoleColor.DarkRed;
+    Console.ForegroundColor = ConsoleColor.White;
+    Console.Write($"ERROR: {error}");
+    Console.ResetColor();
+    Console.WriteLine();
+    Console.WriteLine();
+}
+
+IEnumerable<(string Address, bool IsLocalOnly)> GetLocalAddresses(bool includeIpv6)
 {
     var hostName = Dns.GetHostName();
-    yield return hostName;
-    yield return "127.0.0.1";
-    yield return "localhost";
+    yield return (hostName, false);
+    yield return ("127.0.0.1", true);
+    yield return ("localhost", true);
 
     var entries = Dns.GetHostEntry(hostName)
         .AddressList
         .Where(a =>
             a.AddressFamily == AddressFamily.InterNetwork
-            || (a.AddressFamily == AddressFamily.InterNetworkV6 && includeIpv6));
+            || (a.AddressFamily == AddressFamily.InterNetworkV6 && includeIpv6))
+        .OrderBy(x => x.AddressFamily);
     
     foreach (var entry in entries)
     {
         var encodedEntry = entry.ToString().Split('%').First();
-        yield return entry.AddressFamily == AddressFamily.InterNetwork ? encodedEntry : $"[{encodedEntry}]";
+        yield return (entry.AddressFamily == AddressFamily.InterNetwork ? encodedEntry : $"[{encodedEntry}]", false);
     }
 }
 
@@ -173,8 +225,11 @@ string GetHostUrl(string? hostName = null)
     var hostUrlBuilder = new StringBuilder();
     hostUrlBuilder.Append(commandLineOptions.UseSsl ? "https://" : "http://");
     hostUrlBuilder.Append(hostName ?? commandLineOptions.Hostname);
-    hostUrlBuilder.Append(':');
-    hostUrlBuilder.Append(commandLineOptions.Port);
+    if (commandLineOptions.Port != 80)
+    {
+        hostUrlBuilder.Append(':');
+        hostUrlBuilder.Append(commandLineOptions.Port);
+    }
     hostUrlBuilder.Append('/');
 
     return hostUrlBuilder.ToString();
@@ -238,12 +293,12 @@ public sealed class CommandLineOptions
     [Option('p', "port", Required = false, Default = (ushort)8000, HelpText = "Set the host to expose the application on. Value must be between 1 and 65535.")]
     public ushort Port { get; set; }
 
-    [Option('h', "hostname", Required = false, Default = "::", HelpText = "Set the IP address or host name to use to host the application.")]
+    [Option('h', "hostname", Required = false, Default = "0.0.0.0", HelpText = "Set the IP address or host name to use to host the application.")]
     public string Hostname { get; set; } = string.Empty;
 
     [Option('s', "ssl", Required = false, Default = false, HelpText = "Set to 'true' to use secure communications; otherwise 'false'.")]
     public bool UseSsl { get; set; }
 
-    [Option('l', "log", Required = false, Default = LogLevel.Warning, HelpText = "Set the logging level. Options are 'Trace', 'Debug', 'Information', 'Warning', 'Error', 'Critical', and 'None'.")]
-    public LogLevel LoggingLevel { get; set; }
+    [Option('l', "log", Required = false, Default = MicrosoftLogLevel.Warning, HelpText = "Set the logging level. Options are 'Trace', 'Debug', 'Information', 'Warning', 'Error', 'Critical', and 'None'.")]
+    public MicrosoftLogLevel LoggingLevel { get; set; }
 }
