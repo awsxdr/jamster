@@ -94,6 +94,7 @@ public class GamesController(
             {
                 Success<object> s => Ok(s.Value),
                 Failure<StateNotFoundError> => NotFound(),
+                Failure<GameFileNotFoundForIdError> => NotFound(),
                 var r => throw new UnexpectedResultException(r)
             };
     }

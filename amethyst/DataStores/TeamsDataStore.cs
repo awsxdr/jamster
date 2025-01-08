@@ -143,14 +143,6 @@ public class TeamsDataStore(ConnectionFactory connectionFactory, ISystemTime sys
             .Cast<JsonObject>();
 }
 
-public enum SkaterRole
-{
-    Skater,
-    Captain,
-    NotSkating,
-    BenchStaff,
-}
-
 public record DisplayColor(Color Foreground, Color Background);
 
 public class TeamNotFoundError : NotFoundError;

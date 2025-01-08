@@ -135,6 +135,7 @@ const languages: Languages = {
         "RosterTable.NumberSymbol": "#",
         "Scoreboard.Title": "Scoreboard",
         "ScoreboardControl.Title": "Control",
+        "ScoreboardSettings.Title": "Display settings",
         "TeamColors.Title": "Colors",
         "TeamDetails.ColorName": "Color name",
         "TeamDetails.ColorSection": "Color",

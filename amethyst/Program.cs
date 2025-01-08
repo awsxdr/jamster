@@ -41,6 +41,7 @@ if (builder.Environment.IsDevelopment())
 builder.Host.UseServiceProviderFactory(new AutofacServiceProviderFactory(container =>
 {
     container.RegisterServices();
+    container.RegisterConfigurations();
     container.RegisterDataStores();
     container.RegisterReducers();
     container.RegisterHubNotifiers();
@@ -118,22 +119,10 @@ app.UseSpa(config =>
     config.Options.SourcePath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!, "wwwroot");
 });
 
-void MapHub<THub>(string pattern) where THub : Hub =>
-    app
-        .MapHub<THub>(pattern)
-        .RequireCors(policyBuilder =>
-        {
-            policyBuilder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
-        });
-
-MapHub<GameStatesHub>("/api/hubs/game/{gameId:guid}");
-_ = app.Services.GetService<GameStatesNotifier>();
-MapHub<SystemStateHub>("/api/hubs/system");
-_ = app.Services.GetService<SystemStateNotifier>();
-MapHub<GameStoreHub>("/api/hubs/games");
-_ = app.Services.GetService<GameStoreNotifier>();
-MapHub<TeamsHub>("/api/hubs/teams");
-_ = app.Services.GetService<TeamsNotifier>();
+foreach (var notifier in app.Services.GetService<IEnumerable<INotifier>>() ?? [])
+{
+    MapNotifier(notifier);
+}
 
 if (commandLineOptions.Hostname is "0.0.0.0" or "::")
 {
@@ -286,6 +275,15 @@ ApiDescription HandleApiDescriptionConflicts(IEnumerable<ApiDescription> apiDesc
 public partial class Program
 {
     public static bool SkipCommandLineParse { get; set; } = false;
+
+    private static void MapHub<THub>(WebApplication app, string pattern) where THub : Hub =>
+        app
+            .MapHub<THub>(pattern)
+            .RequireCors(policyBuilder =>
+            {
+                policyBuilder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
+            });
+
 }
 
 public sealed class CommandLineOptions

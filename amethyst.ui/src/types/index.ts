@@ -1,4 +1,5 @@
 export * from './Color';
+export * from './DisplayConfiguration';
 export * from './GameInfo';
 export * from './GameSkater';
 export * from './GameStageState';

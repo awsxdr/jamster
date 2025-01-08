@@ -10,7 +10,7 @@ namespace amethyst.DataStores;
 
 public interface IDataStore : IDisposable
 {
-    internal ISQLiteConnection Connection { get; }
+    ISQLiteConnection Connection { get; }
 }
 
 public delegate ISQLiteConnection ConnectionFactory(string connectionString, SQLiteOpenFlags flags);

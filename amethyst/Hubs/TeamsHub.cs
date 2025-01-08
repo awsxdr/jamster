@@ -6,6 +6,8 @@ namespace amethyst.Hubs;
 
 public class TeamsNotifier : Notifier<TeamsHub, ITeamsHubClient>
 {
+    public override string HubAddress => "api/hubs/teams";
+
     public TeamsNotifier(
         ITeamStore teamStore,
         IHubContext<TeamsHub, ITeamsHubClient> hubContext,

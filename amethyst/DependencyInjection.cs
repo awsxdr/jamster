@@ -1,4 +1,5 @@
 ﻿using System.Reflection;
+using amethyst.Configurations;
 using amethyst.DataStores;
 using amethyst.Hubs;
 using amethyst.Reducers;
@@ -49,6 +50,15 @@ internal static class DependencyInjection
         }
     }
 
+    internal static void RegisterConfigurations(this ContainerBuilder builder)
+    {
+        var configurationFactoryTypes = Assembly.GetExecutingAssembly().GetTypes()
+            .Where(t => !t.IsAbstract && t.IsAssignableTo<IConfigurationFactory>())
+            .ToArray();
+
+        builder.RegisterTypes(configurationFactoryTypes).AsImplementedInterfaces().SingleInstance();
+    }
+
     internal static void RegisterDataStores(this ContainerBuilder builder)
     {
         builder.RegisterType<SystemStateDataStore>().As<ISystemStateDataStore>().SingleInstance();
@@ -62,6 +72,7 @@ internal static class DependencyInjection
         });
         builder.RegisterType<GameDataStoreFactory>().AsImplementedInterfaces().SingleInstance();
         builder.RegisterType<GameDataStore>().As<IGameDataStore>().ExternallyOwned().InstancePerDependency();
+        builder.RegisterType<ConfigurationDataStore>().As<IConfigurationDataStore>().SingleInstance();
     }
 
     internal static void RegisterHubNotifiers(this ContainerBuilder builder)
@@ -73,7 +84,7 @@ internal static class DependencyInjection
 
         foreach (var hubType in hubTypes)
         {
-            builder.RegisterType(hubType).AsSelf().SingleInstance();
+            builder.RegisterType(hubType).AsSelf().As<INotifier>().SingleInstance();
         }
     }
 }

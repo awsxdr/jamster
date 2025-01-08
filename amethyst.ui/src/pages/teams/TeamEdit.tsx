@@ -30,6 +30,7 @@ export const TeamEdit = () => {
 
     return (
         <>
+            <title>{translate("TeamEdit.Title")} | {translate("Main.Title")}</title>
             <div className="flex items-center mt-2">
                 <MobileSidebarTrigger className="mx-5" />
                 <Breadcrumb className="mx-4">

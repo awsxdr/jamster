@@ -1,4 +1,4 @@
-import { GamesListContextProvider, SystemStateContextProvider } from "@/hooks";
+import { ConfigurationContextProvider, GamesListContextProvider, SystemStateContextProvider } from "@/hooks";
 import { Routes } from "./routes";
 import { TeamListContextProvider } from "./hooks/TeamsHook";
 
@@ -8,7 +8,9 @@ const App = () => {
       <SystemStateContextProvider>
         <GamesListContextProvider>
           <TeamListContextProvider>
-            <Routes />
+            <ConfigurationContextProvider>
+              <Routes />
+            </ConfigurationContextProvider>
           </TeamListContextProvider>
         </GamesListContextProvider>
       </SystemStateContextProvider>

@@ -6,6 +6,8 @@ namespace amethyst.Hubs;
 
 public class SystemStateNotifier : Notifier<SystemStateHub>
 {
+    public override string HubAddress => "api/hubs/system";
+
     public SystemStateNotifier(
         ISystemStateStore systemStateStore,
         IGameDiscoveryService gameDiscoveryService,

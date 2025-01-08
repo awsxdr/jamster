@@ -8,14 +8,19 @@ public delegate Task AsyncEventHandler<in TEventArgs>(object sender, TEventArgs 
 
 public interface ISystemStateStore
 {
-    event AsyncEventHandler<SystemStateStore.SystemStateChangedEventArgs<Guid>>? CurrentGameChanged;
+    event AsyncEventHandler<SystemStateChangedEventArgs<Guid>>? CurrentGameChanged;
     Task<Result<GameInfo>> GetCurrentGame();
     Task<Result<GameInfo>> SetCurrentGame(Guid gameId);
+
+    public sealed class SystemStateChangedEventArgs<TValue>(TValue value) : EventArgs
+    {
+        public TValue Value { get; } = value;
+    }
 }
 
 public class SystemStateStore(ISystemStateDataStore dataStore, IGameDiscoveryService gameDiscoveryService) : ISystemStateStore
 {
-    public event AsyncEventHandler<SystemStateChangedEventArgs<Guid>>? CurrentGameChanged;
+    public event AsyncEventHandler<ISystemStateStore.SystemStateChangedEventArgs<Guid>>? CurrentGameChanged;
 
     public Task<Result<GameInfo>> GetCurrentGame() =>
         dataStore.GetCurrentGame()
@@ -26,14 +31,8 @@ public class SystemStateStore(ISystemStateDataStore dataStore, IGameDiscoverySer
             .Then(async game =>
             {
                 dataStore.SetCurrentGame(gameId);
-                await CurrentGameChanged.InvokeHandlersAsync(this, new SystemStateChangedEventArgs<Guid>(gameId));
+                await CurrentGameChanged.InvokeHandlersAsync(this, new ISystemStateStore.SystemStateChangedEventArgs<Guid>(gameId));
 
                 return Result.Succeed(game);
             });
-
-    public sealed class SystemStateChangedEventArgs<TValue>(TValue value) : EventArgs
-    {
-        public TValue Value { get; } = value;
-    }
-
 }

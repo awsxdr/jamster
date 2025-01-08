@@ -12,6 +12,8 @@ public class GameStatesNotifier(IGameDiscoveryService gameDiscoveryService, IHub
     private readonly ConcurrentDictionary<Guid, List<string>> _watchedStatesByGame = new();
     private readonly AsyncManualResetEvent _watchedStatesLock = new(false);
 
+    public override string HubAddress => "api/hubs/game/{gameId:guid}";
+
     public async Task WatchStateName(Guid gameId, string stateName)
     {
         var watchedStates = _watchedStatesByGame.GetOrAdd(gameId, _ => new());

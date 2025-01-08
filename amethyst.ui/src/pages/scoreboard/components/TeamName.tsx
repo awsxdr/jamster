@@ -1,7 +1,7 @@
-import { useTeamDetailsState } from "@/hooks";
+import { useConfiguration, useTeamDetailsState } from "@/hooks";
 import { ScaledText } from "../../../components/ScaledText";
 import { useMemo } from "react";
-import { TeamSide } from "@/types";
+import { DisplayConfiguration, TeamSide } from "@/types";
 import { cn } from "@/lib/utils";
 
 type TeamScoreProps = {
@@ -21,13 +21,15 @@ export const TeamName = ({ side, textClassName }: TeamScoreProps) => {
         return team.team.names['scoreboard'] || team.team.names['team'] || team.team.names['league'] || team.team.names['color'] || (side === TeamSide.Home ? 'Home' : 'Away');
     }, [team]);
 
+    const { useTextBackgrounds } = useConfiguration<DisplayConfiguration>("DisplayConfiguration") ?? { useTextBackgrounds: true };
+
     const foreground = useMemo(
-        () => team?.team.color.complementaryColor ?? '#ffffff',
-        [team]);
+        () => useTextBackgrounds ? (team?.team.color.complementaryColor ?? '#ffffff') : ("#ffffff"),
+        [team, useTextBackgrounds]);
 
     const background = useMemo(
-        () => team?.team.color.shirtColor ?? '#000000',
-        [team]);
+        () => useTextBackgrounds ? (team?.team.color.shirtColor ?? '#000000') : ('rgba(0,0,0,0)'),
+        [team, useTextBackgrounds]);
 
     return (
         <div 

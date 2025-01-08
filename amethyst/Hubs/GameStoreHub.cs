@@ -8,6 +8,8 @@ public class GameStoreNotifier : Notifier<GameStoreHub>, IDisposable
     private readonly CancellationTokenSource _cancellationTokenSource = new();
     private readonly IGameDiscoveryService _gameDiscoveryService;
 
+    public override string HubAddress => "api/hubs/games";
+
     public GameStoreNotifier(
         IGameDiscoveryService gameDiscoveryService,
         IHubContext<GameStoreHub> hubContext)
