@@ -1,5 +1,7 @@
+#!/bin/bash
 :<<"::CMDLITERAL"
 @ECHO OFF
+CLS
 .\win-x64\amethyst %*
 exit /b 1
 ::CMDLITERAL
