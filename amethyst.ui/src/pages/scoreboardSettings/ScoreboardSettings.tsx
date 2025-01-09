@@ -25,11 +25,11 @@ export const ScoreboardSettings = () => {
             <title>{translate("ScoreboardSettings.Title")} | {translate("Main.Title")}</title>
             <Card className="m-4">
                 <CardHeader>
-                    <CardTitle>Scoreboard display settings</CardTitle>
+                    <CardTitle>{translate("ScoreboardSettings.Title")}</CardTitle>
                 </CardHeader>
                 <CardContent className="flex flex-col gap-2">
-                    <ConfigurationSwitch text="Show team color sidebars" checked={configuration?.showSidebars} onCheckedChanged={handleShowSidebarsChanged} />
-                    <ConfigurationSwitch text="Use team colors for name" checked={configuration?.useTextBackgrounds} onCheckedChanged={handleUseTextBackgroundsChanged} />
+                    <ConfigurationSwitch text={translate("ScoreboardSettings.ShowSidebars")} checked={configuration?.showSidebars} onCheckedChanged={handleShowSidebarsChanged} />
+                    <ConfigurationSwitch text={translate("ScoreboardSettings.UseTextBackgrounds")} checked={configuration?.useTextBackgrounds} onCheckedChanged={handleUseTextBackgroundsChanged} />
                 </CardContent>
             </Card>
         </>

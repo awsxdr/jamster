@@ -27,11 +27,11 @@ export const OverlaySettings = () => {
             <title>{translate("OverlaySettings.Title")} | {translate("Main.Title")}</title>
             <Card className="m-4">
                 <CardHeader>
-                    <CardTitle>Scoreboard display settings</CardTitle>
+                    <CardTitle>{translate("OverlaySettings.Title")}</CardTitle>
                 </CardHeader>
                 <CardContent className="flex flex-col gap-2">
                     <ConfigurationSlider 
-                        text="Overlay scale"
+                        text={translate("OverlaySettings.Scale")}
                         value={tempScale}
                         min={0.5}
                         max={3}
