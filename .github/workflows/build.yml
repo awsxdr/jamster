@@ -53,7 +53,9 @@ jobs:
       shell: bash
       run: |
         mkdir ./output
-        mv ./amethyst/publish/** ./output/
+        mv ./amethyst/bin/Release/net8.0/win-x64/publish/** ./output/win-x64/
+        mv ./amethyst/bin/Release/net8.0/linux-x64/publish/** ./output/linux-x64/
+        mv ./amethyst/bin/Release/net8.0/linux-arm64/publish/** ./output/linux-arm64/
         cp ./start.cmd ./output/
 
     - name: Upload build
