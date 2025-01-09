@@ -6,6 +6,7 @@ using System.Text.Json.Serialization;
 using amethyst;
 using amethyst.DataStores;
 using amethyst.Hubs;
+using amethyst.Services;
 using Autofac.Extensions.DependencyInjection;
 using CommandLine;
 using DotNext.Collections.Generic;
@@ -142,6 +143,8 @@ else
 {
     Console.WriteLine($"Application starting. Use a web browser to go to {hostUrl}");
 }
+
+await app.Services.GetService<IFirstRunConfigurator>()!.PerformFirstRunTasksIfRequired();
 
 try
 {
