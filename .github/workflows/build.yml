@@ -53,12 +53,17 @@ jobs:
       shell: bash
       run: |
         mkdir ./output
-        mkdir ./output/win-x64
-        mkdir ./output/linux-x64
-        mkdir ./output/linux-arm64
-        mv ./amethyst/bin/Release/net8.0/win-x64/publish/** ./output/win-x64/
-        mv ./amethyst/bin/Release/net8.0/linux-x64/publish/** ./output/linux-x64/
-        mv ./amethyst/bin/Release/net8.0/linux-arm64/publish/** ./output/linux-arm64/
+        mkdir ./output/bin
+        mkdir ./output/bin/win-x64
+        mkdir ./output/bin/linux-x64
+        mkdir ./output/bin/linux-arm64
+        mv ./amethyst/bin/Release/net8.0/win-x64/publish/** ./output/bin/win-x64/
+        mv ./amethyst/bin/Release/net8.0/linux-x64/publish/** ./output/bin/linux-x64/
+        mv ./amethyst/bin/Release/net8.0/linux-arm64/publish/** ./output/bin/linux-arm64/
+        cp -r ./output/bin/win-x64/wwwroot ./output/wwwroot
+        rm -r ./output/bin/win-x64/wwwroot
+        rm -r ./output/bin/linux-x64/wwwroot
+        rm -r ./output/bin/linux-arm64/wwwroot
         cp ./start.cmd ./output/
 
     - name: Upload build

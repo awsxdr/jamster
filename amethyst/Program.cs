@@ -19,6 +19,7 @@ using LogLevel = NLog.LogLevel;
 using MicrosoftLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 var logger = LogManager.Setup().LoadConfigurationFromFile().GetCurrentClassLogger();
+LogManager.Configuration.Variables["rootPath"] = RunningEnvironment.RootPath;
 
 var parseCommandLineResult = Parser.Default.ParseArguments<CommandLineOptions>(SkipCommandLineParse ? [] : args);
 
@@ -27,6 +28,8 @@ if (parseCommandLineResult.Errors.Any() && !SkipCommandLineParse) return;
 var commandLineOptions = parseCommandLineResult.Value;
 
 var builder = WebApplication.CreateBuilder(args);
+
+RunningEnvironment.IsDevelopment = builder.Environment.IsDevelopment();
 
 var hostUrl = GetHostUrl();
 
@@ -67,7 +70,7 @@ builder.Services.AddSwaggerGen(options =>
 
 builder.Services.AddSpaStaticFiles(config =>
 {
-    config.RootPath = Path.Combine(Path.GetDirectoryName(Assembly.GetEntryAssembly()!.Location)!, "wwwroot");
+    config.RootPath = Path.Combine(RunningEnvironment.RootPath, "wwwroot");
 });
 
 var databasesPath = Path.Combine(RunningEnvironment.RootPath, "db");
