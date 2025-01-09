@@ -7,6 +7,7 @@ export * from './GameTeam';
 export * from './JamClockState';
 export * from './JamLineupState';
 export * from './LineupClockState';
+export * from './OverlayConfiguration';
 export * from './PeriodClockState';
 export * from './ReviewStatus';
 export * from './SetCurrentGameModel';

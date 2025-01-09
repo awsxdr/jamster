@@ -117,6 +117,7 @@ const languages: Languages = {
         "Overlay.LineupRow.StarPassMarker": " (J)",
         "Overlay.ScoreRow.Away": "Away",
         "Overlay.ScoreRow.Home": "Home",
+        "OverlaySettings.Title": "Overlay settings",
         "RosterInput.AddSkater": "Add",
         "RosterTable.DeleteSkater": "Delete selected",
         "RosterTable.DeleteSkaterDialog.Cancel": "Cancel",

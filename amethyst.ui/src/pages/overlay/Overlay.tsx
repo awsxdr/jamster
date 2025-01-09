@@ -1,7 +1,7 @@
 import { CSSProperties, PropsWithChildren, useMemo } from "react";
 import { ScoreRow } from "./components/ScoreRow";
-import { TeamSide } from "@/types";
-import { GameStateContextProvider, I18nContextProvider, useCurrentGame, useI18n } from "@/hooks";
+import { OverlayConfiguration, TeamSide } from "@/types";
+import { GameStateContextProvider, I18nContextProvider, useConfiguration, useCurrentGame, useI18n } from "@/hooks";
 import { useSearchParams } from "react-router-dom";
 import { Clock } from "./components/Clock";
 import { LineupRow } from "./components/LineupRow";
@@ -25,7 +25,7 @@ const OverlayContent = () => {
 
     const showBackground = false;
 
-    const scale = 1.0;
+    const { scale } = useConfiguration<OverlayConfiguration>("OverlayConfiguration") ?? { scale: 1 };
 
     const style = {
         '--score-row-width': `${25 * scale}vw`,

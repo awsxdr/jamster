@@ -10,6 +10,7 @@ import { GamesManagement } from "./pages/games/GamesManagement";
 import { GameEdit } from "./pages/games/GameEdit";
 import { Overlay } from "./pages/overlay/Overlay";
 import { ScoreboardSettings } from "./pages/scoreboardSettings/ScoreboardSettings";
+import { OverlaySettings } from "./pages/overlaySettings/OverlaySettings";
 
 export const Routes = () => {
     const router = createBrowserRouter([
@@ -55,7 +56,7 @@ export const Routes = () => {
         },
         {
             path: '/settings/overlay',
-            element: <MainMenu content={<WorkInProgress />} />
+            element: <MainMenu content={<OverlaySettings />} />
         },
     ]);
     
