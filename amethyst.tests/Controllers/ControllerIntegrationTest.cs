@@ -39,6 +39,7 @@ public abstract class ControllerIntegrationTest
         RunningEnvironment.RootPath = _runPath;
 
         Program.SkipCommandLineParse = true;
+        Program.SkipFirstRunSetup = true;
 
         _applicationFactory = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
         {

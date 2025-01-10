@@ -144,7 +144,8 @@ else
     Console.WriteLine($"Application starting. Use a web browser to go to {hostUrl}");
 }
 
-await app.Services.GetService<IFirstRunConfigurator>()!.PerformFirstRunTasksIfRequired();
+if(!SkipFirstRunSetup)
+    await app.Services.GetService<IFirstRunConfigurator>()!.PerformFirstRunTasksIfRequired();
 
 try
 {
@@ -281,6 +282,7 @@ ApiDescription HandleApiDescriptionConflicts(IEnumerable<ApiDescription> apiDesc
 public partial class Program
 {
     public static bool SkipCommandLineParse { get; set; } = false;
+    public static bool SkipFirstRunSetup { get; set; } = false;
 
     private static void MapHub<THub>(WebApplication app, string pattern) where THub : Hub =>
         app
