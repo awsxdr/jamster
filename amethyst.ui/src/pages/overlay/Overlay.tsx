@@ -1,6 +1,6 @@
 import { CSSProperties, PropsWithChildren, useEffect, useMemo } from "react";
 import { ScoreRow } from "./components/ScoreRow";
-import { DEFAULT_OVERLAY_CONFIGURATION, OverlayConfiguration, TeamSide } from "@/types";
+import { OverlayConfiguration, TeamSide } from "@/types";
 import { GameStateContextProvider, I18nContextProvider, useConfiguration, useCurrentGame, useI18n } from "@/hooks";
 import { useSearchParams } from "react-router-dom";
 import { Clock } from "./components/Clock";
