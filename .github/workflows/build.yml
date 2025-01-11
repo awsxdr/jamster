@@ -65,6 +65,7 @@ jobs:
         rm -r ./output/bin/linux-x64/wwwroot
         rm -r ./output/bin/linux-arm64/wwwroot
         cp ./start.cmd ./output/
+        chmod +x ./output/start.cmd
 
     - name: Upload build
       uses: actions/upload-artifact@v4
