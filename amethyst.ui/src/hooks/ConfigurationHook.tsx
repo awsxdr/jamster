@@ -17,13 +17,14 @@ const ConfigurationContext = createContext<ConfigurationContextProps>({
 export const useConfiguration = <TConfiguration,>(configurationName: string) => {
     const context = useContext(ConfigurationContext);
     const [value, setValue] = useState<TConfiguration>();
-    const { getConfiguration } = useConfigurationApi();
+    const [isConfigurationLoaded, setIsConfigurationLoaded] = useState(false);
+    const { getConfiguration, setConfiguration } = useConfigurationApi();
 
     useEffect(() => {
         (async () => {
             const initialValue = await getConfiguration<TConfiguration>(configurationName);
-
-            setValue(v => v ?? initialValue);
+            setIsConfigurationLoaded(true);
+            setValue(initialValue);
         })();
     }, []);
 
@@ -33,7 +34,15 @@ export const useConfiguration = <TConfiguration,>(configurationName: string) => 
         return () => context.unwatchConfiguration(configurationName, handle);
     }, [configurationName, setValue]);
 
-    return value;
+    const setCurrentConfiguration = useCallback((configuration: TConfiguration) => {
+        setConfiguration(configurationName, configuration);
+    }, [configurationName, setConfiguration]);
+
+    return { 
+        configuration: value,
+        isConfigurationLoaded,
+        setConfiguration: setCurrentConfiguration 
+    };
 }
 
 type ConfigurationChanged<TConfiguration> = (value: TConfiguration) => void;

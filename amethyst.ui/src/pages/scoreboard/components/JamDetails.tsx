@@ -2,7 +2,7 @@ import { JamClock, PeriodClock } from "@/components/clocks"
 import { ScoreboardComponent } from "./ScoreboardComponent"
 import { GameSkater, GameStageState, TeamSide } from "@/types"
 import { ClocksBar } from "./ClocksBar";
-import { useJamLineupState, useJamStatsState, useTeamDetailsState } from "@/hooks";
+import { useI18n, useJamLineupState, useJamStatsState, useTeamDetailsState } from "@/hooks";
 import { useMemo } from "react";
 import { ScaledText } from "@/components/ScaledText";
 import { cn } from "@/lib/utils";
@@ -13,6 +13,8 @@ type JamDetailsProps = {
 }
 
 export const JamDetails = ({ gameStage, visible }: JamDetailsProps) => {
+
+    const { translate } = useI18n();
 
     const { jammerNumber: homeJammerNumber, pivotNumber: homePivotNumber } = useJamLineupState(TeamSide.Home) ?? {};
     const { jammerNumber: awayJammerNumber, pivotNumber: awayPivotNumber } = useJamLineupState(TeamSide.Away) ?? {};
@@ -55,11 +57,11 @@ export const JamDetails = ({ gameStage, visible }: JamDetailsProps) => {
                     <ScaledText text={awayJammerText} className={cn(jammerNameClassName, awayIsLead ? "animate-pulse-scale" : "")} />
                 </div>
             </div>
-            <div className="h-[60%] flex gap-5">
-                <ScoreboardComponent className="w-1/2 h-full" header={`Period ${gameStage.periodNumber}`}>
+            <div className="h-[60%] flex gap-1 md:gap-2 lg:gap-5">
+                <ScoreboardComponent className="w-1/2 h-full" header={`${translate("Scoreboard.JamDetails.Period")} ${gameStage.periodNumber}`}>
                     <PeriodClock textClassName="flex justify-center items-center h-full m-2 overflow-hidden" autoScale />
                 </ScoreboardComponent>
-                <ScoreboardComponent className="w-1/2 h-full" header={`Jam ${gameStage.jamNumber}`}>
+                <ScoreboardComponent className="w-1/2 h-full" header={`${translate("Scoreboard.JamDetails.Jam")} ${gameStage.jamNumber}`}>
                     <JamClock textClassName="flex justify-center items-center h-full m-2 overflow-hidden" autoScale />
                 </ScoreboardComponent>
             </div>

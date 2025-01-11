@@ -7,15 +7,15 @@ export const TeamColorGradients = () => {
     const homeTeam = useTeamDetailsState(TeamSide.Home);
     const awayTeam = useTeamDetailsState(TeamSide.Away);
 
-    const { showSidebars } = useConfiguration<DisplayConfiguration>("DisplayConfiguration") ?? { showSidebars: true };
+    const { configuration } = useConfiguration<DisplayConfiguration>("DisplayConfiguration");
 
     const homeTeamColor = useMemo(
-        () => showSidebars ? (homeTeam?.team.color.shirtColor ?? '#000000') : "rgba(0,0,0,0)",
-        [homeTeam, showSidebars]);
+        () => configuration?.showSidebars ? (homeTeam?.team.color.shirtColor ?? '#000000') : "rgba(0,0,0,0)",
+        [homeTeam, configuration?.showSidebars]);
 
     const awayTeamColor = useMemo(
-        () => showSidebars ? (awayTeam?.team.color.shirtColor ?? '#000000') : "rgba(0,0,0,0)",
-        [awayTeam, showSidebars]);
+        () => configuration?.showSidebars ? (awayTeam?.team.color.shirtColor ?? '#000000') : "rgba(0,0,0,0)",
+        [awayTeam, configuration?.showSidebars]);
     
     return (
         <div className="absolute left-0 top-0 w-full h-full bg-black">

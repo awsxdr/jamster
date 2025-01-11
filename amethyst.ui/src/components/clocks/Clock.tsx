@@ -33,7 +33,7 @@ export const Clock = <TClockState,>({ secondsMapper, stateName, direction, textO
         const seconds = totalSeconds % 60;
 
         return minutes > 0 ? `${minutes}:${seconds.toString().padStart(2, '0')}` : `${seconds}`;
-    }, [clock, direction, startValue]);
+    }, [clock, direction, startValue, textOnZero]);
 
     return (
         <>

@@ -17,11 +17,11 @@ export const TeamDetails = ({ side }: TeamDetailsProps) => {
     const { starPass } = useJamStatsState(side) ?? { starPass: false };
 
     return (
-        <div className="flex flex-col grow w-1/2 gap-5">
+        <div className="flex flex-col grow w-1/2 gap-1 md:gap-3 lg:gap-5">
             <div className="h-[40%]">
                 <TeamName side={side} />
             </div>
-            <div className={cn("flex h-[calc(60%-1.4rem)] gap-5", side === TeamSide.Home ? "flex-row" : "flex-row-reverse")}>
+            <div className={cn("flex h-[calc(60%-1.4rem)] gap-1 md:gap-2 xl:gap-5", side === TeamSide.Home ? "flex-row" : "flex-row-reverse")}>
                 <TeamTimeouts side={side} />
                 <TeamScore side={side} />
                 <div className="flex flex-col w-1/6 justify-between">

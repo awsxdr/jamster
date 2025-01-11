@@ -62,22 +62,7 @@ export const ControlPanel = ({ gameId, disabled }: ControlPanelProps) => {
             )}
             { userSettings.showClocks && <ClocksContainer /> }
             { userSettings.showTimeoutList &&
-                <div className="w-full flex flex-wrap xl:flex-nowrap gap-2">
-                    { userSettings.displaySide !== DisplaySide.Away && 
-                        <TimeoutList 
-                            side={TeamSide.Home} 
-                            gameId={gameId} 
-                            className={userSettings.displaySide == DisplaySide.Both ? "xl:w-1/2" : ""} 
-                        />
-                    }
-                    { userSettings.displaySide !== DisplaySide.Home && 
-                        <TimeoutList 
-                            side={TeamSide.Away} 
-                            gameId={gameId} 
-                            className={userSettings.displaySide == DisplaySide.Both ? "xl:w-1/2" : ""}
-                        />
-                    }
-                </div>
+                <TimeoutList gameId={gameId} displaySide={userSettings.displaySide} />
             }
         </div>
     )

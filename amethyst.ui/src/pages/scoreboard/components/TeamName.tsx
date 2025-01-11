@@ -21,19 +21,19 @@ export const TeamName = ({ side, textClassName }: TeamScoreProps) => {
         return team.team.names['scoreboard'] || team.team.names['team'] || team.team.names['league'] || team.team.names['color'] || (side === TeamSide.Home ? 'Home' : 'Away');
     }, [team]);
 
-    const { useTextBackgrounds } = useConfiguration<DisplayConfiguration>("DisplayConfiguration") ?? { useTextBackgrounds: true };
+    const { configuration } = useConfiguration<DisplayConfiguration>("DisplayConfiguration");
 
     const foreground = useMemo(
-        () => useTextBackgrounds ? (team?.team.color.complementaryColor ?? '#ffffff') : ("#ffffff"),
-        [team, useTextBackgrounds]);
+        () => configuration?.useTextBackgrounds ? (team?.team.color.complementaryColor ?? '#ffffff') : ("#ffffff"),
+        [team, configuration?.useTextBackgrounds]);
 
     const background = useMemo(
-        () => useTextBackgrounds ? (team?.team.color.shirtColor ?? '#000000') : ('rgba(0,0,0,0)'),
-        [team, useTextBackgrounds]);
+        () => configuration?.useTextBackgrounds ? (team?.team.color.shirtColor ?? '#000000') : ('rgba(0,0,0,0)'),
+        [team, configuration?.useTextBackgrounds]);
 
     return (
         <div 
-            className="flex justify-center h-full p-5 overflow-hidden rounded-3xl"
+            className="flex justify-center h-full p-5 overflow-hidden rounded-md sm:rounded-lg md:rounded-xl xl:rounded-3xl"
             style={{ color: foreground, backgroundColor: background }}
         >
             <ScaledText 

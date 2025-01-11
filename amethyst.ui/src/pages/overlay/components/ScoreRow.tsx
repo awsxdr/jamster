@@ -48,7 +48,11 @@ export const ScoreRow = ({ side }: ScoreRowProps) => {
     return (
         <div className={side === TeamSide.Home ? homeScoreRowClassName : awayScoreRowClassName} style={style}>
             <div className="w-[--score-row-height] flex items-center justify-center">
-                { lead && lost ? <StarOff /> : lead ? <Star /> : <></> }
+                { 
+                    lead && lost ? <StarOff className="[transform:scale(var(--star-scale))]" /> 
+                    : lead ? <Star className="[transform:scale(var(--star-scale))]" /> 
+                    : <></> 
+                }
             </div>
             <div className="grow">{teamName}</div>
             <div className="h-full flex flex-col justify-between py-[2px]">

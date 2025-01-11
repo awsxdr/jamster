@@ -19,7 +19,7 @@ export const TeamScore = ({ side, textClassName }: TeamScoreProps) => {
     return (
         <ScoreboardComponent className="grow-[8] p-2 relative">
             { lead &&
-                <div className="absolute left-0 right-0 top-5 scale-[2] flex justify-center">
+                <div className="absolute left-0 right-0 top-1 md:top-2 lg:top-3 xl:top-[2vh] scale-[.75] md:scale-[1] lg:scale-[1.5] xl:scale-[2] flex justify-center">
                     { lost ? <StarOff /> : <Star /> }
                 </div>
             }
