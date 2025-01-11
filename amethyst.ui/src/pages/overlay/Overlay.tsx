@@ -1,6 +1,6 @@
 import { CSSProperties, PropsWithChildren, useEffect, useMemo } from "react";
 import { ScoreRow } from "./components/ScoreRow";
-import { OverlayConfiguration, TeamSide } from "@/types";
+import { DEFAULT_OVERLAY_CONFIGURATION, OverlayConfiguration, TeamSide } from "@/types";
 import { GameStateContextProvider, I18nContextProvider, useConfiguration, useCurrentGame, useI18n } from "@/hooks";
 import { useSearchParams } from "react-router-dom";
 import { Clock } from "./components/Clock";
@@ -27,11 +27,7 @@ const OverlayContent = () => {
 
     const { configuration, isConfigurationLoaded } = useConfiguration<OverlayConfiguration>("OverlayConfiguration");
 
-    if(!configuration) {
-        return (<></>);
-    }
-
-    const { language, scale } = configuration;
+    const { language, scale } = configuration ?? DEFAULT_OVERLAY_CONFIGURATION;
 
     useEffect(() => {
         if(!isConfigurationLoaded) {
