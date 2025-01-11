@@ -1,9 +1,11 @@
 import { Card, CardContent, CardHeader, Separator, Switch } from "@/components/ui";
-import { useEvents, useI18n, useTimeoutListState } from "@/hooks";
+import { DisplaySide, useEvents, useI18n, useTimeoutListState } from "@/hooks";
 import { cn } from "@/lib/utils";
 import { TeamSide, TimeoutListItem, TimeoutType } from "@/types"
 import { TeamReviewLost, TeamReviewRetained } from "@/types/events";
 import { useMemo } from "react";
+import { TeamTimeoutList } from "./TeamTimeoutList";
+import { CombinedTimeoutList } from "./CombinedTimeoutList";
 
 type TimeoutRowProps = {
     sheetSide?: TeamSide;
@@ -44,49 +46,53 @@ const TimeoutRow = ({ sheetSide, timeout, onTimeoutRetentionChanged }: TimeoutRo
 }
 
 type TimeoutListProps = {
-    side: TeamSide;
     gameId?: string;
+    displaySide: DisplaySide;
     className?: string;
 }
 
-export const TimeoutList = ({ side, gameId, className }: TimeoutListProps) => {
+export const TimeoutList = ({ gameId, displaySide, className }: TimeoutListProps) => {
     const { timeouts } = useTimeoutListState() ?? { timeouts: [] };
 
-    const sortedTimeouts = useMemo(() => [...timeouts].sort((a, b) => b.eventId.localeCompare(a.eventId)), [timeouts]);
-
     const { sendEvent } = useEvents();
-
-    const { translate } = useI18n();
 
     if(!gameId) {
         return <></>
     }
 
-    const handleTimeoutRetentionChanged = (eventId: string, retained: boolean) => {
+    const handleTimeoutRetentionChanged = (side: TeamSide, eventId: string, retained: boolean) => {
         sendEvent(gameId, retained ? new TeamReviewRetained(side, eventId) : new TeamReviewLost(side, eventId));
     }
 
     return (
-        <Card className={cn("w-full", className)}>
-            <CardHeader className="font-bold text-center">
-                { side === TeamSide.Home ? translate("TimeoutList.HomeTitle") : translate("TimeoutList.AwayTitle")}
-            </CardHeader>
-            <CardContent>
-                <div className="flex flex-nowrap p-2">
-                    <span className="font-bold w-1/5"></span>
-                    <span className="font-bold w-2/5">Type</span>
-                    <span className="font-bold w-1/5 text-center">Duration</span>
-                </div>
-                <Separator />
-                {sortedTimeouts.map(timeout => 
-                    <TimeoutRow
-                        key={timeout.eventId}
-                        timeout={timeout} 
-                        sheetSide={side} 
-                        onTimeoutRetentionChanged={retained => handleTimeoutRetentionChanged(timeout.eventId, retained)} 
+        <>
+            <div className={cn("w-full hidden flex-nowrap gap-2 2xl:flex", className)}>
+                { displaySide !== DisplaySide.Away && 
+                    <TeamTimeoutList 
+                        side={TeamSide.Home} 
+                        gameId={gameId} 
+                        timeouts={timeouts}
+                        className={displaySide == DisplaySide.Both ? "xl:w-1/2" : ""} 
+                        onRetentionChanged={handleTimeoutRetentionChanged}
                     />
-                )}
-            </CardContent>
-        </Card>
+                }
+                { displaySide !== DisplaySide.Home && 
+                    <TeamTimeoutList 
+                        side={TeamSide.Away} 
+                        gameId={gameId} 
+                        timeouts={timeouts}
+                        className={displaySide == DisplaySide.Both ? "xl:w-1/2" : ""} 
+                        onRetentionChanged={handleTimeoutRetentionChanged}
+                    />
+                }
+            </div>
+            <div className={cn("w-full flex 2xl:hidden", className)}>
+                <CombinedTimeoutList
+                    gameId={gameId}
+                    timeouts={timeouts}
+                    onRetentionChanged={handleTimeoutRetentionChanged}
+                />
+            </div>
+        </>
     )
 }
