@@ -1,5 +1,5 @@
-import { GameStateContextProvider, I18nContextProvider, useCurrentGame, useGameStageState, useI18n } from '@/hooks';
-import { Stage, TeamSide } from '@/types';
+import { GameStateContextProvider, I18nContextProvider, useConfiguration, useCurrentGame, useGameStageState, useHasServerConnection, useI18n } from '@/hooks';
+import { DEFAULT_DISPLAY_CONFIGURATION, DisplayConfiguration, Stage, TeamSide } from '@/types';
 import { TeamDetails } from './components/TeamDetails';
 import { JamDetails } from './components/JamDetails';
 import { TimeoutDetails } from './components/TimeoutDetails';
@@ -12,12 +12,13 @@ import { Maximize2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useWakeLock } from '@/hooks/WakeLock';
 import languages from '@/i18n';
+import { ScaledText } from '@/components/ScaledText';
 
 export const CurrentGameScoreboard = () => {
     const { currentGame } = useCurrentGame();
   
     return (
-        <I18nContextProvider defaultLanguage='en' languages={languages}>
+        <I18nContextProvider usageKey="scoreboard" defaultLanguage='en' languages={languages}>
             <GameStateContextProvider gameId={currentGame?.id}>
                 <Scoreboard />
             </GameStateContextProvider>
@@ -27,12 +28,25 @@ export const CurrentGameScoreboard = () => {
 
 export const Scoreboard = () => {
 
-    const { translate } = useI18n();
+    const { translate, setLanguage } = useI18n();
 
+    const hasConnection = useHasServerConnection();
     const gameStage = useGameStageState() ?? { stage: Stage.BeforeGame, periodNumber: 0, jamNumber: 0, periodIsFinalized: false };
 
     const [fullScreenButtonVisible, setFullScreenButtonVisible] = useState(false);
     const [userInteracting, setUserInteracting] = useState(0);
+
+    const { configuration, isConfigurationLoaded } = useConfiguration<DisplayConfiguration>("DisplayConfiguration");
+
+    const { language } = configuration ?? DEFAULT_DISPLAY_CONFIGURATION;
+
+    useEffect(() => {
+        if(!isConfigurationLoaded) {
+            return;
+        }
+
+        setLanguage(language);
+    }, [language]);
 
     useEffect(() => {
         setFullScreenButtonVisible(true);
@@ -66,7 +80,14 @@ export const Scoreboard = () => {
         <>
             <title>{translate("Scoreboard.Title")} | {translate("Main.Title")}</title>
             <TeamColorGradients />
-            <div className="absolute left-0 top-0 h-full w-full select-none overflow-hidden px-2" onMouseMove={handleUserInteracting} onTouchStart={handleUserInteracting}>
+            <div 
+                className={cn(
+                    "absolute left-0 top-0 h-full w-full select-none overflow-hidden", 
+                    "px-0 md:px-1 lg:px-2"
+                )} 
+                onMouseMove={handleUserInteracting} 
+                onTouchStart={handleUserInteracting}
+            >
                 <Button 
                     size="icon" 
                     variant="ghost" 
@@ -77,8 +98,8 @@ export const Scoreboard = () => {
                 </Button>
                 <div className="flex w-full h-full justify-center">
                     <div className="inline-flex flex-col max-w-[140vh] w-full">
-                        <div className="h-screen flex flex-col justify-center gap-5">
-                            <div className="flex justify-around items-stretch h-[45vh] gap-5">
+                        <div className="h-screen flex flex-col justify-center gap-1 md:gap-2 lg:gap-5">
+                            <div className="flex justify-around items-stretch h-[45vh] gap-1 md:gap-2 lg:gap-5">
                                 <TeamDetails side={TeamSide.Home} />
                                 <TeamDetails side={TeamSide.Away} />
                             </div>
@@ -92,6 +113,15 @@ export const Scoreboard = () => {
                     </div>
                 </div>
             </div>
+            { !hasConnection && (
+                <div className="absolute left-0 top-0 h-full w-full select-none overflow-hidden bg-gradient-to-b from-[rgba(255,0,0,.5)]">
+                    <div className="absolute left-0 top-4 w-full h-[10vh] flex justify-center items-center text-center">
+                        <div className="bg-[#d00] text-white rounded-md sm:rounded-lg md:rounded-xl xl:rounded-3xl h-full w-1/2">
+                            <ScaledText text={translate("Scoreboard.ConnectionLost")} className="h-full w-full flex flex-col justify-center" />
+                        </div>
+                    </div>
+                </div>
+            )}
         </>
     );
 }

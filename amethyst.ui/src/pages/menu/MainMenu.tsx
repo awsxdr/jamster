@@ -15,7 +15,7 @@ export const MainMenu = ({ content }: MainMenuProps) => {
 
     return (
         <>
-            <I18nContextProvider defaultLanguage='en' languages={languages}>
+            <I18nContextProvider usageKey="control" defaultLanguage='en' languages={languages}>
                 <ThemeProvider defaultTheme='light'>
                     <SidebarProvider defaultOpen={sidebarState}>
                         <MenuSidebar />

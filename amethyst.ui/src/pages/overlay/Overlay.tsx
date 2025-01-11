@@ -1,6 +1,6 @@
-import { CSSProperties, PropsWithChildren, useMemo } from "react";
+import { CSSProperties, PropsWithChildren, useEffect, useMemo } from "react";
 import { ScoreRow } from "./components/ScoreRow";
-import { OverlayConfiguration, TeamSide } from "@/types";
+import { DEFAULT_OVERLAY_CONFIGURATION, OverlayConfiguration, TeamSide } from "@/types";
 import { GameStateContextProvider, I18nContextProvider, useConfiguration, useCurrentGame, useI18n } from "@/hooks";
 import { useSearchParams } from "react-router-dom";
 import { Clock } from "./components/Clock";
@@ -12,7 +12,7 @@ type OverlayContextProps = {
 }
 
 const OverlayContext = ({ children, gameId }: PropsWithChildren<OverlayContextProps>) => (
-    <I18nContextProvider defaultLanguage='en' languages={languages}>
+    <I18nContextProvider usageKey="overlay" defaultLanguage='en' languages={languages}>
         <GameStateContextProvider gameId={gameId}>
                 {children}
         </GameStateContextProvider>
@@ -21,11 +21,25 @@ const OverlayContext = ({ children, gameId }: PropsWithChildren<OverlayContextPr
 
 const OverlayContent = () => {
 
-    const { translate } = useI18n();
+    const { translate, setLanguage } = useI18n();
 
     const showBackground = false;
 
-    const { scale } = useConfiguration<OverlayConfiguration>("OverlayConfiguration") ?? { scale: 1 };
+    const { configuration, isConfigurationLoaded } = useConfiguration<OverlayConfiguration>("OverlayConfiguration");
+
+    if(!configuration) {
+        return (<></>);
+    }
+
+    const { language, scale } = configuration;
+
+    useEffect(() => {
+        if(!isConfigurationLoaded) {
+            return;
+        }
+
+        setLanguage(language);
+    }, [language]);
 
     const style = {
         '--score-row-width': `${25 * scale}vw`,
@@ -56,6 +70,7 @@ const OverlayContent = () => {
         '--lineup-row-text-size': `${1.5 * scale}vh`,
         '--lineup-jammer-name-width': `${20 * scale}vw`,
         '--lineup-skater-width': `${4 * scale}vw`,
+        '--star-scale': `${scale * 80}%`,
     } as CSSProperties;
 
     return (

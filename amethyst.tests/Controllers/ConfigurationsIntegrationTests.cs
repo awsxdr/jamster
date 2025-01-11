@@ -38,7 +38,7 @@ public class ConfigurationsIntegrationTests : ControllerIntegrationTest
     [Test]
     public async Task GetConfiguration_WhenPreviouslySet_ReturnsSetConfiguration()
     {
-        var expectedConfiguration = new DisplayConfiguration(false, true);
+        var expectedConfiguration = new DisplayConfiguration(false, true, "test");
 
         await Post("api/Configurations/DisplayConfiguration", expectedConfiguration, HttpStatusCode.OK);
 
@@ -60,7 +60,7 @@ public class ConfigurationsIntegrationTests : ControllerIntegrationTest
     [Test]
     public async Task GetConfiguration_WithGameId_WhenNotSetInGame_AndSetInDatabase_ReturnsDatabaseConfiguration()
     {
-        var expectedConfiguration = new DisplayConfiguration(false, true);
+        var expectedConfiguration = new DisplayConfiguration(false, true, "test");
 
         await Post("api/Configurations/DisplayConfiguration", expectedConfiguration, HttpStatusCode.OK);
 
@@ -72,8 +72,8 @@ public class ConfigurationsIntegrationTests : ControllerIntegrationTest
     [Test]
     public async Task GetConfiguration_WithGameId_WhenSetInGame_ReturnsGameConfiguration()
     {
-        var expectedConfiguration = new DisplayConfiguration(false, true);
-        var databaseConfiguration = new DisplayConfiguration(true, false);
+        var expectedConfiguration = new DisplayConfiguration(false, true, "expected");
+        var databaseConfiguration = new DisplayConfiguration(true, false, "test");
 
         await Post("api/Configurations/DisplayConfiguration", databaseConfiguration, HttpStatusCode.OK);
         await Post($"api/Configurations/DisplayConfiguration?gameId={_game.Id}", expectedConfiguration, HttpStatusCode.OK);
@@ -86,7 +86,7 @@ public class ConfigurationsIntegrationTests : ControllerIntegrationTest
     [Test]
     public async Task SetConfiguration_NotifiesConfigurationWatchers()
     {
-        var expectedConfiguration = new DisplayConfiguration(false, true);
+        var expectedConfiguration = new DisplayConfiguration(false, true, "test");
 
         var hub = await GetHubConnection("api/Hubs/Configuration");
         await hub.InvokeAsync(nameof(ConfigurationHub.WatchConfiguration), nameof(DisplayConfiguration));

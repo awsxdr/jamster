@@ -266,6 +266,20 @@ public class PeriodClockUnitTests : ReducerUnitTest<PeriodClock, PeriodClockStat
     }
 
     [Test]
+    public async Task PeriodClockSet_FollowedByTick_RespectsPeriodClockValue()
+    {
+        State = new(true, false, 0, 10000, 20000, 20);
+
+        await Subject.Handle(new PeriodClockSet(30000, new(10)));
+
+        (PeriodClock.PeriodLengthInTicks.Seconds - State.SecondsPassed).Should().Be(10);
+
+        await Tick(31000);
+
+        (PeriodClock.PeriodLengthInTicks.Seconds - State.SecondsPassed).Should().Be(9);
+    }
+
+    [Test]
     public async Task Tick_WhenPeriodClockRunning_AndPeriodClockNotExpired_UpdatesTicksPassedBasedOnLastStartTick()
     {
         MockState(new JamClockState(true, 0, 0, 0));

@@ -25,6 +25,7 @@ export const useI18n: () => I18n = () => {
 }
 
 type I18nContextProviderProps = {
+    usageKey: string;
     defaultLanguage: string;
     languages: Languages
 }
@@ -60,9 +61,11 @@ const makeDevTranslation = (key: string) => {
     );
 }
 
-export const I18nContextProvider = ({ defaultLanguage, languages, children }: PropsWithChildren<I18nContextProviderProps>) => {
+export const I18nContextProvider = ({ usageKey, defaultLanguage, languages, children }: PropsWithChildren<I18nContextProviderProps>) => {
 
-    const [language, setLanguage] = useState(localStorage.getItem('amethyst-language') ?? defaultLanguage);
+    const storageKey = `amethyst-language-${usageKey}`;
+
+    const [language, setLanguage] = useState(localStorage.getItem(storageKey) ?? defaultLanguage);
     
     const translations = useMemo(() => languages[language] ?? {}, [languages, language]);
     const languageNames = Object.keys(languages).map(key => ({ code: key, displayName: languages[key].name }));
@@ -86,7 +89,7 @@ export const I18nContextProvider = ({ defaultLanguage, languages, children }: Pr
 
     const changeLanguage = useCallback((key: string) => {
         setLanguage(key);
-        localStorage.setItem('amethyst-language', key);
+        localStorage.setItem(storageKey, key);
     }, [setLanguage]);
 
     return (
