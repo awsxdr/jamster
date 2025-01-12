@@ -6,7 +6,7 @@ using Func;
 
 namespace amethyst.Reducers;
 
-public abstract class TeamJamStats(TeamSide teamSide, ReducerGameContext gameContext, ILogger logger)
+public abstract class TeamJamStats(TeamSide teamSide, ReducerGameContext gameContext)
     : Reducer<TeamJamStatsState>(gameContext)
     , IHandlesEvent<LeadMarked>
     , IHandlesEvent<LostMarked>
@@ -110,5 +110,5 @@ public abstract class TeamJamStats(TeamSide teamSide, ReducerGameContext gameCon
 
 public record TeamJamStatsState(bool Lead, bool Lost, bool Called, bool StarPass, bool HasCompletedInitial);
 
-public sealed class HomeTeamJamStats(ReducerGameContext gameContext, ILogger<HomeTeamJamStats> logger) : TeamJamStats(TeamSide.Home, gameContext, logger);
-public sealed class AwayTeamJamStats(ReducerGameContext gameContext, ILogger<AwayTeamJamStats> logger) : TeamJamStats(TeamSide.Away, gameContext, logger);
+public sealed class HomeTeamJamStats(ReducerGameContext gameContext) : TeamJamStats(TeamSide.Home, gameContext);
+public sealed class AwayTeamJamStats(ReducerGameContext gameContext) : TeamJamStats(TeamSide.Away, gameContext);

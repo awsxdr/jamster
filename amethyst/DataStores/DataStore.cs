@@ -126,7 +126,7 @@ public abstract class DataStore<TData, TKey> : IDataStore
 
     protected record DataStoreItem(TKey Id, string Data, bool IsArchived)
     {
-        public DataStoreItem() : this(default, string.Empty, false)
+        public DataStoreItem() : this(default!, string.Empty, false)
         {
         }
     }
