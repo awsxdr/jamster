@@ -86,21 +86,24 @@ public class GameStateStore(ILogger<GameStateStore> logger) : IGameStateStore
     public void WatchState<TState>(string stateName, Func<TState, Task> onStateUpdate) where TState : class =>
         GetEventSource<TState>(stateName).StateUpdated += (_, e) => onStateUpdate(e.State);
 
+    private record EventDetails(Event Event, Guid7? SourceEventId);
+
     public async Task ApplyEvents(IImmutableList<IReducer> reducers, params Event[] events)
     {
         CacheStates();
 
         try
         {
-            var queuedEvents = new Queue<Event>(events.OrderBy(e => e.Id));
+            var queuedEvents = new Queue<EventDetails>(events.OrderBy(e => e.Id).Select(e => new EventDetails(e, null)));
 
             while (queuedEvents.TryDequeue(out var @event))
             {
-                var implicitEvents = await HandleEvent(reducers, @event);
+                var implicitEvents = await HandleEvent(reducers, @event.Event, @event.SourceEventId);
                 implicitEvents = implicitEvents.ToArray();
 
                 if (implicitEvents.Any())
-                    queuedEvents = new Queue<Event>(queuedEvents.Concat(implicitEvents).OrderBy(e => e.Id));
+                    // ReSharper disable once AccessToModifiedClosure
+                    queuedEvents = new Queue<EventDetails>(queuedEvents.Concat(implicitEvents.Select(e => new EventDetails(e, @event.Event.Id))).OrderBy(e => e.Event.Id));
             }
         }
         catch (Exception ex)
@@ -185,7 +188,7 @@ public class GameStateStore(ILogger<GameStateStore> logger) : IGameStateStore
     private static IStateUpdatedEventSource MakeEventSource(Type stateType) =>
         (IStateUpdatedEventSource)typeof(StateUpdateEventSource<>).MakeGenericType(stateType).GetConstructor([])!.Invoke([]);
 
-    private async Task<IEnumerable<Event>> HandleEvent(IImmutableList<IReducer> reducers, Event @event)
+    private async Task<IEnumerable<Event>> HandleEvent(IImmutableList<IReducer> reducers, Event @event, Guid7? sourceEventId)
     {
         logger.BeginScope("Handling {event}", @event);
 
@@ -196,7 +199,7 @@ public class GameStateStore(ILogger<GameStateStore> logger) : IGameStateStore
         {
             try
             {
-                var newImplicitEvents = (await reducer.HandleUntyped(@event)).ToArray();
+                var newImplicitEvents = (await reducer.HandleUntyped(@event, sourceEventId)).ToArray();
 
                 if (periodClock.IsRunning)
                 {

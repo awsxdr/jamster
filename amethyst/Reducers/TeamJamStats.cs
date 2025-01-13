@@ -75,7 +75,9 @@ public abstract class TeamJamStats(TeamSide teamSide, ReducerGameContext gameCon
 
     public IEnumerable<Event> Handle(InitialTripCompleted @event) => @event.HandleIfTeam(teamSide, () =>
     {
-        SetState(GetState() with { HasCompletedInitial = @event.Body.TripCompleted });
+        var state = GetState();
+        var opponentState = GetKeyedState<TeamJamStatsState>(teamSide == TeamSide.Home ? nameof(TeamSide.Away) : nameof(TeamSide.Home));
+        SetState(state with { HasCompletedInitial = @event.Body.TripCompleted, Lost = !state.Lead && !opponentState.Lead});
 
         return [];
     });

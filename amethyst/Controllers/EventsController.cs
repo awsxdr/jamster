@@ -38,6 +38,29 @@ public class EventsController(
             };
     }
 
+    [HttpGet("undo")]
+    public async Task<ActionResult<IEnumerable<EventModel>>> GetUndoEvents(Guid gameId, [FromQuery] int? maxCount = null, [FromQuery] SortOrder sortOrder = SortOrder.Desc)
+    {
+        logger.LogDebug("Getting undo events for game {gameId}", gameId);
+
+        return await gameDiscoveryService.GetExistingGame(gameId)
+            .Then(async game =>
+                (await gameDataStoreFactory.GetDataStore(IGameDiscoveryService.GetGameFileName(game)))
+                .GetEvents()
+                .Where(e => e is IShownInUndo)
+                .Select(e => (EventModel)e)
+                .Map(e => sortOrder == SortOrder.Asc ? e.OrderBy(x => x.Id) : e.OrderByDescending(x => x.Id))
+                .Map(e => maxCount is null ? e : e.Take((int)maxCount))
+                .Map(Result.Succeed))
+            switch
+            {
+                Success<IEnumerable<EventModel>> s => Ok(s.Value),
+                Failure<GameFileNotFoundForIdError> => NotFound(),
+                Failure<MultipleGameFilesFoundForIdError> => StatusCode(500),
+                var r => throw new UnexpectedResultException(r)
+            };
+    }
+
     [HttpPost("")]
     public async Task<ActionResult<EventModel>> AddEvent(Guid gameId, [FromBody] CreateEventModel model)
     {
@@ -94,4 +117,9 @@ public class EventsController(
                 : new UntypedEventWithBody(Type, Body);
     }
 
+    public enum SortOrder
+    {
+        Asc,
+        Desc,
+    }
 }

@@ -64,7 +64,7 @@ public class EventsControllerIntegrationTests : ControllerIntegrationTest
 
         var testEvents = new List<TestEvent>();
 
-        for (var i = 0; i < testEventCount; i++)
+        for (var i = 0; i < testEventCount; ++i)
         {
             var body = new TestEventBody {Value = i.ToString()};
             var createResult = await AddEvent(new TestEvent(Guid.Empty, body));
@@ -90,6 +90,99 @@ public class EventsControllerIntegrationTests : ControllerIntegrationTest
     {
         var result = await Get($"/api/games/{Guid.NewGuid()}/events");
         result.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Test]
+    public async Task GetUndoEvents_WhenGameFound_ReturnsGameUndoEvents()
+    {
+        const int testEventCount = 10;
+        const int undoEventSpacing = 3;
+
+        var testEvents = new List<Event>();
+
+        for (var i = 0; i < testEventCount; ++i)
+        {
+            if (i % undoEventSpacing == 0)
+            {
+                var createResult = await AddEvent(new TestUndoEvent(Guid.Empty));
+
+                testEvents.Add(new TestUndoEvent(createResult.Id));
+            }
+            else
+            {
+                var body = new TestEventBody();
+                var createResult = await AddEvent(new TestEvent(Guid.Empty, body));
+
+                testEvents.Add(new TestEvent(createResult.Id, body));
+            }
+        }
+
+        var events = await GetUndoEvents();
+        var typedEvents = events
+            .Select((e, i) => e.AsUntypedEvent().AsEvent(typeof(TestUndoEvent)))
+            .Select(r => r switch
+            {
+                Success<Event> s => s.Value,
+                _ => throw new AssertionException("Event conversion failed")
+            })
+            .ToArray();
+
+        typedEvents.Should().BeEquivalentTo(testEvents.OfType<TestUndoEvent>());
+    }
+
+    [Test]
+    public async Task GetUndoEvents_ObeysSortOrder([Values] bool descending)
+    {
+        const int testEventCount = 10;
+
+        for (var i = 0; i < testEventCount; ++i)
+        {
+            await AddEvent(new TestUndoEvent(Guid.Empty));
+        }
+
+        var events = await GetUndoEvents(query: $"sortOrder={(descending ? "Desc" : "Asc")}");
+        var typedEvents = events
+            .Select((e, i) => e.AsUntypedEvent().AsEvent(typeof(TestUndoEvent)))
+            .Select(r => r switch
+            {
+                Success<Event> s => s.Value,
+                _ => throw new AssertionException("Event conversion failed")
+            })
+            .ToArray();
+
+        if (descending)
+            typedEvents.Should().BeInDescendingOrder(x => x.Id);
+        else
+            typedEvents.Should().BeInAscendingOrder(x => x.Id);
+    }
+
+    [TestCase(5, 5)]
+    [TestCase(0, 0)]
+    [TestCase(1, 1)]
+    [TestCase(10, 10)]
+    [TestCase(11, 10)]
+    [TestCase(15, 10)]
+    [TestCase(-1, 0)]
+    public async Task GetUndoEvents_ObeysMaxCount(int maxCount, int expectedCount)
+    {
+        const int testEventCount = 10;
+
+        for (var i = 0; i < testEventCount; ++i)
+        {
+            await AddEvent(new TestUndoEvent(Guid.Empty));
+        }
+
+        var events = await GetUndoEvents(query: $"maxCount={maxCount}");
+        var typedEvents = events
+            .Select((e, i) => e.AsUntypedEvent().AsEvent(typeof(TestUndoEvent)))
+            .Select(r => r switch
+            {
+                Success<Event> s => s.Value,
+                _ => throw new AssertionException("Event conversion failed")
+            })
+            .ToArray();
+
+        typedEvents.Should().HaveCount(expectedCount);
     }
 
     [Test]
@@ -168,6 +261,9 @@ public class EventsControllerIntegrationTests : ControllerIntegrationTest
 
     private async Task<EventsController.EventModel[]> GetEvents(Guid? gameId = null, HttpStatusCode expectedResult = HttpStatusCode.OK) =>
         (await Get<EventsController.EventModel[]>($"/api/games/{gameId ?? _game.Id}/events", expectedResult))!;
+
+    private async Task<EventsController.EventModel[]> GetUndoEvents(Guid? gameId = null, string? query = null, HttpStatusCode expectedResult = HttpStatusCode.OK) =>
+        (await Get<EventsController.EventModel[]>($"/api/games/{gameId ?? _game.Id}/events/undo?{query ?? string.Empty}", expectedResult))!;
 
     private async Task<EventsController.EventModel> AddEvent<TEvent>(TEvent @event, Guid? gameId = null, HttpStatusCode expectedResult = HttpStatusCode.Accepted) where TEvent : Event =>
         (await Post<EventsController.EventModel>(

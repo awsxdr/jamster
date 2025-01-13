@@ -1,7 +1,6 @@
 ﻿using amethyst.Domain;
 using amethyst.Events;
 using amethyst.Reducers;
-using amethyst.Services;
 using FluentAssertions;
 
 namespace amethyst.tests.Reducers;
@@ -97,13 +96,26 @@ public class TeamJamStatsUnitTests : ReducerUnitTest<HomeTeamJamStats, TeamJamSt
     [TestCase(true, TeamSide.Home, false, false)]
     [TestCase(true, TeamSide.Away, false, true)]
     [TestCase(false, TeamSide.Home, false, false)]
-    public async Task InitialTripCompleted_UpdatesStateAsExpected(bool initialCompleted, TeamSide side, bool completed, bool expectedCompleted)
+    public async Task InitialTripCompleted_UpdatesHasCompletedInitialAsExpected(bool initialCompleted, TeamSide side, bool completed, bool expectedCompleted)
     {
         State = State with { HasCompletedInitial = initialCompleted };
 
         await Subject.Handle(new InitialTripCompleted(0, new(side, completed)));
 
         State.HasCompletedInitial.Should().Be(expectedCompleted);
+    }
+
+    [TestCase(TeamSide.Home, false)]
+    [TestCase(null, true)]
+    [TestCase(TeamSide.Away, false)]
+    public async Task InitialTripCompleted_UpdatesLostAsExpected(TeamSide? leadSide, bool expectedLost)
+    {
+        State = State with { Lead = leadSide == TeamSide.Home };
+        MockKeyedState("Away", (TeamJamStatsState)Subject.GetDefaultState() with { Lead = leadSide == TeamSide.Away });
+
+        await Subject.Handle(new InitialTripCompleted(0, new(TeamSide.Home, true)));
+
+        State.Lost.Should().Be(expectedLost);
     }
 
     [Test]

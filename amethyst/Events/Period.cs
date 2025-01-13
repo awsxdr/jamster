@@ -5,7 +5,7 @@ namespace amethyst.Events;
 /// <summary>
 /// The period clock has expired
 /// </summary>
-public sealed class PeriodEnded(Guid7 id) : Event(id), IPeriodClockAligned;
+public sealed class PeriodEnded(Guid7 id) : Event(id), IPeriodClockAligned, IShownInUndo;
 
 /// <summary>
 /// The period is finalized and the game should move onto the next period

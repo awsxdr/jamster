@@ -70,6 +70,7 @@ public class GameContextFactory(
         var reducerGameContext = new ReducerGameContext(gameInfo, stateStore);
         var reducers = 
             reducerFactories.Select(f => f(reducerGameContext))
+                .ValidateDependencies()
                 .SortReducers()
                 .ToImmutableList();
         stateStore.LoadDefaultStates(reducers);

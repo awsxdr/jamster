@@ -1,5 +1,4 @@
-﻿using amethyst.DataStores;
-using amethyst.Domain;
+﻿using amethyst.Domain;
 using amethyst.Services;
 
 namespace amethyst.Events;

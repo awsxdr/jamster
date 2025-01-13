@@ -20,7 +20,6 @@ using LogLevel = NLog.LogLevel;
 using MicrosoftLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 var logger = LogManager.Setup().LoadConfigurationFromFile().GetCurrentClassLogger();
-LogManager.Configuration.Variables["rootPath"] = RunningEnvironment.RootPath;
 
 var parseCommandLineResult = Parser.Default.ParseArguments<CommandLineOptions>(SkipCommandLineParse ? [] : args);
 
@@ -31,6 +30,7 @@ var commandLineOptions = parseCommandLineResult.Value;
 var builder = WebApplication.CreateBuilder(args);
 
 RunningEnvironment.IsDevelopment = builder.Environment.IsDevelopment();
+LogManager.Configuration.Variables["rootPath"] = RunningEnvironment.RootPath;
 
 var hostUrl = GetHostUrl();
 

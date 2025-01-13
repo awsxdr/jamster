@@ -43,6 +43,8 @@ public abstract class Event<TBody>(Guid7 id, TBody body) : Event(id)
 
 public interface IPeriodClockAligned;
 
+public interface IShownInUndo;
+
 public interface IUntypedEvent
 {
     string Type { get; }

@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { useGameStageState } from "@/hooks";
+import { useGameStageState, useUndoListState } from "@/hooks";
 import { Event, useEvents } from "@/hooks/EventsApiHook";
 import { useI18n } from "@/hooks/I18nHook";
 import { Stage } from "@/types";
@@ -18,7 +18,8 @@ export const MainControls = ({ gameId, disabled }: MainControlsProps) => {
 
     const gameStage = useGameStageState();
     const {translate, language} = useI18n();
-    const { sendEvent } = useEvents();
+    const { sendEvent, deleteEvent } = useEvents();
+    const undoList = useUndoListState() ?? { };
 
     const [startText, startButtonEnabled] = useMemo(() => {
         if (!gameStage || (gameStage.stage === Stage.AfterGame && gameStage.periodIsFinalized) || gameStage.stage === Stage.Jam) {
@@ -52,11 +53,15 @@ export const MainControls = ({ gameId, disabled }: MainControlsProps) => {
     }, [gameStage, language]);
 
     const [undoText, undoButtonEnabled] = useMemo(() => {
-        return [translate("MainControls.Undo"), false];
-    }, [language]);
+        return undoList.latestUndoEventId
+            ? [`${translate("MainControls.Undo")} ${translate(`MainControls.Undo.${undoList.latestUndoEventName}`)}`, true]
+            : [translate("MainControls.Undo"), false];
+    }, [language, undoList]);
 
     const sendEventIfIdSet = (event: Event) => {
-        if(!gameId) return;
+        if(!gameId) {
+            return;
+        }
 
         sendEvent(gameId, event);
     }
@@ -79,9 +84,18 @@ export const MainControls = ({ gameId, disabled }: MainControlsProps) => {
         sendEventIfIdSet(new TimeoutStarted());
     }
 
+    const handleUndo = () => {
+        if(!undoList.latestUndoEventId || !gameId) {
+            return;
+        }
+
+        deleteEvent(gameId, undoList.latestUndoEventId);
+    }
+
     useHotkeys('`', handleStart);
     useHotkeys('y', handleEnd);
     useHotkeys('t', handleTimeout);
+    useHotkeys('g', handleUndo);
 
     const buttonClass = "w-full py-6 md:w-auto md:px-4 md:py-2";
 
@@ -91,7 +105,7 @@ export const MainControls = ({ gameId, disabled }: MainControlsProps) => {
                 <Button className={buttonClass} onClick={handleStart} variant={startButtonEnabled ? 'default' : 'secondary'} disabled={disabled || !startButtonEnabled}><Play /> { startText } [`]</Button>
                 <Button className={buttonClass} onClick={handleEnd} variant={endButtonEnabled ? 'default' : 'secondary'} disabled={disabled || !endButtonEnabled}><Square /> { endText } [y]</Button>
                 <Button className={buttonClass} onClick={handleTimeout} variant={timeoutButtonEnabled ? 'default' : 'secondary'} disabled={disabled || !timeoutButtonEnabled}><Pause /> { timeoutText } [t]</Button>
-                <Button className={buttonClass} variant={undoButtonEnabled ? 'default' : 'secondary'} disabled={disabled || !undoButtonEnabled}><Undo /> {undoText} [g]</Button>
+                <Button className={buttonClass} onClick={handleUndo} variant={undoButtonEnabled ? 'default' : 'secondary'} disabled={disabled || !undoButtonEnabled}><Undo /> {undoText} [g]</Button>
             </CardContent>
         </Card>
     );

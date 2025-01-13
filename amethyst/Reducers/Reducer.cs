@@ -9,30 +9,38 @@ public delegate IReducer ReducerFactory(ReducerGameContext gameContext);
 
 public interface IReducer
 {
+    Type StateType { get; }
+
     object GetDefaultState();
     Option<string> GetStateKey();
 
-    public async Task<IEnumerable<Event>> Handle<TEvent>(TEvent @event) where TEvent : class
+    public async Task<IEnumerable<Event>> Handle<TEvent>(TEvent @event, Guid7? sourceEventId = null) where TEvent : Event
     {
+        if (this is IHandlesAllEventsAsync allEventsHandler)
+            return await allEventsHandler.HandleAsync(@event, sourceEventId);
+
         if (this is not IHandlesEventAsync<TEvent> handler)
             return [];
 
         return await handler.HandleAsync(@event);
     }
 
-    public Task<IEnumerable<Event>> HandleUntyped(Event @event)
+    public Task<IEnumerable<Event>> HandleUntyped(Event @event, Guid7? sourceEventId = null)
     {
         var handleTask = (Task<IEnumerable<Event>>) typeof(IReducer)
             .GetMethod(nameof(Handle))
             !.MakeGenericMethod(@event.GetType())
-            .Invoke(this, [@event])!;
+            .Invoke(this, [@event, sourceEventId])!;
 
         return handleTask;
     }
 }
 
 // ReSharper disable once UnusedTypeParameter - Type is used to mark interface for DI
-public interface IReducer<out TState> : IReducer where TState : class;
+public interface IReducer<out TState> : IReducer where TState : class
+{
+    Type IReducer.StateType => typeof(TState);
+}
 
 public interface IHandlesEvent<in TEvent> : IHandlesEventAsync<TEvent>
     where TEvent : Event
@@ -55,6 +63,28 @@ public interface IHandlesEvent<in TEvent> : IHandlesEventAsync<TEvent>
 public interface IHandlesEventAsync<in TEvent>
 {
     Task<IEnumerable<Event>> HandleAsync(TEvent @event);
+}
+
+public interface IHandlesAllEvents : IHandlesAllEventsAsync
+{
+    IEnumerable<Event> Handle(Event @event, Guid7? sourceEventId);
+
+    async Task<IEnumerable<Event>> IHandlesAllEventsAsync.HandleAsync(Event @event, Guid7? sourceEventId)
+    {
+        var implicitEvents = new List<Event>();
+
+        if (this is ITickReceiverAsync tickReceiver)
+            implicitEvents.AddRange(await tickReceiver.TickAsync(@event.Id.Tick));
+
+        implicitEvents.AddRange(Handle(@event, sourceEventId));
+
+        return implicitEvents;
+    }
+}
+
+public interface IHandlesAllEventsAsync
+{
+    Task<IEnumerable<Event>> HandleAsync(Event @event, Guid7? sourceEventId);
 }
 
 public interface IDependsOnState;

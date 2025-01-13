@@ -2,6 +2,7 @@ import { API_URL } from "@/constants";
 
 type EventsApi = {
     sendEvent: (gameId: string, event: Event) => Promise<void>;
+    deleteEvent: (gameId: string, eventId: string) => Promise<void>;
 }
 
 export abstract class Event {
@@ -43,7 +44,14 @@ export const useEvents: () => EventsApi = () => {
         });
     }
 
+    const deleteEvent = async (gameId: string, eventId: string) => {
+        await fetch(`${API_URL}/api/Games/${gameId}/events/${eventId}`, {
+            method: 'DELETE',
+        });
+    }
+
     return {
-        sendEvent
+        sendEvent,
+        deleteEvent,
     }
 }
