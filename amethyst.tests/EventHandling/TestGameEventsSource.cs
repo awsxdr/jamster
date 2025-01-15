@@ -114,7 +114,7 @@ public static class TestGameEventsSource
         .Event<JamEnded>(30)
         .Event<JamStarted>(95)
         .Event<JamEnded>(25)
-        .Event<TimeoutStarted>(0) // Team timeout
+        .Event<TimeoutStarted>(1) // Team timeout
         .Event<TimeoutTypeSet>(60).WithBody(new TimeoutTypeSetBody(TimeoutType.Team, TeamSide.Home))
         .Validate(
             ("Home", new TeamTimeoutsState(2, ReviewStatus.Unused, TimeoutInUse.Timeout)),
@@ -131,7 +131,7 @@ public static class TestGameEventsSource
         .Event<JamStarted>(1) // Invalid jam start
         .Event<JamEnded>(30)
         .Event<JamStarted>(145)
-        .Event<TimeoutStarted>(0) // Official timeout
+        .Event<TimeoutStarted>(1) // Official timeout
         .Event<TimeoutTypeSet>(218).WithBody(new TimeoutTypeSetBody(TimeoutType.Official, null))
         .Validate(
             ("Home", new TeamTimeoutsState(2, ReviewStatus.Unused, TimeoutInUse.None)),
@@ -150,7 +150,7 @@ public static class TestGameEventsSource
         .Event<JamEnded>(30)
         .Event<JamStarted>(112)
         .Event<JamEnded>(30)
-        .Event<TimeoutStarted>(0)
+        .Event<TimeoutStarted>(1)
         .Event<TimeoutTypeSet>(10).WithBody(new TimeoutTypeSetBody(TimeoutType.Team, TeamSide.Away))
         .Validate(
             ("Home", new TeamTimeoutsState(2, ReviewStatus.Unused, TimeoutInUse.None)),
@@ -170,25 +170,25 @@ public static class TestGameEventsSource
         .Event<JamStarted>(93)
         .Event<JamEnded>(30)
         .Event<JamStarted>(112)
-        .Event<JamEnded>(0)
+        .Event<JamEnded>(1)
         .Validate(new GameStageState(Stage.Intermission, 1, 16, false))
         .Event<PeriodFinalized>(10 * 60)
         .Validate(new GameStageState(Stage.Intermission, 2, 0, true))
-        .Validate(tick => [new IntermissionClockState(true, false, tick + 5 * 60 * 1000, 5 * 60)])
+        .Validate(tick => [new IntermissionClockState(true, false, IntermissionClock.IntermissionDurationInTicks, tick + (5 * 60 - 1) * 1000, 5 * 60 - 1)])
         .Wait(5 * 60)
-        .Validate(tick => [new IntermissionClockState(true, true, tick, 0)])
+        .Validate(tick => [new IntermissionClockState(true, true, IntermissionClock.IntermissionDurationInTicks, tick - 1000, 0)])
         .Event<JamStarted>(94)
         .Validate(new GameStageState(Stage.Jam, 2, 1, false))
         .Event<JamEnded>(30)
         .Event<JamStarted>(120 + 15)
         .Validate(new GameStageState(Stage.Lineup, 2, 2, false))
-        .Event<TimeoutStarted>(0) // Multiple timeouts
+        .Event<TimeoutStarted>(1) // Multiple timeouts
         .Event<TimeoutTypeSet>(160).WithBody(new TimeoutTypeSetBody(TimeoutType.Official, null))
         .Validate(
             ("Home", new TeamTimeoutsState(1, ReviewStatus.Unused, TimeoutInUse.None)),
             ("Away", new TeamTimeoutsState(3, ReviewStatus.Unused, TimeoutInUse.None))
         )
-        .Event<TimeoutStarted>(0)
+        .Event<TimeoutStarted>(1)
         .Event<TimeoutTypeSet>(60).WithBody(new TimeoutTypeSetBody(TimeoutType.Team, TeamSide.Home))
         .Validate(
             ("Home", new TeamTimeoutsState(0, ReviewStatus.Unused, TimeoutInUse.Timeout)),
@@ -207,13 +207,14 @@ public static class TestGameEventsSource
             new PeriodClockState(
                 false,
                 false,
-                tick - (94 + 30 + 120 + 15 + 160 + 60 + 16 + 7) * 1000,
+                tick - (94 + 30 + 120 + 15 + 160 + 60 + 16 + 7 + 2) * 1000,
                 0,
                 (94 + 30 + 120 + 15) * 1000,
                 94 + 30 + 120 + 15),
             ("Home", new TeamTimeoutsState(0, ReviewStatus.Unused, TimeoutInUse.Review)),
             ("Away", new TeamTimeoutsState(3, ReviewStatus.Unused, TimeoutInUse.None))
         ])
+        .Wait(90)
         .Event<JamStarted>(109)
         .Validate(
             ("Home", new TeamTimeoutsState(0, ReviewStatus.Used, TimeoutInUse.None)),
@@ -236,7 +237,7 @@ public static class TestGameEventsSource
                 94 + 30 + 120 + 15 + 109 + 30 + 35 + 10),
         ])
         .Wait(120 + 30)
-        .Event<JamEnded>(0)
+        .Event<JamEnded>(30)
         .Event<JamStarted>(42)
         .Validate(
             new GameStageState(Stage.Jam, 2, 6, false)
@@ -244,7 +245,7 @@ public static class TestGameEventsSource
         .Event<JamEnded>(30)
         .Event<JamStarted>(59)
         .Event<JamEnded>(30)
-        .Event<TimeoutStarted>(0)
+        .Event<TimeoutStarted>(1)
         .Event<TimeoutTypeSet>(123).WithBody(new TimeoutTypeSetBody(TimeoutType.Review, TeamSide.Away))
         .Validate(
             ("Home", new TeamTimeoutsState(0, ReviewStatus.Used, TimeoutInUse.None)),
@@ -255,6 +256,7 @@ public static class TestGameEventsSource
             ("Home", new TeamTimeoutsState(0, ReviewStatus.Used, TimeoutInUse.None)),
             ("Away", new TeamTimeoutsState(3, ReviewStatus.Used, TimeoutInUse.None))
         )
+        .Wait(15)
         .Event<JamStarted>(119) // Jam at nearly full length
         .Event<JamEnded>(30)
         .Event<JamStarted>(52)

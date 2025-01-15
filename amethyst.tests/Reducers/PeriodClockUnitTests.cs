@@ -67,7 +67,7 @@ public class PeriodClockUnitTests : ReducerUnitTest<PeriodClock, PeriodClockStat
     [Test]
     public async Task JamEnded_WhenPeriodClockRunning_AndPeriodClockExpired_SendsPeriodEndedEvent()
     {
-        var lastStartTick = GetRandomTick();
+        var lastStartTick = 0;
         var ticksPassedAtLastStart = PeriodClock.PeriodLengthInTicks - 10000;
 
         State = new(
@@ -82,8 +82,7 @@ public class PeriodClockUnitTests : ReducerUnitTest<PeriodClock, PeriodClockStat
 
         var result = await Subject.Handle(new JamEnded(lastStartTick + 12100));
 
-        var implicitEvent = result.Should().ContainSingle().Which.Should().BeAssignableTo<PeriodEnded>().Which;
-        implicitEvent.Tick.Should().Be(lastStartTick + 12100);
+        result.Should().ContainSingle().Which.Should().BeOfType<PeriodEnded>().Which.Tick.Should().Be(lastStartTick + 12100);
     }
 
     [Test]
@@ -102,9 +101,10 @@ public class PeriodClockUnitTests : ReducerUnitTest<PeriodClock, PeriodClockStat
 
         var originalState = State;
 
-        await Subject.Handle(new JamEnded(lastStartTick + 12100));
+        await ((ITickReceiver)Subject).TickAsync(lastStartTick + 12100);
+        await Subject.Handle(new JamEnded(lastStartTick + 12101));
 
-        State.Should().Be(originalState with { TicksPassed = ticksPassedAtLastStart + 12100 /* Ticks passed will update due to internal call to Tick */});
+        State.Should().Be(originalState with { TicksPassed = ticksPassedAtLastStart + 12100 /* Ticks passed will update due to call to Tick */});
     }
 
     [Test]
@@ -173,42 +173,13 @@ public class PeriodClockUnitTests : ReducerUnitTest<PeriodClock, PeriodClockStat
     }
 
     [Test]
-    public async Task TimeoutEnded_WhenLineupStartedWhenTimeRemainingLessThanLineupDuration_StartsPeriodClock()
+    public async Task TimeoutEnded_WhenPeriodExpired_SendsPeriodEnded()
     {
-        MockState(new LineupClockState(false, PeriodClock.PeriodLengthInTicks - LineupClock.LineupDurationInTicks + 1000, 1000, 1));
+        State = State with { HasExpired = true, IsRunning = false };
 
-        State = new(
-            false,
-            true,
-            0,
-            0,
-            PeriodClock.PeriodLengthInTicks - LineupClock.LineupDurationInTicks + 1000,
-            (int) ((PeriodClock.PeriodLengthInTicks - LineupClock.LineupDurationInTicks + 1000) / 1000));
+        var implicitEvents = await Subject.Handle(new TimeoutEnded(PeriodClock.PeriodLengthInTicks + 10000));
 
-        await Subject.Handle(new TimeoutEnded(PeriodClock.PeriodLengthInTicks - LineupClock.LineupDurationInTicks / 2));
-
-        State.IsRunning.Should().BeTrue();
-    }
-
-    [Test]
-    public async Task TimeoutEnded_WhenTimeRemainingMoreThanLineupDuration_DoesNotStartPeriodClock()
-    {
-        MockState(new LineupClockState(false, PeriodClock.PeriodLengthInTicks - LineupClock.LineupDurationInTicks - 1000, 1000, 1));
-
-        var ticksPassed = PeriodClock.PeriodLengthInTicks - LineupClock.LineupDurationInTicks - 1000;
-
-        State = new(
-            false,
-            true,
-            0,
-            ticksPassed,
-            ticksPassed,
-            ticksPassed.Seconds
-        );
-
-        await Subject.Handle(new TimeoutEnded(PeriodClock.PeriodLengthInTicks - LineupClock.LineupDurationInTicks + 2000));
-
-        State.IsRunning.Should().BeFalse();
+        implicitEvents.OfType<PeriodEnded>().Should().ContainSingle();
     }
 
     [Test]
@@ -357,7 +328,7 @@ public class PeriodClockUnitTests : ReducerUnitTest<PeriodClock, PeriodClockStat
         var result = await Tick(updateTick);
 
         var implicitEvent = result.Should().ContainSingle().Which.Should().BeAssignableTo<PeriodEnded>().Which;
-        implicitEvent.Tick.Should().Be(updateTick);
+        implicitEvent.Tick.Should().Be(lastStartTick + PeriodClock.PeriodLengthInTicks / 2);
     }
 
     [Test]

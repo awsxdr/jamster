@@ -98,6 +98,19 @@ public class GameStateStore(ILogger<GameStateStore> logger) : IGameStateStore
 
             while (queuedEvents.TryDequeue(out var @event))
             {
+                var tickImplicitEvents = (await Tick(reducers, @event.Event.Tick - 1)).ToArray();
+
+                if (tickImplicitEvents.Any())
+                {
+                    queuedEvents = new Queue<EventDetails>(
+                        queuedEvents
+                            .Concat(tickImplicitEvents.Select(e => new EventDetails(e, null)))
+                            .Append(@event)
+                            .OrderBy(e => e.Event.Id));
+
+                    continue;
+                }
+
                 var implicitEvents = await HandleEvent(reducers, @event.Event, @event.SourceEventId);
                 implicitEvents = implicitEvents.ToArray();
 
@@ -187,6 +200,18 @@ public class GameStateStore(ILogger<GameStateStore> logger) : IGameStateStore
 
     private static IStateUpdatedEventSource MakeEventSource(Type stateType) =>
         (IStateUpdatedEventSource)typeof(StateUpdateEventSource<>).MakeGenericType(stateType).GetConstructor([])!.Invoke([]);
+
+    private async Task<IEnumerable<Event>> Tick(IImmutableList<IReducer> reducers, Tick tick)
+    {
+        var implicitEvents = new List<Event>();
+
+        foreach (var reducer in reducers.OfType<ITickReceiver>())
+        {
+            implicitEvents.AddRange(await reducer.TickAsync(tick));
+        }
+
+        return implicitEvents;
+    }
 
     private async Task<IEnumerable<Event>> HandleEvent(IImmutableList<IReducer> reducers, Event @event, Guid7? sourceEventId)
     {

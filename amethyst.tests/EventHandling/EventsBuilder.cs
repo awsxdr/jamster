@@ -75,7 +75,9 @@ public static class EventsBuilderExtensions
     }
 }
 
-public class ValidateStateFakeEvent(Tick tick, params object[] states) : Event(tick)
+public interface IFakeEvent;
+
+public class ValidateStateFakeEvent(Tick tick, params object[] states) : Event(tick), IFakeEvent
 {
     public void ValidateStates(IGameStateStore stateStore)
     {
@@ -104,4 +106,4 @@ public class ValidateStateFakeEvent(Tick tick, params object[] states) : Event(t
     }
 }
 
-public class WaitFakeEvent(Guid7 id) : Event(id);
+public class WaitFakeEvent(Guid7 id) : Event(id), IFakeEvent;

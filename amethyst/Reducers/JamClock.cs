@@ -1,4 +1,4 @@
-﻿using amethyst.Domain;
+using amethyst.Domain;
 using amethyst.Events;
 using amethyst.Services;
 
@@ -96,9 +96,7 @@ public sealed class JamClock(ReducerGameContext gameContext, IEventBus eventBus,
 
         logger.LogDebug("Jam clock expired, ending jam");
 
-        _ = eventBus.AddEvent(Context.GameInfo, new JamEnded(Guid7.FromTick(state.StartTick + JamLengthInTicks)));
-
-        return [];
+        return [new JamEnded(Guid7.FromTick(state.StartTick + JamLengthInTicks))];
 
     }
 }

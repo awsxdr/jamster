@@ -58,7 +58,7 @@ public class EventBus(
 
         @event.Id = persistResult.Value;
 
-        logger.LogDebug("Applying event {eventId} to game {gameId}", @event.Id, game.Id);
+        logger.LogDebug("Applying event {eventId} ({eventType}) to game {gameId}", @event.Id, @event.GetType().Name, game.Id);
         await gameContext.StateStore.ApplyEvents(gameContext.Reducers, @event);
 
         return @event;

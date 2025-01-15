@@ -47,17 +47,7 @@ public interface IHandlesEvent<in TEvent> : IHandlesEventAsync<TEvent>
 {
     IEnumerable<Event> Handle(TEvent @event);
 
-    async Task<IEnumerable<Event>> IHandlesEventAsync<TEvent>.HandleAsync(TEvent @event)
-    {
-        var implicitEvents = new List<Event>();
-
-        if (this is ITickReceiverAsync tickReceiver)
-            implicitEvents.AddRange(await tickReceiver.TickAsync(@event.Id.Tick));
-
-        implicitEvents.AddRange(Handle(@event));
-
-        return implicitEvents;
-    }
+    Task<IEnumerable<Event>> IHandlesEventAsync<TEvent>.HandleAsync(TEvent @event) => Handle(@event).ToTask();
 }
 
 public interface IHandlesEventAsync<in TEvent>
