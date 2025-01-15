@@ -3,6 +3,7 @@ import { ScaledText } from "../../../components/ScaledText";
 import { useMemo } from "react";
 import { DisplayConfiguration, TeamSide } from "@/types";
 import { cn } from "@/lib/utils";
+import { SCOREBOARD_TEXT_PADDING_CLASS_NAME } from "../Scoreboard";
 
 type TeamScoreProps = {
     side: TeamSide,
@@ -33,7 +34,7 @@ export const TeamName = ({ side, textClassName }: TeamScoreProps) => {
 
     return (
         <div 
-            className="flex justify-center h-full p-5 overflow-hidden rounded-md sm:rounded-lg md:rounded-xl xl:rounded-3xl"
+            className={cn("flex justify-center h-full overflow-hidden rounded-md sm:rounded-lg md:rounded-xl xl:rounded-3xl", SCOREBOARD_TEXT_PADDING_CLASS_NAME)}
             style={{ color: foreground, backgroundColor: background }}
         >
             <ScaledText 

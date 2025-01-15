@@ -4,6 +4,8 @@ import { GameStageState, TimeoutType } from "@/types"
 import { useCurrentTimeoutTypeState, useI18n } from "@/hooks";
 import { useMemo } from "react";
 import { ClocksBar } from "./ClocksBar";
+import { cn } from "@/lib/utils";
+import { SCOREBOARD_GAP_CLASS_NAME } from "../Scoreboard";
 
 type TimeoutDetailsProps = {
     gameStage: GameStageState;
@@ -24,10 +26,10 @@ export const TimeoutDetails = ({ gameStage, visible }: TimeoutDetailsProps) => {
     , [type, language]);
     
     return (
-        <ClocksBar visible={visible} className="gap-1 md:gap-2 lg:gap-5 flex-col">
+        <ClocksBar visible={visible} className={cn("flex-col", SCOREBOARD_GAP_CLASS_NAME)}>
             <div className="h-[40%] flex">
             </div>
-            <div className="h-[60%] flex gap-1 md:gap-2 lg:gap-5">
+            <div className={cn("h-[60%] flex", SCOREBOARD_GAP_CLASS_NAME)}>
                 <ScoreboardComponent className="w-1/2 h-full" header={`${translate("Scoreboard.TimeoutDetails.Period")} ${gameStage.periodNumber} | ${translate("Scoreboard.TimeoutDetails.Jam")} ${gameStage.jamNumber}`}>
                     <PeriodClock textClassName="flex justify-center items-center h-full m-2 overflow-hidden" autoScale />
                 </ScoreboardComponent>

@@ -31,7 +31,7 @@ export const JamDetails = ({ gameStage, visible }: JamDetailsProps) => {
     const getJammerText = (jammerNumber: string | undefined, pivotNumber: string | undefined, starPass: boolean, roster?: GameSkater[]) => {
         const skaterNumber = starPass ? pivotNumber : jammerNumber;
 
-        return roster?.find(s => s.number === skaterNumber)?.name ?? skaterNumber ?? "";
+        return roster?.find(s => s.number === skaterNumber)?.name || skaterNumber?.toString() || "";
     }
 
     const homeJammerText = useMemo(

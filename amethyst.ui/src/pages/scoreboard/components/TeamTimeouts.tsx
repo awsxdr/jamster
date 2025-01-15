@@ -4,6 +4,7 @@ import { ScoreboardComponent } from "./ScoreboardComponent";
 import { ScaledText } from '@components/ScaledText';
 import { ReviewStatus, TeamSide, TimeoutInUse } from "@/types";
 import { cn } from "@/lib/utils";
+import { SCOREBOARD_GAP_CLASS_NAME } from "../Scoreboard";
 
 type TeamTimeoutsProps = {
     side: TeamSide
@@ -47,8 +48,8 @@ export const TeamTimeouts = ({ side }: TeamTimeoutsProps) => {
     const timeoutActive = useMemo(() => timeouts?.currentTimeout === TimeoutInUse.Timeout, [timeouts]);
 
     return (
-        <div className="flex flex-col gap-1 md:gap-2 lg:gap-5 grow h-full mh-full">
-            <ScoreboardComponent className="flex flex-col py-2 items-center text-center grow-[3]">
+        <div className={cn("flex flex-col grow h-full mh-full", SCOREBOARD_GAP_CLASS_NAME)}>
+            <ScoreboardComponent className="flex flex-col py-1 md:py-2 items-center text-center grow-[3]">
                 { Array.from(new Array(timeouts?.numberRemaining ?? 3)).map((_, i) => (<TimeoutSymbol key={i} state={TimeoutSymbolState.Default} />))}
                 { timeoutActive && <TimeoutSymbol state={TimeoutSymbolState.Default} active /> }
                 { Array.from(new Array((timeoutActive ? 2 : 3) - (timeouts?.numberRemaining ?? 3))).map((_, i) => (<TimeoutSymbol key={3 - i} state={TimeoutSymbolState.Hidden} />))}

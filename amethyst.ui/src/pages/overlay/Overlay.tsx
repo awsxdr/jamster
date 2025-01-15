@@ -66,7 +66,7 @@ const OverlayContent = () => {
         '--lineup-row-text-size': `${1.5 * scale}vh`,
         '--lineup-jammer-name-width': `${20 * scale}vw`,
         '--lineup-skater-width': `${4 * scale}vw`,
-        '--star-scale': `${scale * 80}%`,
+        '--star-height': `${2 * scale}vh`,
     } as CSSProperties;
 
     return (

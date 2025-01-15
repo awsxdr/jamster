@@ -1,5 +1,7 @@
 import { CSSProperties, PropsWithChildren } from 'react';
 import { cn } from '@/lib/utils';
+import { SCOREBOARD_TEXT_PADDING_CLASS_NAME } from '../Scoreboard';
+import { ScaledText } from '@/components/ScaledText';
 
 type ScoreboardComponentProps = {
     header?: string,
@@ -10,18 +12,24 @@ type ScoreboardComponentProps = {
 
 export const ScoreboardComponent = ({ header, style, className, headerClassName, children }: PropsWithChildren<ScoreboardComponentProps>) => {
     return (
-        <div style={style} className={cn("flex flex-col bg-white content-stretch rounded-md sm:rounded-lg md:rounded-xl xl:rounded-3xl", className)}>
+        <div 
+            style={style} 
+            className={cn(
+                "flex flex-col bg-white content-stretch rounded-md sm:rounded-lg md:rounded-xl xl:rounded-3xl",
+                 className
+            )}
+        >
             { header && (
-                <div 
+                <ScaledText 
                     className={cn(
-                        "bg-gray-300 text-center font-bold p-2",
+                        "bg-gray-300 text-center font-bold",
                         "rounded-t-md sm:rounded-t-lg md:rounded-t-xl xl:rounded-t-3xl",
-                        "text-xl sm:text-2xl md:text-3xl lg:text-5xl",
+                        "w-full h-[80%]",
+                        SCOREBOARD_TEXT_PADDING_CLASS_NAME,
                         headerClassName,
                     )}
-                >
-                    {header}
-                </div> 
+                    text={header}
+                />
             )}
             {children}
         </div>
