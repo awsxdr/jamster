@@ -10,9 +10,14 @@ public class IntermissionClock(ReducerGameContext context, ILogger<IntermissionC
     , IHandlesEvent<IntermissionStarted>
     , IHandlesEvent<IntermissionClockSet>
     , IHandlesEvent<IntermissionEnded>
+    , IHandlesEvent<TimeoutStarted>
+    , IHandlesEvent<TimeoutEnded>
     , ITickReceiver
+    , IDependsOnState<PeriodClockState>
 {
-    protected override IntermissionClockState DefaultState => new(false, true, 0, 0);
+    protected override IntermissionClockState DefaultState => new(false, true, IntermissionDurationInTicks, 0, 0);
+
+    public static readonly Tick IntermissionDurationInTicks = 15000;
 
     public IEnumerable<Event> Handle(JamStarted @event)
     {
@@ -60,6 +65,39 @@ public class IntermissionClock(ReducerGameContext context, ILogger<IntermissionC
         return [];
     }
 
+    public IEnumerable<Event> Handle(TimeoutStarted @event)
+    {
+        var state = GetState();
+
+        if (!state.IsRunning) return [];
+
+        logger.LogDebug("Stopping intermission clock due to timeout start");
+
+        SetState(state with { IsRunning = false });
+
+        return [];
+    }
+
+    public IEnumerable<Event> Handle(TimeoutEnded @event)
+    {
+        var periodClock = GetState<PeriodClockState>();
+
+        if (!periodClock.HasExpired) return [];
+
+        logger.LogDebug("Restarting intermission clock after timeout");
+
+        var state = GetState();
+        SetState(state with
+        {
+            HasExpired = false,
+            IsRunning = true,
+            SecondsRemaining = state.InitialDurationTicks.Seconds,
+            TargetTick = @event.Tick + state.InitialDurationTicks,
+        });
+
+        return [];
+    }
+
     public IEnumerable<Event> Tick(Tick tick)
     {
         var state = GetState();
@@ -81,5 +119,6 @@ public class IntermissionClock(ReducerGameContext context, ILogger<IntermissionC
 public sealed record IntermissionClockState(
     bool IsRunning,
     bool HasExpired,
+    Tick InitialDurationTicks,
     Tick TargetTick,
     int SecondsRemaining);

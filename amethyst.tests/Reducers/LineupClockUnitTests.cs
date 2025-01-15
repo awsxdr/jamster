@@ -58,12 +58,13 @@ public class LineupClockUnitTests : ReducerUnitTest<LineupClock, LineupClockStat
     public async Task JamEnded_WhenLineupAlreadyRunning_DoesNotChangeState()
     {
         var randomTick = GetRandomTick();
-        State = new(true, randomTick, randomTick, 0);
+        State = new(true, randomTick, 0, 0);
 
         var secondTick = randomTick + 100000;
         var ticksPassed = secondTick - randomTick;
 
-        await Subject.Handle(new JamEnded(secondTick));
+        await ((ITickReceiver)Subject).TickAsync(secondTick);
+        await Subject.Handle(new JamEnded(secondTick + 1));
 
         State.IsRunning.Should().BeTrue();
         State.StartTick.Should().Be(randomTick);

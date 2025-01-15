@@ -1,4 +1,4 @@
-using amethyst.Domain;
+﻿using amethyst.Domain;
 using amethyst.Events;
 using amethyst.Services;
 
@@ -21,7 +21,7 @@ public sealed class JamClock(ReducerGameContext gameContext, IEventBus eventBus,
     {
         var state = GetState();
 
-        if (state.IsRunning)
+        if (state is { IsRunning: true, TicksPassed: < JamLengthInTicks })
             return [];
 
         logger.LogDebug("Starting jam clock");

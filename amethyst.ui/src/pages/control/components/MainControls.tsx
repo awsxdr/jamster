@@ -42,7 +42,7 @@ export const MainControls = ({ gameId, disabled }: MainControlsProps) => {
             default: 
                 return ["---", false];
         }
-    }, [gameStage?.stage, language]);
+    }, [gameStage?.stage, gameStage?.periodIsFinalized, language]);
 
     const [timeoutText, timeoutButtonEnabled] = useMemo(() => {
         if(gameStage && !gameStage.periodIsFinalized && gameStage.stage !== Stage.BeforeGame) {

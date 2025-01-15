@@ -31,12 +31,13 @@ public class JamClockUnitTests : ReducerUnitTest<JamClock, JamClockState>
     {
         var randomTick = GetRandomTick();
 
-        State = new JamClockState(true, randomTick, randomTick, randomTick.Seconds);
+        State = new JamClockState(true, randomTick, 0, 0);
 
         var secondTick = randomTick + 10000;
         var ticksPassed = secondTick - randomTick;
 
-        await Subject.Handle(new JamStarted(secondTick));
+        await ((ITickReceiver)Subject).TickAsync(secondTick);
+        await Subject.Handle(new JamStarted(secondTick + 1));
 
         State.IsRunning.Should().BeTrue();
         State.StartTick.Should().Be(randomTick);
@@ -51,6 +52,7 @@ public class JamClockUnitTests : ReducerUnitTest<JamClock, JamClockState>
 
         var newJamStartTick = JamClock.JamLengthInTicks + LineupClock.LineupDurationInTicks;
 
+        await ((ITickReceiver)Subject).TickAsync(newJamStartTick - 1);
         await Subject.Handle(new JamStarted(newJamStartTick));
 
         State.IsRunning.Should().BeTrue();
@@ -159,7 +161,6 @@ public class JamClockUnitTests : ReducerUnitTest<JamClock, JamClockState>
 
         var result = await Tick(130 * 1000);
 
-        GetMock<IEventBus>()
-            .Verify(mock => mock.AddEvent(It.IsAny<GameInfo>(), It.Is<JamEnded>(je => je.Tick == 120 * 1000)));
+        result.Should().ContainSingle().Which.Should().BeOfType<JamEnded>().Which.Tick.Should().Be(120 * 1000);
     }
 }

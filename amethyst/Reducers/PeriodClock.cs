@@ -77,26 +77,11 @@ public class PeriodClock(ReducerGameContext context, ILogger<PeriodClock> logger
     {
         var state = GetState();
 
-        var ticksRemaining = PeriodLengthInTicks - state.TicksPassed;
+        if (!state.HasExpired) return [];
 
-        if (ticksRemaining > LineupClock.LineupDurationInTicks) return [];
+        logger.LogDebug("Ending period as timeout ended with no time on the period clock");
 
-        var lineupClock = GetState<LineupClockState>();
-        var ticksRemainingWhenLastLineupStarted =
-            PeriodLengthInTicks - lineupClock.StartTick - state.LastStartTick + state.TicksPassedAtLastStart;
-
-        if (ticksRemainingWhenLastLineupStarted > LineupClock.LineupDurationInTicks) return [];
-
-        logger.LogDebug("Starting period clock as timeout ended and previous lineup started with less than lineup duration on clock");
-
-        SetState(state with
-        {
-            IsRunning = true,
-            TicksPassedAtLastStart = state.TicksPassed,
-            LastStartTick = @event.Tick,
-        });
-
-        return [];
+        return [new PeriodEnded(@event.Tick)];
     }
 
     public IEnumerable<Event> Handle(PeriodFinalized @event)
@@ -135,9 +120,9 @@ public class PeriodClock(ReducerGameContext context, ILogger<PeriodClock> logger
         var state = GetState();
         if (!state.IsRunning) return [];
 
-        var ticksPassed = Math.Min(PeriodLengthInTicks, (long)tick - state.LastStartTick + state.TicksPassedAtLastStart);
+        var ticksPassed = (long)tick - state.LastStartTick + state.TicksPassedAtLastStart;
 
-        if (!state.HasExpired && ticksPassed == PeriodLengthInTicks)
+        if (!state.HasExpired && ticksPassed >= PeriodLengthInTicks)
         {
             logger.LogDebug("Period clock expired");
 
@@ -150,15 +135,17 @@ public class PeriodClock(ReducerGameContext context, ILogger<PeriodClock> logger
             state = state with {HasExpired = true};
         }
 
+        var limitedTicksPassed = Math.Min(PeriodLengthInTicks, ticksPassed);
+
         SetState(state with
         {
-            TicksPassed = ticksPassed,
-            SecondsPassed = (int)(ticksPassed / 1000L)
+            TicksPassed = limitedTicksPassed,
+            SecondsPassed = (int)(limitedTicksPassed / 1000L)
         });
 
         if (!state.IsRunning)
         {
-            return [new PeriodEnded(tick)];
+            return [new PeriodEnded(tick - (ticksPassed - PeriodLengthInTicks))];
         }
 
         return [];
