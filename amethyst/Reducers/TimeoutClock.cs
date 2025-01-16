@@ -47,10 +47,8 @@ public class TimeoutClock(ReducerGameContext context, ILogger<TimeoutClock> logg
 
         if (state is { IsRunning: true, EndTick: 0 })
         {
-            var periodClock = GetState<PeriodClockState>();
-
             logger.LogDebug("Ending timeout at {tick}", @event.Tick);
-            SetState(state with { EndTick = @event.Tick, IsRunning = !periodClock.HasExpired });
+            SetState(state with { EndTick = @event.Tick });
         }
         else
         {
