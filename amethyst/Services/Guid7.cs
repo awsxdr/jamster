@@ -49,6 +49,8 @@ public class Guid7 : IComparable<Guid>, IComparable<Guid7>
 
         uuidData[6] &= 0b00001111;
         uuidData[6] |= 0b11100000;
+        uuidData[7] &= 0b00001111;
+        uuidData[7] |= 0b01110000;
         uuidData[8] &= 0b00111111;
         uuidData[8] |= 0b10000000;
 
