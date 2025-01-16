@@ -50,24 +50,68 @@ public class IntermissionClockUnitTests : ReducerUnitTest<IntermissionClock, Int
     }
 
     [Test]
-    public async Task IntermissionStarted_StartsClock()
+    public async Task IntermissionStarted_WhenTargetTickZero_ResetsIntermissionClockToInitialDuration()
     {
-        await Subject.Handle(new IntermissionStarted(0));
+        State = new(false, true, Domain.Tick.FromSeconds(10), 0, 0);
+
+        await Subject.Handle(new IntermissionStarted(1000));
 
         State.IsRunning.Should().BeTrue();
+        State.HasExpired.Should().BeFalse();
+        State.TargetTick.Should().Be(Domain.Tick.FromSeconds(10) + 1000);
+        State.SecondsRemaining.Should().Be(10);
+    }
+
+    [Test]
+    public async Task IntermissionStarted_WhenTargetTickNonZero_ResumesIntermissionClock()
+    {
+        State = new(false, false, Domain.Tick.FromSeconds(15), Domain.Tick.FromSeconds(15), 10);
+
+        await Subject.Handle(new IntermissionStarted(Domain.Tick.FromSeconds(7)));
+
+        State.IsRunning.Should().BeTrue();
+        State.HasExpired.Should().BeFalse();
+        State.TargetTick.Should().Be(Domain.Tick.FromSeconds(17));
+        State.SecondsRemaining.Should().Be(10);
     }
 
     [Test]
     public async Task IntermissionClockSet_SetsClock()
     {
         State = new(true, false, IntermissionClock.IntermissionDurationInTicks, 15000, 15);
+        MockState<PeriodClockState>(new(true, true, 0, 0, 0, 0));
 
         await Subject.Handle(new IntermissionClockSet(10000, new(20)));
 
         State.IsRunning.Should().BeTrue();
         State.HasExpired.Should().BeFalse();
+        State.InitialDurationTicks.Should().Be(Domain.Tick.FromSeconds(20));
         State.TargetTick.Should().Be(30000);
         State.SecondsRemaining.Should().Be(20);
+    }
+
+    [Test]
+    public async Task IntermissionClockSet_WhenPeriodExpired_StartsClock()
+    {
+        State = new(false, false, Domain.Tick.FromSeconds(15), 0, 15);
+        MockState<PeriodClockState>(new(true, true, 0, 0, 0, 0));
+
+        var implicitEvents = await Subject.Handle(new IntermissionClockSet(10000, new(20)));
+
+        implicitEvents.OfType<IntermissionStarted>().Should().ContainSingle();
+        State.IsRunning.Should().BeFalse();
+    }
+
+    [Test]
+    public async Task IntermissionClockSet_WhenPeriodNotExpired_DoesNotStartClock()
+    {
+        State = new(false, false, Domain.Tick.FromSeconds(15), 0, 15);
+        MockState<PeriodClockState>(new(false, false, 0, 0, 0, 0));
+
+        var implicitEvents = await Subject.Handle(new IntermissionClockSet(10000, new(20)));
+
+        implicitEvents.OfType<IntermissionStarted>().Should().BeEmpty();
+        State.IsRunning.Should().BeFalse();
     }
 
     [Test]

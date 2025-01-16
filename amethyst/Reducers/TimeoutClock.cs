@@ -10,6 +10,7 @@ public class TimeoutClock(ReducerGameContext context, ILogger<TimeoutClock> logg
     , IHandlesEvent<TimeoutStarted>
     , IHandlesEvent<TimeoutEnded>
     , IHandlesEvent<TimeoutClockSet>
+    , IHandlesEvent<IntermissionStarted>
     , ITickReceiver
 {
     protected override TimeoutClockState DefaultState => new(false, 0, 0, 0, 0);
@@ -46,8 +47,10 @@ public class TimeoutClock(ReducerGameContext context, ILogger<TimeoutClock> logg
 
         if (state is { IsRunning: true, EndTick: 0 })
         {
+            var periodClock = GetState<PeriodClockState>();
+
             logger.LogDebug("Ending timeout at {tick}", @event.Tick);
-            SetState(state with { EndTick = @event.Tick });
+            SetState(state with { EndTick = @event.Tick, IsRunning = !periodClock.HasExpired });
         }
         else
         {
@@ -68,6 +71,23 @@ public class TimeoutClock(ReducerGameContext context, ILogger<TimeoutClock> logg
             StartTick = @event.Tick - ticksPassed,
             TicksPassed = ticksPassed,
             SecondsPassed = @event.Body.SecondsPassed,
+        });
+
+        return [];
+    }
+
+    public IEnumerable<Event> Handle(IntermissionStarted @event)
+    {
+        var state = GetState();
+
+        if (!state.IsRunning) return [];
+
+        logger.LogDebug("Stopping timeout clock due to intermission start");
+
+        SetState(GetState() with
+        {
+            IsRunning = false,
+            EndTick = @event.Tick,
         });
 
         return [];

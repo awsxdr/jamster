@@ -80,6 +80,65 @@ public static class TestGameEventsSource
         .Validate(new GameStageState(Stage.Jam, 1, 1, false))
         .Build();
 
+    public static Event[] OfficialReviewDuringIntermission => new EventsBuilder(0, [])
+        .Event<TeamSet>(0).WithBody(new TeamSetBody(TeamSide.Home, new GameTeam(HomeTeam.Names, HomeTeam.Color, HomeTeam.Roster)))
+        .Event<TeamSet>(0).WithBody(new TeamSetBody(TeamSide.Away, new GameTeam(AwayTeam.Names, AwayTeam.Color, AwayTeam.Roster)))
+        .Event<IntermissionEnded>(0)
+        .Event<IntermissionClockSet>(0).WithBody(new IntermissionClockSetBody(120))
+        .Event<JamStarted>(90)
+        .Event<JamEnded>(30)
+        .Event<JamStarted>(90)
+        .Event<JamEnded>(30)
+        .Event<JamStarted>(90)
+        .Event<JamEnded>(30)
+        .Event<JamStarted>(90)
+        .Event<JamEnded>(30)
+        .Event<JamStarted>(90)
+        .Event<JamEnded>(30)
+        .Event<JamStarted>(90)
+        .Event<JamEnded>(30)
+        .Event<JamStarted>(90)
+        .Event<JamEnded>(30)
+        .Event<JamStarted>(90)
+        .Event<JamEnded>(30)
+        .Event<JamStarted>(90)
+        .Event<JamEnded>(30)
+        .Event<JamStarted>(90)
+        .Event<JamEnded>(30)
+        .Event<JamStarted>(90)
+        .Event<JamEnded>(30)
+        .Event<JamStarted>(90)
+        .Event<JamEnded>(30)
+        .Event<JamStarted>(90)
+        .Event<JamEnded>(30)
+        .Event<JamStarted>(120)
+        .Event<JamEnded>(30)
+        .Event<JamStarted>(150)
+        .Wait(0)
+        .Validate(
+            new GameStageState(Stage.Intermission, 1, 15, false),
+            new IntermissionClockState(
+                true, 
+                false,
+                Tick.FromSeconds(120), 
+                Tick.FromSeconds(120 * 14 + 150) + Tick.FromSeconds(120),
+                90)
+        )
+        .Event<TimeoutStarted>(1)
+        .Event<TimeoutTypeSet>(90).WithBody(new TimeoutTypeSetBody(TimeoutType.Review, TeamSide.Home))
+        .Validate(tick => [
+            new GameStageState(Stage.Timeout, 1, 15, false),
+            new TimeoutClockState(true, tick - Tick.FromSeconds(91), 0, Tick.FromSeconds(91), 91),
+            new IntermissionClockState(false, false, Tick.FromSeconds(120), Tick.FromSeconds(120 * 14 + 150) + Tick.FromSeconds(120), 90)
+        ])
+        .Event<TimeoutEnded>(15)
+        .Validate(tick => [
+            new GameStageState(Stage.Intermission, 1, 15, false),
+            new TimeoutClockState(false, tick - Tick.FromSeconds(106), tick - Tick.FromSeconds(15), Tick.FromSeconds(91) - 1, 90),
+            new IntermissionClockState(true, false, Tick.FromSeconds(120), tick + Tick.FromSeconds(105), 120 - 15)
+        ])
+        .Build();
+
     public static Event[] FullGame => new EventsBuilder(0, [])
         .Validate(new GameStageState(Stage.BeforeGame, 0, 0, false))
         .Event<TeamSet>(0).WithBody(new TeamSetBody(TeamSide.Home, new GameTeam(HomeTeam.Names, HomeTeam.Color, HomeTeam.Roster)))

@@ -4,7 +4,7 @@ using amethyst.Services;
 
 namespace amethyst.Reducers;
 
-public sealed class JamClock(ReducerGameContext gameContext, IEventBus eventBus, ILogger<JamClock> logger) 
+public sealed class JamClock(ReducerGameContext gameContext, ILogger<JamClock> logger) 
     : Reducer<JamClockState>(gameContext)
     , IHandlesEvent<JamStarted>
     , IHandlesEvent<JamEnded>

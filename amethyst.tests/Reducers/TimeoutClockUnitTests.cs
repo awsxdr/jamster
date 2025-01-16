@@ -1,6 +1,7 @@
 ﻿using amethyst.Events;
 using amethyst.Reducers;
 using FluentAssertions;
+using static amethyst.tests.DataGenerator;
 
 namespace amethyst.tests.Reducers;
 
@@ -51,6 +52,7 @@ public class TimeoutClockUnitTests : ReducerUnitTest<TimeoutClock, TimeoutClockS
     public async Task TimeoutEnded_WhenClockRunningAndEndTickIsZero_SetsEndTick()
     {
         State = new(true, 10000, 0, 20000, 20);
+        MockState(new PeriodClockState(false, false, 0, 0, 0, 0));
         var initialState = State;
 
         await Subject.Handle(new TimeoutEnded(30000));
@@ -75,11 +77,21 @@ public class TimeoutClockUnitTests : ReducerUnitTest<TimeoutClock, TimeoutClockS
         State = new(false, 0, 0, 0, 0);
         var initialState = State;
 
-        var randomTick = Random.Shared.Next((int)initialState.StartTick + 10000, (int)initialState.StartTick + 100000);
+        var randomTick = GetRandomTickFollowing(initialState.StartTick + 10000);
 
         await Subject.Handle(new TimeoutEnded(randomTick));
 
         State.Should().Be(initialState);
+    }
+
+    [Test]
+    public async Task IntermissionStarted_StopsClock()
+    {
+        State = new(true, 0, 0, 0, 0);
+
+        await Subject.Handle(new IntermissionStarted(10000));
+
+        State.IsRunning.Should().BeFalse();
     }
 
     [Test]

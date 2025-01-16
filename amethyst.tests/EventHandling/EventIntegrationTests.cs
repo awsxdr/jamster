@@ -2,10 +2,8 @@
 using amethyst.Events;
 using amethyst.Reducers;
 using amethyst.Services;
-using Castle.Core.Logging;
 using FluentAssertions;
 using Func;
-using Microsoft.Extensions.Logging;
 
 namespace amethyst.tests.EventHandling;
 
@@ -14,6 +12,7 @@ public class EventIntegrationTests : EventBusIntegrationTest
     [TestCase( typeof(TestGameEventsSource), nameof(TestGameEventsSource.FullGame))]
     [TestCase(typeof(TestGameEventsSource), nameof(TestGameEventsSource.TwoJamsWithScores))]
     [TestCase(typeof(TestGameEventsSource), nameof(TestGameEventsSource.SingleJamStartedWithoutEndingIntermission))]
+    [TestCase(typeof(TestGameEventsSource), nameof(TestGameEventsSource.OfficialReviewDuringIntermission))]
     public async Task EventSources_UpdateStatesAsExpected(Type eventSourceType, string eventSourceName)
     {
         var events = GetEvents(eventSourceType, eventSourceName);

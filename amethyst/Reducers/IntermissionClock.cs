@@ -17,7 +17,7 @@ public class IntermissionClock(ReducerGameContext context, ILogger<IntermissionC
 {
     protected override IntermissionClockState DefaultState => new(false, true, IntermissionDurationInTicks, 0, 0);
 
-    public static readonly Tick IntermissionDurationInTicks = 15000;
+    public static readonly Tick IntermissionDurationInTicks = Domain.Tick.FromSeconds(15 * 60);
 
     public IEnumerable<Event> Handle(JamStarted @event)
     {
@@ -36,7 +36,15 @@ public class IntermissionClock(ReducerGameContext context, ILogger<IntermissionC
     {
         logger.LogInformation("Intermission started");
 
-        SetState(GetState() with { IsRunning = true });
+        var state = GetState();
+
+        SetState(state with
+        {
+            IsRunning = true,
+            HasExpired = false,
+            SecondsRemaining = state.TargetTick == 0 ? state.InitialDurationTicks.Seconds : state.SecondsRemaining,
+            TargetTick = state.TargetTick == 0 ? @event.Tick + state.InitialDurationTicks : @event.Tick + Domain.Tick.FromSeconds(state.SecondsRemaining),
+        });
 
         return [];
     }
@@ -44,14 +52,20 @@ public class IntermissionClock(ReducerGameContext context, ILogger<IntermissionC
     public IEnumerable<Event> Handle(IntermissionClockSet @event)
     {
         logger.LogDebug("Intermission length set to {length} seconds", @event.Body.SecondsRemaining);
+
+        var periodClock = GetState<PeriodClockState>();
+
         SetState(GetState() with
         {
             HasExpired = @event.Body.SecondsRemaining <= 0,
             SecondsRemaining = @event.Body.SecondsRemaining,
-            TargetTick = @event.Tick + @event.Body.SecondsRemaining * 1000,
+            TargetTick = periodClock.HasExpired ? @event.Tick + @event.Body.SecondsRemaining * 1000 : 0,
+            InitialDurationTicks = Domain.Tick.FromSeconds(@event.Body.SecondsRemaining),
         });
 
-        return [];
+        return periodClock.HasExpired
+            ? [new IntermissionStarted(@event.Tick)]
+            : [];
     }
 
     public IEnumerable<Event> Handle(IntermissionEnded @event)
