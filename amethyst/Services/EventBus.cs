@@ -14,6 +14,7 @@ public interface IEventBus
     Task<Event> AddEventAtCurrentTick(GameInfo game, Event @event);
     Task<Event> AddEvent(GameInfo game, Event @event);
     Task AddEventWithoutPersisting(GameInfo game, Event @event);
+    Task<Result<Event>> MoveEvent(GameInfo game, Event @event, Tick newTick);
     Task<Result> RemoveEvent(GameInfo game, Guid eventId);
 }
 
@@ -71,6 +72,21 @@ public class EventBus(
         var gameContext = contextFactory.GetGame(game);
 
         await gameContext.StateStore.ApplyEvents(gameContext.Reducers, @event);
+    }
+
+    public async Task<Result<Event>> MoveEvent(GameInfo game, Event @event, Tick newTick)
+    {
+        using var @lock = await AcquireLock(game.Id);
+
+        return await
+            RemoveEventFromDatabase(game, @event.Id)
+                .OnSuccess(() => @event.Id = Guid7.FromTick(newTick))
+                .Then(() => PersistEventToDatabase(game, @event))
+                .Then(() =>
+                {
+                    contextFactory.ReloadGame(game);
+                    return Result.Succeed(@event);
+                });
     }
 
     public async Task<Result> RemoveEvent(GameInfo game, Guid eventId)

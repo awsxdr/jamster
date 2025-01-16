@@ -11,6 +11,7 @@ import { GameEdit } from "./pages/games/GameEdit";
 import { Overlay } from "./pages/overlay/Overlay";
 import { ScoreboardSettings } from "./pages/scoreboardSettings/ScoreboardSettings";
 import { OverlaySettings } from "./pages/overlaySettings/OverlaySettings";
+import { Timeline } from "./pages/timeline/Timeline";
 
 export const Routes = () => {
     const router = createBrowserRouter([
@@ -41,6 +42,10 @@ export const Routes = () => {
         {
             path: '/games/:gameId',
             element: <MainMenu content={<GameEdit />} />
+        },
+        {
+            path: '/games/:gameId/timeline',
+            element: <MainMenu content={<Timeline />} />
         },
         {
             path: '/overlay',

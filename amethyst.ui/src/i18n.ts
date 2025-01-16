@@ -167,6 +167,8 @@ const languages: Languages = {
         "Scoreboard.TimeoutDetails.TeamTimeout": "Team timeout",
         "Scoreboard.TimeoutDetails.Timeout": "Timeout",
         "Scoreboard.Title": "Scoreboard",
+        "ScoreboardControl.SettingsMenu.Settings": "Game settings",
+        "ScoreboardControl.SettingsMenu.Timeline": "Timeline",
         "ScoreboardControl.Title": "Control",
         "ScoreboardSettings.Language": "Language",
         "ScoreboardSettings.ShowSidebars": "Show team color sidebars",

@@ -19,7 +19,7 @@ public class EventsController(
     ) : Controller
 {
     [HttpGet("")]
-    public async Task<ActionResult<IEnumerable<EventModel>>> GetEvents(Guid gameId)
+    public async Task<ActionResult<IEnumerable<EventModel>>> GetEvents(Guid gameId, [FromQuery] int skip = 0, [FromQuery] int? maxCount = null, [FromQuery] SortOrder sortOrder = SortOrder.Desc)
     {
         logger.LogDebug("Getting events for game {gameId}", gameId);
 
@@ -28,6 +28,9 @@ public class EventsController(
                     (await gameDataStoreFactory.GetDataStore(IGameDiscoveryService.GetGameFileName(game)))
                         .GetEvents()
                         .Select(e => (EventModel)e)
+                        .Map(e => sortOrder == SortOrder.Asc ? e.OrderBy(x => x.Id) : e.OrderByDescending(x => x.Id))
+                        .Skip(skip)
+                        .Map(e => maxCount is null ? e : e.Take((int)maxCount))
                         .Map(Result.Succeed))
             switch
             {
@@ -99,6 +102,27 @@ public class EventsController(
             };
     }
 
+    [HttpPut("{eventId:guid}/tick")]
+    public async Task<IActionResult> SetEventTick(Guid gameId, Guid eventId, [FromBody] SetEventTickModel model)
+    {
+        logger.LogDebug("Setting tick for event {eventId} in game {gameId} to {tick}", eventId, gameId, model.Tick);
+
+        return await gameDiscoveryService.GetExistingGame(gameId)
+                .Then(async game =>
+                    await (await gameDataStoreFactory.GetDataStore(IGameDiscoveryService.GetGameFileName(game)))
+                    .GetEvent(eventId)
+                    .Then(@event => eventBus.MoveEvent(game, @event, model.Tick))
+                )
+            switch
+            {
+                Success => Ok(),
+                Failure<GameDataStore.EventNotFoundError> => NotFound(),
+                Failure<GameFileNotFoundForIdError> => NotFound(),
+                Failure<MultipleGameFilesFoundForIdError> => StatusCode(500),
+                var r => throw new UnexpectedResultException(r)
+            };
+    }
+
     public record EventModel(string Type, Guid Id, object? Body)
     {
         public IUntypedEvent AsUntypedEvent() =>
@@ -116,6 +140,8 @@ public class EventsController(
                 ? new UntypedEvent(Type)
                 : new UntypedEventWithBody(Type, Body);
     }
+
+    public record SetEventTickModel(long Tick);
 
     public enum SortOrder
     {

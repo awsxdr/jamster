@@ -1,6 +1,6 @@
 import { Button, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui";
-import { useCurrentGame } from "@/hooks";
-import { List, Settings } from "lucide-react";
+import { useCurrentGame, useI18n } from "@/hooks";
+import { History, List, Settings } from "lucide-react";
 import { Link } from "react-router-dom";
 
 type SettingsMenuProps = {
@@ -11,6 +11,8 @@ export const SettingsMenu = ({ disabled }: SettingsMenuProps) => {
 
     const { currentGame } = useCurrentGame();
 
+    const { translate } = useI18n();
+
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -19,14 +21,22 @@ export const SettingsMenu = ({ disabled }: SettingsMenuProps) => {
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-56">
-                { currentGame &&
-                    <DropdownMenuItem disabled={disabled} asChild>
-                        <Link to={`/games/${currentGame?.id}`}>
-                            <List />
-                            Game settings
-                        </Link>
-                    </DropdownMenuItem>
-                }
+                { currentGame && (
+                    <>
+                        <DropdownMenuItem disabled={disabled} asChild>
+                            <Link to={`/games/${currentGame?.id}`}>
+                                <List />
+                                {translate("ScoreboardControl.SettingsMenu.Settings")}
+                            </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem disabled={disabled} asChild>
+                            <Link to={`/games/${currentGame?.id}/timeline`}>
+                                <History />
+                                {translate("ScoreboardControl.SettingsMenu.Timeline")}
+                            </Link>
+                        </DropdownMenuItem>
+                    </>
+                )}
             </DropdownMenuContent>
         </DropdownMenu>
     )
