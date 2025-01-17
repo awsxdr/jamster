@@ -23,8 +23,6 @@ const OverlayContent = () => {
 
     const { translate, setLanguage } = useI18n();
 
-    const showBackground = false;
-
     const { configuration, isConfigurationLoaded } = useConfiguration<OverlayConfiguration>("OverlayConfiguration");
 
     const { language, scale } = configuration ?? DEFAULT_OVERLAY_CONFIGURATION;
@@ -67,23 +65,24 @@ const OverlayContent = () => {
         '--lineup-jammer-name-width': `${20 * scale}vw`,
         '--lineup-skater-width': `${4 * scale}vw`,
         '--star-height': `${2 * scale}vh`,
+        '--background-fill-color': configuration?.backgroundColor ?? '#00ff00',
     } as CSSProperties;
 
     return (
-        <>
+        <div style={style}>
             <title>{translate("Overlay.Title")} | {translate("Main.Title")}</title>
-            { showBackground && (
-                <div className="absolute left-0 top-0 right-0 bottom-0 bg-[#0f0]">
+            { configuration?.useBackground && (
+                <div className="absolute left-0 top-0 right-0 bottom-0 bg-[--background-fill-color]">
                 </div>
             )}
-            <div className="h-0 w-0 relative select-none" style={style}>
+            <div className="h-0 w-0 relative select-none">
                 <LineupRow side={TeamSide.Home} />
                 <ScoreRow side={TeamSide.Home} />
                 <LineupRow side={TeamSide.Away} />
                 <ScoreRow side={TeamSide.Away} />
                 <Clock />
             </div>
-        </>
+        </div>
     );
 }
 

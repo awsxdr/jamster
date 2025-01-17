@@ -1,9 +1,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui"
 import { useConfiguration, useI18n } from "@/hooks"
 import { DisplayConfiguration } from "@/types";
-import { ConfigurationSwitch } from "./components/ConfigurationSwitch";
 import { MobileSidebarTrigger } from "@/components/MobileSidebarTrigger";
-import { ConfigurationLanguageSelect } from "./components/ConfigurationLanguageSelect";
+import { ConfigurationLanguageSelect, ConfigurationSwitch } from "@/components/configuration";
 
 export const ScoreboardSettings = () => {
 

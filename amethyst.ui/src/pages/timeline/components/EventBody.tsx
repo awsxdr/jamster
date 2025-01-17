@@ -48,8 +48,6 @@ export const EventBody = ({ body }: EventBodyProps) => {
             default:
                 return (value as object).toString();
         }
-
-        return <></>;
     };
 
     const renderArray = (value: object[]) => 

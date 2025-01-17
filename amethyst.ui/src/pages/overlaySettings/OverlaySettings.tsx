@@ -1,10 +1,11 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui"
+import { MobileSidebarTrigger } from "@/components";
+import { ConfigurationLanguageSelect, ConfigurationSlider } from "@/components/configuration";
+import { ConfigurationSetting } from "@/components/configuration/ConfigurationSetting";
+import { Card, CardContent, CardHeader, CardTitle, Switch } from "@/components/ui"
 import { useConfiguration, useI18n } from "@/hooks"
-import { OverlayConfiguration } from "@/types";
-import { ConfigurationSlider } from "./components/ConfigurationSlider";
-import { useEffect, useState } from "react";
-import { ConfigurationLanguageSelect } from "./components/ConfigurationLanguageSelect";
-import { MobileSidebarTrigger } from "@/components/MobileSidebarTrigger";
+import { Color, HslColor, OverlayConfiguration } from "@/types";
+import { useEffect, useMemo, useState } from "react";
+import { ColorSelectButton } from "../teams/components/ColorSelectButton";
 
 export const OverlaySettings = () => {
 
@@ -22,6 +23,8 @@ export const OverlaySettings = () => {
         setTempScale(configuration.scale);
     }, [configuration?.scale]);
 
+    const backgroundColor = useMemo(() => Color.rgbToHsl(Color.parseRgb(configuration?.backgroundColor ?? "#00ff00") ?? { red: 0, green: 1, blue: 0 }), [configuration]);
+
     if(!configuration) {
         return (
             <></>
@@ -29,13 +32,19 @@ export const OverlaySettings = () => {
     }
 
     const handleLanguageChanged = (newLanguage: string) => {
-        console.log("Set language", newLanguage);
         setConfiguration({ ...configuration, language: newLanguage});
     }
 
     const handleScaleChanged = (value: number) => {
-        console.log("Set scale", value);
         setConfiguration({ ...configuration, scale: value });
+    }
+
+    const handleUseBackgroundChanged = (checked: boolean) => {
+        setConfiguration({ ...configuration, useBackground: checked });
+    }
+
+    const handleBackgroundColorChanged = (color: HslColor) => {
+        setConfiguration({ ...configuration, backgroundColor: Color.rgbToString(Color.hslToRgb(color))});
     }
 
     return (
@@ -62,6 +71,17 @@ export const OverlaySettings = () => {
                         onValueChanged={setTempScale}
                         onValueCommit={handleScaleChanged}
                     />
+                    <ConfigurationSetting
+                        text=""
+                    >
+                        <Switch checked={configuration.useBackground} onCheckedChange={handleUseBackgroundChanged} />
+                        {translate("OverlaySettings.FillBackground")}
+                        <ColorSelectButton 
+                            color={backgroundColor} 
+                            disabled={!configuration.useBackground} 
+                            onColorChanged={handleBackgroundColorChanged} 
+                        />
+                    </ConfigurationSetting>
                 </CardContent>
             </Card>
         </>

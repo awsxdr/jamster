@@ -131,6 +131,7 @@ const languages: Languages = {
         "Overlay.LineupRow.StarPassMarker": " (J)",
         "Overlay.ScoreRow.Away": "Away",
         "Overlay.ScoreRow.Home": "Home",
+        "OverlaySettings.FillBackground": "Fill background with color",
         "OverlaySettings.Language": "Language",
         "OverlaySettings.Scale": "Overlay scale",
         "OverlaySettings.Title": "Overlay settings",
