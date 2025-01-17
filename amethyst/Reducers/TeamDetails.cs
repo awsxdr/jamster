@@ -22,10 +22,10 @@ public abstract class TeamDetails(TeamSide teamSide, ReducerGameContext context,
 
     public IEnumerable<Event> Handle(TeamSet @event) => @event.HandleIfTeam(teamSide, () =>
     {
-        if (!@event.Body.Team.Names.TryGetValue("default", out var defaultName))
-            defaultName = @event.Body.Team.Names.FirstOrDefault().Value ?? "";
+        if (!@event.Body.Team.Names.TryGetValue("team", out var teamName))
+            teamName = @event.Body.Team.Names.FirstOrDefault().Value ?? "";
 
-        logger.LogInformation("Setting team for {side} to {name}", teamSide, defaultName);
+        logger.LogInformation("Setting team for {side} to {name}", teamSide, teamName);
 
         SetState(new (@event.Body.Team));
 

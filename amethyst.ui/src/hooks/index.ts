@@ -1,5 +1,6 @@
 export * from './ConfigurationApiHook';
 export * from './ConfigurationHook';
+export * from './CreateGame';
 export * from './EventsApiHook';
 export * from './GameApiHook';
 export * from './GamesListHook';

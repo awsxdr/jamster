@@ -28,7 +28,7 @@ export const NewGameDialogTrigger = ({children}: PropsWithChildren) => {
     )
 }
 
-type NewGameCreated = (
+export type NewGameCreated = (
     homeTeamId: string, 
     homeTeamColorIndex: number,
     awayTeamId: string, 
