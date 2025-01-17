@@ -13,7 +13,6 @@ public class GameStage(ReducerGameContext context, ILogger<GameStage> logger)
     , IHandlesEvent<PeriodEnded>
     , IHandlesEvent<PeriodFinalized>
     , IDependsOnState<PeriodClockState>
-    , IDependsOnState<IntermissionClockState>
 {
     protected override GameStageState DefaultState => new(Stage.BeforeGame, 0, 0, false);
 
@@ -47,7 +46,9 @@ public class GameStage(ReducerGameContext context, ILogger<GameStage> logger)
         if (SetStateIfDifferent(newState))
             logger.LogDebug("Setting game state to {state} after jam start", newState);
 
-        return [];
+        return (state.Stage is Stage.BeforeGame or Stage.Intermission)
+            ? [new IntermissionEnded(@event.Tick)]
+            : [];
     }
 
     public IEnumerable<Event> Handle(JamEnded @event)
@@ -115,19 +116,7 @@ public class GameStage(ReducerGameContext context, ILogger<GameStage> logger)
 
         if (newState.Stage != Stage.Intermission) return [];
 
-        var intermissionClock = GetState<IntermissionClockState>();
-
-        var resultingEvents = new List<Event>();
-
-        if (intermissionClock.SecondsRemaining <= 0)
-        {
-            logger.LogInformation("Starting intermission with length {intermissionLength} seconds due to end of period", 15 * 60);
-            resultingEvents.Add(new IntermissionClockSet(@event.Tick, new(15 * 60)));
-        }
-
-        resultingEvents.Add(new IntermissionStarted(@event.Tick));
-
-        return resultingEvents;
+        return [new IntermissionStarted(@event.Tick)];
     }
 
     public IEnumerable<Event> Handle(PeriodFinalized @event)

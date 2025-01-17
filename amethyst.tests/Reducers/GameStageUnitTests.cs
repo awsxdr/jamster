@@ -119,17 +119,17 @@ public class GameStageUnitTests : ReducerUnitTest<GameStage, GameStageState>
         State.JamNumber.Should().Be(expectedJamNumber);
     }
 
-    [Test]
-    public async Task PeriodEnded_WhenEnteringIntermission_AndIntermissionClockNotSet_StartsIntermissionClockWithDefaultValue()
+    [TestCase(Stage.BeforeGame)]
+    [TestCase(Stage.Intermission)]
+    public async Task JamStarted_WhenInIntermission_AndPeriodFinalized_SendsIntermissionEnded(Stage stage)
     {
-        State = new(Stage.Jam, 1, 15, false);
-        MockState<PeriodClockState>(new(false, true, 0, 0, PeriodClock.PeriodLengthInTicks + 10000, 0));
-        MockState<IntermissionClockState>(new(false, false, IntermissionClock.IntermissionDurationInTicks, 0, 0));
+        State = new(stage, 1, 1, true);
+        MockState(new JamClockState(false, 0, 0, 0));
 
-        var result = (await Subject.Handle(new PeriodEnded(123))).ToArray();
+        var implicitEvents = await Subject.Handle(new JamStarted(1000));
 
-        result[0].Should().BeAssignableTo<IntermissionClockSet>().Which.Body.SecondsRemaining.Should().Be(15 * 60);
-        result[1].Should().BeAssignableTo<IntermissionStarted>();
+        implicitEvents.OfType<IntermissionEnded>().Should().ContainSingle()
+            .Which.Tick.Should().Be(1000);
     }
 
     [Test]

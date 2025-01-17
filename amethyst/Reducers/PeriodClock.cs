@@ -16,7 +16,7 @@ public class PeriodClock(ReducerGameContext context, ILogger<PeriodClock> logger
     , IDependsOnState<LineupClockState>
     , ITickReceiver
 {
-    protected override PeriodClockState DefaultState => new(false, false, 0, 0, 0, 0);
+    protected override PeriodClockState DefaultState => new(false, true, 0, 0, 0, 0);
 
     public static readonly Tick PeriodLengthInTicks = Domain.Tick.FromSeconds(30 * 60);
 

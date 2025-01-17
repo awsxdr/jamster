@@ -6,7 +6,6 @@ namespace amethyst.Reducers;
 
 public class IntermissionClock(ReducerGameContext context, ILogger<IntermissionClock> logger) 
     : Reducer<IntermissionClockState>(context)
-    , IHandlesEvent<JamStarted>
     , IHandlesEvent<IntermissionStarted>
     , IHandlesEvent<IntermissionClockSet>
     , IHandlesEvent<IntermissionEnded>
@@ -18,19 +17,6 @@ public class IntermissionClock(ReducerGameContext context, ILogger<IntermissionC
     protected override IntermissionClockState DefaultState => new(false, true, IntermissionDurationInTicks, 0, 0);
 
     public static readonly Tick IntermissionDurationInTicks = Domain.Tick.FromSeconds(15 * 60);
-
-    public IEnumerable<Event> Handle(JamStarted @event)
-    {
-        var state = GetState();
-
-        if (!state.IsRunning) return [];
-
-        logger.LogDebug("Stopping intermission clock due to jam start");
-
-        SetState(state with { IsRunning = false });
-
-        return [];
-    }
 
     public IEnumerable<Event> Handle(IntermissionStarted @event)
     {
@@ -57,7 +43,6 @@ public class IntermissionClock(ReducerGameContext context, ILogger<IntermissionC
 
         SetState(GetState() with
         {
-            HasExpired = @event.Body.SecondsRemaining <= 0,
             SecondsRemaining = @event.Body.SecondsRemaining,
             TargetTick = periodClock.HasExpired ? @event.Tick + @event.Body.SecondsRemaining * 1000 : 0,
             InitialDurationTicks = Domain.Tick.FromSeconds(@event.Body.SecondsRemaining),
@@ -74,7 +59,13 @@ public class IntermissionClock(ReducerGameContext context, ILogger<IntermissionC
 
         if (!state.IsRunning) return [];
 
-        SetState(state with { IsRunning = false });
+        SetState(state with
+        {
+            IsRunning = false, 
+            HasExpired = true, 
+            InitialDurationTicks = IntermissionDurationInTicks,
+            TargetTick = 0,
+        });
 
         return [];
     }

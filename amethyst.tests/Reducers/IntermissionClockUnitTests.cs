@@ -8,27 +8,6 @@ namespace amethyst.tests.Reducers;
 public class IntermissionClockUnitTests : ReducerUnitTest<IntermissionClock, IntermissionClockState>
 {
     [Test]
-    public async Task JamStarted_WhenClockIsRunning_StopsClock()
-    {
-        State = new(true, false, IntermissionClock.IntermissionDurationInTicks, 20000, 10);
-
-        await Subject.Handle(new JamStarted(15000));
-
-        State.IsRunning.Should().BeFalse();
-    }
-
-    [Test]
-    public async Task JamStarted_WhenClockIsNotRunning_DoesNotChangeState()
-    {
-        State = new(false, false, IntermissionClock.IntermissionDurationInTicks, 20000, 10);
-        var originalState = State;
-
-        await Subject.Handle(new JamStarted(15000));
-
-        State.Should().Be(originalState);
-    }
-
-    [Test]
     public async Task IntermissionEnded_WhenClockIsRunning_StopsClock()
     {
         State = new(true, false, IntermissionClock.IntermissionDurationInTicks, 20000, 10);
@@ -47,6 +26,16 @@ public class IntermissionClockUnitTests : ReducerUnitTest<IntermissionClock, Int
         await Subject.Handle(new IntermissionEnded(15000));
 
         State.Should().Be(originalState);
+    }
+
+    [Test]
+    public async Task IntermissionEnded_ResetsClockToDefaultDuration()
+    {
+        State = new(true, true, Domain.Tick.FromSeconds(10), 0, 0);
+
+        await Subject.Handle(new IntermissionEnded(0));
+
+        State.InitialDurationTicks.Should().Be(IntermissionClock.IntermissionDurationInTicks);
     }
 
     [Test]

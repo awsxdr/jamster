@@ -14,10 +14,9 @@ public static class TestGameEventsSource
             ("Home", new TeamDetailsState(new GameTeam(HomeTeam.Names, HomeTeam.Color, HomeTeam.Roster))),
             ("Away", new TeamDetailsState(new GameTeam(AwayTeam.Names, AwayTeam.Color, AwayTeam.Roster)))
         )
-        .Event<IntermissionEnded>(15)
+        .Event<IntermissionEnded>(30)
         .Validate(new GameStageState(Stage.Lineup, 1, 0, false))
         .Event<JamStarted>(12)
-        // TODO: Lead jammer
         .Wait(15)
         .Validate(
             ("Home", new TeamScoreState(0, 0)),
@@ -83,10 +82,9 @@ public static class TestGameEventsSource
     public static Event[] OfficialReviewDuringIntermission => new EventsBuilder(0, [])
         .Event<TeamSet>(0).WithBody(new TeamSetBody(TeamSide.Home, new GameTeam(HomeTeam.Names, HomeTeam.Color, HomeTeam.Roster)))
         .Event<TeamSet>(0).WithBody(new TeamSetBody(TeamSide.Away, new GameTeam(AwayTeam.Names, AwayTeam.Color, AwayTeam.Roster)))
-        .Event<IntermissionEnded>(0)
-        .Event<IntermissionClockSet>(0).WithBody(new IntermissionClockSetBody(120))
         .Event<JamStarted>(90)
         .Event<JamEnded>(30)
+        .Event<IntermissionClockSet>(0).WithBody(new IntermissionClockSetBody(120))
         .Event<JamStarted>(90)
         .Event<JamEnded>(30)
         .Event<JamStarted>(90)
@@ -148,8 +146,8 @@ public static class TestGameEventsSource
             ("Home", new TeamDetailsState(new GameTeam(HomeTeam.Names, HomeTeam.Color, HomeTeam.Roster))),
             ("Away", new TeamDetailsState(new GameTeam(AwayTeam.Names, AwayTeam.Color, AwayTeam.Roster)))
         )
-        .Event<IntermissionEnded>(15)
-        .Validate(new GameStageState(Stage.Lineup, 1, 0, false))
+        .Event<IntermissionClockSet>(10).WithBody(new IntermissionClockSetBody(10 * 60))
+        .Validate(new IntermissionClockState(true, false, Tick.FromSeconds(10 * 60), Tick.FromSeconds(10 * 60), 10 * 60 - 10))
         .Event<SkaterOnTrack>(1).WithBody(new SkaterOnTrackBody(TeamSide.Home, HomeTeam.Roster[3].Number, SkaterPosition.Jammer))
         .Event<SkaterOnTrack>(1).WithBody(new SkaterOnTrackBody(TeamSide.Home, HomeTeam.Roster[6].Number, SkaterPosition.Pivot))
         .Event<SkaterOnTrack>(1).WithBody(new SkaterOnTrackBody(TeamSide.Away, AwayTeam.Roster[2].Number, SkaterPosition.Jammer))
