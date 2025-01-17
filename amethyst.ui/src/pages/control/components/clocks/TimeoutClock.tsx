@@ -2,6 +2,7 @@ import { TimeoutClockState } from "@/types";
 import { Clock, ClockProps } from "./Clock";
 import { useCurrentGame, useEvents, useGameState } from "@/hooks";
 import { TimeoutClockSet } from "@/types/events";
+import { useMemo } from "react";
 
 type TimeoutClockProps = Omit<ClockProps, "seconds" | "isRunning" | "direction" | "startValue">;
 
@@ -11,6 +12,8 @@ export const TimeoutClock = (props: TimeoutClockProps) => {
     const { currentGame } = useCurrentGame();
 
     const { sendEvent } = useEvents();
+
+    const isRunning = useMemo(() => clockState?.isRunning ?? false, [clockState, currentGame]);
 
     const handleClockSet = (value: number) => {
         if(!currentGame) {
@@ -23,7 +26,7 @@ export const TimeoutClock = (props: TimeoutClockProps) => {
     return (
         <Clock
             seconds={clockState?.secondsPassed}
-            isRunning={clockState?.isRunning ?? false}
+            isRunning={isRunning}
             direction="up" 
             onClockSet={handleClockSet}
             {...props} 

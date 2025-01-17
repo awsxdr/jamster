@@ -1,6 +1,5 @@
 import { CSSProperties, PropsWithChildren } from 'react';
 import { cn } from '@/lib/utils';
-import { SCOREBOARD_TEXT_PADDING_CLASS_NAME } from '../Scoreboard';
 import { ScaledText } from '@/components/ScaledText';
 
 type ScoreboardComponentProps = {
@@ -24,8 +23,7 @@ export const ScoreboardComponent = ({ header, style, className, headerClassName,
                     className={cn(
                         "bg-gray-300 text-center font-bold",
                         "rounded-t-md sm:rounded-t-lg md:rounded-t-xl xl:rounded-t-3xl",
-                        "w-full h-[80%]",
-                        SCOREBOARD_TEXT_PADDING_CLASS_NAME,
+                        "w-full h-[60%] p-1",
                         headerClassName,
                     )}
                     text={header}
