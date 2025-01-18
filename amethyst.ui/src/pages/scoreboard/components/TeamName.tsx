@@ -3,7 +3,6 @@ import { ScaledText } from "../../../components/ScaledText";
 import { useMemo } from "react";
 import { DisplayConfiguration, TeamSide } from "@/types";
 import { cn } from "@/lib/utils";
-import { SCOREBOARD_TEXT_PADDING_CLASS_NAME } from "../Scoreboard";
 
 type TeamScoreProps = {
     side: TeamSide,
