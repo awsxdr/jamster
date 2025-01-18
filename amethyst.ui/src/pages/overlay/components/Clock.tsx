@@ -31,6 +31,7 @@ export const Clock = () => {
             : stage === Stage.Jam ? translate("Overlay.Clock.Jam")
             : stage === Stage.Timeout ? getTimeoutText()
             : stage === Stage.AfterTimeout ? translate("Overlay.Clock.Timeout")
+            : stage === Stage.Intermission ? translate("Overlay.Clock.Intermission")
             : ""
         , [stage]);
 

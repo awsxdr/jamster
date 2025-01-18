@@ -119,6 +119,7 @@ const languages: Languages = {
         "NewTeamDialog.Title": "New team",
         "Overlay.Title": "Stream overlay",
         "Overlay.Clock.FinalScore": "Final score",
+        "Overlay.Clock.Intermission": "Intermission",
         "Overlay.Clock.Jam": "Jam",
         "Overlay.Clock.Lineup": "Lineup",
         "Overlay.Clock.OfficialTimeout": "Official timeout",
