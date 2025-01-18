@@ -34,7 +34,7 @@ export const TeamName = ({ side, textClassName }: TeamScoreProps) => {
 
     return (
         <div 
-            className={cn("flex justify-center h-full overflow-hidden rounded-md sm:rounded-lg md:rounded-xl xl:rounded-3xl", SCOREBOARD_TEXT_PADDING_CLASS_NAME)}
+            className={cn("flex justify-center h-full overflow-hidden rounded-md sm:rounded-lg md:rounded-xl xl:rounded-3xl p-1")}
             style={{ color: foreground, backgroundColor: background }}
         >
             <ScaledText 

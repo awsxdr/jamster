@@ -6,6 +6,7 @@ import { useI18n, useJamLineupState, useJamStatsState, useTeamDetailsState } fro
 import { useMemo } from "react";
 import { ScaledText } from "@/components/ScaledText";
 import { cn } from "@/lib/utils";
+import { SCOREBOARD_GAP_CLASS_NAME } from "../Scoreboard";
 
 type JamDetailsProps = {
     gameStage: GameStageState;
@@ -45,26 +46,38 @@ export const JamDetails = ({ gameStage, visible }: JamDetailsProps) => {
     const homeIsLead = useMemo(() => homeStats?.lead && !homeStats?.lost, [homeStats]);
     const awayIsLead = useMemo(() => awayStats?.lead && !awayStats?.lost, [awayStats]);
 
-    const jammerNameClassName = "w-full h-full justify-center text-center [-webkit-text-stroke-color:#000] [-webkit-text-stroke-width:.1rem] text-white";
+    const jammerNameClassName = "w-full h-full justify-center text-center [-webkit-text-stroke-color:#000] [-webkit-text-stroke-width:.1rem] text-white font-bold";
 
     return (
-        <ClocksBar visible={visible} className="flex-col overflow-visible">
-            <div className="h-[40%] flex">
-                <div className={cn("w-1/2 h-full flex")}>
-                    <ScaledText text={homeJammerText} className={cn(jammerNameClassName, homeIsLead ? "animate-pulse-scale" : "")} />
+        <ClocksBar 
+            visible={visible} 
+            className="flex-col overflow-visible" 
+            topPanel={
+                <>
+                    <div className={cn("w-1/2 h-full flex")}>
+                        <ScaledText text={homeJammerText} className={cn(jammerNameClassName, homeIsLead ? "animate-pulse-scale" : "")} />
+                    </div>
+                    <div className="w-1/2 h-full flex">
+                        <ScaledText text={awayJammerText} className={cn(jammerNameClassName, awayIsLead ? "animate-pulse-scale" : "")} />
+                    </div>
+                </>
+            }
+            bottomPanel={
+                <div className={cn("flex w-full h-full", SCOREBOARD_GAP_CLASS_NAME)}>
+                    <ScoreboardComponent className="w-1/2 h-full" header={`${translate("Scoreboard.JamDetails.Period")} ${gameStage.periodNumber}`}>
+                        <PeriodClock 
+                            textClassName="flex justify-center items-center grow overflow-hidden" 
+                            autoScale 
+                        />
+                    </ScoreboardComponent>
+                    <ScoreboardComponent className="w-1/2 h-full" header={`${translate("Scoreboard.JamDetails.Jam")} ${gameStage.jamNumber}`}>
+                        <JamClock 
+                            textClassName="flex justify-center items-center grow overflow-hidden" 
+                            autoScale 
+                        />
+                    </ScoreboardComponent>
                 </div>
-                <div className="w-1/2 h-full flex">
-                    <ScaledText text={awayJammerText} className={cn(jammerNameClassName, awayIsLead ? "animate-pulse-scale" : "")} />
-                </div>
-            </div>
-            <div className="h-[60%] flex gap-1 md:gap-2 lg:gap-5">
-                <ScoreboardComponent className="w-1/2 h-full" header={`${translate("Scoreboard.JamDetails.Period")} ${gameStage.periodNumber}`}>
-                    <PeriodClock textClassName="flex justify-center items-center h-full m-2 overflow-hidden" autoScale />
-                </ScoreboardComponent>
-                <ScoreboardComponent className="w-1/2 h-full" header={`${translate("Scoreboard.JamDetails.Jam")} ${gameStage.jamNumber}`}>
-                    <JamClock textClassName="flex justify-center items-center h-full m-2 overflow-hidden" autoScale />
-                </ScoreboardComponent>
-            </div>
-        </ClocksBar>
+            } 
+        />
     );
 }

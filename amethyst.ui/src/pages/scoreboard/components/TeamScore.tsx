@@ -4,7 +4,6 @@ import { TeamSide } from "@/types";
 import { ScoreboardComponent } from "./ScoreboardComponent";
 import { cn } from "@/lib/utils";
 import { Star, StarOff } from "lucide-react";
-import { SCOREBOARD_TEXT_PADDING_CLASS_NAME } from "../Scoreboard";
 
 type TeamScoreProps = {
     side: TeamSide,
@@ -18,7 +17,7 @@ export const TeamScore = ({ side, textClassName }: TeamScoreProps) => {
     
 
     return (
-        <ScoreboardComponent className={cn("grow-[8] p-2 relative", SCOREBOARD_TEXT_PADDING_CLASS_NAME)}>
+        <ScoreboardComponent className={cn("grow-[8] relative p-1")}>
             { lead &&
                 <div className="absolute left-0 right-0 top-1 md:top-2 lg:top-3 xl:top-[2vh] flex justify-center">
                     { lost ? <StarOff className="w-full h-[5vh]" /> : <Star className="w-full h-[5vh]" /> }

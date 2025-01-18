@@ -23,7 +23,7 @@ export const ScoreboardComponent = ({ header, style, className, headerClassName,
                     className={cn(
                         "bg-gray-300 text-center font-bold",
                         "rounded-t-md sm:rounded-t-lg md:rounded-t-xl xl:rounded-t-3xl",
-                        "w-full h-[60%] p-1",
+                        "w-full h-[35%] p-1",
                         headerClassName,
                     )}
                     text={header}

@@ -26,17 +26,21 @@ export const TimeoutDetails = ({ gameStage, visible }: TimeoutDetailsProps) => {
     , [type, language]);
     
     return (
-        <ClocksBar visible={visible} className={cn("flex-col", SCOREBOARD_GAP_CLASS_NAME)}>
-            <div className="h-[40%] flex">
-            </div>
-            <div className={cn("h-[60%] flex", SCOREBOARD_GAP_CLASS_NAME)}>
+        <ClocksBar visible={visible} className={cn("flex-col", SCOREBOARD_GAP_CLASS_NAME)} bottomPanel={
+            <div className={cn("flex w-full h-full", SCOREBOARD_GAP_CLASS_NAME)}>
                 <ScoreboardComponent className="w-1/2 h-full" header={`${translate("Scoreboard.TimeoutDetails.Period")} ${gameStage.periodNumber} | ${translate("Scoreboard.TimeoutDetails.Jam")} ${gameStage.jamNumber}`}>
-                    <PeriodClock textClassName="flex justify-center items-center h-full m-2 overflow-hidden" autoScale />
+                    <PeriodClock 
+                        textClassName="flex justify-center items-center grow overflow-hidden" 
+                        autoScale 
+                    />
                 </ScoreboardComponent>
                 <ScoreboardComponent className="w-1/2 h-full" header={timeoutTypeName} headerClassName="bg-red-300">
-                    <TimeoutClock textClassName="flex justify-center items-center h-full m-2 overflow-hidden" autoScale />
+                    <TimeoutClock 
+                        textClassName="flex justify-center items-center grow overflow-hidden" 
+                        autoScale 
+                    />
                 </ScoreboardComponent>
             </div>
-        </ClocksBar>
+        } />
     );
 }

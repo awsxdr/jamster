@@ -4,7 +4,6 @@ import { ScoreboardComponent } from "./ScoreboardComponent";
 import { TeamSide } from "@/types";
 
 import { cn } from "@/lib/utils";
-import { SCOREBOARD_TEXT_PADDING_CLASS_NAME } from "../Scoreboard";
 
 type JamScoreProps = {
     side: TeamSide,
@@ -17,7 +16,7 @@ export const JamScore = ({ side, textClassName }: JamScoreProps) => {
     const { hasCompletedInitial } = useJamStatsState(side) ?? { hasCompletedInitial: false };
     
     return (
-        <ScoreboardComponent className={cn("h-2/5 w-full", SCOREBOARD_TEXT_PADDING_CLASS_NAME, !hasCompletedInitial && "bg-gray-400")}>
+        <ScoreboardComponent className={cn("h-2/5 w-full p-1 font-bold", !hasCompletedInitial && "bg-gray-300")}>
             <ScaledText 
                 text={jamScore.toString()} 
                 className={cn("flex justify-center items-center h-full overflow-hidden", textClassName)} 
