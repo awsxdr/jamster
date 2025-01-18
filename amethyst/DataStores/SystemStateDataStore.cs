@@ -9,7 +9,7 @@ public interface ISystemStateDataStore : IDisposable
     void SetCurrentGame(Guid gameId);
 }
 
-public class SystemStateDataStore : DataStore
+public class SystemStateDataStore : DataStore, ISystemStateDataStore
 {
     private const string CurrentGameKey = "current_game";
 

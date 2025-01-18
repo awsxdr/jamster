@@ -82,68 +82,6 @@ public class TeamsDataStore : DataStore, ITeamsDataStore
 
     protected override void ApplyUpgrade(int version)
     {
-        #region Database upgrades
-        switch (version)
-        {
-            case 1:
-                break;
-
-            case 2:
-            case 3:
-            {
-                var items = 
-                    GetAllItemsAsJsonObjects()
-                        .Select(i => new 
-                        {
-                            Id = i["Id"]!.GetValue<Guid>(),
-                            Names = i["Names"]!.AsObject().ToDictionary(k => k.Key, v => v.Value!.GetValue<string>()),
-                            Colors = new Dictionary<string, Dictionary<string, DisplayColor>>
-                            {
-                                ["Legacy"] = i["Colors"]!.AsObject().ToDictionary(k => k.Key, v => v.Value!.Deserialize<DisplayColor>()!)
-                            },
-                            Roster = i["Roster"]!.AsArray().Select(n => n!.Deserialize<Skater>()!).ToList(),
-                            LastUpdateTime = _systemTime.UtcNow()
-                        })
-                        .ToArray();
-
-                foreach (var item in items)
-                {
-                    _teamsTable.Update(item.Id, JsonSerializer.SerializeToNode(item)!.AsObject());
-                }
-
-                break;
-            }
-
-            case 4:
-            {
-                    var items =
-                        GetAllItemsAsJsonObjects()
-                            .Select(i => new
-                            {
-                                Id = i["Id"]!.GetValue<Guid>(),
-                                Names = i["Names"]!.AsObject().ToDictionary(k => k.Key, v => v.Value!.GetValue<string>()),
-                                Colors = i["Colors"]!.AsObject().ToDictionary(
-                                    k => k.Key,
-                                    v => v.Value!.AsObject()[v.Key]!.AsObject().Map(c => new
-                                    {
-                                        ShirtColor = c["Background"]!.GetValue<string>(),
-                                        ComplementaryColor = c["Foreground"]!.GetValue<string>(),
-                                    })
-                                ),
-                                Roster = i["Roster"]!.AsArray().Select(n => n!.Deserialize<Skater>()!).ToList(),
-                                LastUpdateTime = _systemTime.UtcNow()
-                            })
-                            .ToArray();
-
-                    foreach (var item in items)
-                    {
-                        _teamsTable.Update(item.Id, JsonSerializer.SerializeToNode(item)!.AsObject());
-                    }
-
-                    break;
-            }
-        }
-        #endregion
     }
 
     private IEnumerable<JsonObject> GetAllItemsAsJsonObjects() =>

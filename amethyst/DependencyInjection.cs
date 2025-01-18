@@ -61,6 +61,8 @@ internal static class DependencyInjection
 
     internal static void RegisterDataStores(this ContainerBuilder builder)
     {
+        builder.RegisterType<DataTableFactory>().As<IDataTableFactory>().SingleInstance();
+
         builder.RegisterType<SystemStateDataStore>().As<ISystemStateDataStore>().SingleInstance();
         builder.RegisterType<SystemStateStore>().As<ISystemStateStore>().SingleInstance();
         builder.RegisterType<TeamsDataStore>().As<ITeamsDataStore>().SingleInstance();
