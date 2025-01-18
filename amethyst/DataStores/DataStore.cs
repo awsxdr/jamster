@@ -1,10 +1,4 @@
-﻿using System.Text.Json;
-using System.Text.Json.Nodes;
-using amethyst.Domain;
-using Func;
-using SQLite;
-
-using static Func.Result;
+﻿using SQLite;
 
 namespace amethyst.DataStores;
 
@@ -15,23 +9,15 @@ public interface IDataStore : IDisposable
 
 public delegate ISQLiteConnection ConnectionFactory(string connectionString, SQLiteOpenFlags flags);
 
-public abstract class DataStore<TData, TKey> : IDataStore
-    where TData : new()
+public abstract class DataStore : IDataStore
 {
-    private readonly KeySelector _keySelector;
-    private readonly string _tableName;
-
-    protected delegate TKey KeySelector(TData dataItem);
-
+    private readonly IDataTableFactory _dataTableFactory;
     public ISQLiteConnection Connection { get; }
 
-    protected DataStore(string databaseName, int version, KeySelector keySelector, ConnectionFactory connectionFactory)
+    protected DataStore(string databaseName, int version, ConnectionFactory connectionFactory, IDataTableFactory dataTableFactory)
     {
-        _keySelector = keySelector;
-        _tableName = typeof(TData).Name;
+        _dataTableFactory = dataTableFactory;
         Connection = connectionFactory(Path.Combine(RunningEnvironment.RootPath, "db", $"{databaseName}.db"), SQLiteOpenFlags.Create | SQLiteOpenFlags.ReadWrite);
-
-        Connection.Execute($"CREATE TABLE IF NOT EXISTS {_tableName} (id BLOB PRIMARY KEY, data TEXT, isArchived INTEGER)");
 
         Connection.Execute("CREATE TABLE IF NOT EXISTS __version (version INTEGER PRIMARY KEY)");
         var currentVersion = Connection.QueryScalars<int>("SELECT version FROM __version LIMIT 1").SingleOrDefault();
@@ -55,80 +41,12 @@ public abstract class DataStore<TData, TKey> : IDataStore
 
     protected abstract void ApplyUpgrade(int version);
 
-    protected IEnumerable<TData> GetAll() =>
-        Connection.Query<DataStoreItem>($"SELECT * FROM {_tableName} WHERE isArchived = FALSE", _tableName)
-            .Select(MapItem);
-
-    protected IEnumerable<DataStoreItem> GetAllItems() =>
-        Connection.Query<DataStoreItem>($"SELECT * FROM {_tableName}", _tableName);
-
-    protected Result<TData> Get(TKey key) =>
-        Connection.Query<DataStoreItem>($"SELECT id, data FROM {_tableName} WHERE id = ? AND isArchived = FALSE LIMIT 1", key)
-            .Select(MapItem)
-            .SingleOrDefault()
-            ?.Map(x => Succeed(x!))
-        ?? Result<TData>.Fail<NotFoundError>();
-
-    protected Result<TData> GetIncludingArchived(TKey key) =>
-        Connection.Query<DataStoreItem>($"SELECT id, data FROM {_tableName} WHERE id = ? LIMIT 1", key)
-            .Select(MapItem)
-            .SingleOrDefault()
-            ?.Map(x => Succeed(x!))
-        ?? Result<TData>.Fail<NotFoundError>();
-
-    protected void Insert(TData item) =>
-        Connection.Execute($"INSERT INTO {_tableName} (id, data, isArchived) VALUES (?, ?, FALSE)", _keySelector(item), Serialize(item));
-
-    protected void Upsert(TData item)
-    {
-        var key = _keySelector(item);
-        var data = Serialize(item);
-
-        Connection.Execute(
-            $"INSERT INTO {_tableName} (id, data, isArchived) VALUES (?, ?, FALSE) ON CONFLICT DO UPDATE SET data = ? WHERE id = ?",
-            key,
-            data,
-            data,
-            key);
-    }
-
-    protected Result Archive(TKey key) =>
-        Connection.Query<int>($"UPDATE {_tableName} SET isArchived = TRUE WHERE id = ? RETURNING 0", key).Count switch
-        {
-            1 => Succeed(),
-            0 => Fail<TeamNotFoundError>(),
-            _ => throw new UnexpectedUpdateCountException()
-        };
-
-    protected Result Update(TKey key, TData item) => Update(key, Serialize(item));
-    protected Result Update(TKey key, JsonObject item) => Update(key, item.ToJsonString());
-
-    private Result Update(TKey key, string itemJson) =>
-        Connection.Query<int>($"UPDATE {_tableName} SET data = ? WHERE isArchived = FALSE AND id = ? RETURNING 0", itemJson, key).Count switch
-        {
-            1 => Succeed(),
-            0 => Fail<TeamNotFoundError>(),
-            _ => throw new UnexpectedUpdateCountException()
-        };
-
-    protected bool Exists(TKey key) =>
-        Connection.ExecuteScalar<int>($"SELECT COUNT(id) FROM {_tableName} WHERE isArchived = FALSE AND id = ? LIMIT 1", key) == 1;
-
-    private static TData MapItem(DataStoreItem item) =>
-        JsonSerializer.Deserialize<TData>(item.Data) ?? new();
-
-    private static string Serialize(TData data) => JsonSerializer.Serialize(data);
+    protected IDataTable<TData, TKey> GetTable<TData, TKey>(KeySelector<TData, TKey> keySelector) where TData : new() =>
+        _dataTableFactory.Create(keySelector, Connection);
 
     public void Dispose()
     {
         Connection.Dispose();
-    }
-
-    protected record DataStoreItem(TKey Id, string Data, bool IsArchived)
-    {
-        public DataStoreItem() : this(default!, string.Empty, false)
-        {
-        }
     }
 }
 

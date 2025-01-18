@@ -17,15 +17,24 @@ public interface ITeamsDataStore
     Result SetRoster(Guid teamId, IEnumerable<Skater> skaters);
 }
 
-public class TeamsDataStore(ConnectionFactory connectionFactory, ISystemTime systemTime) 
-    : DataStore<Team, Guid>("teams", 4, t => t.Id, connectionFactory)
-    , ITeamsDataStore
+public class TeamsDataStore : DataStore, ITeamsDataStore
 {
-    public IEnumerable<Team> GetTeams() =>
-        GetAll().ToArray();
+    private readonly ISystemTime _systemTime;
+    private readonly IDataTable<Team, Guid> _teamsTable;
 
-    public Result<Team> GetTeam(Guid teamId) => 
-        Get(teamId) switch
+    public TeamsDataStore(ConnectionFactory connectionFactory, IDataTableFactory dataTableFactory, ISystemTime systemTime)
+        : base("teams", 4, connectionFactory, dataTableFactory)
+    {
+        _systemTime = systemTime;
+
+        _teamsTable = GetTable<Team, Guid>(t => t.Id);
+    }
+
+    public IEnumerable<Team> GetTeams() =>
+        _teamsTable.GetAll().ToArray();
+
+    public Result<Team> GetTeam(Guid teamId) =>
+        _teamsTable.Get(teamId) switch
         {
             Success<Team> s => s,
             Failure<NotFoundError> => Result<Team>.Fail<TeamNotFoundError>(),
@@ -33,7 +42,7 @@ public class TeamsDataStore(ConnectionFactory connectionFactory, ISystemTime sys
         };
 
     public Result<Team> GetTeamIncludingArchived(Guid teamId) =>
-        GetIncludingArchived(teamId) switch
+        _teamsTable.GetIncludingArchived(teamId) switch
         {
             Success<Team> s => s,
             Failure<NotFoundError> => Result<Team>.Fail<TeamNotFoundError>(),
@@ -44,16 +53,16 @@ public class TeamsDataStore(ConnectionFactory connectionFactory, ISystemTime sys
     {
         var newTeam = team with {Id = Guid.NewGuid()};
 
-        Insert(newTeam);
+        _teamsTable.Insert(newTeam);
 
         return newTeam;
     }
 
     public Result UpdateTeam(Team team) =>
-        Update(team.Id, team);
+        _teamsTable.Update(team.Id, team);
 
     public Result ArchiveTeam(Guid teamId) =>
-        Archive(teamId) switch
+        _teamsTable.Archive(teamId) switch
         {
             Success s => s,
             Failure<NotFoundError> => Result.Fail<TeamNotFoundError>(),
@@ -61,9 +70,9 @@ public class TeamsDataStore(ConnectionFactory connectionFactory, ISystemTime sys
         };
 
     public Result SetRoster(Guid teamId, IEnumerable<Skater> skaters) =>
-        Get(teamId)
+        _teamsTable.Get(teamId)
                 .ThenMap(team => team with {Roster = skaters.ToList()})
-                .Then(Update, teamId)
+                .Then(_teamsTable.Update, teamId)
             switch
             {
                 Success s => s,
@@ -93,13 +102,13 @@ public class TeamsDataStore(ConnectionFactory connectionFactory, ISystemTime sys
                                 ["Legacy"] = i["Colors"]!.AsObject().ToDictionary(k => k.Key, v => v.Value!.Deserialize<DisplayColor>()!)
                             },
                             Roster = i["Roster"]!.AsArray().Select(n => n!.Deserialize<Skater>()!).ToList(),
-                            LastUpdateTime = systemTime.UtcNow()
+                            LastUpdateTime = _systemTime.UtcNow()
                         })
                         .ToArray();
 
                 foreach (var item in items)
                 {
-                    Update(item.Id, JsonSerializer.SerializeToNode(item)!.AsObject());
+                    _teamsTable.Update(item.Id, JsonSerializer.SerializeToNode(item)!.AsObject());
                 }
 
                 break;
@@ -122,13 +131,13 @@ public class TeamsDataStore(ConnectionFactory connectionFactory, ISystemTime sys
                                     })
                                 ),
                                 Roster = i["Roster"]!.AsArray().Select(n => n!.Deserialize<Skater>()!).ToList(),
-                                LastUpdateTime = systemTime.UtcNow()
+                                LastUpdateTime = _systemTime.UtcNow()
                             })
                             .ToArray();
 
                     foreach (var item in items)
                     {
-                        Update(item.Id, JsonSerializer.SerializeToNode(item)!.AsObject());
+                        _teamsTable.Update(item.Id, JsonSerializer.SerializeToNode(item)!.AsObject());
                     }
 
                     break;
@@ -138,7 +147,7 @@ public class TeamsDataStore(ConnectionFactory connectionFactory, ISystemTime sys
     }
 
     private IEnumerable<JsonObject> GetAllItemsAsJsonObjects() =>
-        GetAllItems()
+        _teamsTable.GetAllItems()
             .Select(i => JsonNode.Parse(i.Data))
             .Cast<JsonObject>();
 }

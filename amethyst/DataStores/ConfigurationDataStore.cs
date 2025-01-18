@@ -13,29 +13,38 @@ public interface IConfigurationDataStore : IDataStore
     Result SetConfiguration(object configuration, Type configurationType);
 }
 
-public class ConfigurationDataStore(ConnectionFactory connectionFactory, IDefaultConfigurationFactory defaultConfigurationFactory) 
-    : DataStore<ConfigurationDataItem, string>("configurations", 1, i => i.ConfigurationTypeName, connectionFactory)
+public class ConfigurationDataStore 
+    : DataStore
     , IConfigurationDataStore
 {
     private static readonly JsonSerializerOptions SerializerOptions = GetSerializerOptions();
+    private readonly IDataTable<ConfigurationDataItem, string> _configurationTable;
+    private readonly IDefaultConfigurationFactory _defaultConfigurationFactory;
+
+    public ConfigurationDataStore(ConnectionFactory connectionFactory, IDataTableFactory dataTableFactory, IDefaultConfigurationFactory defaultConfigurationFactory)
+        : base("configurations", 1, connectionFactory, dataTableFactory)
+    {
+        _defaultConfigurationFactory = defaultConfigurationFactory;
+        _configurationTable = GetTable<ConfigurationDataItem, string>(c => c.ConfigurationTypeName);
+    }
 
     public Result<TConfiguration> GetConfiguration<TConfiguration>() where TConfiguration : class =>
-        Get(typeof(TConfiguration).Name).Then(MapConfiguration<TConfiguration>)
-        .Else<TConfiguration>(_ => defaultConfigurationFactory.GetDefaultConfiguration<TConfiguration>());
+        _configurationTable.Get(typeof(TConfiguration).Name).Then(MapConfiguration<TConfiguration>)
+        .Else<TConfiguration>(_ => _defaultConfigurationFactory.GetDefaultConfiguration<TConfiguration>());
 
     public Result<object> GetConfiguration(Type configurationType) =>
-        Get(configurationType.Name).Then(MapConfiguration)
-            .Else<object>(_ => defaultConfigurationFactory.GetDefaultConfiguration(configurationType));
+        _configurationTable.Get(configurationType.Name).Then(MapConfiguration)
+            .Else<object>(_ => _defaultConfigurationFactory.GetDefaultConfiguration(configurationType));
 
     public Result SetConfiguration<TConfiguration>(TConfiguration configuration) where TConfiguration : class =>
         SetConfiguration(configuration, typeof(TConfiguration));
 
     public Result SetConfiguration(object configuration, Type configurationType)
     {
-        if (!defaultConfigurationFactory.IsKnownConfigurationType(configurationType))
+        if (!_defaultConfigurationFactory.IsKnownConfigurationType(configurationType))
             return Result.Fail<ConfigurationTypeNotKnownError>();
 
-        Upsert(new ConfigurationDataItem
+        _configurationTable.Upsert(new ConfigurationDataItem
         {
             ConfigurationTypeName = configurationType.Name,
             ConfigurationJson = JsonSerializer.Serialize(configuration, SerializerOptions)
@@ -54,7 +63,7 @@ public class ConfigurationDataStore(ConnectionFactory connectionFactory, IDefaul
         : Result<TConfiguration>.Fail<ConfigurationTypesDoNotMatchError>();
 
     private Result<object> MapConfiguration(ConfigurationDataItem item) =>
-        defaultConfigurationFactory.GetKnownConfigurationTypeForKey(item.ConfigurationTypeName)
+        _defaultConfigurationFactory.GetKnownConfigurationTypeForKey(item.ConfigurationTypeName)
             .Then(configurationType =>
                 JsonSerializer.Deserialize(item.ConfigurationJson, configurationType, SerializerOptions)?.Map(Result.Succeed)
                 ?? Result<object>.Fail<ConfigurationJsonInvalidError>());

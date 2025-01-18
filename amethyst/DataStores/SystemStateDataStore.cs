@@ -9,20 +9,27 @@ public interface ISystemStateDataStore : IDisposable
     void SetCurrentGame(Guid gameId);
 }
 
-public class SystemStateDataStore(ConnectionFactory connectionFactory)
-    : DataStore<SystemStateItem, string>("system", 1, i => i.Key, connectionFactory), ISystemStateDataStore
+public class SystemStateDataStore : DataStore
 {
     private const string CurrentGameKey = "current_game";
 
+    private readonly IDataTable<SystemStateItem, string> _systemStateTable;
+
+    public SystemStateDataStore(ConnectionFactory connectionFactory, IDataTableFactory dataTableFactory)
+        : base("system", 1, connectionFactory, dataTableFactory)
+    {
+        _systemStateTable = GetTable<SystemStateItem, string>(s => s.Key);
+    }
+
     public Result<Guid> GetCurrentGame() =>
-        Get(CurrentGameKey) switch
+        _systemStateTable.Get(CurrentGameKey) switch
         {
             Success<SystemStateItem> s when Guid.TryParse(s.Value.Value, out var id) => Result.Succeed(id),
             _ => Result<Guid>.Fail<CurrentGameNotFoundError>()
         };
 
     public void SetCurrentGame(Guid gameId) =>
-        Upsert(new(CurrentGameKey, gameId.ToString()));
+        _systemStateTable.Upsert(new(CurrentGameKey, gameId.ToString()));
 
     protected override void ApplyUpgrade(int version)
     {
