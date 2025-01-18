@@ -1,5 +1,5 @@
 import { Button, Collapsible, CollapsibleContent, CollapsibleTrigger, Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from "@components/ui"
-import { Captions, ChartNoAxesCombined, ChevronDown, ChevronLeft, ChevronRight, Keyboard, List, MonitorCog, TvMinimal, Users } from "lucide-react"
+import { Captions, ChartNoAxesCombined, ChevronDown, ChevronLeft, ChevronRight, CircleHelp, Keyboard, List, MonitorCog, TvMinimal, Users } from "lucide-react"
 import { ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { LanguageMenu } from "./LanguageMenu";
@@ -110,8 +110,8 @@ export const MenuSidebar = () => {
                                 <SidebarMenu>
                                     {group.items.map(item =>
                                         <SidebarMenuItem key={item.title}>
-                                            <SidebarMenuButton asChild isActive={location.pathname.startsWith(item.href)}>
-                                                <Link to={item.href}>
+                                            <SidebarMenuButton asChild isActive={location.pathname.startsWith(item.href)} tooltip={translate(item.title)}>
+                                                <Link to={item.href} onClick={() => isMobile && toggleSidebar()}>
                                                     {item.icon}
                                                     <span>{translate(item.title)}</span>
                                                 </Link>
@@ -155,6 +155,14 @@ export const MenuSidebar = () => {
                 <SidebarMenu>
                     <LanguageMenu />
                     <ThemeMenu />
+                    <SidebarMenuItem>
+                        <SidebarMenuButton asChild tooltip={translate("MenuSidebar.Help")}>
+                            <Link to="/help" onClick={() => isMobile && toggleSidebar()}>
+                                <CircleHelp />
+                                <span>{translate("MenuSidebar.Help")}</span>
+                            </Link>
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
                 </SidebarMenu>
             </SidebarFooter>
         </Sidebar>

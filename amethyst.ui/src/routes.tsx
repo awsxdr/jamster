@@ -48,6 +48,10 @@ export const Routes = () => {
             element: <MainMenu content={<Timeline />} />
         },
         {
+            path: '/help',
+            element: <MainMenu content={<WorkInProgress />} />
+        },
+        {
             path: '/overlay',
             element: <Overlay />
         },

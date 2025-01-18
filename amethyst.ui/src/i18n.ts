@@ -82,6 +82,7 @@ const languages: Languages = {
         "MenuSidebar.DataGroup": "Data",
         "MenuSidebar.DisplaySettings": "Scoreboard display settings",
         "MenuSidebar.Games": "Games",
+        "MenuSidebar.Help": "Help",
         "MenuSidebar.MainGroup": "Main",
         "MenuSidebar.Overlay": "Streaming overlay",
         "MenuSidebar.OverlaySettings": "Streaming overlay settings",
