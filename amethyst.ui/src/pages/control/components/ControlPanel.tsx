@@ -1,10 +1,9 @@
 import { MainControls } from "./MainControls"
 import { TeamControls } from "./TeamControls"
-import { Stage, TeamSide } from "@/types";
+import { ControlPanelViewConfiguration, DEFAULT_CONTROL_PANEL_VIEW_CONFIGURATION, DisplaySide, Stage, TeamSide } from "@/types";
 import { ClocksContainer } from "./ClocksContainer";
 import { TimeoutTypePanel } from "./TimeoutTypePanel";
-import { useGameStageState, useHasServerConnection } from "@/hooks";
-import { DisplaySide, useUserSettings } from "@/hooks/UserSettings";
+import { useCurrentUserConfiguration, useGameStageState, useHasServerConnection } from "@/hooks";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui";
 import { WifiOff } from "lucide-react";
 import { TimeoutList } from "./TimeoutList";
@@ -22,7 +21,7 @@ export const ControlPanel = ({ gameId, disabled }: ControlPanelProps) => {
 
     const { stage, periodIsFinalized } = useGameStageState() ?? { stage: Stage.BeforeGame, periodIsFinalized: false };
 
-    const { userSettings } = useUserSettings();
+    const { configuration: viewConfiguration } = useCurrentUserConfiguration<ControlPanelViewConfiguration>("ControlPanelViewConfiguration", DEFAULT_CONTROL_PANEL_VIEW_CONFIGURATION);
 
     const teamControlsDisabled = 
         disabled  || stage === Stage.AfterGame && periodIsFinalized ? true
@@ -38,31 +37,31 @@ export const ControlPanel = ({ gameId, disabled }: ControlPanelProps) => {
                     <AlertDescription className="ml-2">Connection to the server has been lost. Please check that the software is running and that your connection to the computer running it is working.</AlertDescription>
                 </Alert>
             }
-            { userSettings.showClockControls && <MainControls gameId={gameId} disabled={disabled} /> }
-            { userSettings.showClockControls && <TimeoutTypePanel gameId={gameId} disabled={disabled} /> }
-            { (userSettings.showLineupControls || userSettings.showScoreControls || userSettings.showStatsControls) && (
+            { viewConfiguration.showClockControls && <MainControls gameId={gameId} disabled={disabled} /> }
+            { viewConfiguration.showClockControls && <TimeoutTypePanel gameId={gameId} disabled={disabled} /> }
+            { (viewConfiguration.showLineupControls || viewConfiguration.showScoreControls || viewConfiguration.showStatsControls) && (
                 <div className="w-full flex flex-wrap xl:flex-nowrap gap-2">
-                    { userSettings.displaySide !== DisplaySide.Away && 
+                    { viewConfiguration.displaySide !== DisplaySide.Away && 
                         <TeamControls 
                             side={TeamSide.Home} 
                             gameId={gameId} 
                             disabled={teamControlsDisabled} 
-                            className={userSettings.displaySide == DisplaySide.Both ? "xl:w-1/2" : ""} 
+                            className={viewConfiguration.displaySide == DisplaySide.Both ? "xl:w-1/2" : ""} 
                         /> 
                     }
-                    { userSettings.displaySide !== DisplaySide.Home && 
+                    { viewConfiguration.displaySide !== DisplaySide.Home && 
                         <TeamControls 
                             side={TeamSide.Away} 
                             gameId={gameId} 
                             disabled={teamControlsDisabled} 
-                            className={userSettings.displaySide == DisplaySide.Both ? "xl:w-1/2" : ""} 
+                            className={viewConfiguration.displaySide == DisplaySide.Both ? "xl:w-1/2" : ""} 
                         /> 
                     }
                 </div>
             )}
-            { userSettings.showClocks && <ClocksContainer /> }
-            { userSettings.showTimeoutList &&
-                <TimeoutList gameId={gameId} displaySide={userSettings.displaySide} />
+            { viewConfiguration.showClocks && <ClocksContainer /> }
+            { viewConfiguration.showTimeoutList &&
+                <TimeoutList gameId={gameId} displaySide={viewConfiguration.displaySide} />
             }
         </div>
     )

@@ -20,6 +20,10 @@ export const useConfiguration = <TConfiguration,>(configurationName: string) => 
     const [isConfigurationLoaded, setIsConfigurationLoaded] = useState(false);
     const { getConfiguration, setConfiguration } = useConfigurationApi();
 
+    if (context === undefined) {
+        throw new Error('useConfiguration must be used inside a UserSettingsProvider');
+    }
+
     useEffect(() => {
         (async () => {
             const initialValue = await getConfiguration<TConfiguration>(configurationName);
@@ -84,7 +88,7 @@ export const ConfigurationContextProvider = ({ children }: PropsWithChildren) =>
                 console.warn("Attempt to unwatch configuration with invalid handle", handle);
             }
 
-            const { [handle]: _, ...newNotifier } = n[configurationName] ?? {};
+            const { [handle]: _, ...newNotifier } = n[configurationName];
 
             return {
                 ...n,

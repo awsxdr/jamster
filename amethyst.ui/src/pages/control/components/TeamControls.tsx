@@ -1,22 +1,16 @@
-import { Card, CardContent } from "@/components/ui/card"
-import { useTeamDetailsState, useTripScoreState } from "@/hooks";
-import { TeamSide } from "@/types"
+import { useCurrentUserConfiguration, useEvents, useTeamDetailsState, useTripScoreState, Event, useShortcut } from "@/hooks";
+import { ControlPanelViewConfiguration, DEFAULT_CONTROL_PANEL_VIEW_CONFIGURATION, InputControls, TeamSide } from "@/types"
 import { useMemo } from "react";
 import { TeamScore } from "./TeamScore";
 import { Button } from "@/components/ui/button";
 import { TripScore } from "./TripScore";
-import { Event, useEvents } from "@/hooks/EventsApiHook";
-import { ScoreModifiedRelative } from "@/types/events/Scores";
-import { useHotkeys } from "react-hotkeys-hook";
 import { JamScore } from "./JamScore";
-import { SkaterOnTrack, SkaterPosition } from "@/types/events/JamLineup";
-import { useUserSettings } from "@/hooks/UserSettings";
 import { JamStats } from "./JamStats";
 import { TeamLineup } from "./TeamLineup";
-import { SeparatedCollection } from "@/components/SeparatedCollection";
-import { CallMarked, InitialTripCompleted, LeadMarked, LostMarked, StarPassMarked } from "@/types/events/JamStats";
-import { LastTripDeleted } from "@/types/events";
+import { CallMarked, InitialTripCompleted, LastTripDeleted, LeadMarked, LostMarked, ScoreModifiedRelative, SkaterOnTrack, SkaterPosition, StarPassMarked } from "@/types/events";
 import { cn } from "@/lib/utils";
+import { Card, CardContent } from "@/components/ui";
+import { SeparatedCollection } from "@/components";
 
 type TeamControlsProps = {
     gameId?: string;
@@ -29,7 +23,7 @@ export const TeamControls = ({ gameId, side, disabled, className }: TeamControls
 
     const { sendEvent } = useEvents();
 
-    const { userSettings } = useUserSettings();
+    const { configuration: viewConfiguration } = useCurrentUserConfiguration<ControlPanelViewConfiguration>("ControlPanelViewConfiguration", DEFAULT_CONTROL_PANEL_VIEW_CONFIGURATION);
 
     const team = useTeamDetailsState(side);
     const teamName = useMemo(() => {
@@ -98,34 +92,35 @@ export const TeamControls = ({ gameId, side, disabled, className }: TeamControls
         sendEventIfIdSet(new InitialTripCompleted(side, value));
     }
 
-    const tripShortcutKeys: string[] = [];
-    tripShortcutKeys[0] = side === TeamSide.Home ? "🠅a" : "🠅'";
-    tripShortcutKeys[4] = side === TeamSide.Home ? "🠅s" : "🠅#";
-
-    useHotkeys(side === TeamSide.Home ? 'a' : '\'', decrementScore, { preventDefault: true });
-    useHotkeys(side === TeamSide.Home ? 's' : '#', incrementScore, { preventDefault: true });
-    useHotkeys(side === TeamSide.Home ? 'shift+a' : 'shift+quote', () => setTripScore(0), { preventDefault: true });
-    useHotkeys(side === TeamSide.Home ? 'shift+s' : 'shift+#', () => setTripScore(4), { preventDefault: true });
+    const shortcutGroup: keyof InputControls = side === TeamSide.Home ? "homeScore" : "awayScore";
+    useShortcut(shortcutGroup, "incrementScore", incrementScore);
+    useShortcut(shortcutGroup, "decrementScore", decrementScore);
+    useShortcut(shortcutGroup, "setTripScoreUnknown", () => setTripScore(-1));
+    useShortcut(shortcutGroup, "setTripScore0", () => setTripScore(0));
+    useShortcut(shortcutGroup, "setTripScore1", () => setTripScore(1));
+    useShortcut(shortcutGroup, "setTripScore2", () => setTripScore(2));
+    useShortcut(shortcutGroup, "setTripScore3", () => setTripScore(3));
+    useShortcut(shortcutGroup, "setTripScore4", () => setTripScore(4));
 
     return (
         <Card className={cn("w-full inline-block", className)}>
             <CardContent className="py-0">
                 <SeparatedCollection>
                     { teamName && <div className="text-center text-xl">{teamName}</div> }
-                    { userSettings.showScoreControls && (
+                    { viewConfiguration.showScoreControls && (
                         <>
                             <div>
                                 <JamScore side={side} />
                                 <div className="flex w-full justify-center items-center">
-                                    <Button onClick={decrementScore} variant="secondary" disabled={!!disabled} className="text-md lg:text-xl">-1 [{side === TeamSide.Home ? 'a' : '\''}]</Button>
+                                    <Button onClick={decrementScore} variant="secondary" disabled={!!disabled} className="text-md lg:text-xl">-1</Button>
                                     <TeamScore side={side} />
-                                    <Button onClick={incrementScore} variant="secondary" disabled={!!disabled} className="text-md lg:text-xl" >+1 [{side === TeamSide.Home ? 's' : '#'}]</Button>
+                                    <Button onClick={incrementScore} variant="secondary" disabled={!!disabled} className="text-md lg:text-xl" >+1</Button>
                                 </div>
                             </div>
-                            <TripScore tripScore={tripScore?.score ?? -1} disabled={!!disabled} scoreShortcutKeys={tripShortcutKeys} onTripScoreSet={setTripScore} />
+                            <TripScore tripScore={tripScore?.score ?? -1} disabled={!!disabled} onTripScoreSet={setTripScore} />
                         </>
                     )}
-                    { userSettings.showStatsControls && (
+                    { viewConfiguration.showStatsControls && (
                         <>
                             <JamStats 
                                 side={side} 
@@ -138,7 +133,7 @@ export const TeamControls = ({ gameId, side, disabled, className }: TeamControls
                             />
                         </>
                     )}
-                    { userSettings.showLineupControls && (
+                    { viewConfiguration.showLineupControls && (
                         <TeamLineup side={side} disabled={disabled === true} onLineupSelected={handleLineupSelected} />
                     )}
                 </SeparatedCollection>

@@ -15,7 +15,6 @@ export const ScoreboardSettings = () => {
     }
 
     const handleLanguageChanged = (newLanguage: string) => {
-        console.log("Set language", newLanguage);
         setConfiguration({ ...configuration, language: newLanguage});
     }
 

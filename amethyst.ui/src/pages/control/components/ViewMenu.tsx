@@ -1,8 +1,8 @@
 import { Button, DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger } from "@/components/ui"
-import { useI18n } from "@/hooks";
+import { useCurrentUserConfiguration, useI18n } from "@/hooks";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { DisplaySide, useUserSettings } from "@/hooks/UserSettings"
 import { useWakeLock } from "@/hooks/WakeLock";
+import { ControlPanelViewConfiguration, DEFAULT_CONTROL_PANEL_VIEW_CONFIGURATION, DisplaySide } from "@/types";
 import { Check, Clock, Eye, Maximize2, NotebookPen, Package, Play, Table, Tally5, Timer, UsersRound } from "lucide-react"
 
 type ViewMenuProps = {
@@ -11,7 +11,7 @@ type ViewMenuProps = {
 
 export const ViewMenu = ({ disabled }: ViewMenuProps) => {
 
-    const { userSettings, setUserSettings } = useUserSettings();
+    const { configuration: viewConfiguration, setConfiguration: setViewConfiguration } = useCurrentUserConfiguration<ControlPanelViewConfiguration>("ControlPanelViewConfiguration", DEFAULT_CONTROL_PANEL_VIEW_CONFIGURATION);
 
     const IconSpacer = () => (<span className="w-[16px]"></span>);
     const isMobile = useIsMobile();
@@ -29,8 +29,8 @@ export const ViewMenu = ({ disabled }: ViewMenuProps) => {
     }
 
     const handleScoreboardOperatorPresetClick = () => {
-        setUserSettings(current => ({
-            ...current,
+        setViewConfiguration({
+            ...viewConfiguration,
             showClockControls: true,
             showScoreControls: true,
             showStatsControls: true,
@@ -38,24 +38,24 @@ export const ViewMenu = ({ disabled }: ViewMenuProps) => {
             showClocks: true,
             showTimeoutList: true,
             displaySide: DisplaySide.Both,
-        }));
+        });
     }
 
     const handleScorekeeperPresetClick = () => {
-        setUserSettings(current => ({
-            ...current,
+        setViewConfiguration({
+            ...viewConfiguration,
             showClockControls: false,
             showScoreControls: true,
             showStatsControls: true,
             showLineupControls: true,
             showClocks: true,
             showTimeoutList: false,
-        }));
+        });
     }
 
     const handleJamTimerPresetClick = () => {
-        setUserSettings(current => ({
-            ...current,
+        setViewConfiguration({
+            ...viewConfiguration,
             showClockControls: true,
             showScoreControls: false,
             showStatsControls: false,
@@ -63,43 +63,43 @@ export const ViewMenu = ({ disabled }: ViewMenuProps) => {
             showClocks: true,
             showTimeoutList: true,
             displaySide: DisplaySide.Both,
-        }));
+        });
     }
 
-    const toggleShowClockControls = () => setUserSettings(current => ({
-        ...current,
-        showClockControls: !current.showClockControls,
-    }));
+    const toggleShowClockControls = () => setViewConfiguration({
+        ...viewConfiguration,
+        showClockControls: !viewConfiguration.showClockControls,
+    });
 
-    const toggleShowScoreControls = () => setUserSettings(current => ({
-        ...current,
-        showScoreControls: !current.showScoreControls,
-    }));
+    const toggleShowScoreControls = () => setViewConfiguration({
+        ...viewConfiguration,
+        showScoreControls: !viewConfiguration.showScoreControls,
+    });
 
-    const toggleShowStatsControls = () => setUserSettings(current => ({
-        ...current,
-        showStatsControls: !current.showStatsControls,
-    }));
+    const toggleShowStatsControls = () => setViewConfiguration({
+        ...viewConfiguration,
+        showStatsControls: !viewConfiguration.showStatsControls,
+    });
 
-    const toggleShowLineupControls = () => setUserSettings(current => ({
-        ...current,
-        showLineupControls: !current.showLineupControls,
-    }));
+    const toggleShowLineupControls = () => setViewConfiguration({
+        ...viewConfiguration,
+        showLineupControls: !viewConfiguration.showLineupControls,
+    });
 
-    const toggleShowClocks = () => setUserSettings(current => ({
-        ...current,
-        showClocks: !current.showClocks,
-    }));
+    const toggleShowClocks = () => setViewConfiguration({
+        ...viewConfiguration,
+        showClocks: !viewConfiguration.showClocks,
+    });
 
-    const toggleShowTimeouts = () => setUserSettings(current => ({
-        ...current,
-        showTimeoutList: !current.showTimeoutList,
-    }));
+    const toggleShowTimeouts = () => setViewConfiguration({
+        ...viewConfiguration,
+        showTimeoutList: !viewConfiguration.showTimeoutList,
+    });
 
-    const setDisplaySide = (displaySide: DisplaySide) => setUserSettings(current => ({
-        ...current,
+    const setDisplaySide = (displaySide: DisplaySide) => setViewConfiguration({
+        ...viewConfiguration,
         displaySide
-    }));
+    });
 
     return (
         <DropdownMenu>
@@ -144,32 +144,32 @@ export const ViewMenu = ({ disabled }: ViewMenuProps) => {
                 <DropdownMenuSeparator />
                 <DropdownMenuGroup>
                     <DropdownMenuItem disabled={disabled} onClick={toggleShowClockControls}>
-                        { userSettings.showClockControls ? (<Check />) : (<IconSpacer />) }
+                        { viewConfiguration.showClockControls ? (<Check />) : (<IconSpacer />) }
                         <Play />
                         {translate("ViewMenu.ClockControls")}
                     </DropdownMenuItem>
                     <DropdownMenuItem disabled={disabled} onClick={toggleShowScoreControls}>
-                        { userSettings.showScoreControls ? (<Check />) : (<IconSpacer />) }
+                        { viewConfiguration.showScoreControls ? (<Check />) : (<IconSpacer />) }
                         <Tally5 />
                         {translate("ViewMenu.ScoreControls")}
                     </DropdownMenuItem>
                     <DropdownMenuItem disabled={disabled} onClick={toggleShowStatsControls}>
-                        { userSettings.showStatsControls ? (<Check />) : (<IconSpacer />) }
+                        { viewConfiguration.showStatsControls ? (<Check />) : (<IconSpacer />) }
                         <NotebookPen />
                         {translate("ViewMenu.StatsControls")}
                     </DropdownMenuItem>
                     <DropdownMenuItem disabled={disabled} onClick={toggleShowLineupControls}>
-                        { userSettings.showLineupControls ? (<Check />) : (<IconSpacer />) }
+                        { viewConfiguration.showLineupControls ? (<Check />) : (<IconSpacer />) }
                         <UsersRound />
                         {translate("ViewMenu.LineupControls")}
                     </DropdownMenuItem>
                     <DropdownMenuItem disabled={disabled} onClick={toggleShowClocks}>
-                        { userSettings.showClocks ? (<Check />) : (<IconSpacer />) }
+                        { viewConfiguration.showClocks ? (<Check />) : (<IconSpacer />) }
                         <Clock />
                         {translate("ViewMenu.Clocks")}
                     </DropdownMenuItem>
                     <DropdownMenuItem disabled={disabled} onClick={toggleShowTimeouts}>
-                        { userSettings.showTimeoutList ? (<Check />) : (<IconSpacer />) }
+                        { viewConfiguration.showTimeoutList ? (<Check />) : (<IconSpacer />) }
                         <Timer />
                         {translate("ViewMenu.Timeouts")}
                     </DropdownMenuItem>
@@ -180,7 +180,7 @@ export const ViewMenu = ({ disabled }: ViewMenuProps) => {
                     </DropdownMenuItem>
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />
-                <DropdownMenuRadioGroup value={userSettings.displaySide} onValueChange={v => setDisplaySide(DisplaySide[v as keyof typeof DisplaySide])}>
+                <DropdownMenuRadioGroup value={viewConfiguration.displaySide} onValueChange={v => setDisplaySide(DisplaySide[v as keyof typeof DisplaySide])}>
                     <DropdownMenuRadioItem disabled={disabled} value={DisplaySide.Both}>{translate("ViewMenu.BothTeams")}</DropdownMenuRadioItem>
                     <DropdownMenuRadioItem disabled={disabled} value={DisplaySide.Home}>{translate("ViewMenu.HomeTeam")}</DropdownMenuRadioItem>
                     <DropdownMenuRadioItem disabled={disabled} value={DisplaySide.Away}>{translate("ViewMenu.AwayTeam")}</DropdownMenuRadioItem>

@@ -13,11 +13,11 @@ type I18n = {
     setLanguage: (language: string) => void;
 }
 
-export const useI18n: () => I18n = () => {
+export const useI18n = (options?: { prefix?: string }): I18n => {
     const context = useContext(I18nContext);
 
     return {
-        translate: context.translate,
+        translate: (key: string) => context.translate((options?.prefix ?? "") + key),
         language: context.language,
         languages: context.languages,
         setLanguage: context.setLanguage

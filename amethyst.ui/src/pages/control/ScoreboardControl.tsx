@@ -5,7 +5,6 @@ import { GameStateContextProvider, useCreateGame, useCurrentGame, useGamesList, 
 import { useSearchParams } from "react-router-dom";
 import { ControlPanel } from "./components/ControlPanel";
 import { NewGameCreated, NewGameDialog, NewGameDialogContainer } from "../../components/NewGameDialog";
-import { UserSettingsProvider } from "@/hooks/UserSettings";
 
 export const ScoreboardControl = () => {
     const games = useGamesList();
@@ -52,29 +51,27 @@ export const ScoreboardControl = () => {
     return (
         <>
             <title>{translate("ScoreboardControl.Title")} | {translate("Main.Title")}</title>
-            <UserSettingsProvider>
-                <NewGameDialogContainer open={newGameDialogOpen} onOpenChange={setNewGameDialogOpen}>
-                    <GameToolbar 
-                        games={games} 
-                        currentGame={currentGame} 
-                        onCurrentGameIdChanged={setCurrentGame} 
-                        selectedGameId={selectedGameId} 
-                        onSelectedGameIdChanged={updateSelectedGameId}
-                    />
-                    <Separator />
-                    <div className="px-2 md:px-5">
-                        <GameStateContextProvider gameId={selectedGameId}>
-                            <ControlPanel 
-                                gameId={selectedGameId}
-                            />
-                        </GameStateContextProvider>
-                        <NewGameDialog 
-                            onNewGameCreated={handleNewGameCreated}
-                            onCancelled={handleNewGameCancelled}
+            <NewGameDialogContainer open={newGameDialogOpen} onOpenChange={setNewGameDialogOpen}>
+                <GameToolbar 
+                    games={games} 
+                    currentGame={currentGame} 
+                    onCurrentGameIdChanged={setCurrentGame} 
+                    selectedGameId={selectedGameId} 
+                    onSelectedGameIdChanged={updateSelectedGameId}
+                />
+                <Separator />
+                <div className="px-2 md:px-5">
+                    <GameStateContextProvider gameId={selectedGameId}>
+                        <ControlPanel 
+                            gameId={selectedGameId}
                         />
-                    </div>
-                </NewGameDialogContainer>
-            </UserSettingsProvider>
+                    </GameStateContextProvider>
+                    <NewGameDialog 
+                        onNewGameCreated={handleNewGameCreated}
+                        onCancelled={handleNewGameCancelled}
+                    />
+                </div>
+            </NewGameDialogContainer>
         </>
     );
 }

@@ -1,9 +1,12 @@
 export * from './Color';
+export * from './ControlPanelViewConfiguration';
 export * from './DisplayConfiguration';
+export * from './DisplaySide';
 export * from './GameInfo';
 export * from './GameSkater';
 export * from './GameStageState';
 export * from './GameTeam';
+export * from './InputControls';
 export * from './JamClockState';
 export * from './JamLineupState';
 export * from './LineupClockState';
@@ -28,3 +31,4 @@ export * from './TimeoutInUse';
 export * from './TripScoreState';
 export * from './UndoListState';
 export * from './UpdateTeam';
+export * from './User';

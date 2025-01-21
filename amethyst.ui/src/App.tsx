@@ -1,6 +1,7 @@
-import { ConfigurationContextProvider, GamesListContextProvider, SystemStateContextProvider } from "@/hooks";
+import { ConfigurationContextProvider, GamesListContextProvider, SystemStateContextProvider, UserLoginContextProvider, UserSettingsContextProvider } from "@/hooks";
 import { Routes } from "./routes";
 import { TeamListContextProvider } from "./hooks/TeamsHook";
+import { ShortcutsContextProvider } from "./hooks/InputControls";
 
 const App = () => {
   return (
@@ -9,7 +10,13 @@ const App = () => {
         <GamesListContextProvider>
           <TeamListContextProvider>
             <ConfigurationContextProvider>
-              <Routes />
+              <UserLoginContextProvider>
+                <UserSettingsContextProvider>
+                  <ShortcutsContextProvider>
+                    <Routes />
+                  </ShortcutsContextProvider>
+                </UserSettingsContextProvider>
+              </UserLoginContextProvider>
             </ConfigurationContextProvider>
           </TeamListContextProvider>
         </GamesListContextProvider>

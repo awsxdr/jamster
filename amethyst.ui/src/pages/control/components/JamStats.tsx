@@ -1,9 +1,9 @@
 import { Button, ButtonProps } from "@/components/ui";
 import { useI18n, useJamStatsState } from "@/hooks";
+import { useShortcut } from "@/hooks/InputControls";
 import { cn } from "@/lib/utils";
-import { TeamSide } from "@/types";
+import { InputControls, TeamSide } from "@/types";
 import { PropsWithChildren } from "react";
-import { useHotkeys } from "react-hotkeys-hook";
 
 type StatsButtonProps = {
     active?: boolean;
@@ -44,20 +44,21 @@ export const JamStats = ({ side, disabled, onLeadChanged, onLostChanged, onCallC
     const handleStarPass = () => onStarPassChanged?.(side, !jamStats?.starPass);
     const handleInitialTrip = () => onInitialPassChanged?.(side, !jamStats?.hasCompletedInitial);
 
-    useHotkeys(side === TeamSide.Home ? 'd' : ';', handleLead, { preventDefault: true });
-    useHotkeys(side === TeamSide.Home ? 'shift+d' : 'shift+semicolon', handleLost, { preventDefault: true });
-    useHotkeys(side === TeamSide.Home ? 'r' : 'o', handleCall, { preventDefault: true });
-    useHotkeys(side === TeamSide.Home ? 'x' : '/', handleStarPass, { preventDefault: true });
-    useHotkeys(side === TeamSide.Home ? 'w' : ']', handleInitialTrip, { preventDefault: true });
+    const shortcutGroup: keyof InputControls = side === TeamSide.Home ? "homeStats" : "awayStats";
+    useShortcut(shortcutGroup, "lead", handleLead);
+    useShortcut(shortcutGroup, "lost", handleLost);
+    useShortcut(shortcutGroup, "called", handleCall);
+    useShortcut(shortcutGroup, "starPass", handleStarPass);
+    useShortcut(shortcutGroup, "initialTrip", handleInitialTrip);
 
     return (
         <>
             <div className="flex flex-wrap w-full justify-center items-center gap-2 p-5">
-                <StatsButton active={jamStats?.lead} disabled={disabled} onClick={handleLead}>{translate("TripStats.Lead")} [{side === TeamSide.Home ? "d" : ";"}]</StatsButton>
-                <StatsButton active={jamStats?.lost} disabled={disabled} onClick={handleLost}>{translate("TripStats.Lost")} [{side === TeamSide.Home ? "🠅d" : "🠅;"}]</StatsButton>
-                <StatsButton active={jamStats?.called} disabled={disabled} onClick={handleCall}>{translate("TripStats.Call")} [{side === TeamSide.Home ? "r" : "o"}]</StatsButton>
-                <StatsButton active={jamStats?.starPass} disabled={disabled} onClick={handleStarPass}>{translate("TripStats.StarPass")} [{side === TeamSide.Home ? "x" : "/"}]</StatsButton>
-                <StatsButton active={jamStats?.hasCompletedInitial} disabled={disabled} onClick={handleInitialTrip}>{translate("TripStats.InitialComplete")} [{side === TeamSide.Home ? "w" : "]"}]</StatsButton>
+                <StatsButton active={jamStats?.lead} disabled={disabled} onClick={handleLead}>{translate("TripStats.Lead")}</StatsButton>
+                <StatsButton active={jamStats?.lost} disabled={disabled} onClick={handleLost}>{translate("TripStats.Lost")}</StatsButton>
+                <StatsButton active={jamStats?.called} disabled={disabled} onClick={handleCall}>{translate("TripStats.Call")}</StatsButton>
+                <StatsButton active={jamStats?.starPass} disabled={disabled} onClick={handleStarPass}>{translate("TripStats.StarPass")}</StatsButton>
+                <StatsButton active={jamStats?.hasCompletedInitial} disabled={disabled} onClick={handleInitialTrip}>{translate("TripStats.InitialComplete")}</StatsButton>
             </div>
         </>
     );

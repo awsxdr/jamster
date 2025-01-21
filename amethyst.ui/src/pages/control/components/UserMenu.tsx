@@ -1,7 +1,8 @@
 import { Button, DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui";
-import { useI18n, useUserSettings } from "@/hooks";
+import { useI18n } from "@/hooks";
 import { LogOut, UserRound } from "lucide-react";
 import { LoginDialog, LoginDialogContainer, LoginDialogTrigger } from "./LoginDialog";
+import { useUserLogin } from "@/hooks/UserLogin";
 
 type UserMenuProps = {
     disabled?: boolean;
@@ -9,7 +10,7 @@ type UserMenuProps = {
 
 export const UserMenu = ({ disabled }: UserMenuProps) => {
 
-    const { userName, logout } = useUserSettings();
+    const { userName, logout } = useUserLogin();
     const { translate } = useI18n();
 
     const handleLogOut = () => {

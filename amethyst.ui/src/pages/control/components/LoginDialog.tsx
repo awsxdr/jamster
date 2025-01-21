@@ -1,8 +1,8 @@
 import { Button, Dialog, DialogClose, DialogContent, DialogFooter, DialogHeader, DialogTitle, Input, Label } from "@/components/ui";
 import { useI18n } from "@/hooks/I18nHook";
-import { useUserSettings } from "@/hooks/UserSettings";
+import { useUserLogin } from "@/hooks";
 import { DialogDescription, DialogTrigger } from "@radix-ui/react-dialog";
-import { ChangeEvent, PropsWithChildren, useEffect, useState } from "react";
+import { ChangeEvent, FormEvent, PropsWithChildren, useEffect, useState } from "react";
 
 export const LoginDialogContainer = ({ children }: PropsWithChildren) => {
     return (
@@ -25,7 +25,7 @@ export const LoginDialog = () => {
     const { translate } = useI18n();
     const [ userName, setUserName ] = useState("");
 
-    const { userName: currentUserName, login } = useUserSettings();
+    const { userName: currentUserName, login } = useUserLogin();
 
     useEffect(() => {
         setUserName(currentUserName ?? "");
@@ -35,13 +35,14 @@ export const LoginDialog = () => {
         setUserName(event.target.value);
     }
 
-    const handleLoginClicked = () => {
+    const handleLoginClicked = (e: FormEvent) => {
+        e.preventDefault();
         login(userName);
     }
 
     return (
         <DialogContent>
-            <form>
+            <form onSubmit={handleLoginClicked}>
                 <DialogHeader>
                     <DialogTitle>{translate("LoginDialog.Title")}</DialogTitle>
                     <DialogDescription>{translate("LoginDialog.Description")}</DialogDescription>
@@ -63,7 +64,6 @@ export const LoginDialog = () => {
                             type="submit"
                             className="mt-4" 
                             disabled={!userName}
-                            onClick={handleLoginClicked}
                         >
                             {translate("LoginDialog.Login")}
                         </Button>

@@ -15,7 +15,7 @@ export const useConfigurationApi: () => ConfigurationApi = () => {
         await fetch(
             `${API_URL}/api/configurations/${configurationName}`,
             {
-                method: 'POST',
+                method: 'PUT',
                 body: JSON.stringify(configuration),
                 headers: {
                     "Content-Type": "application/json"

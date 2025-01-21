@@ -1,6 +1,6 @@
-import { DisplaySide, useEvents, useTimeoutListState } from "@/hooks";
+import { useEvents, useTimeoutListState } from "@/hooks";
 import { cn } from "@/lib/utils";
-import { TeamSide } from "@/types"
+import { DisplaySide, TeamSide } from "@/types"
 import { TeamReviewLost, TeamReviewRetained } from "@/types/events";
 import { TeamTimeoutList } from "./TeamTimeoutList";
 import { CombinedTimeoutList } from "./CombinedTimeoutList";

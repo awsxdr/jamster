@@ -3,11 +3,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useGameStageState, useUndoListState } from "@/hooks";
 import { Event, useEvents } from "@/hooks/EventsApiHook";
 import { useI18n } from "@/hooks/I18nHook";
+import { useShortcut } from "@/hooks/InputControls";
 import { Stage } from "@/types";
 import { JamEnded, JamStarted, PeriodFinalized, TimeoutEnded, TimeoutStarted } from "@/types/events";
 import { Pause, Play, Square, Undo } from "lucide-react";
 import { useMemo } from "react";
-import { useHotkeys } from 'react-hotkeys-hook';
 
 type MainControlsProps = {
     gameId?: string;
@@ -92,20 +92,20 @@ export const MainControls = ({ gameId, disabled }: MainControlsProps) => {
         deleteEvent(gameId, undoList.latestUndoEventId);
     }
 
-    useHotkeys('`', handleStart);
-    useHotkeys('y', handleEnd);
-    useHotkeys('t', handleTimeout);
-    useHotkeys('g', handleUndo);
+    useShortcut("clocks", "start", handleStart);
+    useShortcut("clocks", "stop", handleEnd);
+    useShortcut("clocks", "timeout", handleTimeout);
+    useShortcut("clocks", "undo", handleUndo);
 
     const buttonClass = "w-full py-6 md:w-auto md:px-4 md:py-2";
 
     return (
         <Card className="grow py-2">
             <CardContent className="flex p-0 px-2 flex-wrap gap-2 justify-evenly">
-                <Button className={buttonClass} onClick={handleStart} variant={startButtonEnabled ? 'default' : 'secondary'} disabled={disabled || !startButtonEnabled}><Play /> { startText } [`]</Button>
-                <Button className={buttonClass} onClick={handleEnd} variant={endButtonEnabled ? 'default' : 'secondary'} disabled={disabled || !endButtonEnabled}><Square /> { endText } [y]</Button>
-                <Button className={buttonClass} onClick={handleTimeout} variant={timeoutButtonEnabled ? 'default' : 'secondary'} disabled={disabled || !timeoutButtonEnabled}><Pause /> { timeoutText } [t]</Button>
-                <Button className={buttonClass} onClick={handleUndo} variant={undoButtonEnabled ? 'default' : 'secondary'} disabled={disabled || !undoButtonEnabled}><Undo /> {undoText} [g]</Button>
+                <Button className={buttonClass} onClick={handleStart} variant={startButtonEnabled ? 'default' : 'secondary'} disabled={disabled || !startButtonEnabled}><Play /> { startText }</Button>
+                <Button className={buttonClass} onClick={handleEnd} variant={endButtonEnabled ? 'default' : 'secondary'} disabled={disabled || !endButtonEnabled}><Square /> { endText }</Button>
+                <Button className={buttonClass} onClick={handleTimeout} variant={timeoutButtonEnabled ? 'default' : 'secondary'} disabled={disabled || !timeoutButtonEnabled}><Pause /> { timeoutText }</Button>
+                <Button className={buttonClass} onClick={handleUndo} variant={undoButtonEnabled ? 'default' : 'secondary'} disabled={disabled || !undoButtonEnabled}><Undo /> {undoText}</Button>
             </CardContent>
         </Card>
     );
