@@ -1,5 +1,5 @@
-import { createContext, PropsWithChildren, useCallback, useContext, useEffect, useState } from "react";
-import { useHubConnection, useUserApi } from ".";
+import { createContext, PropsWithChildren, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { useConfiguration, useHubConnection, useUserApi } from ".";
 import { HubConnection } from "@microsoft/signalr";
 import { useUserLogin } from "./UserLogin";
 import * as uuid from 'uuid';
@@ -26,6 +26,9 @@ export const useCurrentUserConfiguration = <TConfiguration,>(configurationName: 
     const [isConfigurationLoaded, setIsConfigurationLoaded] = useState(false);
     const userApi = useUserApi();
     const { userName } = useUserLogin();
+    const { configuration: baseConfiguration, setConfiguration: setBaseConfiguration } = useConfiguration<TConfiguration>(configurationName);
+
+    const safeBaseConfiguration = useMemo(() => baseConfiguration ?? defaultValue, [baseConfiguration]);
 
     if (context === undefined) {
         throw new Error('useUserSettings must be used inside a UserSettingsProvider');
@@ -54,9 +57,9 @@ export const useCurrentUserConfiguration = <TConfiguration,>(configurationName: 
     }, [userName, configurationName, userApi]);
 
     return {
-        configuration: value,
+        configuration: userName ? value : safeBaseConfiguration,
         isConfigurationLoaded,
-        setConfiguration,
+        setConfiguration: userName ? setConfiguration : setBaseConfiguration,
     };
 }
 
