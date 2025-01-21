@@ -40,18 +40,19 @@ public class GameDataStore : EventStore, IGameDataStore
         _eventConverter = eventConverter;
         _logger = logger;
         Connection.Execute("CREATE TABLE IF NOT EXISTS gameInfo (id SMALLINT PRIMARY KEY, info TEXT)");
-        Connection.Execute("INSERT INTO gameInfo (id, info) VALUES (0, ?) ON CONFLICT DO NOTHING", JsonSerializer.Serialize(new GameInfo()));
+        Connection.Execute("INSERT INTO gameInfo (id, info) VALUES (0, ?) ON CONFLICT DO NOTHING", JsonSerializer.Serialize(new GameInfo(), Program.JsonSerializerOptions));
 
         Connection.Execute("CREATE TABLE IF NOT EXISTS events (id BLOB PRIMARY KEY, type TEXT, body TEXT)");
     }
 
     public GameInfo GetInfo() =>
         JsonSerializer.Deserialize<GameInfo>(
-            Connection.ExecuteScalar<string>("SELECT info FROM gameInfo LIMIT 1")
+            Connection.ExecuteScalar<string>("SELECT info FROM gameInfo LIMIT 1"),
+            Program.JsonSerializerOptions
         )!;
 
     public void SetInfo(GameInfo info) =>
-        Connection.Execute("UPDATE gameInfo SET info = ?", JsonSerializer.Serialize(info));
+        Connection.Execute("UPDATE gameInfo SET info = ?", JsonSerializer.Serialize(info, Program.JsonSerializerOptions));
 
     public Guid AddEvent(Event @event)
     {
@@ -61,7 +62,7 @@ public class GameDataStore : EventStore, IGameDataStore
             "INSERT INTO events (id, type, body) VALUES (?, ?, ?)", 
             (Guid) eventId,
             @event.Type,
-            @event.HasBody ? JsonSerializer.Serialize(@event.GetBodyObject()) : null);
+            @event.HasBody ? JsonSerializer.Serialize(@event.GetBodyObject(), Program.JsonSerializerOptions) : null);
 
         return eventId;
     }

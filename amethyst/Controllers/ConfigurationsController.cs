@@ -1,6 +1,5 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Nodes;
-using System.Text.Json.Serialization;
 using amethyst.Domain;
 using amethyst.Services;
 using Func;
@@ -30,7 +29,7 @@ public class ConfigurationsController : Controller
             };
     }
 
-    [HttpPost("")]
+    [HttpPut("")]
     public async Task<ActionResult> SetConfiguration(
         string configurationKey,
         [FromQuery] Guid? gameId,
@@ -54,9 +53,7 @@ public class ConfigurationsController : Controller
 
     private static Result<object> DeserializeConfiguration(JsonObject json, Type configurationType)
     {
-        var serializerOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web);
-        serializerOptions.Converters.Add(new JsonStringEnumConverter());
-        var result = json.Deserialize(configurationType, serializerOptions);
+        var result = json.Deserialize(configurationType, Program.JsonSerializerOptions);
 
         return result is not null 
             ? Result.Succeed(result) 

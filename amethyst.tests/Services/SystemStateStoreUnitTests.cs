@@ -1,5 +1,4 @@
 ﻿using amethyst.DataStores;
-using amethyst.Domain;
 using amethyst.Services;
 using FluentAssertions;
 using Func;
@@ -37,6 +36,10 @@ public class SystemStateStoreUnitTests : UnitTest<SystemStateStore>
         GetMock<IGameDiscoveryService>()
             .Setup(mock => mock.GetExistingGame(gameId))
             .ReturnsAsync(Result.Succeed(new GameInfo(gameId, "Test Game")));
+
+        GetMock<ISystemStateDataStore>()
+            .Setup(mock => mock.SetCurrentGame(gameId))
+            .Returns(Result.Succeed());
 
         await Subject.SetCurrentGame(gameId);
 

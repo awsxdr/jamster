@@ -52,7 +52,9 @@ internal static class DependencyInjection
 
     internal static void RegisterConfigurations(this ContainerBuilder builder)
     {
-        var configurationFactoryTypes = Assembly.GetExecutingAssembly().GetTypes()
+        var configurationFactoryTypes = AppDomain.CurrentDomain.GetAssemblies()
+            .Where(ass => !ass.IsDynamic)
+            .SelectMany(ass => ass.GetTypes())
             .Where(t => !t.IsAbstract && t.IsAssignableTo<IConfigurationFactory>())
             .ToArray();
 
@@ -75,6 +77,7 @@ internal static class DependencyInjection
         builder.RegisterType<GameDataStoreFactory>().AsImplementedInterfaces().SingleInstance();
         builder.RegisterType<GameDataStore>().As<IGameDataStore>().ExternallyOwned().InstancePerDependency();
         builder.RegisterType<ConfigurationDataStore>().As<IConfigurationDataStore>().SingleInstance();
+        builder.RegisterType<UserDataStore>().As<IUserDataStore>().SingleInstance();
     }
 
     internal static void RegisterHubNotifiers(this ContainerBuilder builder)

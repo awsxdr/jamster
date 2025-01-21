@@ -4,7 +4,7 @@ namespace amethyst.DataStores;
 
 public interface IDataStore : IDisposable
 {
-    ISQLiteConnection Connection { get; }
+    public ISQLiteConnection Connection { get; }
 }
 
 public delegate ISQLiteConnection ConnectionFactory(string connectionString, SQLiteOpenFlags flags);
@@ -42,7 +42,10 @@ public abstract class DataStore : IDataStore
     protected abstract void ApplyUpgrade(int version);
 
     protected IDataTable<TData, TKey> GetTable<TData, TKey>(KeySelector<TData, TKey> keySelector) where TData : new() =>
-        _dataTableFactory.Create(keySelector, Connection);
+        _dataTableFactory.Create(keySelector, Connection, []);
+
+    protected IDataTable<TData, TKey> GetTable<TData, TKey>(KeySelector<TData, TKey> keySelector, IEnumerable<IColumn> columns) where TData : new() =>
+        _dataTableFactory.Create(keySelector, Connection, columns);
 
     public void Dispose()
     {

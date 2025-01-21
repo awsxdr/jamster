@@ -1,13 +1,10 @@
 ﻿using System.Net;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using System.Text.Json.Serialization;
 using amethyst.Configurations;
 using amethyst.Controllers;
 using amethyst.DataStores;
-using amethyst.Domain;
 using amethyst.Hubs;
-using amethyst.Reducers;
 using FluentAssertions;
 using Microsoft.AspNetCore.SignalR.Client;
 using SQLite;
@@ -40,7 +37,7 @@ public class ConfigurationsIntegrationTests : ControllerIntegrationTest
     {
         var expectedConfiguration = new DisplayConfiguration(false, true, "test");
 
-        await Post("api/Configurations/DisplayConfiguration", expectedConfiguration, HttpStatusCode.OK);
+        await Put("api/Configurations/DisplayConfiguration", expectedConfiguration, HttpStatusCode.OK);
 
         var configuration = await Get<DisplayConfiguration>("api/Configurations/DisplayConfiguration", HttpStatusCode.OK);
 
@@ -62,7 +59,7 @@ public class ConfigurationsIntegrationTests : ControllerIntegrationTest
     {
         var expectedConfiguration = new DisplayConfiguration(false, true, "test");
 
-        await Post("api/Configurations/DisplayConfiguration", expectedConfiguration, HttpStatusCode.OK);
+        await Put("api/Configurations/DisplayConfiguration", expectedConfiguration, HttpStatusCode.OK);
 
         var configuration = await Get<DisplayConfiguration>($"api/Configurations/DisplayConfiguration?gameId={_game.Id}", HttpStatusCode.OK);
 
@@ -75,8 +72,8 @@ public class ConfigurationsIntegrationTests : ControllerIntegrationTest
         var expectedConfiguration = new DisplayConfiguration(false, true, "expected");
         var databaseConfiguration = new DisplayConfiguration(true, false, "test");
 
-        await Post("api/Configurations/DisplayConfiguration", databaseConfiguration, HttpStatusCode.OK);
-        await Post($"api/Configurations/DisplayConfiguration?gameId={_game.Id}", expectedConfiguration, HttpStatusCode.OK);
+        await Put("api/Configurations/DisplayConfiguration", databaseConfiguration, HttpStatusCode.OK);
+        await Put($"api/Configurations/DisplayConfiguration?gameId={_game.Id}", expectedConfiguration, HttpStatusCode.OK);
 
         var configuration = await Get<DisplayConfiguration>($"api/Configurations/DisplayConfiguration?gameId={_game.Id}", HttpStatusCode.OK);
 
@@ -97,14 +94,12 @@ public class ConfigurationsIntegrationTests : ControllerIntegrationTest
         {
             if (key == nameof(DisplayConfiguration))
             {
-                var serializerOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web);
-                serializerOptions.Converters.Add(new JsonStringEnumConverter());
-                var deserializedValue = value.Deserialize<DisplayConfiguration>(serializerOptions)!;
+                var deserializedValue = value.Deserialize<DisplayConfiguration>(Program.JsonSerializerOptions)!;
                 taskCompletionSource.SetResult(deserializedValue);
             }
         });
 
-        await Post("api/Configurations/DisplayConfiguration", expectedConfiguration, HttpStatusCode.OK);
+        await Put("api/Configurations/DisplayConfiguration", expectedConfiguration, HttpStatusCode.OK);
 
         var passedConfiguration = await Wait(taskCompletionSource.Task);
 

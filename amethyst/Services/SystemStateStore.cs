@@ -28,11 +28,8 @@ public class SystemStateStore(ISystemStateDataStore dataStore, IGameDiscoverySer
 
     public Task<Result<GameInfo>> SetCurrentGame(Guid gameId) =>
         gameDiscoveryService.GetExistingGame(gameId)
-            .Then(async game =>
-            {
-                dataStore.SetCurrentGame(gameId);
-                await CurrentGameChanged.InvokeHandlersAsync(this, new ISystemStateStore.SystemStateChangedEventArgs<Guid>(gameId));
-
-                return Result.Succeed(game);
-            });
+            .OnSuccess(game =>
+                dataStore.SetCurrentGame(game.Id)
+                    .OnSuccess(() => CurrentGameChanged.InvokeHandlersAsync(this, new ISystemStateStore.SystemStateChangedEventArgs<Guid>(gameId)))
+            );
 }

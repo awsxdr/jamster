@@ -26,4 +26,13 @@ public class Guid7UnitTests
             .Select(g => g.Tick)
             .Should().BeEquivalentTo(Enumerable.Range(0, 10));
     }
+
+    [Test]
+    public void Guid7_FromLong_DoesNotResultInCollisions()
+    {
+        Enumerable.Range(0, 1_000_000)
+            .Select(_ => Guid7.FromTick(1234))
+            .Distinct()
+            .Should().HaveCount(1_000_000);
+    }
 }

@@ -6,7 +6,7 @@ namespace amethyst.DataStores;
 public interface ISystemStateDataStore : IDisposable
 {
     Result<Guid> GetCurrentGame();
-    void SetCurrentGame(Guid gameId);
+    Result SetCurrentGame(Guid gameId);
 }
 
 public class SystemStateDataStore : DataStore, ISystemStateDataStore
@@ -28,7 +28,7 @@ public class SystemStateDataStore : DataStore, ISystemStateDataStore
             _ => Result<Guid>.Fail<CurrentGameNotFoundError>()
         };
 
-    public void SetCurrentGame(Guid gameId) =>
+    public Result SetCurrentGame(Guid gameId) =>
         _systemStateTable.Upsert(new(CurrentGameKey, gameId.ToString()));
 
     protected override void ApplyUpgrade(int version)

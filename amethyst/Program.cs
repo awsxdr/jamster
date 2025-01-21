@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
 using System.Text;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using amethyst;
 using amethyst.DataStores;
@@ -283,6 +284,7 @@ public partial class Program
 {
     public static bool SkipCommandLineParse { get; set; } = false;
     public static bool SkipFirstRunSetup { get; set; } = false;
+    public static JsonSerializerOptions JsonSerializerOptions { get; } = GetSerializerOptions();
 
     private static void MapHub<THub>(WebApplication app, string pattern) where THub : Hub =>
         app
@@ -292,6 +294,12 @@ public partial class Program
                 policyBuilder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
             });
 
+    private static JsonSerializerOptions GetSerializerOptions()
+    {
+        var serializerOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web);
+        serializerOptions.Converters.Add(new JsonStringEnumConverter());
+        return serializerOptions;
+    }
 }
 
 public sealed class CommandLineOptions

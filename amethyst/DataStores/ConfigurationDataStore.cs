@@ -1,5 +1,4 @@
 ﻿using System.Text.Json;
-using System.Text.Json.Serialization;
 using amethyst.Services;
 using Func;
 
@@ -17,7 +16,6 @@ public class ConfigurationDataStore
     : DataStore
     , IConfigurationDataStore
 {
-    private static readonly JsonSerializerOptions SerializerOptions = GetSerializerOptions();
     private readonly IDataTable<ConfigurationDataItem, string> _configurationTable;
     private readonly IDefaultConfigurationFactory _defaultConfigurationFactory;
 
@@ -44,13 +42,11 @@ public class ConfigurationDataStore
         if (!_defaultConfigurationFactory.IsKnownConfigurationType(configurationType))
             return Result.Fail<ConfigurationTypeNotKnownError>();
 
-        _configurationTable.Upsert(new ConfigurationDataItem
+        return _configurationTable.Upsert(new ConfigurationDataItem
         {
             ConfigurationTypeName = configurationType.Name,
-            ConfigurationJson = JsonSerializer.Serialize(configuration, SerializerOptions)
+            ConfigurationJson = JsonSerializer.Serialize(configuration, Program.JsonSerializerOptions)
         });
-
-        return Result.Succeed();
     }
 
     protected override void ApplyUpgrade(int version)
@@ -59,21 +55,14 @@ public class ConfigurationDataStore
 
     private static Result<TConfiguration> MapConfiguration<TConfiguration>(ConfigurationDataItem item) where TConfiguration : class =>
         item.ConfigurationTypeName == typeof(TConfiguration).Name
-        ? JsonSerializer.Deserialize<TConfiguration>(item.ConfigurationJson)?.Map(Result.Succeed) ?? Result<TConfiguration>.Fail<ConfigurationJsonInvalidError>()
+        ? JsonSerializer.Deserialize<TConfiguration>(item.ConfigurationJson, Program.JsonSerializerOptions)?.Map(Result.Succeed) ?? Result<TConfiguration>.Fail<ConfigurationJsonInvalidError>()
         : Result<TConfiguration>.Fail<ConfigurationTypesDoNotMatchError>();
 
     private Result<object> MapConfiguration(ConfigurationDataItem item) =>
         _defaultConfigurationFactory.GetKnownConfigurationTypeForKey(item.ConfigurationTypeName)
             .Then(configurationType =>
-                JsonSerializer.Deserialize(item.ConfigurationJson, configurationType, SerializerOptions)?.Map(Result.Succeed)
+                JsonSerializer.Deserialize(item.ConfigurationJson, configurationType, Program.JsonSerializerOptions)?.Map(Result.Succeed)
                 ?? Result<object>.Fail<ConfigurationJsonInvalidError>());
-
-    private static JsonSerializerOptions GetSerializerOptions()
-    {
-        var serializerOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web);
-        serializerOptions.Converters.Add(new JsonStringEnumConverter());
-        return serializerOptions;
-    }
 
     public sealed class ConfigurationJsonInvalidError : ResultError;
     public sealed class ConfigurationTypesDoNotMatchError : ResultError;
