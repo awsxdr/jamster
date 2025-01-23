@@ -1,6 +1,5 @@
 import { ShortcutButton } from "@/components";
 import { TooltipProvider } from "@/components/ui";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useGameStageState, useUndoListState } from "@/hooks";
 import { Event, useEvents } from "@/hooks/EventsApiHook";
