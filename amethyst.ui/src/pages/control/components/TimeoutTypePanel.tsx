@@ -1,10 +1,10 @@
-import { RadioButtonGroup, RadioItem } from "@/components/RadioButtonGroup";
+import { RadioButtonGroup, RadioItem, TooltipRadioItem } from "@/components/RadioButtonGroup";
 import { Card, CardContent } from "@/components/ui";
-import { useCurrentTimeoutTypeState, useGameStageState } from "@/hooks";
+import { useCurrentTimeoutTypeState, useGameStageState, useTeamDetailsState } from "@/hooks";
 import { useEvents } from "@/hooks/EventsApiHook";
 import { useI18n } from "@/hooks/I18nHook";
 import { cn } from "@/lib/utils";
-import { Stage, TeamSide, TimeoutType } from "@/types";
+import { Stage, TeamDetailsState, TeamSide, TimeoutType } from "@/types";
 import { TimeoutTypeSet } from "@/types/events";
 import { useMemo } from "react";
 
@@ -29,6 +29,21 @@ export const TimeoutTypePanel = ({ gameId, disabled }: TimeoutTypePanelProps) =>
     const { stage } = useGameStageState() ?? { stage: Stage.BeforeGame };
 
     const { sendEvent } = useEvents();
+
+    const homeTeam = useTeamDetailsState(TeamSide.Home);
+    const awayTeam = useTeamDetailsState(TeamSide.Away);
+
+    const getTeamName = (team: TeamDetailsState | undefined, defaultName: string) => {
+        if(!team) {
+            return defaultName;
+        }
+
+        return team.team.names['controls'] || team.team.names['color'] || defaultName;
+    }
+
+    const homeTeamName = useMemo(() => getTeamName(homeTeam, "Home"), [homeTeam]);
+    const awayTeamName = useMemo(() => getTeamName(awayTeam, "Away"), [awayTeam]);
+
     const compoundType = useMemo<CompoundTimeoutType>(() =>
         timeoutType?.type === TimeoutType.Team && timeoutType?.side === TeamSide.Home ? 'HomeTeamTimeout'
         : timeoutType?.type === TimeoutType.Team && timeoutType?.side === TeamSide.Away ? 'AwayTeamTimeout'
@@ -38,12 +53,32 @@ export const TimeoutTypePanel = ({ gameId, disabled }: TimeoutTypePanelProps) =>
         : 'Untyped'
     , [timeoutType]);
 
-    const timeoutTypes: RadioItem<CompoundTimeoutType>[] = [
-        { value: 'HomeTeamTimeout', name: translate("TimeoutType.HomeTeam") },
-        { value: 'HomeTeamReview', name: translate("TimeoutType.HomeTeamReview") },
-        { value: 'Official', name: translate("TimeoutType.Official") },
-        { value: 'AwayTeamTimeout', name: translate("TimeoutType.AwayTeam") },
-        { value: 'AwayTeamReview', name: translate("TimeoutType.AwayTeamReview") },
+    const timeoutTypes: TooltipRadioItem<CompoundTimeoutType>[] = [
+        { 
+            value: 'HomeTeamTimeout', 
+            name: translate("TimeoutType.Team").replace("{teamName}", homeTeamName), 
+            description: translate("TimeoutType.Team.Description").replace("{teamName}", homeTeamName),
+        },
+        { 
+            value: 'HomeTeamReview', 
+            name: translate("TimeoutType.TeamReview").replace("{teamName}", homeTeamName), 
+            description: translate("TimeoutType.TeamReview.Description").replace("{teamName}", homeTeamName),
+        },
+        { 
+            value: 'Official', 
+            name: translate("TimeoutType.Official"), 
+            description: translate("TimeoutType.Official.Description"),
+        },
+        { 
+            value: 'AwayTeamTimeout', 
+            name: translate("TimeoutType.Team").replace("{teamName}", awayTeamName), 
+            description: translate("TimeoutType.Team.Description").replace("{teamName}", awayTeamName),
+        },
+        { 
+            value: 'AwayTeamReview', 
+            name: translate("TimeoutType.TeamReview").replace("{teamName}", awayTeamName), 
+            description: translate("TimeoutType.TeamReview.Description").replace("{teamName}", awayTeamName), 
+        },
     ];
 
     const handleTimeoutSelected = (selectedType: CompoundTimeoutType) => {

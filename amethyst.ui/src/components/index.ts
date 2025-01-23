@@ -4,5 +4,6 @@ export * from './NewGameDialog';
 export * from './RadioButtonGroup';
 export * from './ScaledText';
 export * from './SeparatedCollection';
+export * from './ShortcutButton';
 export * from './SortableColumnHeader';
 export * from './TeamSelect';

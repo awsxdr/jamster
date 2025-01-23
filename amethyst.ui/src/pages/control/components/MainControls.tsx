@@ -1,3 +1,5 @@
+import { ShortcutButton } from "@/components";
+import { TooltipProvider } from "@/components/ui";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useGameStageState, useUndoListState } from "@/hooks";
@@ -21,41 +23,45 @@ export const MainControls = ({ gameId, disabled }: MainControlsProps) => {
     const { sendEvent, deleteEvent } = useEvents();
     const undoList = useUndoListState() ?? { };
 
-    const [startText, startButtonEnabled] = useMemo(() => {
+    const [startText, startDescription, startButtonEnabled] = useMemo(() => {
         if (!gameStage || (gameStage.stage === Stage.AfterGame && gameStage.periodIsFinalized) || gameStage.stage === Stage.Jam) {
-            return ["---", false];
+            return ["---", "", false];
         } else {
-            return [translate("MainControls.StartJam"), true];
+            return [translate("MainControls.StartJam"), translate("MainControls.StartJam.Description"), true];
         }
     }, [gameStage, language]);
 
-    const [endText, endButtonEnabled] = useMemo(() => {
+    const [endText, endDescription, endButtonEnabled] = useMemo(() => {
         switch (gameStage?.stage) {
             case Stage.Jam: 
-                return [translate("MainControls.EndJam"), true];
+                return [translate("MainControls.EndJam"), translate("MainControls.EndJam.Description"), true];
             case Stage.Timeout: 
-                return [translate("MainControls.EndTimeout"), true];
+                return [translate("MainControls.EndTimeout"), translate("MainControls.EndTimeout.Description"), true];
             case Stage.Intermission: 
-                return gameStage.periodIsFinalized ? ["---", false] : [translate("MainControls.FinalizePeriod"), true];
+                return gameStage.periodIsFinalized ? ["---", "", false] : [translate("MainControls.FinalizePeriod"), translate("MainControls.FinalizePeriod.Description"), true];
             case Stage.AfterGame: 
-                return gameStage.periodIsFinalized ? ["---", false] : [translate("MainControls.FinalizeGame"), true];
+                return gameStage.periodIsFinalized ? ["---", "", false] : [translate("MainControls.FinalizeGame"), translate("MainControls.FinalizeGame.Description"), true];
             default: 
-                return ["---", false];
+                return ["---", "", false];
         }
     }, [gameStage?.stage, gameStage?.periodIsFinalized, language]);
 
-    const [timeoutText, timeoutButtonEnabled] = useMemo(() => {
+    const [timeoutText, timeoutDescription, timeoutButtonEnabled] = useMemo(() => {
         if(gameStage && !gameStage.periodIsFinalized && gameStage.stage !== Stage.BeforeGame) {
-            return [translate("MainControls.NewTimeout"), true];
+            return [translate("MainControls.NewTimeout"), translate("MainControls.NewTimeout.Description"), true];
         } else {
-            return ["---", false];
+            return ["---", "", false];
         }
     }, [gameStage, language]);
 
-    const [undoText, undoButtonEnabled] = useMemo(() => {
+    const [undoText, undoDescription, undoButtonEnabled] = useMemo(() => {
         return undoList.latestUndoEventId
-            ? [`${translate("MainControls.Undo")} ${translate(`MainControls.Undo.${undoList.latestUndoEventName}`)}`, true]
-            : [translate("MainControls.Undo"), false];
+            ? [
+                `${translate("MainControls.Undo")} ${translate(`MainControls.Undo.${undoList.latestUndoEventName}`)}`, 
+                translate(`MainControls.Undo.${undoList.latestUndoEventName}.Description`),
+                true
+            ]
+            : [translate("MainControls.Undo"), "", false];
     }, [language, undoList]);
 
     const sendEventIfIdSet = (event: Event) => {
@@ -92,7 +98,6 @@ export const MainControls = ({ gameId, disabled }: MainControlsProps) => {
         deleteEvent(gameId, undoList.latestUndoEventId);
     }
 
-    useShortcut("clocks", "start", handleStart);
     useShortcut("clocks", "stop", handleEnd);
     useShortcut("clocks", "timeout", handleTimeout);
     useShortcut("clocks", "undo", handleUndo);
@@ -102,10 +107,56 @@ export const MainControls = ({ gameId, disabled }: MainControlsProps) => {
     return (
         <Card className="grow py-2">
             <CardContent className="flex p-0 px-2 flex-wrap gap-2 justify-evenly">
-                <Button className={buttonClass} onClick={handleStart} variant={startButtonEnabled ? 'default' : 'secondary'} disabled={disabled || !startButtonEnabled}><Play /> { startText }</Button>
-                <Button className={buttonClass} onClick={handleEnd} variant={endButtonEnabled ? 'default' : 'secondary'} disabled={disabled || !endButtonEnabled}><Square /> { endText }</Button>
-                <Button className={buttonClass} onClick={handleTimeout} variant={timeoutButtonEnabled ? 'default' : 'secondary'} disabled={disabled || !timeoutButtonEnabled}><Pause /> { timeoutText }</Button>
-                <Button className={buttonClass} onClick={handleUndo} variant={undoButtonEnabled ? 'default' : 'secondary'} disabled={disabled || !undoButtonEnabled}><Undo /> {undoText}</Button>
+                <TooltipProvider>
+                    <ShortcutButton 
+                        shortcutGroup="clocks" 
+                        shortcutKey="start"
+                        description={startDescription}
+                        className={buttonClass} 
+                        variant={startButtonEnabled ? 'default' : 'secondary'} 
+                        disabled={disabled || !startButtonEnabled}
+                        onClick={handleStart} 
+                    >
+                        <Play />
+                        { startText }
+                    </ShortcutButton>
+                    <ShortcutButton
+                        shortcutGroup="clocks"
+                        shortcutKey="stop"
+                        description={endDescription}
+                        className={buttonClass}
+                        variant={endButtonEnabled ? "default" : "secondary"}
+                        disabled={disabled || !endButtonEnabled}
+                        onClick={handleEnd}
+                    >
+                        <Square />
+                        { endText }
+                    </ShortcutButton>
+                    <ShortcutButton
+                        shortcutGroup="clocks"
+                        shortcutKey="timeout"
+                        description={timeoutDescription}
+                        className={buttonClass}
+                        variant={timeoutButtonEnabled ? "default" : "secondary"}
+                        disabled={disabled || !timeoutButtonEnabled}
+                        onClick={handleTimeout}
+                    >
+                        <Pause />
+                        { timeoutText }
+                    </ShortcutButton>
+                    <ShortcutButton
+                        shortcutGroup="clocks"
+                        shortcutKey="undo"
+                        description={undoDescription}
+                        className={buttonClass}
+                        variant={undoButtonEnabled ? "default" : "secondary"}
+                        disabled={disabled || !undoButtonEnabled}
+                        onClick={handleEnd}
+                    >
+                        <Undo />
+                        { undoText }
+                    </ShortcutButton>
+                </TooltipProvider>
             </CardContent>
         </Card>
     );

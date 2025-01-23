@@ -24,7 +24,7 @@ export const LanguageMenu = () => {
         <SidebarMenuItem>
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <SidebarMenuButton>
+                    <SidebarMenuButton tooltip={translate("LanguageMenu.Title")}>
                         <Globe /> {translate("LanguageMenu.Title")}
                         <ChevronUp className="ml-auto" />
                     </SidebarMenuButton>

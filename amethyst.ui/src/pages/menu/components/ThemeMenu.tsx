@@ -12,7 +12,7 @@ export const ThemeMenu = () => {
         <SidebarMenuItem>
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <SidebarMenuButton>
+                    <SidebarMenuButton tooltip={translate("ThemeMenu.Title")}>
                         <Palette /> {translate("ThemeMenu.Title")}
                         <ChevronUp className="ml-auto" />
                     </SidebarMenuButton>

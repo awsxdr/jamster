@@ -1,10 +1,19 @@
 import { cn } from "@/lib/utils";
-import { Button } from "./ui";
+import { Button, TooltipProvider } from "./ui";
+import { ReactNode } from "react";
+import { TooltipButton } from "./TooltipButton";
 
-export type RadioItem<TValue> = { value: TValue, name: string };
+export type RadioItem<TValue> = { 
+    value: TValue;
+    name: string;
+};
+
+export type TooltipRadioItem<TValue> = RadioItem<TValue> & { 
+    description: ReactNode;
+};
 
 type RadioButtonGroupProps<TValue> = {
-    items: RadioItem<TValue>[];
+    items: (RadioItem<TValue> | TooltipRadioItem<TValue>)[];
     value?: TValue;
     variant?: "default" | "secondary" | "ghost";
     size?: 'lg' | 'sm' | 'default';
@@ -28,8 +37,21 @@ export const RadioButtonGroup = <TValue,>({ items, value, variant, size, rowClas
 
     return (
         <div className={cn("flex flex-wrap gap-2", rowClassName)}>
+            <TooltipProvider>
             {
-                items.map(item => (
+                items.map(item => (item as TooltipRadioItem<TValue>)?.description ? (
+                    <TooltipButton 
+                        description={(item as TooltipRadioItem<TValue>).description}
+                        size={size}
+                        variant={variant ?? "secondary"}
+                        className={cn("border-2", value === item.value ? "border-primary" : "", buttonClassName)}
+                        disabled={disabled}
+                        key={item.name}
+                        onClick={() => handleButtonClick(item.value)}
+                    >
+                        {item.name}
+                    </TooltipButton>
+                ) : (
                     <Button 
                         size={size}
                         variant={variant ?? "secondary"}
@@ -42,6 +64,7 @@ export const RadioButtonGroup = <TValue,>({ items, value, variant, size, rowClas
                     </Button>
                 ))
             }
+            </TooltipProvider>
         </div>
     )
 }
