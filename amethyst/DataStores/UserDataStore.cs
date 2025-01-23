@@ -10,6 +10,7 @@ public interface IUserDataStore : IDisposable
     IEnumerable<string> GetUserNames();
     Result<Domain.User> GetUser(string userName);
     bool CreateIfNotExists(string userName);
+    Result DeleteUser(string userName);
     Result SetConfiguration(string userName, object configuration);
     Result<TConfiguration> GetConfiguration<TConfiguration>(string userName);
     Result<object> GetConfiguration(string userName, Type configurationType);
@@ -57,6 +58,20 @@ public class UserDataStore : DataStore, IUserDataStore
 
     public bool CreateIfNotExists(string userName) =>
         _usersTable.Insert(new User(userName.ToLowerInvariant()));
+
+    public Result DeleteUser(string userName) =>
+        _usersTable.Archive(userName.ToLowerInvariant())
+            .Then(() =>
+            {
+                // Result is ignored as it will fail if no configurations have been set for the user
+                _ = _configurationTable.ArchiveByColumn(_configurationTable.Columns["userName"], userName.ToLowerInvariant());
+                return Result.Succeed();
+            })
+            switch
+            {
+                Failure<NotFoundError> => Result<Domain.User>.Fail<UserNotFoundError>(),
+                var r => r
+            };
 
     public Result SetConfiguration(string userName, object configuration)
     {

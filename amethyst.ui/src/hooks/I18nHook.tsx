@@ -7,17 +7,22 @@ export type LanguageName = {
 }
 
 type I18n = {
-    translate: (key: string) => string;
+    translate: (key: string, options?: { ignorePrefix: boolean }) => string;
     language: string;
     languages: LanguageName[];
     setLanguage: (language: string) => void;
 }
 
-export const useI18n = (options?: { prefix?: string }): I18n => {
+export const useI18n = (i18nOptions?: { prefix?: string }): I18n => {
     const context = useContext(I18nContext);
 
+    const translate = (key: string, options?: { ignorePrefix: boolean }) => {
+        const prefix = (options?.ignorePrefix ? "" : i18nOptions?.prefix) ?? "";
+        return context.translate(prefix + key);
+    }
+
     return {
-        translate: (key: string) => context.translate((options?.prefix ?? "") + key),
+        translate,
         language: context.language,
         languages: context.languages,
         setLanguage: context.setLanguage
@@ -72,7 +77,7 @@ export const I18nContextProvider = ({ usageKey, defaultLanguage, languages, chil
 
     const translate = useCallback((key: string) => {
         if(language === 'dev') {
-            return makeDevTranslation(key);
+            return makeDevTranslation(languages[defaultLanguage][key]);
         }
 
         if(!translations[key]) {

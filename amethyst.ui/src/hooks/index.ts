@@ -15,6 +15,7 @@ export * from './TeamsHook';
 export * from './ThemeHook';
 export * from './use-mobile';
 export * from './UserApi';
+export * from './UserList';
 export * from './UserLogin';
 export * from './UserSettings';
 export * from './WakeLock';

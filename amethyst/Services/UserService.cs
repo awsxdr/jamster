@@ -11,14 +11,17 @@ public interface IUserService
 
     IEnumerable<string> GetUserNames();
     Result<Domain.User> GetUser(string userName);
-    void CreateIfNotExists(string userName);
+    Task CreateIfNotExists(string userName);
+    Task<Result> ImportUsers(Stream jsonStream);
+    Result<string> GetUsersJson(string[] userNames);
+    Task<Result> DeleteUser(string userName);
     Result<TConfiguration> GetConfiguration<TConfiguration>(string userName);
     Result<object> GetConfiguration(string userName, Type configurationType);
     Task<Result> SetConfiguration(string userName, object configuration);
 }
 
 [Singleton]
-public class UserService(IUserDataStore dataStore) : IUserService
+public class UserService(IUserDataStore dataStore, IUserDataSerializer userDataSerializer) : IUserService
 {
     public event AsyncEventHandler<UserListChangedEventArgs>? UserListChanged;
     public event AsyncEventHandler<UserConfigurationChangedEventArgs>? UserConfigurationChanged;
@@ -26,16 +29,50 @@ public class UserService(IUserDataStore dataStore) : IUserService
     public IEnumerable<string> GetUserNames() => dataStore.GetUserNames();
     public Result<Domain.User> GetUser(string userName) => dataStore.GetUser(userName);
 
-    public void CreateIfNotExists(string userName)
+    public async Task CreateIfNotExists(string userName)
     {
         var changed = dataStore.CreateIfNotExists(userName);
 
         if (changed)
         {
             var users = GetUserNames().ToArray();
-            UserListChanged?.InvokeHandlersAsync(this, new(users));
+            await (UserListChanged?.InvokeHandlersAsync(this, new(users)) ?? Task.CompletedTask);
         }
     }
+
+    public async Task<Result> ImportUsers(Stream jsonStream)
+    {
+        var result = userDataSerializer.Deserialize(jsonStream);
+
+        if(result is not Success<IEnumerable<UserWithConfigurations>> s)
+            return result;
+
+        foreach (var user in s.Value)
+        {
+            await CreateIfNotExists(user.UserName);
+            foreach (var configuration in user.Configurations.Values)
+            {
+                await SetConfiguration(user.UserName, configuration);
+            }
+        }
+
+        return Result.Succeed();
+    }
+
+    public Result<string> GetUsersJson(string[] userNames) =>
+        userNames.Select(dataStore.GetUser)
+            .Aggregate(
+                Result.Succeed<IEnumerable<UserWithConfigurations>>([]),
+                (a, c) => a.And(c).ThenMap(x => x.Item1.Append(new UserWithConfigurations(x.Item2.Name, x.Item2.Configurations))))
+            .ThenMap(userDataSerializer.Serialize);
+
+    public Task<Result> DeleteUser(string userName) =>
+        dataStore.DeleteUser(userName)
+            .OnSuccess(() =>
+            {
+                var users = GetUserNames().ToArray();
+                return UserListChanged?.InvokeHandlersAsync(this, new(users));
+            });
 
     public Result<TConfiguration> GetConfiguration<TConfiguration>(string userName) =>
         dataStore.GetConfiguration<TConfiguration>(userName);

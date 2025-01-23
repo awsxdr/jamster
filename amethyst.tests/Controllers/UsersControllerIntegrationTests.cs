@@ -4,6 +4,7 @@ using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using amethyst.Configurations;
 using amethyst.Controllers;
+using amethyst.DataStores;
 using amethyst.Hubs;
 using FluentAssertions;
 using Microsoft.AspNetCore.SignalR.Client;
@@ -89,6 +90,88 @@ public class UsersControllerIntegrationTests : ControllerIntegrationTest
     public async Task GetUser_WhenUserDoesNotExist_ReturnsNotFound()
     {
         await Get<UserConfigurationsModel>("api/users/doesNotExist", HttpStatusCode.NotFound);
+    }
+
+    [Test]
+    public async Task DeleteUser_WhenUserExists_RemovesUserFromList()
+    {
+        for (var i = 0; i < 3; ++i)
+        {
+            await Post("api/users", new UserModel($"testUser{i + 1}"), HttpStatusCode.Created);
+        }
+
+        var users1 = (await Get<UserModel[]>("api/users", HttpStatusCode.OK))!;
+
+        users1.Length.Should().Be(3);
+
+        await Delete("api/users/testUser2", HttpStatusCode.NoContent);
+
+        var users2 = (await Get<UserModel[]>("api/users", HttpStatusCode.OK))!;
+
+        users2.Length.Should().Be(2);
+    }
+
+    [Test]
+    public async Task DeleteUser_WhenUserExists_RemovesUserConfigurations()
+    {
+        await Post("api/users", new UserModel("testUser"), HttpStatusCode.Created);
+
+        await Put(
+            "api/users/testUser/configuration/testConfiguration1",
+            new TestConfiguration1 { Value = "Test" },
+            HttpStatusCode.OK);
+
+        await Put(
+            "api/users/testUser/configuration/testConfiguration2",
+            new TestConfiguration2 { Value = 123 },
+            HttpStatusCode.OK);
+
+        using var connection = new SQLiteConnection(Path.Combine(RunningEnvironment.RootPath, "db", "users.db"));
+
+        Column<string, UserConfiguration>[] columns =
+        [
+            new ("userName", u => u.UserName),
+            new ("configurationType", u => u.ConfigurationType),
+        ];
+
+        var dataTable = new DataTableFactory().Create<UserConfiguration, string>(c => $"{c.UserName}_{c.ConfigurationType}", connection, columns);
+
+        dataTable.GetByColumn(columns[0], "testuser").Should().HaveCount(2);
+
+        await Delete("api/users/testUser", HttpStatusCode.NoContent);
+
+        dataTable.GetByColumn(columns[0], "testuser").Should().HaveCount(0);
+    }
+
+    [Test]
+    public async Task DeleteUser_WhenUserDoesNotExist_ReturnsNotFound()
+    {
+        await Delete("api/users/doesNotExist", HttpStatusCode.NotFound);
+    }
+
+    [Test]
+    public async Task DeleteUser_NotifiesUserListWatchers()
+    {
+        for (var i = 0; i < 3; ++i)
+        {
+            await Post("api/users", new UserModel($"testUser{i + 1}"), HttpStatusCode.Created);
+        }
+
+        var hub = await GetHubConnection("api/Hubs/Users");
+        await hub.InvokeAsync(nameof(UsersHub.WatchUserList));
+
+        var taskCompletionSource = new TaskCompletionSource<string[]>();
+
+        hub.On(nameof(IUsersHubClient.UserListChanged), (string[] users) =>
+        {
+            taskCompletionSource.SetResult(users);
+        });
+
+        await Delete("api/users/testUser2", HttpStatusCode.NoContent);
+
+        var users = await Wait(taskCompletionSource.Task);
+
+        users.Should().BeEquivalentTo(["testuser1", "testuser3"]);
     }
 
     [Test]

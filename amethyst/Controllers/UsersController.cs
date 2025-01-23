@@ -1,4 +1,6 @@
-﻿using System.Text.Json.Nodes;
+﻿using System.Net.Mime;
+using System.Text;
+using System.Text.Json.Nodes;
 using amethyst.Configurations;
 using amethyst.DataStores;
 using amethyst.Domain;
@@ -14,7 +16,7 @@ public class UsersController(IUserService userService, IEnumerable<IConfiguratio
     private readonly Dictionary<string, IConfigurationFactory> _configurationFactories =
         configurationFactories.ToDictionary(x => x.ConfigurationType.Name.ToLowerInvariant(), x => x);
 
-    [HttpGet("")]
+    [HttpGet]
     public ActionResult<UserModel[]> GetUsers()
     {
         logger.LogDebug("Getting list of user names");
@@ -22,14 +24,44 @@ public class UsersController(IUserService userService, IEnumerable<IConfiguratio
         return Ok(userService.GetUserNames().Select(n => new UserModel(n)));
     }
 
-    [HttpPost("")]
-    public ActionResult CreateUser([FromBody] UserModel user)
+    [HttpPost]
+    public async Task<ActionResult> CreateUser([FromBody] UserModel user)
     {
         logger.LogDebug("Creating user {userName} if not already present", user.UserName);
 
-        userService.CreateIfNotExists(user.UserName);
+        await userService.CreateIfNotExists(user.UserName);
         
         return Created($"api/users/${Uri.EscapeDataString(user.UserName)}", user);
+    }
+
+    [HttpPost]
+    public async Task<ActionResult> UploadUser(IFormFile userFile)
+    {
+        logger.LogDebug("Importing user JSON file");
+
+        if (userFile.ContentType != MediaTypeNames.Application.Json)
+            return new UnsupportedMediaTypeResult();
+
+        await using var readStream = userFile.OpenReadStream();
+
+        return await userService.ImportUsers(readStream) switch
+        {
+            Success => Ok(),
+            Failure<InvalidStreamContentError> => BadRequest(),
+            var r => throw new UnexpectedResultException(r)
+        };
+    }
+
+    [HttpGet("file")]
+    public ActionResult GetUserExportFile([FromQuery] string[] userNames)
+    {
+        logger.LogDebug("Exporting user file");
+
+        return userService.GetUsersJson(userNames) switch
+        {
+            Success<string> userJson => File(Encoding.UTF8.GetBytes(userJson.Value), MediaTypeNames.Application.Json),
+            var r => throw new UnexpectedResultException(r)
+        };
     }
 
     [HttpGet("{userName}")]
@@ -41,6 +73,20 @@ public class UsersController(IUserService userService, IEnumerable<IConfiguratio
             switch
             {
                 Success<Domain.User> s => Ok((UserConfigurationsModel)s.Value),
+                Failure<UserNotFoundError> => NotFound(),
+                var r => throw new UnexpectedResultException(r)
+            };
+    }
+
+    [HttpDelete("{userName}")]
+    public async Task<ActionResult> DeleteUser(string userName)
+    {
+        logger.LogDebug("Deleting user {userName}", userName);
+
+        return await userService.DeleteUser(userName)
+            switch
+            {
+                Success => NoContent(),
                 Failure<UserNotFoundError> => NotFound(),
                 var r => throw new UnexpectedResultException(r)
             };

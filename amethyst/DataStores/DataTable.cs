@@ -40,6 +40,7 @@ public interface IDataTable<TData, TKey> : IDataTable where TData : new()
     bool Insert(TData item);
     Result Upsert(TData item);
     Result Archive(TKey key);
+    Result ArchiveByColumn(IColumn column, object key);
     Result Update(TKey key, TData item);
     Result Update(TKey key, JsonObject item);
     Result Update(TKey key, string itemJson);
@@ -135,8 +136,15 @@ public class DataTable<TData, TKey>(KeySelector<TData, TKey> keySelector, ISQLit
         connection.Query<int>($"UPDATE {_tableName} SET isArchived = TRUE WHERE id = ? RETURNING 0", key).Count switch
         {
             1 => Result.Succeed(),
-            0 => Result.Fail<TeamNotFoundError>(),
+            0 => Result.Fail<NotFoundError>(),
             _ => throw new UnexpectedUpdateCountException()
+        };
+
+    public Result ArchiveByColumn(IColumn column, object key) =>
+        connection.Query<int>($"UPDATE {_tableName} SET isArchived = TRUE WHERE {column.Name} = ? RETURNING 0", key).Count switch
+        {
+            0 => Result.Fail<NotFoundError>(),
+            _ => Result.Succeed()
         };
 
     public Result Update(TKey key, TData item) => Update(key, Serialize(item));
@@ -146,7 +154,7 @@ public class DataTable<TData, TKey>(KeySelector<TData, TKey> keySelector, ISQLit
         connection.Query<int>($"UPDATE {_tableName} SET data = ? WHERE isArchived = FALSE AND id = ? RETURNING 0", itemJson, key).Count switch
         {
             1 => Result.Succeed(),
-            0 => Result.Fail<TeamNotFoundError>(),
+            0 => Result.Fail<NotFoundError>(),
             _ => throw new UnexpectedUpdateCountException()
         };
 
@@ -165,7 +173,7 @@ public class DataTable<TData, TKey>(KeySelector<TData, TKey> keySelector, ISQLit
         }
     }
 
-    public virtual void CreateTablesIfRequired()
+    public void CreateTablesIfRequired()
     {
         var keyType = GetSqliteType(typeof(TKey));
 

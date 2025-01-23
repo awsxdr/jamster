@@ -12,6 +12,7 @@ import { Overlay } from "./pages/overlay/Overlay";
 import { ScoreboardSettings } from "./pages/scoreboardSettings/ScoreboardSettings";
 import { OverlaySettings } from "./pages/overlaySettings/OverlaySettings";
 import { Timeline } from "./pages/timeline/Timeline";
+import { UsersManagement } from "./pages/users/UsersManagement";
 
 export const Routes = () => {
     const router = createBrowserRouter([
@@ -66,6 +67,10 @@ export const Routes = () => {
         {
             path: '/settings/overlay',
             element: <MainMenu content={<OverlaySettings />} />
+        },
+        {
+            path: '/users',
+            element: <MainMenu content={<UsersManagement />} />
         },
     ]);
     
