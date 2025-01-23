@@ -1,8 +1,9 @@
 import { Button, Card, Collapsible, CollapsibleContent, CollapsibleTrigger, Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, ScrollArea } from "@/components/ui";
 import { useI18n } from "@/hooks";
 import { useShortcutsContext } from "@/hooks/InputControls";
+import { cn } from "@/lib/utils";
 import { Control, InputControls, InputControlsItem, InputType } from "@/types";
-import { ChevronUp, Trash } from "lucide-react";
+import { ChevronRight, Trash } from "lucide-react";
 import { PropsWithChildren, useEffect, useMemo, useRef, useState } from "react";
 import { useRecordHotkeys } from "react-hotkeys-hook";
 
@@ -20,12 +21,13 @@ export const ShortcutConfigurationDialogTrigger = ({ children }: PropsWithChildr
 
 type ShortcutRecorderProps = {
     input: Control;
+    className?: string;
     onRecordingStarted: () => void;
     onRecordingEnded: () => void;
     onShortcutSet: (keys: string) => void;
 }
 
-const ShortcutRecorder = ({ input, onRecordingStarted, onRecordingEnded, onShortcutSet }: ShortcutRecorderProps) => {
+const ShortcutRecorder = ({ input, className, onRecordingStarted, onRecordingEnded, onShortcutSet }: ShortcutRecorderProps) => {
 
     const [keys, { start, stop, resetKeys, isRecording }] = useRecordHotkeys();
     const [keyDownCount, setKeyDownCount] = useState(0);
@@ -64,7 +66,7 @@ const ShortcutRecorder = ({ input, onRecordingStarted, onRecordingEnded, onShort
     return (
         <div 
             ref={inputRef}
-            className="min-w-[40%] bg-accent border border-transparent focus:border-destructive" 
+            className={cn("min-w-[40%] bg-accent border border-transparent focus:border-destructive", className)}
             tabIndex={0} 
             onFocus={handleFocus} 
             onBlur={handleBlur}
@@ -105,18 +107,19 @@ const ShortcutItem = <TGroupKey extends keyof InputControls, TControlKey extends
     }
 
     return (
-        <div className="flex w-full pl-8">
-            <div className="grow">{translate(`Shortcut.${groupName}.${controlName}`)}</div>
+        <>
+            <div className="col-start-1">{translate(`Shortcut.${groupName}.${controlName}`)}</div>
             <ShortcutRecorder
                 input={input}
+                className="col-start-2"
                 onRecordingStarted={onRecordingStarted} 
                 onRecordingEnded={onRecordingEnded} 
                 onShortcutSet={handleShortcutSet}
             />
-            <Button variant="ghost" className="text-red-500" size="icon" onClick={handleShortcutRemoved}>
+            <Button variant="ghost" className="col-start-3 text-red-500" size="icon" onClick={handleShortcutRemoved}>
                 <Trash />
             </Button>
-        </div>
+        </>
     )
 }
 
@@ -140,10 +143,10 @@ const ShortcutGroup = <TGroup extends InputControlsItem, TGroupKey extends keyof
                     <div className="grow text-left">
                         {translate(`Shortcut.${groupName}`)}
                     </div>
-                    <ChevronUp className="transition duration-300 ease-in-out group-data-[state=open]/collapsible:rotate-180" />
+                    <ChevronRight className="transition duration-300 ease-in-out group-data-[state=open]/collapsible:rotate-90" />
                 </Button>
             </CollapsibleTrigger>
-            <CollapsibleContent>
+            <CollapsibleContent className="ml-6 grid grid-flow-col grid-cols-[50%_auto_36px]">
                 {Object.keys(group).map(controlName => (
                     <ShortcutItem 
                         key={controlName}

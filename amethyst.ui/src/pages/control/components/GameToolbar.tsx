@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button"
 import { GameSelectMenu } from "./GameSelectMenu"
-import { ChevronDown, ChevronUp, Repeat, Settings, SquarePlus } from "lucide-react"
+import { ChevronDown, ChevronUp, Repeat, SquarePlus } from "lucide-react"
 import { ConfirmMakeCurrentDialog } from "./ConfirmMakeCurrentDialog";
 import { GameInfo } from "@/types";
 import { useI18n } from "@/hooks/I18nHook";
@@ -36,9 +36,7 @@ export const GameToolbar = ({ games, currentGame, onCurrentGameIdChanged, select
                     <div className="flex grow justify-end gap-2">
                         <UserMenu disabled={disabled} />
                         <ViewMenu disabled={disabled} />
-                        <Button size="icon" variant="ghost" disabled={disabled}>
-                            <Settings />
-                        </Button>
+                        <SettingsMenu disabled={disabled} />
                         <Button variant="ghost" className="inline" disabled={disabled} onClick={() => setShowGameSelect(v => !v)}>
                             { showGameSelect ? <ChevronUp /> : <ChevronDown /> }
                         </Button>

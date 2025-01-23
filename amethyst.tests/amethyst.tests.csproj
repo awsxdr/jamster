@@ -12,6 +12,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Services\CrgUserExport.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Services\CrgUserExport.json" />
     <EmbeddedResource Include="Services\ValidStatsbook1.xlsx" />
   </ItemGroup>
 
