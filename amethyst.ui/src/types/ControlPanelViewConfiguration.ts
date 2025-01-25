@@ -7,6 +7,7 @@ export type ControlPanelViewConfiguration = {
     showLineupControls: boolean;
     showClocks: boolean;
     showTimeoutList: boolean;
+    showScoreSheet: boolean;
     displaySide: DisplaySide;
 }
 
@@ -17,5 +18,6 @@ export const DEFAULT_CONTROL_PANEL_VIEW_CONFIGURATION: ControlPanelViewConfigura
     showLineupControls: true,
     showClocks: true,
     showTimeoutList: true,
+    showScoreSheet: true,
     displaySide: DisplaySide.Both,
 }

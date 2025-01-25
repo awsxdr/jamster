@@ -6,7 +6,7 @@ using Func;
 
 namespace amethyst.Reducers;
 
-public abstract class TeamJamStats(TeamSide teamSide, ReducerGameContext gameContext)
+public abstract class TeamJamStats(TeamSide teamSide, ReducerGameContext gameContext, ILogger logger)
     : Reducer<TeamJamStatsState>(gameContext)
     , IHandlesEvent<LeadMarked>
     , IHandlesEvent<LostMarked>
@@ -37,6 +37,8 @@ public abstract class TeamJamStats(TeamSide teamSide, ReducerGameContext gameCon
 
         SetState(state with { Lead = lead });
 
+        logger.LogDebug("Initial trip completed set to {value} for {teamSide} due to lead marked", lead, teamSide);
+
         if (state.HasCompletedInitial || !lead) return [];
 
         return [new InitialTripCompleted(@event.Tick, new(teamSide, true))];
@@ -61,6 +63,8 @@ public abstract class TeamJamStats(TeamSide teamSide, ReducerGameContext gameCon
                 _ => state.Called
             };
 
+        logger.LogDebug("Call set to {value} for {teamSide}", call, teamSide);
+
         SetState(state with { Called = call });
 
         return [];
@@ -77,7 +81,7 @@ public abstract class TeamJamStats(TeamSide teamSide, ReducerGameContext gameCon
     {
         var state = GetState();
         var opponentState = GetKeyedState<TeamJamStatsState>(teamSide == TeamSide.Home ? nameof(TeamSide.Away) : nameof(TeamSide.Home));
-        SetState(state with { HasCompletedInitial = @event.Body.TripCompleted, Lost = !state.Lead && !opponentState.Lead});
+        SetState(state with { HasCompletedInitial = @event.Body.TripCompleted, Lost = state.Lost || !state.Lead && !opponentState.Lead});
 
         return [];
     });
@@ -94,7 +98,7 @@ public abstract class TeamJamStats(TeamSide teamSide, ReducerGameContext gameCon
         var state = GetState();
         var timeoutClock = GetState<TimeoutClockState>();
 
-        if (state is { Lead: true, Called: false } && timeoutClock is { IsRunning: false })
+        if (state is { Lead: true, Lost: false, Called: false } && timeoutClock is { IsRunning: false })
             return [new CallMarked(@event.Tick, new(teamSide, true))];
 
         return [];
@@ -106,11 +110,13 @@ public abstract class TeamJamStats(TeamSide teamSide, ReducerGameContext gameCon
 
         if (state.HasCompletedInitial) return [];
 
+        logger.LogDebug("Marking initial trip completed for {teamSide} due to score modified", teamSide);
+
         return [new InitialTripCompleted(@event.Tick, new(teamSide, true))];
     });
 }
 
 public record TeamJamStatsState(bool Lead, bool Lost, bool Called, bool StarPass, bool HasCompletedInitial);
 
-public sealed class HomeTeamJamStats(ReducerGameContext gameContext) : TeamJamStats(TeamSide.Home, gameContext);
-public sealed class AwayTeamJamStats(ReducerGameContext gameContext) : TeamJamStats(TeamSide.Away, gameContext);
+public sealed class HomeTeamJamStats(ReducerGameContext gameContext, ILogger<HomeTeamJamStats> logger) : TeamJamStats(TeamSide.Home, gameContext, logger);
+public sealed class AwayTeamJamStats(ReducerGameContext gameContext, ILogger<AwayTeamJamStats> logger) : TeamJamStats(TeamSide.Away, gameContext, logger);

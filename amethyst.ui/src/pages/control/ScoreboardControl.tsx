@@ -60,7 +60,7 @@ export const ScoreboardControl = () => {
                     onSelectedGameIdChanged={updateSelectedGameId}
                 />
                 <Separator />
-                <div className="px-2 md:px-5">
+                <div className="px-0 sm:px-1 md:px-2 xl:px-5">
                     <GameStateContextProvider gameId={selectedGameId}>
                         <ControlPanel 
                             gameId={selectedGameId}

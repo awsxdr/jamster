@@ -42,7 +42,7 @@ public class TeamScoreUnitTests : ReducerUnitTest<HomeTeamScore, TeamScoreState>
     public async Task LastTripDeleted_WhenTeamMatches_RemovesPointsFromTrip(int totalScore, int jamScore, TeamSide teamSide, int? tripScore, int expectedTotalScore, int expectedJamScore)
     {
         State = new(totalScore, jamScore);
-        MockKeyedState("Home", new TripScoreState(tripScore, 0));
+        MockKeyedState("Home", new TripScoreState(tripScore, 1, 0));
 
         await Subject.Handle(new LastTripDeleted(0, new(teamSide)));
 

@@ -5,3 +5,9 @@ export class IntermissionStarted extends EventWithoutBody {
         super("IntermissionStarted");
     }
 }
+
+export class IntermissionEnded extends EventWithoutBody {
+    constructor() {
+        super("IntermissionEnded");
+    }
+}

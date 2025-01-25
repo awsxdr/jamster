@@ -56,6 +56,12 @@ public class EventsBuilder<TEventBeingBuilt>(Tick tick, Event[] events, int curr
     public override Event[] Build() =>
         BuildCurrentEvent().Build();
 
+    public virtual EventsBuilder<TEventBeingBuilt> GetTick(out Tick tick)
+    {
+        tick = Tick;
+        return this;
+    }
+
     private EventsBuilder BuildCurrentEvent()
     {
         var @event = (TEventBeingBuilt)Activator.CreateInstance(typeof(TEventBeingBuilt), [(Guid7)Tick])!;

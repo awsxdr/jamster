@@ -104,7 +104,7 @@ export const TeamControls = ({ gameId, side, disabled, className }: TeamControls
 
     return (
         <Card className={cn("w-full inline-block", className)}>
-            <CardContent className="py-0">
+            <CardContent className="p-0">
                 <SeparatedCollection>
                     { teamName && <div className="text-center text-xl">{teamName}</div> }
                     { viewConfiguration.showScoreControls && (

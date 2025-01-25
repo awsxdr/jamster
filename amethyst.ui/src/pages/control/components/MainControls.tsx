@@ -4,9 +4,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useGameStageState, useUndoListState } from "@/hooks";
 import { Event, useEvents } from "@/hooks/EventsApiHook";
 import { useI18n } from "@/hooks/I18nHook";
-import { useShortcut } from "@/hooks/InputControls";
 import { Stage } from "@/types";
-import { JamEnded, JamStarted, PeriodFinalized, TimeoutEnded, TimeoutStarted } from "@/types/events";
+import { IntermissionEnded, JamEnded, JamStarted, PeriodFinalized, TimeoutEnded, TimeoutStarted } from "@/types/events";
 import { Pause, Play, Square, Undo } from "lucide-react";
 import { useMemo } from "react";
 
@@ -36,8 +35,10 @@ export const MainControls = ({ gameId, disabled }: MainControlsProps) => {
                 return [translate("MainControls.EndJam"), translate("MainControls.EndJam.Description"), true];
             case Stage.Timeout: 
                 return [translate("MainControls.EndTimeout"), translate("MainControls.EndTimeout.Description"), true];
+            case Stage.BeforeGame:
+                return [translate("MainControls.StartLineup"), translate("MainControls.StartLineup.Description"), true];
             case Stage.Intermission: 
-                return gameStage.periodIsFinalized ? ["---", "", false] : [translate("MainControls.FinalizePeriod"), translate("MainControls.FinalizePeriod.Description"), true];
+                return gameStage.periodIsFinalized ? [translate("MainControls.StartLineup"), translate("MainControls.StartLineup.Description"), true] : [translate("MainControls.FinalizePeriod"), translate("MainControls.FinalizePeriod.Description"), true];
             case Stage.AfterGame: 
                 return gameStage.periodIsFinalized ? ["---", "", false] : [translate("MainControls.FinalizeGame"), translate("MainControls.FinalizeGame.Description"), true];
             default: 
@@ -80,8 +81,10 @@ export const MainControls = ({ gameId, disabled }: MainControlsProps) => {
             sendEventIfIdSet(new JamEnded());
         } else if(gameStage?.stage === Stage.Timeout) {
             sendEventIfIdSet(new TimeoutEnded());
-        } else if(gameStage?.stage === Stage.Intermission || gameStage?.stage === Stage.AfterGame) {
+        } else if((gameStage?.stage === Stage.Intermission || gameStage?.stage === Stage.AfterGame) && !gameStage.periodIsFinalized) {
             sendEventIfIdSet(new PeriodFinalized());
+        } else if(gameStage?.stage === Stage.BeforeGame || gameStage?.stage === Stage.Intermission) {
+            sendEventIfIdSet(new IntermissionEnded());
         }
     }
 
@@ -96,10 +99,6 @@ export const MainControls = ({ gameId, disabled }: MainControlsProps) => {
 
         deleteEvent(gameId, undoList.latestUndoEventId);
     }
-
-    useShortcut("clocks", "stop", handleEnd);
-    useShortcut("clocks", "timeout", handleTimeout);
-    useShortcut("clocks", "undo", handleUndo);
 
     const buttonClass = "w-full py-6 md:w-auto md:px-4 md:py-2";
 
@@ -150,7 +149,7 @@ export const MainControls = ({ gameId, disabled }: MainControlsProps) => {
                         className={buttonClass}
                         variant={undoButtonEnabled ? "default" : "secondary"}
                         disabled={disabled || !undoButtonEnabled}
-                        onClick={handleEnd}
+                        onClick={handleUndo}
                     >
                         <Undo />
                         { undoText }

@@ -1,20 +1,22 @@
-import { PropsWithChildren, ReactNode } from "react";
+import { forwardRef, PropsWithChildren, ReactNode } from "react";
 import { Button, ButtonProps, Tooltip, TooltipContent, TooltipTrigger } from "./ui";
 
 export type TooltipButtonProps = {
     description: ReactNode;
+    ref?: React.LegacyRef<HTMLButtonElement>;
 } & ButtonProps;
 
-export const TooltipButton = ({ 
+export const TooltipButton = forwardRef<HTMLButtonElement, TooltipButtonProps>(({ 
         children, 
         description,
         ...props 
-    }: PropsWithChildren<TooltipButtonProps>
+    }: PropsWithChildren<TooltipButtonProps>,
+    ref
 ) => {
     return (
         <Tooltip>
             <TooltipTrigger asChild>
-                <Button {...props}>
+                <Button {...props} ref={ref}>
                     { children }
                 </Button>
             </TooltipTrigger>
@@ -23,4 +25,4 @@ export const TooltipButton = ({
             </TooltipContent>
         </Tooltip>
     );
-}
+});

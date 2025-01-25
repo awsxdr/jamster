@@ -1,7 +1,6 @@
 ﻿using amethyst.Domain;
 using amethyst.Events;
 using amethyst.Services;
-using Microsoft.Extensions.Logging;
 
 namespace amethyst.Reducers;
 
@@ -12,18 +11,20 @@ public class TimeoutList(ReducerGameContext context, ILogger<TimeoutList> logger
     , IHandlesEvent<TimeoutEnded>
     , IHandlesEvent<TeamReviewRetained>
     , IHandlesEvent<TeamReviewLost>
+    , IDependsOnState<GameStageState>
 {
     protected override TimeoutListState DefaultState => new([]);
 
     public IEnumerable<Event> Handle(TimeoutStarted @event)
     {
         var state = GetState();
+        var gameStage = GetState<GameStageState>();
 
         var newState = SetLastTimeoutDuration(state, @event.Tick);
 
         SetState(new (
             newState.Timeouts
-                .Append(new TimeoutListItem(@event.Id, TimeoutType.Untyped, null, null, false))
+                .Append(new TimeoutListItem(@event.Id, TimeoutType.Untyped, gameStage.PeriodNumber, gameStage.JamNumber, null, null, false))
                 .ToArray()));
 
         return [];
@@ -131,4 +132,4 @@ public sealed record TimeoutListState(TimeoutListItem[] Timeouts)
     public override int GetHashCode() => Timeouts.GetHashCode();
 }
 
-public record TimeoutListItem(Guid7 EventId, TimeoutType Type, TeamSide? Side, int? DurationInSeconds, bool Retained);
+public record TimeoutListItem(Guid7 EventId, TimeoutType Type, int Period, int Jam, TeamSide? Side, int? DurationInSeconds, bool Retained);

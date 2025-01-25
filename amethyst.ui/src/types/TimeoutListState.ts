@@ -8,6 +8,8 @@ export type TimeoutListState = {
 export type TimeoutListItem = {
     eventId: string;
     type: TimeoutType;
+    period: number;
+    jam: number;
     side?: TeamSide;
     durationInSeconds?: number;
     retained: boolean;

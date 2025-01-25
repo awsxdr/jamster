@@ -7,6 +7,7 @@ public record ControlPanelViewConfiguration(
     bool ShowLineupControls,
     bool ShowClocks,
     bool ShowTimeoutList,
+    bool ShowScoreSheet,
     DisplaySide DisplaySide
 );
 
@@ -25,6 +26,7 @@ public class ControlPanelViewConfigurationFactory : IConfigurationFactory<Contro
         true,
         true,
         true,
+        false,
         true,
         DisplaySide.Both);
 }

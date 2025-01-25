@@ -14,7 +14,6 @@ export const ShortcutButton = <TGroupKey extends keyof InputControls, TControlKe
         shortcutKey,
         disabled,
         description,
-        onClick, 
         ...props 
     }: PropsWithChildren<ShortcutButtonProps<TGroupKey, TControlKey>>
 ) => {
@@ -35,7 +34,8 @@ export const ShortcutButton = <TGroupKey extends keyof InputControls, TControlKe
 
     return (
         <TooltipButton 
-            {...props} 
+            {...props}
+            ref={buttonRef}
             description={
                 <>
                     { shortcut?.binding && (

@@ -7,6 +7,7 @@ import { useCurrentUserConfiguration, useGameStageState, useHasServerConnection 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui";
 import { WifiOff } from "lucide-react";
 import { TimeoutList } from "./TimeoutList";
+import { ScoreSheetContainer } from "./statsSheet/ScoreSheetContainer";
 
 type ControlPanelProps = {
     gameId?: string;
@@ -62,6 +63,9 @@ export const ControlPanel = ({ gameId, disabled }: ControlPanelProps) => {
             { viewConfiguration.showClocks && <ClocksContainer /> }
             { viewConfiguration.showTimeoutList &&
                 <TimeoutList gameId={gameId} displaySide={viewConfiguration.displaySide} />
+            }
+            { viewConfiguration.showScoreSheet &&
+                <ScoreSheetContainer displaySide={viewConfiguration.displaySide} />
             }
         </div>
     )

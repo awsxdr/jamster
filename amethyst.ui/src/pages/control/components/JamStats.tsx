@@ -53,7 +53,7 @@ export const JamStats = ({ side, disabled, onLeadChanged, onLostChanged, onCallC
 
     return (
         <>
-            <div className="flex flex-wrap w-full justify-center items-center gap-2 p-5">
+            <div className="flex flex-wrap w-full justify-center items-center gap-2 py-2">
                 <StatsButton active={jamStats?.lead} disabled={disabled} onClick={handleLead}>{translate("TripStats.Lead")}</StatsButton>
                 <StatsButton active={jamStats?.lost} disabled={disabled} onClick={handleLost}>{translate("TripStats.Lost")}</StatsButton>
                 <StatsButton active={jamStats?.called} disabled={disabled} onClick={handleCall}>{translate("TripStats.Call")}</StatsButton>

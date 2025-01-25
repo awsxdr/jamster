@@ -36,7 +36,8 @@ export const ViewMenu = ({ disabled }: ViewMenuProps) => {
             showStatsControls: true,
             showLineupControls: true,
             showClocks: true,
-            showTimeoutList: true,
+            showTimeoutList: false,
+            showScoreSheet: true,
             displaySide: DisplaySide.Both,
         });
     }
@@ -50,6 +51,7 @@ export const ViewMenu = ({ disabled }: ViewMenuProps) => {
             showLineupControls: true,
             showClocks: true,
             showTimeoutList: false,
+            showScoreSheet: true,
         });
     }
 
@@ -62,6 +64,7 @@ export const ViewMenu = ({ disabled }: ViewMenuProps) => {
             showLineupControls: false,
             showClocks: true,
             showTimeoutList: true,
+            showScoreSheet: false,
             displaySide: DisplaySide.Both,
         });
     }
@@ -94,6 +97,11 @@ export const ViewMenu = ({ disabled }: ViewMenuProps) => {
     const toggleShowTimeouts = () => setViewConfiguration({
         ...viewConfiguration,
         showTimeoutList: !viewConfiguration.showTimeoutList,
+    });
+
+    const toggleShowScoreSheet = () => setViewConfiguration({
+        ...viewConfiguration,
+        showScoreSheet: !viewConfiguration.showScoreSheet,
     });
 
     const setDisplaySide = (displaySide: DisplaySide) => setViewConfiguration({
@@ -173,8 +181,8 @@ export const ViewMenu = ({ disabled }: ViewMenuProps) => {
                         <Timer />
                         {translate("ViewMenu.Timeouts")}
                     </DropdownMenuItem>
-                    <DropdownMenuItem disabled={disabled}>
-                        <span className="w-[16px]"></span>
+                    <DropdownMenuItem disabled={disabled} onClick={toggleShowScoreSheet}>
+                        { viewConfiguration.showScoreSheet ? (<Check />) : (<IconSpacer />) }
                         <Table />
                         {translate("ViewMenu.ScoreSheet")}
                     </DropdownMenuItem>

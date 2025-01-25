@@ -21,7 +21,7 @@ export const TeamLineup = ({ side, onLineupSelected, disabled }: TeamLineupProps
         <>
             <div className="flex justify-center items-center self-center">
                 <div className="flex flex-col items-end">
-                    <div className="flex flex-wrap justify-center items-center gap-2 pt-5 pb-1 items-baseline">
+                    <div className="flex flex-wrap justify-center items-center gap-2 p-2 pb-1 items-baseline">
                         <span className={disabled ? "opacity-50" : ""}>{translate("TeamLineup.Jammer")}</span>
                         <RadioButtonGroup
                             items={[{value: null, name: "?"}, ...skaterNumbers.map(s => ({ value: s, name: s}))]}
@@ -33,7 +33,7 @@ export const TeamLineup = ({ side, onLineupSelected, disabled }: TeamLineupProps
                             onItemSelected={v => onLineupSelected?.(SkaterPosition.Jammer, v)}
                         />
                     </div>
-                    <div className="flex flex-wrap justify-center items-center gap-2 pb-5 items-baseline">
+                    <div className="flex flex-wrap justify-center items-center gap-2 p-2 pt-0 items-baseline">
                         <span className={disabled ? "opacity-50" : ""}>{translate("TeamLineup.Pivot")}</span>
                         <RadioButtonGroup
                             items={[{value: null, name: "?"}, ...skaterNumbers.map(s => ({ value: s, name: s}))]}
