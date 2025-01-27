@@ -2,7 +2,7 @@ import { useScoreSheetState, useTeamDetailsState, useTimeoutListState } from "@/
 import { ScoreSheetJam, TeamSide, TimeoutListItem } from "@/types";
 import { ScoreSheetJamRow } from "./ScoreSheetJamRow";
 import { cn } from "@/lib/utils";
-import { useMemo } from "react";
+import { Fragment, useMemo } from "react";
 import { ScoreSheetTimeoutRow } from "./ScoreSheetTimeoutRow";
 
 type ScoreSheetProps = {
@@ -58,8 +58,8 @@ export const ScoreSheet = ({ teamSide, descending, className }: ScoreSheetProps)
     return (
         <div className="flex flex-col gap-2">
             <div className="text-lg text-center block xl:hidden">{teamName}</div>
-            { periods.map(lines => (
-                <>
+            { periods.slice(0, 1).map((lines, lineNumber) => (
+                <Fragment key={`line-${lineNumber}`}>
                     <div>Period {lines[0]?.period}</div>
                     <div 
                         className={cn(
@@ -70,11 +70,11 @@ export const ScoreSheet = ({ teamSide, descending, className }: ScoreSheetProps)
                     >
                         { lines.map((line, i) => 
                             line.type === "jam"
-                            ? <ScoreSheetJamRow key={i} line={line.jamItem!} even={line.jamItem!.even} />
-                            : <ScoreSheetTimeoutRow key={i} timeout={line.timeoutItem!} sheetSide={teamSide} />
+                            ? <ScoreSheetJamRow key={`jamLine-${lineNumber}-column-${i}`} line={line.jamItem!} even={line.jamItem!.even} />
+                            : <ScoreSheetTimeoutRow key={`jamLine-${lineNumber}-column-${i}`} timeout={line.timeoutItem!} sheetSide={teamSide} />
                         )}
                     </div>
-                </>
+                </Fragment>
             ))}
         </div>
     );

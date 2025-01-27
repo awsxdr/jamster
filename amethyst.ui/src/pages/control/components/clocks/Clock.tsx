@@ -99,10 +99,10 @@ export const Clock = ({ name, editing, seconds, isRunning, direction, startValue
     }
 
     return (
-        <Card className={cn("grow lg:w-1/5 transition-[border]", className, isRunning && "border-t-primary border-t-8")}>
+        <Card className={cn("transition-[border]", className, isRunning && "border-t-primary border-t-8")}>
             <CardContent className={cn("flex flex-col gap-2 p-4", isRunning && "mt-[-8px]")}>
-                <div className="items-center justify-between lg:flex lg:flex-wrap lg:gap-5">
-                    <span className="text-xl block">{name}</span>
+                <div className="items-center justify-between flex-col xl:flex-row lg:flex lg:flex-wrap lg:gap-2">
+                    <span className="text-base text-center block">{name}</span>
                     <div className="flex flex-col gap-1 grow">
                         {!!editing && (
                             <div className="text-center">
@@ -118,7 +118,7 @@ export const Clock = ({ name, editing, seconds, isRunning, direction, startValue
                                 </RepeaterButton>
                             </div>
                         )}
-                        <span className="block text-right h-full text-4xl">{time}</span>
+                        <span className="block text-center xl:text-right h-full text-2xl lg:text-3xl xl:text-4xl">{time}</span>
                         {!!editing && (
                             <div className="text-center">
                                 <RepeaterButton 
@@ -136,7 +136,7 @@ export const Clock = ({ name, editing, seconds, isRunning, direction, startValue
                     </div>
                 </div>
                 {!!editing && (
-                    <div className="flex gap-2 items-center">
+                    <div className="flex flex-col sm:flex-row gap-2 items-center">
                         <Input placeholder="12:34" className="text-right" value={inputValue} onChange={handleInputChanged} onBlur={handleInputBlur} />
                         <Button variant="secondary" size="sm" onClick={handleSetClicked} disabled={inputValue === ''}>Set</Button>
                     </div>

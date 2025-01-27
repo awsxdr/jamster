@@ -6,7 +6,7 @@ import { TeamScore } from "./TeamScore";
 import { JamScore } from "./JamScore";
 import { cn } from "@/lib/utils";
 import { ScaledText } from "@/components/ScaledText";
-import { useJamStatsState } from "@/hooks";
+import { useI18n, useJamStatsState } from "@/hooks";
 import { SCOREBOARD_GAP_CLASS_NAME } from "../Scoreboard";
 
 type TeamDetailsProps = {
@@ -16,6 +16,7 @@ type TeamDetailsProps = {
 export const TeamDetails = ({ side }: TeamDetailsProps) => {
 
     const { starPass } = useJamStatsState(side) ?? { starPass: false };
+    const { translate } = useI18n({ prefix: "Scoreboard.TeamDetails." })
 
     return (
         <div className={cn("flex flex-col grow w-1/2", SCOREBOARD_GAP_CLASS_NAME)}>
@@ -29,8 +30,8 @@ export const TeamDetails = ({ side }: TeamDetailsProps) => {
                     <JamScore side={side} />
                     <div className="text-white h-2/5">
                         <ScaledText 
-                            text={starPass ? "SP" : ""}
-                            className={cn("flex justify-center items-center h-full overflow-hidden")} 
+                            text={starPass ? translate("StarPassInicator") : ""}
+                            className={cn("flex justify-center items-center h-full overflow-hidden font-bold")} 
                         />
                     </div>
                 </div>

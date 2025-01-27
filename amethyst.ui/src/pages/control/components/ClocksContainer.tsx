@@ -18,24 +18,29 @@ export const ClocksContainer = () => {
 
     return (
         <div className="w-full flex gap-2 items-center">
-            <div className="w-full flex flex-wrap lg:flex-nowrap gap-2 justify-between">
+            <div className="w-full grid grid-flow-rows auto-cols-fr gap-2">
                 <PeriodClock
+                    className="col-start-1"
                     editing={isEditing} 
                     name={`${translate('ClocksContainer.Period')} ${gameStage?.periodNumber ?? 0}`} 
                 />
                 <JamClock
+                    className="col-start-2"
                     editing={isEditing} 
                     name={`${translate('ClocksContainer.Jam')} ${gameStage?.jamNumber ?? 0}`} 
                 />
                 <LineupClock
+                    className="col-start-3"
                     editing={isEditing}
                     name={translate('ClocksContainer.Lineup')}
                 />
                 <TimeoutClock 
+                    className="col-start-1 lg:col-start-4"
                     editing={isEditing} 
                     name={translate('ClocksContainer.Timeout')} 
                 />
                 <IntermissionClock
+                    className="col-start-2 lg:col-start-5"
                     editing={isEditing} 
                     name={translate('ClocksContainer.Intermission')} 
                 />
