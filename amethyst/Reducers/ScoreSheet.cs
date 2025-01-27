@@ -16,6 +16,8 @@ public abstract class ScoreSheet(TeamSide teamSide, ReducerGameContext context, 
     , IHandlesEvent<LeadMarked>
     , IHandlesEvent<LostMarked>
     , IHandlesEvent<CallMarked>
+    , IHandlesEvent<ScoreSheetJammerNumberSet>
+    , IHandlesEvent<ScoreSheetLeadSet>
     , IDependsOnState<JamLineupState>
     , IDependsOnState<GameStageState>
     , IDependsOnState<TeamJamStatsState>
@@ -177,6 +179,44 @@ public abstract class ScoreSheet(TeamSide teamSide, ReducerGameContext context, 
 
         return [];
     });
+
+    public IEnumerable<Event> Handle(ScoreSheetJammerNumberSet @event)
+    {
+        var state = GetState();
+
+        if (@event.Body.LineNumber >= state.Jams.Length)
+            return [];
+
+        SetState(new(
+            state.Jams.Take(@event.Body.LineNumber)
+                .Append(state.Jams[@event.Body.LineNumber] with
+                {
+                    JammerNumber = @event.Body.Value,
+                })
+                .Concat(state.Jams.Skip(@event.Body.LineNumber + 1))
+                .ToArray()));
+
+        return [];
+    }
+
+    public IEnumerable<Event> Handle(ScoreSheetLeadSet @event)
+    {
+        var state = GetState();
+
+        if (@event.Body.LineNumber >= state.Jams.Length)
+            return [];
+
+        SetState(new(
+            state.Jams.Take(@event.Body.LineNumber)
+                .Append(state.Jams[@event.Body.LineNumber] with
+                {
+                    Lead = @event.Body.Value,
+                })
+                .Concat(state.Jams.Skip(@event.Body.LineNumber + 1))
+                .ToArray()));
+
+        return [];
+    }
 }
 
 public sealed record ScoreSheetState(ScoreSheetJam[] Jams)
