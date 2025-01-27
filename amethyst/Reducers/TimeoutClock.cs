@@ -18,19 +18,16 @@ public class TimeoutClock(ReducerGameContext context, ILogger<TimeoutClock> logg
     public IEnumerable<Event> Handle(JamStarted @event)
     {
         var state = GetState();
-        if (state.IsRunning)
-        {
-            logger.LogDebug("Jam started; stopping timeout at {tick}", @event.Tick);
-            var endTick = state.EndTick > 0 ? state.EndTick : @event.Tick;
-            SetState(state with
-            {
-                IsRunning = false, 
-                EndTick = endTick,
-                TicksPassed = endTick - state.StartTick,
-            });
-        }
 
-        return [];
+        if(state.IsRunning)
+            SetState(state with { IsRunning = false });
+
+        if (!state.IsRunning || state.EndTick > 0)
+            return [];
+
+        logger.LogDebug("Jam started; stopping timeout at {tick}", @event.Tick);
+
+        return [new TimeoutEnded(@event.Tick)];
     }
 
     public IEnumerable<Event> Handle(TimeoutStarted @event)
@@ -45,7 +42,7 @@ public class TimeoutClock(ReducerGameContext context, ILogger<TimeoutClock> logg
     {
         var state = GetState();
 
-        if (state is { IsRunning: true, EndTick: 0 })
+        if (state is { EndTick: 0 })
         {
             logger.LogDebug("Ending timeout at {tick}", @event.Tick);
             SetState(state with { EndTick = @event.Tick });

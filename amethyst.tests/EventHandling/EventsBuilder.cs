@@ -1,4 +1,4 @@
-﻿using System.Runtime.CompilerServices;
+using System.Runtime.CompilerServices;
 using amethyst.Domain;
 using amethyst.Events;
 using amethyst.Services;
@@ -40,6 +40,7 @@ public class EventsBuilder<TEventBeingBuilt>(Tick tick, Event[] events, int curr
     where TEventBeingBuilt : Event
 {
     internal int EventDurationInSeconds { get; } = currentEventDurationInSeconds;
+    private Guid7? _nextEventId = null;
 
     public override EventsBuilder<TEvent> Event<TEvent>(int durationInSeconds) =>
         BuildCurrentEvent().Event<TEvent>(durationInSeconds);
@@ -62,9 +63,16 @@ public class EventsBuilder<TEventBeingBuilt>(Tick tick, Event[] events, int curr
         return this;
     }
 
+    public virtual EventsBuilder<TEventBeingBuilt> GetId(out Guid7 eventId)
+    {
+        _nextEventId = Tick;
+        eventId = _nextEventId;
+        return this;
+    }
+
     private EventsBuilder BuildCurrentEvent()
     {
-        var @event = (TEventBeingBuilt)Activator.CreateInstance(typeof(TEventBeingBuilt), [(Guid7)Tick])!;
+        var @event = (TEventBeingBuilt)Activator.CreateInstance(typeof(TEventBeingBuilt), _nextEventId ?? Tick)!;
 
         return Event(@event, EventDurationInSeconds);
     }

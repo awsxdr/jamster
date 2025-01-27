@@ -8,7 +8,7 @@ namespace amethyst.tests.Reducers;
 public class TimeoutClockUnitTests : ReducerUnitTest<TimeoutClock, TimeoutClockState>
 {
     [Test]
-    public async Task JamStarted_WhenLineupClockIsRunning_StopsClock()
+    public async Task JamStarted_WhenClockRunning_AndEndTickNotSet_SendsTimeoutEndedEvent()
     {
         var randomTick = Random.Shared.Next(0, 100000);
 
@@ -16,24 +16,39 @@ public class TimeoutClockUnitTests : ReducerUnitTest<TimeoutClock, TimeoutClockS
 
         var secondRandomTick = randomTick + Random.Shared.Next(1, 10000);
 
-        await Subject.Handle(new JamStarted(secondRandomTick));
+        var implicitEvents = await Subject.Handle(new JamStarted(secondRandomTick));
 
-        State.IsRunning.Should().BeFalse();
-        State.StartTick.Should().Be(randomTick);
-        State.EndTick.Should().Be(secondRandomTick);
-        State.TicksPassed.Should().Be(secondRandomTick - randomTick);
+        implicitEvents.OfType<TimeoutEnded>().Should().ContainSingle().Which.Tick.Should().Be(secondRandomTick);
     }
 
     [Test]
-    public async Task JamStarted_WhenLineupClockNotRunning_DoesNotChangeState()
+    public async Task JamStarted_WhenClockNotRunning_DoesNotSendTimeoutEndedEvent()
     {
         State = (TimeoutClockState)Subject.GetDefaultState();
 
-        var initialState = State;
+        var implicitEvents = await Subject.Handle(new JamStarted(10000));
+
+        implicitEvents.OfType<TimeoutEnded>().Should().BeEmpty();
+    }
+
+    [Test]
+    public async Task JamStarted_WhenClockRunning_AndEndTickSet_DoesNotSendTimeoutEndedEvent()
+    {
+        State = new(true, 0, 9000, 9000, 9);
+
+        var implicitEvents = await Subject.Handle(new JamStarted(10000));
+
+        implicitEvents.OfType<TimeoutEnded>().Should().BeEmpty();
+    }
+
+    [Test]
+    public async Task JamStarted_WhenClock_RegardlessOfEndTickSet_StopsTimeoutClock([Values] bool endTickSet)
+    {
+        State = new(true, 0, endTickSet ? 9000 : 0, endTickSet ? 9000 : 10000, endTickSet ? 9 : 10);
 
         await Subject.Handle(new JamStarted(10000));
 
-        State.Should().Be(initialState);
+        State.IsRunning.Should().BeFalse();
     }
 
     [Test]
@@ -67,19 +82,6 @@ public class TimeoutClockUnitTests : ReducerUnitTest<TimeoutClock, TimeoutClockS
         var initialState = State;
 
         await Subject.Handle(new TimeoutEnded(50000));
-
-        State.Should().Be(initialState);
-    }
-
-    [Test]
-    public async Task TimeoutEnded_WhenClockNotRunning_DoesNotChangeState()
-    {
-        State = new(false, 0, 0, 0, 0);
-        var initialState = State;
-
-        var randomTick = GetRandomTickFollowing(initialState.StartTick + 10000);
-
-        await Subject.Handle(new TimeoutEnded(randomTick));
 
         State.Should().Be(initialState);
     }
