@@ -1,5 +1,5 @@
 import { Button, Collapsible, CollapsibleContent, CollapsibleTrigger, Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from "@components/ui"
-import { Captions, ChartNoAxesCombined, ChevronDown, ChevronLeft, ChevronRight, CircleHelp, Keyboard, List, MonitorCog, Shirt, TvMinimal, Users } from "lucide-react"
+import { Captions, ChartNoAxesCombined, ChevronDown, ChevronLeft, ChevronRight, CircleHelp, ClipboardPenLine, Grid3X3, Keyboard, List, MonitorCog, NotebookText, Shirt, TvMinimal, Users } from "lucide-react"
 import { ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { LanguageMenu } from "./LanguageMenu";
@@ -23,66 +23,85 @@ type SidebarGroupList = {
 };
 
 const sidebarItems: SidebarGroupList = {
-    "MenuSidebar.MainGroup": {
+    "ControlGroup": {
         items: [
             {
-                title: "MenuSidebar.ScoreboardDisplay",
+                title: "ScoreboardControl",
+                href: "/sbo",
+                icon: <Keyboard />
+            },
+            {
+                title: "PenaltyLineup",
+                href: "/plt",
+                icon: <ClipboardPenLine />
+            },
+        ],
+    },
+    "DisplayGroup": {
+        items: [
+            {
+                title: "ScoreboardDisplay",
                 href: "/scoreboard",
                 icon: <TvMinimal />
             },
             {
-                title: "MenuSidebar.ScoreboardControl",
-                href: "/control",
-                icon: <Keyboard />
-            }
-        ],
-    },
-    "MenuSidebar.DataGroup": {
-        collapsible: false,
-        defaultOpen: true,
-        items: [
-            {
-                title: "MenuSidebar.Teams",
-                href: "/teams",
-                icon: <Shirt />
-            },
-            {
-                title: "MenuSidebar.Games",
-                href: "/games",
-                icon: <List />
-            },
-            {
-                title: "MenuSidebar.Users",
-                href: "/users",
-                icon: <Users />
-            }
-        ],
-    },
-    "MenuSidebar.ScreensGroup": {
-        collapsible: false,
-        items: [
-            {
-                title: "MenuSidebar.Overlay",
+                title: "Overlay",
                 href: "/overlay",
                 icon: <Captions />
             },
             {
-                title: "MenuSidebar.Stats",
+                title: "Penalties",
+                href: "/penalties",
+                icon: <Grid3X3 />
+            }
+        ]
+    },
+    "DataGroup": {
+        collapsible: false,
+        defaultOpen: true,
+        items: [
+            {
+                title: "Games",
+                href: "/games",
+                icon: <List />
+            },
+            {
+                title: "Teams",
+                href: "/teams",
+                icon: <Shirt />
+            },
+            {
+                title: "Users",
+                href: "/users",
+                icon: <Users />
+            },
+            {
+                title: "Rulesets",
+                href: "/rulesets",
+                icon: <NotebookText />
+            },
+        ],
+    },
+    "ScreensGroup": {
+        collapsible: false,
+        items: [
+            {
+                title: "Stats",
                 href: "/stats",
                 icon: <ChartNoAxesCombined />
             },
         ],
     },
-    "MenuSidebar.SettingsGroup": {
+    "SettingsGroup": {
         collapsible: false,
         items: [
             {
-                title: "MenuSidebar.DisplaySettings",
+                title: "DisplaySettings",
                 href: "/settings/display",
                 icon: <MonitorCog />
             },
             {
-                title: "MenuSidebar.OverlaySettings",
+                title: "OverlaySettings",
                 href: "/settings/overlay",
                 icon: <Captions />
             }
@@ -94,7 +113,7 @@ export const MenuSidebar = () => {
     const location = useLocation();
 
     const { open: sidebarOpen, toggleSidebar, isMobile } = useSidebar();
-    const { translate } = useI18n();
+    const { translate } = useI18n({ prefix: "MenuSidebar." });
 
     return (
         <Sidebar collapsible="icon">
@@ -161,10 +180,10 @@ export const MenuSidebar = () => {
                     <LanguageMenu />
                     <ThemeMenu />
                     <SidebarMenuItem>
-                        <SidebarMenuButton asChild tooltip={translate("MenuSidebar.Help")}>
+                        <SidebarMenuButton asChild tooltip={translate("Help")}>
                             <Link to="/help" onClick={() => isMobile && toggleSidebar()}>
                                 <CircleHelp />
-                                <span>{translate("MenuSidebar.Help")}</span>
+                                <span>{translate("Help")}</span>
                             </Link>
                         </SidebarMenuButton>
                     </SidebarMenuItem>

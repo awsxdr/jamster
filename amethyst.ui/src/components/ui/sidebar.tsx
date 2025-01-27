@@ -16,6 +16,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { useI18n } from "@/hooks"
 
 const SIDEBAR_COOKIE_NAME = "sidebar:state"
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
@@ -108,7 +109,13 @@ const SidebarProvider = React.forwardRef<
         toggleSidebar,
       }),
       [state, open, setOpen, isMobile, openMobile, setOpenMobile, toggleSidebar]
-    )
+    );
+
+    // Language-based sidebar width overrides
+    const { language } = useI18n();
+    const sidebarWidth =
+      language === "es" ? "18rem"
+      : SIDEBAR_WIDTH;
 
     return (
       <SidebarContext.Provider value={contextValue}>
@@ -116,7 +123,7 @@ const SidebarProvider = React.forwardRef<
           <div
             style={
               {
-                "--sidebar-width": SIDEBAR_WIDTH,
+                "--sidebar-width": sidebarWidth,
                 "--sidebar-width-icon": SIDEBAR_WIDTH_ICON,
                 ...style,
               } as React.CSSProperties

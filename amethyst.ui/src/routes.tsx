@@ -25,7 +25,7 @@ export const Routes = () => {
             element: <CurrentGameScoreboard />
         },
         {
-            path: '/control',
+            path: '/sbo',
             element: <MainMenu content={<ScoreboardControl />} />
         },
         {
@@ -55,6 +55,18 @@ export const Routes = () => {
         {
             path: '/overlay',
             element: <Overlay />
+        },
+        {
+            path: '/penalties',
+            element: <MainMenu content={<WorkInProgress />} />
+        },
+        {
+            path: '/plt',
+            element: <MainMenu content={<WorkInProgress />} />
+        },
+        {
+            path: '/rulesets',
+            element: <MainMenu content={<WorkInProgress />} />
         },
         {
             path: '/stats',
