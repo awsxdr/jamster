@@ -39,14 +39,14 @@ export const RadioButtonGroup = <TValue,>({ items, value, variant, size, rowClas
         <div className={cn("flex flex-wrap gap-2", rowClassName)}>
             <TooltipProvider>
             {
-                items.map(item => (item as TooltipRadioItem<TValue>)?.description ? (
+                items.map((item, i) => (item as TooltipRadioItem<TValue>)?.description ? (
                     <TooltipButton 
                         description={(item as TooltipRadioItem<TValue>).description}
                         size={size}
                         variant={variant ?? "secondary"}
                         className={cn("border-2", value === item.value ? "border-primary" : "", buttonClassName)}
                         disabled={disabled}
-                        key={item.name}
+                        key={i}
                         onClick={() => handleButtonClick(item.value)}
                     >
                         {item.name}
@@ -57,7 +57,7 @@ export const RadioButtonGroup = <TValue,>({ items, value, variant, size, rowClas
                         variant={variant ?? "secondary"}
                         className={cn("border-2", value === item.value ? "border-primary" : "", buttonClassName)}
                         disabled={disabled}
-                        key={item.name}
+                        key={i}
                         onClick={() => handleButtonClick(item.value)}
                     >
                         {item.name}

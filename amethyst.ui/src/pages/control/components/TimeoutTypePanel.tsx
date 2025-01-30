@@ -70,14 +70,14 @@ export const TimeoutTypePanel = ({ gameId, disabled }: TimeoutTypePanelProps) =>
             description: translate("TimeoutType.Official.Description"),
         },
         { 
-            value: 'AwayTeamTimeout', 
-            name: translate("TimeoutType.Team").replace("{teamName}", awayTeamName), 
-            description: translate("TimeoutType.Team.Description").replace("{teamName}", awayTeamName),
-        },
-        { 
             value: 'AwayTeamReview', 
             name: translate("TimeoutType.TeamReview").replace("{teamName}", awayTeamName), 
             description: translate("TimeoutType.TeamReview.Description").replace("{teamName}", awayTeamName), 
+        },
+        {
+            value: 'AwayTeamTimeout', 
+            name: translate("TimeoutType.Team").replace("{teamName}", awayTeamName), 
+            description: translate("TimeoutType.Team.Description").replace("{teamName}", awayTeamName),
         },
     ];
 
