@@ -31,7 +31,8 @@ public class PeriodClock(ReducerGameContext context, ILogger<PeriodClock> logger
         {
             IsRunning = true, 
             HasExpired = false,
-            TicksPassedAtLastStart = state.TicksPassed,
+            TicksPassedAtLastStart = (int)(Math.Floor(state.TicksPassed / 1000.0) * 1000),
+            TicksPassed = (int)(Math.Floor(state.TicksPassed / 1000.0) * 1000),
             LastStartTick = @event.Tick,
         });
 

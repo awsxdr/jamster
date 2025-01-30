@@ -25,6 +25,19 @@ public class PeriodClockUnitTests : ReducerUnitTest<PeriodClock, PeriodClockStat
     }
 
     [Test]
+    public async Task JamStart_WhenPeriodClockStopped_AlignsSecondsToStartTick()
+    {
+        State = new(false, false, 0, 1234, 1234, 1);
+
+        await Subject.Handle(new JamStarted(10789));
+
+        State.LastStartTick.Should().Be(10789);
+        State.TicksPassedAtLastStart.Should().Be(1000);
+        State.TicksPassed.Should().Be(1000);
+        State.SecondsPassed.Should().Be(1);
+    }
+
+    [Test]
     public async Task JamStart_WhenPeriodClockRunning_DoesNotChangeState()
     {
         Tick ticksPassed = Random.Shared.Next(1000);
