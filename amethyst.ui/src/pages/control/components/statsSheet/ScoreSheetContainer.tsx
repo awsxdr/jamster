@@ -9,10 +9,11 @@ import { cn } from "@/lib/utils";
 import { TooltipButton } from "@/components/TooltipButton";
 
 type ScoreSheetContainerProps = {
+    gameId: string;
     displaySide: DisplaySide;
 }
 
-export const ScoreSheetContainer = ({ displaySide }: ScoreSheetContainerProps) => {
+export const ScoreSheetContainer = ({ gameId, displaySide }: ScoreSheetContainerProps) => {
 
     const [open, setOpen] = useState(true);
     const [descending, setDescending] = useState(true);
@@ -40,8 +41,8 @@ export const ScoreSheetContainer = ({ displaySide }: ScoreSheetContainerProps) =
                 <CollapsibleContent>
                     <CardContent className={cn(SCOREBOARD_TEXT_PADDING_CLASS_NAME, "pt-0 md:pt-0 lg:pt-0 xl:pt-0")}>
                         <div className="w-full flex flex-col xl:grid grid-flow-col auto-cols-fr gap-2" data-state->
-                            { displaySide !== DisplaySide.Away && <ScoreSheet teamSide={TeamSide.Home} descending={descending} /> }
-                            { displaySide !== DisplaySide.Home && <ScoreSheet teamSide={TeamSide.Away} descending={descending} /> }
+                            { displaySide !== DisplaySide.Away && <ScoreSheet gameId={gameId} teamSide={TeamSide.Home} descending={descending} /> }
+                            { displaySide !== DisplaySide.Home && <ScoreSheet gameId={gameId} teamSide={TeamSide.Away} descending={descending} /> }
                         </div>
                     </CardContent>
                 </CollapsibleContent>

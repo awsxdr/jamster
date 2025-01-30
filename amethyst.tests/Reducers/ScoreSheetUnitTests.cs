@@ -1,5 +1,4 @@
-﻿using System.Diagnostics.Contracts;
-using amethyst.Domain;
+﻿using amethyst.Domain;
 using amethyst.Events;
 using amethyst.Reducers;
 using FluentAssertions;
@@ -29,13 +28,13 @@ public class ScoreSheetUnitTests : ReducerUnitTest<HomeScoreSheet, ScoreSheetSta
         jam.Jam.Should().Be(6);
         jam.JamTotal.Should().Be(0);
         jam.JammerNumber.Should().Be("123");
-        jam.LineLabel.Should().Be("6");
+        jam.PivotNumber.Should().Be("321");
     }
 
     [Test]
     public async Task JamStarted_WhenPreviousJam_AddsJamWithExpectedGameTotal()
     {
-        State = new([new(1, 1, "1", "123", false, true, true, false, false, [new(4), new(4)], 8, 8)]);
+        State = new([new(1, 1, "123", "555", false, true, true, false, false, [new(4), new(4)], null, 8, 8)]);
         MockKeyedState<JamLineupState>(nameof(TeamSide.Home), new("123", "321"));
         MockState<GameStageState>(new(Stage.Jam, 1, 2, false));
 
@@ -64,7 +63,7 @@ public class ScoreSheetUnitTests : ReducerUnitTest<HomeScoreSheet, ScoreSheetSta
     {
         if (gameStage == Stage.Jam) return;
 
-        var jam = new ScoreSheetJam(1, 1, "1", "321", false, false, false, false, false, [], 0, 0);
+        var jam = new ScoreSheetJam(1, 1, "321", "555", false, false, false, false, false, [], null, 0, 0);
         State = new([jam]);
         MockState<GameStageState>(new(gameStage, 1, 2, false));
 
@@ -76,7 +75,7 @@ public class ScoreSheetUnitTests : ReducerUnitTest<HomeScoreSheet, ScoreSheetSta
     [Test]
     public async Task SkaterOnTrack_WhenGameStageInJam_AndSkaterIsJammer_AndTeamMatches_SetsJammerNumber()
     {
-        State = new([new(1, 1, "1", "321", false, false, false, false, false, [], 0, 0)]);
+        State = new([new(1, 1, "321", "555", false, false, false, false, false, [], null, 0, 0)]);
         MockState<GameStageState>(new(Stage.Jam, 1, 2, false));
 
         await Subject.Handle(new SkaterOnTrack(1000, new(TeamSide.Home, "123", SkaterPosition.Jammer)));
@@ -85,21 +84,20 @@ public class ScoreSheetUnitTests : ReducerUnitTest<HomeScoreSheet, ScoreSheetSta
     }
 
     [Test]
-    public async Task SkaterOnTrack_WhenGameStageInJam_AndSkaterIsPivot_AndTeamMatches_DoesNotChangeState()
+    public async Task SkaterOnTrack_WhenGameStageInJam_AndSkaterIsPivot_AndTeamMatches_SetsPivotNumber()
     {
-        var jam = new ScoreSheetJam(1, 1, "1", "321", false, false, false, false, false, [], 0, 0);
-        State = new([jam]);
+        State = new([new(1, 1, "321", "555", false, false, false, false, false, [], null, 0, 0)]);
         MockState<GameStageState>(new(Stage.Jam, 1, 2, false));
 
         await Subject.Handle(new SkaterOnTrack(1000, new(TeamSide.Home, "123", SkaterPosition.Pivot)));
 
-        State.Jams.Should().ContainSingle().Which.Should().Be(jam);
+        State.Jams.Should().ContainSingle().Which.PivotNumber.Should().Be("123");
     }
 
     [Test]
     public async Task SkaterOnTrack_WhenGameStageInJam_AndSkaterIsJammer_AndTeamDoesNotMatch_DoesNotChangeState()
     {
-        var jam = new ScoreSheetJam(1, 1, "1", "321", false, false, false, false, false, [], 0, 0);
+        var jam = new ScoreSheetJam(1, 1, "321", "555", false, false, false, false, false, [], null, 0, 0);
         State = new([jam]);
         MockState<GameStageState>(new(Stage.Jam, 1, 2, false));
 
@@ -112,9 +110,9 @@ public class ScoreSheetUnitTests : ReducerUnitTest<HomeScoreSheet, ScoreSheetSta
     public async Task InitialTripCompleted_WhenCompletedTrue_AndTeamMatches_AddsASingleTrip()
     {
         State = new([
-            new(1, 1, "1", "123", false, true, true, false, false, [new(4), new(4), new(3)], 11, 11),
-            new(1, 2, "2", "234", false, false, false, false, false, [new(2)], 2, 13),
-            new(1, 3, "3", "?", false, false, false, false, false, [], 0, 13),
+            new(1, 1, "123", "555", false, true, true, false, false, [new(4), new(4), new(3)], null, 11, 11),
+            new(1, 2, "234", "555", false, false, false, false, false, [new(2)], null, 2, 13),
+            new(1, 3, "?", "?", false, false, false, false, false, [], null, 0, 13),
         ]);
         MockKeyedState<TeamJamStatsState>(nameof(TeamSide.Home), new(false, false, false, false, true));
 
@@ -129,9 +127,9 @@ public class ScoreSheetUnitTests : ReducerUnitTest<HomeScoreSheet, ScoreSheetSta
     public async Task InitialTripCompleted_WhenCompletedFalse_AndTeamMatches_ClearsAllTrips()
     {
         State = new([
-            new(1, 1, "1", "123", false, true, true, false, false, [new(4), new(4), new(3)], 11, 11),
-            new(1, 2, "2", "234", false, false, false, false, false, [new(2)], 2, 13),
-            new(1, 3, "3", "?", false, false, false, false, false, [new(0), new(0)], 0, 13),
+            new(1, 1, "123", "555", false, true, true, false, false, [new(4), new(4), new(3)], null, 11, 11),
+            new(1, 2, "234", "555", false, false, false, false, false, [new(2)], null, 2, 13),
+            new(1, 3, "?", "?", false, false, false, false, false, [new(0), new(0)], null, 0, 13),
         ]);
         MockKeyedState<TeamJamStatsState>(nameof(TeamSide.Home), new(false, false, false, false, false));
 
@@ -145,9 +143,9 @@ public class ScoreSheetUnitTests : ReducerUnitTest<HomeScoreSheet, ScoreSheetSta
     public async Task InitialTripCompleted_WhenTeamDoesNotMatch_DoesNotChangeState()
     {
         var originalState = State = new([
-            new(1, 1, "1", "123", false, true, true, false, false, [new(4), new(4), new(3)], 11, 11),
-            new(1, 2, "2", "234", false, false, false, false, false, [new(2)], 2, 13),
-            new(1, 3, "3", "?", false, false, false, false, false, [new(0), new(0)], 0, 13),
+            new(1, 1, "123", "555", false, true, true, false, false, [new(4), new(4), new(3)], null, 11, 11),
+            new(1, 2, "234", "555", false, false, false, false, false, [new(2)], null, 2, 13),
+            new(1, 3, "?", "?", false, false, false, false, false, [new(0), new(0)], null, 0, 13),
         ]);
         MockKeyedState<TeamJamStatsState>(nameof(TeamSide.Home), new(false, false, false, false, false));
 
@@ -160,9 +158,9 @@ public class ScoreSheetUnitTests : ReducerUnitTest<HomeScoreSheet, ScoreSheetSta
     public async Task TripCompleted_WhenTeamMatches_AddsBlankTripToLatestJam()
     {
         State = new([
-            new(1, 1, "1", "123", false, true, true, false, false, [new(4), new(4), new(3)], 11, 11),
-            new(1, 2, "2", "234", false, false, false, false, false, [new(2)], 2, 13),
-            new(1, 3, "3", "?", false, false, false, false, false, [new(4), new(4)], 8, 21),
+            new(1, 1, "123", "555", false, true, true, false, false, [new(4), new(4), new(3)], null, 11, 11),
+            new(1, 2, "234", "555", false, false, false, false, false, [new(2)], null, 2, 13),
+            new(1, 3, "?", "?", false, false, false, false, false, [new(4), new(4)], null, 8, 21),
         ]);
 
         await Subject.Handle(new TripCompleted(1000, new(TeamSide.Home)));
@@ -176,9 +174,9 @@ public class ScoreSheetUnitTests : ReducerUnitTest<HomeScoreSheet, ScoreSheetSta
     public async Task TripCompleted_WhenTeamDoesNotMatch_DoesNotChangeState()
     {
         var originalState = State = new([
-            new(1, 1, "1", "123", false, true, true, false, false, [new(4), new(4), new(3)], 11, 11),
-            new(1, 2, "2", "234", false, false, false, false, false, [new(2)], 2, 13),
-            new(1, 3, "3", "?", false, false, false, false, false, [new(4), new(4)], 8, 21),
+            new(1, 1, "123", "555", false, true, true, false, false, [new(4), new(4), new(3)], null, 11, 11),
+            new(1, 2, "234", "555", false, false, false, false, false, [new(2)], null, 2, 13),
+            new(1, 3, "?", "?", false, false, false, false, false, [new(4), new(4)], null, 8, 21),
         ]);
 
         await Subject.Handle(new TripCompleted(1000, new(TeamSide.Away)));
@@ -190,9 +188,9 @@ public class ScoreSheetUnitTests : ReducerUnitTest<HomeScoreSheet, ScoreSheetSta
     public async Task ScoreModifiedRelative_WhenTeamMatches_AddsScoreToLastTripScore_AndUpdatesJamAndGameTotals()
     {
         State = new([
-            new(1, 1, "1", "123", false, true, true, false, false, [new(4), new(4), new(3)], 11, 11),
-            new(1, 2, "2", "234", false, false, false, false, false, [new(2)], 2, 13),
-            new(1, 3, "3", "?", false, false, false, false, false, [new(4), new(4), new(null)], 8, 21),
+            new(1, 1, "123", "555", false, true, true, false, false, [new(4), new(4), new(3)], null, 11, 11),
+            new(1, 2, "234", "555", false, false, false, false, false, [new(2)], null, 2, 13),
+            new(1, 3, "?", "?", false, false, false, false, false, [new(4), new(4), new(null)], null, 8, 21),
         ]);
 
         await Subject.Handle(new ScoreModifiedRelative(1000, new(TeamSide.Home, 2)));
@@ -210,9 +208,9 @@ public class ScoreSheetUnitTests : ReducerUnitTest<HomeScoreSheet, ScoreSheetSta
     public async Task ScoreModifiedRelative_WhenTeamDoesNotMatch_DoesNotChangeState()
     {
         var originalState = State = new([
-            new(1, 1, "1", "123", false, true, true, false, false, [new(4), new(4), new(3)], 11, 11),
-            new(1, 2, "2", "234", false, false, false, false, false, [new(2)], 2, 13),
-            new(1, 3, "3", "?", false, false, false, false, false, [new(4), new(4)], 8, 21),
+            new(1, 1, "123", "555", false, true, true, false, false, [new(4), new(4), new(3)], null, 11, 11),
+            new(1, 2, "234", "555", false, false, false, false, false, [new(2)], null, 2, 13),
+            new(1, 3, "?", "?", false, false, false, false, false, [new(4), new(4)], null, 8, 21),
         ]);
 
         await Subject.Handle(new ScoreModifiedRelative(1000, new(TeamSide.Away, 2)));
@@ -224,9 +222,9 @@ public class ScoreSheetUnitTests : ReducerUnitTest<HomeScoreSheet, ScoreSheetSta
     public async Task LeadMarked_WhenTeamMatches_SetsCurrentJamLeadToValue([Values] bool isLead)
     {
         State = new([
-            new(1, 1, "1", "123", false, true, true, false, false, [new(4), new(4), new(3)], 11, 11),
-            new(1, 2, "2", "234", false, false, false, false, false, [new(2)], 2, 13),
-            new(1, 3, "3", "?", !isLead, false, false, false, false, [new(4), new(4), new(null)], 8, 21),
+            new(1, 1, "123", "555", false, true, true, false, false, [new(4), new(4), new(3)], null, 11, 11),
+            new(1, 2, "234", "555", false, false, false, false, false, [new(2)], null, 2, 13),
+            new(1, 3, "?", "?", !isLead, false, false, false, false, [new(4), new(4), new(null)], null, 8, 21),
         ]);
 
         var expectedState = new ScoreSheetState(State.Jams.Select(j => j).ToArray());
@@ -241,9 +239,9 @@ public class ScoreSheetUnitTests : ReducerUnitTest<HomeScoreSheet, ScoreSheetSta
     public async Task LeadMarked_WhenTeamDoesNotMatch_DoesNotChangeState([Values] bool isLead)
     {
         var originalState = State = new([
-            new(1, 1, "1", "123", false, true, true, false, false, [new(4), new(4), new(3)], 11, 11),
-            new(1, 2, "2", "234", false, false, false, false, false, [new(2)], 2, 13),
-            new(1, 3, "3", "?", !isLead, false, false, false, false, [new(4), new(4), new(null)], 8, 21),
+            new(1, 1, "123", "555", false, true, true, false, false, [new(4), new(4), new(3)], null, 11, 11),
+            new(1, 2, "234", "555", false, false, false, false, false, [new(2)], null, 2, 13),
+            new(1, 3, "?", "?", !isLead, false, false, false, false, [new(4), new(4), new(null)], null, 8, 21),
         ]);
 
         await Subject.Handle(new LeadMarked(1000, new(TeamSide.Away, isLead)));
@@ -255,9 +253,9 @@ public class ScoreSheetUnitTests : ReducerUnitTest<HomeScoreSheet, ScoreSheetSta
     public async Task LostMarked_WhenTeamMatches_SetsCurrentJamLostToValue([Values] bool isLost)
     {
         State = new([
-            new(1, 1, "1", "123", false, true, true, false, false, [new(4), new(4), new(3)], 11, 11),
-            new(1, 2, "2", "234", false, false, false, false, false, [new(2)], 2, 13),
-            new(1, 3, "3", "?", false, !isLost, false, false, false, [new(4), new(4), new(null)], 8, 21),
+            new(1, 1, "123", "555", false, true, true, false, false, [new(4), new(4), new(3)], null, 11, 11),
+            new(1, 2, "234", "555", false, false, false, false, false, [new(2)], null, 2, 13),
+            new(1, 3, "?", "?", false, !isLost, false, false, false, [new(4), new(4), new(null)], null, 8, 21),
         ]);
 
         var expectedState = new ScoreSheetState(State.Jams.Select(j => j).ToArray());
@@ -272,9 +270,9 @@ public class ScoreSheetUnitTests : ReducerUnitTest<HomeScoreSheet, ScoreSheetSta
     public async Task LostMarked_WhenTeamDoesNotMatch_DoesNotChangeState([Values] bool isLost)
     {
         var originalState = State = new([
-            new(1, 1, "1", "123", false, true, true, false, false, [new(4), new(4), new(3)], 11, 11),
-            new(1, 2, "2", "234", false, false, false, false, false, [new(2)], 2, 13),
-            new(1, 3, "3", "?", false, !isLost, false, false, false, [new(4), new(4), new(null)], 8, 21),
+            new(1, 1, "123", "555", false, true, true, false, false, [new(4), new(4), new(3)], null, 11, 11),
+            new(1, 2, "234", "555", false, false, false, false, false, [new(2)], null, 2, 13),
+            new(1, 3, "?", "?", false, !isLost, false, false, false, [new(4), new(4), new(null)], null, 8, 21),
         ]);
 
         await Subject.Handle(new LeadMarked(1000, new(TeamSide.Away, isLost)));
@@ -286,9 +284,9 @@ public class ScoreSheetUnitTests : ReducerUnitTest<HomeScoreSheet, ScoreSheetSta
     public async Task CalledMarked_WhenTeamMatches_SetsCurrentJamCalledToValue([Values] bool called)
     {
         State = new([
-            new(1, 1, "1", "123", false, true, true, false, false, [new(4), new(4), new(3)], 11, 11),
-            new(1, 2, "2", "234", false, false, false, false, false, [new(2)], 2, 13),
-            new(1, 3, "3", "?", false, false, !called, false, false, [new(4), new(4), new(null)], 8, 21),
+            new(1, 1, "123", "555", false, true, true, false, false, [new(4), new(4), new(3)], null, 11, 11),
+            new(1, 2, "234", "555", false, false, false, false, false, [new(2)], null, 2, 13),
+            new(1, 3, "?", "?", false, false, !called, false, false, [new(4), new(4), new(null)], null, 8, 21),
         ]);
 
         var expectedState = new ScoreSheetState(State.Jams.Select(j => j).ToArray());
@@ -303,9 +301,9 @@ public class ScoreSheetUnitTests : ReducerUnitTest<HomeScoreSheet, ScoreSheetSta
     public async Task CalledMarked_WhenTeamDoesNotMatch_DoesNotChangeState([Values] bool called)
     {
         var originalState = State = new([
-            new(1, 1, "1", "123", false, true, true, false, false, [new(4), new(4), new(3)], 11, 11),
-            new(1, 2, "2", "234", false, false, false, false, false, [new(2)], 2, 13),
-            new(1, 3, "3", "?", false, false, called, false, false, [new(4), new(4), new(null)], 8, 21),
+            new(1, 1, "123", "555", false, true, true, false, false, [new(4), new(4), new(3)], null, 11, 11),
+            new(1, 2, "234", "555", false, false, false, false, false, [new(2)], null, 2, 13),
+            new(1, 3, "?", "?", false, false, called, false, false, [new(4), new(4), new(null)], null, 8, 21),
         ]);
 
         await Subject.Handle(new CallMarked(1000, new(TeamSide.Away, called)));
@@ -314,18 +312,18 @@ public class ScoreSheetUnitTests : ReducerUnitTest<HomeScoreSheet, ScoreSheetSta
     }
 
     [Test]
-    public async Task ScoreSheetJammerNumberSet_WhenJamLineExists_SetsJammerNumberToValue()
+    public async Task ScoreSheetJammerNumberSet_WhenJamLineExists_AndTeamMatches_SetsJammerNumberToValue()
     {
         State = new([
-            new(1, 1, "1", "123", false, true, true, false, false, [new(4), new(4), new(3)], 11, 11),
-            new(1, 2, "2", "234", false, false, false, false, false, [new(2)], 2, 13),
-            new(1, 3, "3", "?", false, false, false, false, false, [new(4), new(4), new(null)], 8, 21),
+            new(1, 1, "123", "555", false, true, true, false, false, [new(4), new(4), new(3)], null, 11, 11),
+            new(1, 2, "234", "555", false, false, false, false, false, [new(2)], null, 2, 13),
+            new(1, 3, "?", "?", false, false, false, false, false, [new(4), new(4), new(null)], null, 8, 21),
         ]);
 
         var expectedState = new ScoreSheetState(State.Jams.Select(j => j).ToArray());
         expectedState.Jams[1] = expectedState.Jams[1] with { JammerNumber = "4444" };
 
-        await Subject.Handle(new ScoreSheetJammerNumberSet(1000, new(1, "4444")));
+        await Subject.Handle(new ScoreSheetJammerNumberSet(1000, new(TeamSide.Home, 1, "4444")));
 
         State.Should().Be(expectedState);
     }
@@ -334,29 +332,43 @@ public class ScoreSheetUnitTests : ReducerUnitTest<HomeScoreSheet, ScoreSheetSta
     public async Task ScoreSheetJammerNumberSet_WhenJamLineDoesNotExist_DoesNotChangeState()
     {
         var originalState = State = new([
-            new(1, 1, "1", "123", false, true, true, false, false, [new(4), new(4), new(3)], 11, 11),
-            new(1, 2, "2", "234", false, false, false, false, false, [new(2)], 2, 13),
-            new(1, 3, "3", "?", false, false, false, false, false, [new(4), new(4), new(null)], 8, 21),
+            new(1, 1, "123", "555", false, true, true, false, false, [new(4), new(4), new(3)], null, 11, 11),
+            new(1, 2, "234", "555", false, false, false, false, false, [new(2)], null, 2, 13),
+            new(1, 3, "?", "?", false, false, false, false, false, [new(4), new(4), new(null)], null, 8, 21),
         ]);
 
-        await Subject.Handle(new ScoreSheetJammerNumberSet(1000, new(10, "4444")));
+        await Subject.Handle(new ScoreSheetJammerNumberSet(1000, new(TeamSide.Home, 10, "4444")));
 
         State.Should().Be(originalState);
     }
 
     [Test]
-    public async Task ScoreSheetLeadSet_WhenJamLineExists_SetsLeadToValue([Values] bool isLead)
+    public async Task ScoreSheetJammerNumberSet_WhenTeamDoesNotMatch_DoesNotChangeState()
+    {
+        var originalState = State = new([
+            new(1, 1, "123", "555", false, true, true, false, false, [new(4), new(4), new(3)], null, 11, 11),
+            new(1, 2, "234", "555", false, false, false, false, false, [new(2)], null, 2, 13),
+            new(1, 3, "?", "?", false, false, false, false, false, [new(4), new(4), new(null)], null, 8, 21),
+        ]);
+
+        await Subject.Handle(new ScoreSheetJammerNumberSet(1000, new(TeamSide.Away, 1, "4444")));
+
+        State.Should().Be(originalState);
+    }
+
+    [Test]
+    public async Task ScoreSheetLeadSet_WhenJamLineExists_AndTeamMatches_SetsLeadToValue([Values] bool isLead)
     {
         State = new([
-            new(1, 1, "1", "123", false, true, true, false, false, [new(4), new(4), new(3)], 11, 11),
-            new(1, 2, "2", "234", !isLead, false, false, false, false, [new(2)], 2, 13),
-            new(1, 3, "3", "?", false, false, false, false, false, [new(4), new(4), new(null)], 8, 21),
+            new(1, 1, "123", "555", false, true, true, false, false, [new(4), new(4), new(3)], null, 11, 11),
+            new(1, 2, "234", "555", !isLead, false, false, false, false, [new(2)], null, 2, 13),
+            new(1, 3, "?", "?", false, false, false, false, false, [new(4), new(4), new(null)], null, 8, 21),
         ]);
 
         var expectedState = new ScoreSheetState(State.Jams.Select(j => j).ToArray());
         expectedState.Jams[1] = expectedState.Jams[1] with { Lead = isLead };
 
-        await Subject.Handle(new ScoreSheetLeadSet(1000, new(1, isLead)));
+        await Subject.Handle(new ScoreSheetLeadSet(1000, new(TeamSide.Home, 1, isLead)));
 
         State.Should().Be(expectedState);
     }
@@ -365,13 +377,234 @@ public class ScoreSheetUnitTests : ReducerUnitTest<HomeScoreSheet, ScoreSheetSta
     public async Task ScoreSheetLeadSet_WhenJamLineDoesNotExist_DoesNotChangeState()
     {
         var originalState = State = new([
-            new(1, 1, "1", "123", false, true, true, false, false, [new(4), new(4), new(3)], 11, 11),
-            new(1, 2, "2", "234", false, false, false, false, false, [new(2)], 2, 13),
-            new(1, 3, "3", "?", false, false, false, false, false, [new(4), new(4), new(null)], 8, 21),
+            new(1, 1, "123", "555", false, true, true, false, false, [new(4), new(4), new(3)], null, 11, 11),
+            new(1, 2, "234", "555", false, false, false, false, false, [new(2)], null, 2, 13),
+            new(1, 3, "?", "?", false, false, false, false, false, [new(4), new(4), new(null)], null, 8, 21),
         ]);
 
-        await Subject.Handle(new ScoreSheetLeadSet(1000, new(10, true)));
+        await Subject.Handle(new ScoreSheetLeadSet(1000, new(TeamSide.Home, 10, true)));
 
         State.Should().Be(originalState);
+    }
+
+    [Test]
+    public async Task ScoreSheetLeadSet_WhenTeamDoesNotMatch_DoesNotChangeState()
+    {
+        var originalState = State = new([
+            new(1, 1, "123", "555", false, true, true, false, false, [new(4), new(4), new(3)], null, 11, 11),
+            new(1, 2, "234", "555", false, false, false, false, false, [new(2)], null, 2, 13),
+            new(1, 3, "?", "?", false, false, false, false, false, [new(4), new(4), new(null)], null, 8, 21),
+        ]);
+
+        await Subject.Handle(new ScoreSheetLeadSet(1000, new(TeamSide.Away, 1, true)));
+
+        State.Should().Be(originalState);
+    }
+
+    [Test]
+    public async Task ScoreSheetLostSet_WhenJamLineExists_AndTeamMatches_SetsLostToValue([Values] bool isLost)
+    {
+        State = new([
+            new(1, 1, "123", "555", false, true, true, false, false, [new(4), new(4), new(3)], null, 11, 11),
+            new(1, 2, "234", "555", false, !isLost, false, false, false, [new(2)], null, 2, 13),
+            new(1, 3, "?", "?", false, false, false, false, false, [new(4), new(4), new(null)], null, 8, 21),
+        ]);
+
+        var expectedState = new ScoreSheetState(State.Jams.Select(j => j).ToArray());
+        expectedState.Jams[1] = expectedState.Jams[1] with { Lost = isLost };
+
+        await Subject.Handle(new ScoreSheetLostSet(1000, new(TeamSide.Home, 1, isLost)));
+
+        State.Should().Be(expectedState);
+    }
+
+    [Test]
+    public async Task ScoreSheetLostSet_WhenJamLineDoesNotExist_DoesNotChangeState()
+    {
+        var originalState = State = new([
+            new(1, 1, "123", "555", false, true, true, false, false, [new(4), new(4), new(3)], null, 11, 11),
+            new(1, 2, "234", "555", false, false, false, false, false, [new(2)], null, 2, 13),
+            new(1, 3, "?", "?", false, false, false, false, false, [new(4), new(4), new(null)], null, 8, 21),
+        ]);
+
+        await Subject.Handle(new ScoreSheetLostSet(1000, new(TeamSide.Home, 10, true)));
+
+        State.Should().Be(originalState);
+    }
+
+    [Test]
+    public async Task ScoreSheetLostSet_WhenTeamDoesNotMatch_DoesNotChangeState()
+    {
+        var originalState = State = new([
+            new(1, 1, "123", "555", false, true, true, false, false, [new(4), new(4), new(3)], null, 11, 11),
+            new(1, 2, "234", "555", false, false, false, false, false, [new(2)], null, 2, 13),
+            new(1, 3, "?", "?", false, false, false, false, false, [new(4), new(4), new(null)], null, 8, 21),
+        ]);
+
+        await Subject.Handle(new ScoreSheetLostSet(1000, new(TeamSide.Away, 1, true)));
+
+        State.Should().Be(originalState);
+    }
+
+    [Test]
+    public async Task ScoreSheetCalledSet_WhenJamLineExists_AndTeamMatches_SetsCalledToValue([Values] bool isCalled)
+    {
+        State = new([
+            new(1, 1, "123", "555", false, true, true, false, false, [new(4), new(4), new(3)], null, 11, 11),
+            new(1, 2, "234", "555", false, false, !isCalled, false, false, [new(2)], null, 2, 13),
+            new(1, 3, "?", "?", false, false, false, false, false, [new(4), new(4), new(null)], null, 8, 21),
+        ]);
+
+        var expectedState = new ScoreSheetState(State.Jams.Select(j => j).ToArray());
+        expectedState.Jams[1] = expectedState.Jams[1] with { Called = isCalled };
+
+        await Subject.Handle(new ScoreSheetCalledSet(1000, new(TeamSide.Home, 1, isCalled)));
+
+        State.Should().Be(expectedState);
+    }
+
+    [Test]
+    public async Task ScoreSheetCalledSet_WhenJamLineDoesNotExist_DoesNotChangeState()
+    {
+        var originalState = State = new([
+            new(1, 1, "123", "555", false, true, true, false, false, [new(4), new(4), new(3)], null, 11, 11),
+            new(1, 2, "234", "555", false, false, false, false, false, [new(2)], null, 2, 13),
+            new(1, 3, "?", "?", false, false, false, false, false, [new(4), new(4), new(null)], null, 8, 21),
+        ]);
+
+        await Subject.Handle(new ScoreSheetCalledSet(1000, new(TeamSide.Home, 10, true)));
+
+        State.Should().Be(originalState);
+    }
+
+    [Test]
+    public async Task ScoreSheetCalledSet_WhenTeamDoesNotMatch_DoesNotChangeState()
+    {
+        var originalState = State = new([
+            new(1, 1, "123", "555", false, true, true, false, false, [new(4), new(4), new(3)], null, 11, 11),
+            new(1, 2, "234", "555", false, false, false, false, false, [new(2)], null, 2, 13),
+            new(1, 3, "?", "?", false, false, false, false, false, [new(4), new(4), new(null)], null, 8, 21),
+        ]);
+
+        await Subject.Handle(new ScoreSheetCalledSet(1000, new(TeamSide.Away, 1, true)));
+
+        State.Should().Be(originalState);
+    }
+
+    [Test]
+    public async Task ScoreSheetInjurySet_WhenJamLineExists_SetsInjuryToValue([Values] bool isInjury)
+    {
+        State = new([
+            new(1, 1, "123", "555", false, true, true, false, false, [new(4), new(4), new(3)], null, 11, 11),
+            new(1, 2, "234", "555", false, false, false, !isInjury, false, [new(2)], null, 2, 13),
+            new(1, 3, "?", "?", false, false, false, false, false, [new(4), new(4), new(null)], null, 8, 21),
+        ]);
+
+        var expectedState = new ScoreSheetState(State.Jams.Select(j => j).ToArray());
+        expectedState.Jams[1] = expectedState.Jams[1] with { Injury = isInjury };
+
+        await Subject.Handle(new ScoreSheetInjurySet(1000, new(1, isInjury)));
+
+        State.Should().Be(expectedState);
+    }
+
+    [Test]
+    public async Task ScoreSheetInjurySet_WhenJamLineDoesNotExist_DoesNotChangeState()
+    {
+        var originalState = State = new([
+            new(1, 1, "123", "555", false, true, true, false, false, [new(4), new(4), new(3)], null, 11, 11),
+            new(1, 2, "234", "555", false, false, false, false, false, [new(2)], null, 2, 13),
+            new(1, 3, "?", "?", false, false, false, false, false, [new(4), new(4), new(null)], null, 8, 21),
+        ]);
+
+        await Subject.Handle(new ScoreSheetInjurySet(1000, new(10, true)));
+
+        State.Should().Be(originalState);
+    }
+
+    [Test]
+    public async Task ScoreSheetNoInitialSet_WhenJamLineExists_AndTeamMatches_SetsNoInitialToValue([Values] bool isNoInitial)
+    {
+        State = new([
+            new(1, 1, "123", "555", false, true, true, false, false, [new(4), new(4), new(3)], null, 11, 11),
+            new(1, 2, "234", "555", false, false, false, false, !isNoInitial, [new(2)], null, 2, 13),
+            new(1, 3, "?", "?", false, false, false, false, false, [new(4), new(4), new(null)], null, 8, 21),
+        ]);
+
+        var expectedState = new ScoreSheetState(State.Jams.Select(j => j).ToArray());
+        expectedState.Jams[1] = expectedState.Jams[1] with { NoInitial = isNoInitial };
+
+        await Subject.Handle(new ScoreSheetNoInitialSet(1000, new(TeamSide.Home, 1, isNoInitial)));
+
+        State.Should().Be(expectedState);
+    }
+
+    [Test]
+    public async Task ScoreSheetNoInitialSet_WhenJamLineDoesNotExist_DoesNotChangeState()
+    {
+        var originalState = State = new([
+            new(1, 1, "123", "555", false, true, true, false, false, [new(4), new(4), new(3)], null, 11, 11),
+            new(1, 2, "234", "555", false, false, false, false, false, [new(2)], null, 2, 13),
+            new(1, 3, "?", "?", false, false, false, false, false, [new(4), new(4), new(null)], null, 8, 21),
+        ]);
+
+        await Subject.Handle(new ScoreSheetNoInitialSet(1000, new(TeamSide.Home, 10, true)));
+
+        State.Should().Be(originalState);
+    }
+
+    [Test]
+    public async Task ScoreSheetNoInitialSet_WhenTeamDoesNotMatch_DoesNotChangeState()
+    {
+        var originalState = State = new([
+            new(1, 1, "123", "555", false, true, true, false, false, [new(4), new(4), new(3)], null, 11, 11),
+            new(1, 2, "234", "555", false, false, false, false, false, [new(2)], null, 2, 13),
+            new(1, 3, "?", "?", false, false, false, false, false, [new(4), new(4), new(null)], null, 8, 21),
+        ]);
+
+        await Subject.Handle(new ScoreSheetNoInitialSet(1000, new(TeamSide.Away, 1, true)));
+
+        State.Should().Be(originalState);
+    }
+
+    [TestCase(TeamSide.Home, true, 3, null, 3)]
+    [TestCase(TeamSide.Home, false, 3, 3, null)]
+    [TestCase(TeamSide.Home, true, 0, null, 0)]
+    [TestCase(TeamSide.Home, true, 1, null, 1)]
+    [TestCase(TeamSide.Home, true, 3, 1, 3)]
+    [TestCase(TeamSide.Home, false, 0, 0, null)]
+    [TestCase(TeamSide.Home, false, 0, null, null)]
+    [TestCase(TeamSide.Away, true, 3, null, null)]
+    [TestCase(TeamSide.Away, false, 3, 3, 3)]
+    public async Task StarPassMarked_SetsStarPassTripAsExpected(TeamSide teamSide, bool starPass, int currentTripCount, int? initialStarPassTrip, int? expectedStarPassTrip)
+    {
+        State = new([
+            new(1, 1, "123", "555", false, true, true, false, false, [new(4), new(4), new(3)], null, 11, 11),
+            new(1, 2, "234", "555", false, false, false, false, false, [new(2)], null, 2, 13),
+            new(1, 3, "?", "?", false, false, false, false, false, Enumerable.Repeat(new JamLineTrip(4), currentTripCount).ToArray(), initialStarPassTrip, 8, 21),
+        ]);
+
+        await Subject.Handle(new StarPassMarked(1000, new(teamSide, starPass)));
+
+        State.Jams[2].StarPassTrip.Should().Be(expectedStarPassTrip);
+    }
+
+    [TestCase(TeamSide.Home, 5, 3, null, 3)]
+    [TestCase(TeamSide.Home, 3, 5, null, 3)]
+    [TestCase(TeamSide.Home, 3, 0, null, 0)]
+    [TestCase(TeamSide.Home, 3, null, 2, null)]
+    [TestCase(TeamSide.Home, 3, 1, 2, 1)]
+    [TestCase(TeamSide.Away, 3, 1, null, null)]
+    public async Task ScoreSheetStarPassTripSet_SetsStarPassTripAsExpected(TeamSide setSide, int tripCount, int? starPassTrip, int? initialStarPassTrip, int? expectedStarPassTrip)
+    {
+        State = new([
+            new(1, 1, "123", "555", false, true, true, false, false, [new(4), new(4), new(3)], null, 11, 11),
+            new(1, 2, "234", "555", false, false, false, false, false, [new(2)], null, 2, 13),
+            new(1, 3, "?", "?", false, false, false, false, false, Enumerable.Repeat(new JamLineTrip(4), tripCount).ToArray(), initialStarPassTrip, 8, 21),
+        ]);
+
+        await Subject.Handle(new ScoreSheetStarPassTripSet(1000, new(setSide, 2, starPassTrip)));
+
+        State.Jams[2].StarPassTrip.Should().Be(expectedStarPassTrip);
     }
 }

@@ -16,7 +16,9 @@ public static class TestGameEventsSource
         )
         .Wait(10)
         .Event<SkaterOnTrack>(1).WithBody(new SkaterOnTrackBody(TeamSide.Home, HomeTeam.Roster[0].Number, SkaterPosition.Jammer))
+        .Event<SkaterOnTrack>(1).WithBody(new SkaterOnTrackBody(TeamSide.Home, HomeTeam.Roster[1].Number, SkaterPosition.Pivot))
         .Event<SkaterOnTrack>(1).WithBody(new SkaterOnTrackBody(TeamSide.Away, AwayTeam.Roster[0].Number, SkaterPosition.Jammer))
+        .Event<SkaterOnTrack>(1).WithBody(new SkaterOnTrackBody(TeamSide.Away, AwayTeam.Roster[1].Number, SkaterPosition.Pivot))
         .Event<IntermissionEnded>(30)
         .Validate(
             new GameStageState(Stage.Lineup, 1, 0, false),
@@ -29,8 +31,8 @@ public static class TestGameEventsSource
             ("Away", new TeamScoreState(0, 0)),
             ("Home", new TripScoreState(null, 0, 0)),
             ("Away", new TripScoreState(null, 0, 0)),
-            ("Home", new ScoreSheetState([new(1, 1, "1", HomeTeam.Roster[0].Number, false, false, false, false, true, [], 0, 0)])),
-            ("Away", new ScoreSheetState([new(1, 1, "1", AwayTeam.Roster[0].Number, false, false, false, false, true, [], 0, 0)]))
+            ("Home", new ScoreSheetState([new(1, 1, HomeTeam.Roster[0].Number, HomeTeam.Roster[1].Number, false, false, false, false, true, [], null, 0, 0)])),
+            ("Away", new ScoreSheetState([new(1, 1, AwayTeam.Roster[0].Number, AwayTeam.Roster[1].Number, false, false, false, false, true, [], null, 0, 0)]))
         )
         .Event<LeadMarked>(2).WithBody(new LeadMarkedBody(TeamSide.Home, true))
         .Event<InitialTripCompleted>(10).WithBody(new InitialTripCompletedBody(TeamSide.Away, true))
@@ -40,8 +42,8 @@ public static class TestGameEventsSource
             ("Away", new TeamScoreState(0, 0)),
             ("Home", new TripScoreState(4, 1, homeScoreTick)),
             ("Away", new TripScoreState(null, 1, 0)),
-            ("Home", new ScoreSheetState([new(1, 1, "1", HomeTeam.Roster[0].Number, false, true, false, false, false, [new JamLineTrip(4)], 4, 4)])),
-            ("Away", new ScoreSheetState([new(1, 1, "1", AwayTeam.Roster[0].Number, false, false, false, false, false, [new JamLineTrip(null)], 0, 0)]))
+            ("Home", new ScoreSheetState([new(1, 1, HomeTeam.Roster[0].Number, HomeTeam.Roster[1].Number, false, true, false, false, false, [new JamLineTrip(4)], null, 4, 4)])),
+            ("Away", new ScoreSheetState([new(1, 1, AwayTeam.Roster[0].Number, AwayTeam.Roster[1].Number, false, false, false, false, false, [new JamLineTrip(null)], null, 0, 0)]))
         )
         .Wait(2)
         .Event<ScoreModifiedRelative>(0).GetTick(out var awayScoreTick).WithBody(new ScoreModifiedRelativeBody(TeamSide.Away, 4))
@@ -50,8 +52,8 @@ public static class TestGameEventsSource
             ("Away", new TeamScoreState(4, 4)),
             ("Home", new TripScoreState(4, 1, homeScoreTick)),
             ("Away", new TripScoreState(4, 1, awayScoreTick)),
-            ("Home", new ScoreSheetState([new(1, 1, "1", HomeTeam.Roster[0].Number, false, true, false, false, false, [new JamLineTrip(4)], 4, 4)])),
-            ("Away", new ScoreSheetState([new(1, 1, "1", AwayTeam.Roster[0].Number, false, false, false, false, false, [new JamLineTrip(4)], 4,  4)]))
+            ("Home", new ScoreSheetState([new(1, 1, HomeTeam.Roster[0].Number, HomeTeam.Roster[1].Number, false, true, false, false, false, [new JamLineTrip(4)], null, 4, 4)])),
+            ("Away", new ScoreSheetState([new(1, 1, AwayTeam.Roster[0].Number, AwayTeam.Roster[1].Number, false, false, false, false, false, [new JamLineTrip(4)], null, 4, 4)]))
         )
         .Wait(2)
         .Validate(tick => [
@@ -59,8 +61,8 @@ public static class TestGameEventsSource
             ("Away", new TeamScoreState(4, 4)),
             ("Home", new TripScoreState(null, 2, tick - 1000)),
             ("Away", new TripScoreState(4, 1, awayScoreTick)),
-            ("Home", new ScoreSheetState([new(1, 1, "1", HomeTeam.Roster[0].Number, false, true, false, false, false, [new JamLineTrip(4), new JamLineTrip(null)], 4, 4)])),
-            ("Away", new ScoreSheetState([new(1, 1, "1", AwayTeam.Roster[0].Number, false, false, false, false, false, [new JamLineTrip(4)], 4,  4)]))
+            ("Home", new ScoreSheetState([new(1, 1, HomeTeam.Roster[0].Number, HomeTeam.Roster[1].Number, false, true, false, false, false, [new JamLineTrip(4), new JamLineTrip(null)], null, 4, 4)])),
+            ("Away", new ScoreSheetState([new(1, 1, AwayTeam.Roster[0].Number, AwayTeam.Roster[1].Number, false, false, false, false, false, [new JamLineTrip(4)], null, 4,  4)]))
         ])
         .Wait(2)
         .Validate(tick => [
@@ -68,8 +70,8 @@ public static class TestGameEventsSource
             ("Away", new TeamScoreState(4, 4)),
             ("Home", new TripScoreState(null, 2, tick - 3000)),
             ("Away", new TripScoreState(null, 2, tick - 1000)),
-            ("Home", new ScoreSheetState([new(1, 1, "1", HomeTeam.Roster[0].Number, false, true, false, false, false, [new JamLineTrip(4), new JamLineTrip(null)], 4, 4)])),
-            ("Away", new ScoreSheetState([new(1, 1, "1", AwayTeam.Roster[0].Number, false, false, false, false, false, [new JamLineTrip(4), new JamLineTrip(null)], 4,  4)]))
+            ("Home", new ScoreSheetState([new(1, 1, HomeTeam.Roster[0].Number, HomeTeam.Roster[1].Number, false, true, false, false, false, [new JamLineTrip(4), new JamLineTrip(null)], null, 4, 4)])),
+            ("Away", new ScoreSheetState([new(1, 1, AwayTeam.Roster[0].Number, AwayTeam.Roster[1].Number, false, false, false, false, false, [new JamLineTrip(4), new JamLineTrip(null)], null, 4,  4)]))
         ])
         .Wait(15)
         .Event<JamEnded>(2)
@@ -78,35 +80,37 @@ public static class TestGameEventsSource
         .Validate(
             ("Home", new TeamScoreState(7, 7)),
             ("Away", new TeamScoreState(5, 5)),
-            ("Home", new ScoreSheetState([new(1, 1, "1", HomeTeam.Roster[0].Number, false, true, true, false, false, [new JamLineTrip(4), new JamLineTrip(3)], 7, 7)])),
-            ("Away", new ScoreSheetState([new(1, 1, "1", AwayTeam.Roster[0].Number, false, false, false, false, false, [new JamLineTrip(4), new JamLineTrip(1)], 5, 5)]))
+            ("Home", new ScoreSheetState([new(1, 1, HomeTeam.Roster[0].Number, HomeTeam.Roster[1].Number, false, true, true, false, false, [new JamLineTrip(4), new JamLineTrip(3)], null, 7, 7)])),
+            ("Away", new ScoreSheetState([new(1, 1, AwayTeam.Roster[0].Number, AwayTeam.Roster[1].Number, false, false, false, false, false, [new JamLineTrip(4), new JamLineTrip(1)], null, 5, 5)]))
         )
         .Wait(20)
         .Event<SkaterOnTrack>(1).WithBody(new SkaterOnTrackBody(TeamSide.Home, HomeTeam.Roster[1].Number, SkaterPosition.Jammer))
+        .Event<SkaterOnTrack>(1).WithBody(new SkaterOnTrackBody(TeamSide.Away, AwayTeam.Roster[3].Number, SkaterPosition.Pivot))
         .Wait(8)
         .Event<JamStarted>(2)
         .Validate(
             ("Home", new TeamScoreState(7, 0)),
             ("Away", new TeamScoreState(5, 0)),
             ("Home", new ScoreSheetState([
-                new(1, 1, "1", HomeTeam.Roster[0].Number, false, true, true, false, false, [new JamLineTrip(4), new JamLineTrip(3)], 7, 7),
-                new(1, 2, "2", HomeTeam.Roster[1].Number, false, false, false, false, true, [], 0, 7),
+                new(1, 1, HomeTeam.Roster[0].Number, HomeTeam.Roster[1].Number, false, true, true, false, false, [new JamLineTrip(4), new JamLineTrip(3)], null, 7, 7),
+                new(1, 2, HomeTeam.Roster[1].Number, "?", false, false, false, false, true, [], null, 0, 7),
             ])),
             ("Away", new ScoreSheetState([
-                new(1, 1, "1", AwayTeam.Roster[0].Number, false, false, false, false, false, [new JamLineTrip(4), new JamLineTrip(1)], 5, 5),
-                new(1, 2, "2", "?", false, false, false, false, true, [], 0, 5),
+                new(1, 1, AwayTeam.Roster[0].Number, AwayTeam.Roster[1].Number, false, false, false, false, false, [new JamLineTrip(4), new JamLineTrip(1)], null, 5, 5),
+                new(1, 2, "?", AwayTeam.Roster[3].Number, false, false, false, false, true, [], null, 0, 5),
             ]))
         )
+        .Event<SkaterOnTrack>(1).WithBody(new SkaterOnTrackBody(TeamSide.Home, HomeTeam.Roster[3].Number, SkaterPosition.Pivot))
         .Event<SkaterOnTrack>(1).WithBody(new SkaterOnTrackBody(TeamSide.Away, AwayTeam.Roster[1].Number, SkaterPosition.Jammer))
         .Event<LeadMarked>(1).WithBody(new LeadMarkedBody(TeamSide.Away, true))
         .Validate(
             ("Home", new ScoreSheetState([
-                new(1, 1, "1", HomeTeam.Roster[0].Number, false, true, true, false, false, [new JamLineTrip(4), new JamLineTrip(3)], 7, 7),
-                new(1, 2, "2", HomeTeam.Roster[1].Number, false, false, false, false, true, [], 0, 7),
+                new(1, 1, HomeTeam.Roster[0].Number, HomeTeam.Roster[1].Number, false, true, true, false, false, [new JamLineTrip(4), new JamLineTrip(3)], null, 7, 7),
+                new(1, 2, HomeTeam.Roster[1].Number, HomeTeam.Roster[3].Number, false, false, false, false, true, [], null, 0, 7),
             ])),
             ("Away", new ScoreSheetState([
-                new(1, 1, "1", AwayTeam.Roster[0].Number, false, false, false, false, false, [new JamLineTrip(4), new JamLineTrip(1)], 5, 5),
-                new(1, 2, "2", AwayTeam.Roster[1].Number, false, true, false, false, false, [new JamLineTrip(null)], 0, 5),
+                new(1, 1, AwayTeam.Roster[0].Number, AwayTeam.Roster[1].Number, false, false, false, false, false, [new JamLineTrip(4), new JamLineTrip(1)], null, 5, 5),
+                new(1, 2, AwayTeam.Roster[1].Number, AwayTeam.Roster[3].Number, false, true, false, false, false, [new JamLineTrip(null)], null, 0, 5),
             ]))
         )
         .Event<ScoreModifiedRelative>(0).WithBody(new ScoreModifiedRelativeBody(TeamSide.Away, 4))
@@ -114,24 +118,24 @@ public static class TestGameEventsSource
             ("Home", new TeamScoreState(7, 0)),
             ("Away", new TeamScoreState(9, 4)),
             ("Home", new ScoreSheetState([
-                new(1, 1, "1", HomeTeam.Roster[0].Number, false, true, true, false, false, [new JamLineTrip(4), new JamLineTrip(3)], 7, 7),
-                new(1, 2, "2", HomeTeam.Roster[1].Number, false, false, false, false, true, [], 0, 7),
+                new(1, 1, HomeTeam.Roster[0].Number, HomeTeam.Roster[1].Number, false, true, true, false, false, [new JamLineTrip(4), new JamLineTrip(3)], null, 7, 7),
+                new(1, 2, HomeTeam.Roster[1].Number, HomeTeam.Roster[3].Number, false, false, false, false, true, [], null, 0, 7),
             ])),
             ("Away", new ScoreSheetState([
-                new(1, 1, "1", AwayTeam.Roster[0].Number, false, false, false, false, false, [new JamLineTrip(4), new JamLineTrip(1)], 5, 5),
-                new(1, 2, "2", AwayTeam.Roster[1].Number, false, true, false, false, false, [new JamLineTrip(4)], 4, 9),
+                new(1, 1, AwayTeam.Roster[0].Number, AwayTeam.Roster[1].Number, false, false, false, false, false, [new JamLineTrip(4), new JamLineTrip(1)], null, 5, 5),
+                new(1, 2, AwayTeam.Roster[1].Number, AwayTeam.Roster[3].Number, false, true, false, false, false, [new JamLineTrip(4)], null, 4, 9),
             ]))
         )
         .Wait(5)
         .Event<CallMarked>(2).WithBody(new CallMarkedBody(TeamSide.Away, true))
         .Validate(
             ("Home", new ScoreSheetState([
-                new(1, 1, "1", HomeTeam.Roster[0].Number, false, true, true, false, false, [new JamLineTrip(4), new JamLineTrip(3)], 7, 7),
-                new(1, 2, "2", HomeTeam.Roster[1].Number, false, false, false, false, true, [], 0, 7),
+                new(1, 1, HomeTeam.Roster[0].Number, HomeTeam.Roster[1].Number, false, true, true, false, false, [new JamLineTrip(4), new JamLineTrip(3)], null, 7, 7),
+                new(1, 2, HomeTeam.Roster[1].Number, HomeTeam.Roster[3].Number, false, false, false, false, true, [], null, 0, 7),
             ])),
             ("Away", new ScoreSheetState([
-                new(1, 1, "1", AwayTeam.Roster[0].Number, false, false, false, false, false, [new JamLineTrip(4), new JamLineTrip(1)], 5, 5),
-                new(1, 2, "2", AwayTeam.Roster[1].Number, false, true, true, false, false, [new JamLineTrip(4), new JamLineTrip(0)], 4, 9),
+                new(1, 1, AwayTeam.Roster[0].Number, AwayTeam.Roster[1].Number, false, false, false, false, false, [new JamLineTrip(4), new JamLineTrip(1)], null, 5, 5),
+                new(1, 2, AwayTeam.Roster[1].Number, AwayTeam.Roster[3].Number, false, true, true, false, false, [new JamLineTrip(4), new JamLineTrip(0)], null, 4, 9),
             ]))
         )
         .Build();

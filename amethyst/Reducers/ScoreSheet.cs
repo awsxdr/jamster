@@ -6,7 +6,7 @@ using Func;
 
 namespace amethyst.Reducers;
 
-public abstract class ScoreSheet(TeamSide teamSide, ReducerGameContext context, ILogger logger)
+public abstract class ScoreSheet(TeamSide teamSide, ReducerGameContext context, ILogger _)
     : Reducer<ScoreSheetState>(context)
     , IHandlesEvent<JamStarted>
     , IHandlesEvent<SkaterOnTrack>
@@ -16,8 +16,14 @@ public abstract class ScoreSheet(TeamSide teamSide, ReducerGameContext context, 
     , IHandlesEvent<LeadMarked>
     , IHandlesEvent<LostMarked>
     , IHandlesEvent<CallMarked>
+    , IHandlesEvent<StarPassMarked>
     , IHandlesEvent<ScoreSheetJammerNumberSet>
     , IHandlesEvent<ScoreSheetLeadSet>
+    , IHandlesEvent<ScoreSheetLostSet>
+    , IHandlesEvent<ScoreSheetCalledSet>
+    , IHandlesEvent<ScoreSheetInjurySet>
+    , IHandlesEvent<ScoreSheetNoInitialSet>
+    , IHandlesEvent<ScoreSheetStarPassTripSet>
     , IDependsOnState<JamLineupState>
     , IDependsOnState<GameStageState>
     , IDependsOnState<TeamJamStatsState>
@@ -36,14 +42,15 @@ public abstract class ScoreSheet(TeamSide teamSide, ReducerGameContext context, 
         SetState(new(state.Jams.Append(new ScoreSheetJam(
             gameStage.PeriodNumber,
             gameStage.JamNumber,
-            gameStage.JamNumber.ToString(), 
             lineup.JammerNumber ?? "?",
+            lineup.PivotNumber ?? "?",
             false,
             false,
             false,
             false,
             true,
             [],
+            null,
             0,
             state.Jams.Any() ? state.Jams[^1].GameTotal : 0
         )).ToArray()));
@@ -57,17 +64,15 @@ public abstract class ScoreSheet(TeamSide teamSide, ReducerGameContext context, 
         if (gameStage.Stage != Stage.Jam)
             return [];
 
-        var state = GetState();
-
-        if (@event.Body.Position == SkaterPosition.Jammer)
+        switch (@event.Body.Position)
         {
-            SetState(new (
-                state.Jams.Take(state.Jams.Length - 1)
-                    .Append(state.Jams[^1] with
-                    {
-                        JammerNumber = @event.Body.SkaterNumber ?? string.Empty,
-                    })
-                    .ToArray()));
+            case SkaterPosition.Jammer:
+                ModifyLatestJam(jam => jam with { JammerNumber = @event.Body.SkaterNumber ?? string.Empty });
+                break;
+
+            case SkaterPosition.Pivot:
+                ModifyLatestJam(jam => jam with { PivotNumber = @event.Body.SkaterNumber ?? string.Empty });
+                break;
         }
 
         return [];
@@ -75,147 +80,149 @@ public abstract class ScoreSheet(TeamSide teamSide, ReducerGameContext context, 
 
     public IEnumerable<Event> Handle(InitialTripCompleted @event) => @event.HandleIfTeam(teamSide, () =>
     {
-        var state = GetState();
         var jamStatsState = GetKeyedState<TeamJamStatsState>(teamSide.ToString());
 
-        SetState(new(
-            state.Jams.Take(state.Jams.Length - 1)
-                .Append(state.Jams[^1] with
-                {
-                    NoInitial = !jamStatsState.HasCompletedInitial,
-                    Trips = jamStatsState.HasCompletedInitial ? [new JamLineTrip(null)] : [],
-                })
-                .ToArray()
-            ));
+        ModifyLatestJam(jam => jam with
+        {
+            NoInitial = !jamStatsState.HasCompletedInitial,
+            Trips = jamStatsState.HasCompletedInitial ? [new JamLineTrip(null)] : [],
+        });
 
         return [];
     });
 
     public IEnumerable<Event> Handle(TripCompleted @event) => @event.HandleIfTeam(teamSide, () =>
     {
-        var state = GetState();
-
-        SetState(new(
-            state.Jams.Take(state.Jams.Length - 1)
-                .Append(state.Jams[^1] with
-                {
-                    Trips = state.Jams[^1].Trips.Append(new JamLineTrip(null)).ToArray(),
-                })
-                .ToArray()
-        ));
+        ModifyLatestJam(jam => jam with { Trips = jam.Trips.Append(new(null)).ToArray() });
 
         return [];
     });
 
     public IEnumerable<Event> Handle(ScoreModifiedRelative @event) => @event.HandleIfTeam(teamSide, () =>
     {
-        var state = GetState();
-        
-        logger.LogDebug("Jams length: {jamsLength} | Last jam trips length: {tripsLength}", state.Jams.Length, state.Jams[^1].Trips.Length);
-
-        SetState(new(
-            state.Jams.Take(state.Jams.Length - 1)
-                .Append(state.Jams[^1] with
-                {
-                    JamTotal = state.Jams[^1].JamTotal + @event.Body.Value,
-                    GameTotal = state.Jams[^1].GameTotal + @event.Body.Value,
-                    Trips =
-                        state.Jams[^1].Trips.Any()
-                        ? state.Jams[^1].Trips.Take(state.Jams[^1].Trips.Length - 1).Append(state.Jams[^1].Trips[^1] with
-                        {
-                            Score = (state.Jams[^1].Trips[^1].Score ?? 0) + @event.Body.Value,
-                        }).ToArray()
-                        : [new JamLineTrip(@event.Body.Value)]
-                }).ToArray()
-        ));
+        ModifyLatestJam(jam => jam with
+        {
+            JamTotal = jam.JamTotal + @event.Body.Value,
+            GameTotal = jam.GameTotal + @event.Body.Value,
+            Trips = jam.Trips.Any()
+                ? jam.Trips.Take(jam.Trips.Length - 1).Append(jam.Trips[^1] with
+                    {
+                        Score = (jam.Trips[^1].Score ?? 0) + @event.Body.Value,
+                    }).ToArray()
+                : [new JamLineTrip(@event.Body.Value)]
+        });
 
         return [];
     });
 
     public IEnumerable<Event> Handle(LeadMarked @event) => @event.HandleIfTeam(teamSide, () =>
     {
-        var state = GetState();
-
-        SetState(new(
-            state.Jams.Take(state.Jams.Length - 1)
-                .Append(state.Jams[^1] with
-                {
-                    Lead = @event.Body.Lead,
-                })
-                .ToArray()
-        ));
+        ModifyLatestJam(jam => jam with { Lead = @event.Body.Lead });
 
         return [];
     });
 
     public IEnumerable<Event> Handle(LostMarked @event) => @event.HandleIfTeam(teamSide, () =>
     {
-        var state = GetState();
-
-        SetState(new(
-            state.Jams.Take(state.Jams.Length - 1)
-                .Append(state.Jams[^1] with
-                {
-                    Lost = @event.Body.Lost,
-                })
-                .ToArray()
-        ));
+        ModifyLatestJam(jam => jam with { Lost = @event.Body.Lost });
 
         return [];
     });
 
     public IEnumerable<Event> Handle(CallMarked @event) => @event.HandleIfTeam(teamSide, () =>
     {
-        var state = GetState();
-
-        SetState(new(
-            state.Jams.Take(state.Jams.Length - 1)
-                .Append(state.Jams[^1] with
-                {
-                    Called = @event.Body.Call,
-                })
-                .ToArray()
-        ));
+        ModifyLatestJam(jam => jam with { Called = @event.Body.Call });
 
         return [];
     });
 
-    public IEnumerable<Event> Handle(ScoreSheetJammerNumberSet @event)
+    public IEnumerable<Event> Handle(StarPassMarked @event)
     {
-        var state = GetState();
-
-        if (@event.Body.LineNumber >= state.Jams.Length)
-            return [];
-
-        SetState(new(
-            state.Jams.Take(@event.Body.LineNumber)
-                .Append(state.Jams[@event.Body.LineNumber] with
-                {
-                    JammerNumber = @event.Body.Value,
-                })
-                .Concat(state.Jams.Skip(@event.Body.LineNumber + 1))
-                .ToArray()));
+        ModifyLatestJam(jam => jam with
+        {
+            StarPassTrip = @event.Body.TeamSide == teamSide ? (@event.Body.StarPass ? jam.Trips.Length : null) : jam.StarPassTrip,
+        });
 
         return [];
     }
 
-    public IEnumerable<Event> Handle(ScoreSheetLeadSet @event)
+    public IEnumerable<Event> Handle(ScoreSheetJammerNumberSet @event) => @event.HandleIfTeam(teamSide, () =>
+    {
+        ModifyJam(@event.Body.TotalJamNumber, line => line with { JammerNumber = @event.Body.Value });
+
+        return [];
+    });
+
+    public IEnumerable<Event> Handle(ScoreSheetLeadSet @event) => @event.HandleIfTeam(teamSide, () =>
+    {
+        ModifyJam(@event.Body.TotalJamNumber, line => line with { Lead = @event.Body.Value });
+
+        return [];
+    });
+
+    public IEnumerable<Event> Handle(ScoreSheetLostSet @event) => @event.HandleIfTeam(teamSide, () =>
+    {
+        ModifyJam(@event.Body.TotalJamNumber, line => line with { Lost = @event.Body.Value });
+
+        return [];
+    });
+
+    public IEnumerable<Event> Handle(ScoreSheetCalledSet @event) => @event.HandleIfTeam(teamSide, () =>
+    {
+        ModifyJam(@event.Body.TotalJamNumber, line => line with { Called = @event.Body.Value });
+
+        return [];
+    });
+
+    public IEnumerable<Event> Handle(ScoreSheetInjurySet @event)
+    {
+        ModifyJam(@event.Body.TotalJamNumber, line => line with { Injury = @event.Body.Value });
+
+        return [];
+    }
+
+    public IEnumerable<Event> Handle(ScoreSheetNoInitialSet @event) => @event.HandleIfTeam(teamSide, () =>
+    {
+        ModifyJam(@event.Body.TotalJamNumber, line => line with { NoInitial = @event.Body.Value });
+
+        return [];
+    });
+
+    public IEnumerable<Event> Handle(ScoreSheetStarPassTripSet @event) => @event.HandleIfTeam(teamSide, () =>
+    {
+        ModifyJam(@event.Body.TotalJamNumber, line => line with
+        {
+            StarPassTrip = @event.Body.StarPassTrip == null ? null : Math.Min(line.Trips.Length, (int)@event.Body.StarPassTrip!),
+        });
+
+        return [];
+    });
+
+    private void ModifyLatestJam(Func<ScoreSheetJam, ScoreSheetJam> mapper)
     {
         var state = GetState();
 
-        if (@event.Body.LineNumber >= state.Jams.Length)
-            return [];
+        if (!state.Jams.Any())
+            return;
 
         SetState(new(
-            state.Jams.Take(@event.Body.LineNumber)
-                .Append(state.Jams[@event.Body.LineNumber] with
-                {
-                    Lead = @event.Body.Value,
-                })
-                .Concat(state.Jams.Skip(@event.Body.LineNumber + 1))
+            state.Jams.Take(state.Jams.Length - 1)
+                .Append(mapper(state.Jams[^1]))
                 .ToArray()));
+    }
 
-        return [];
+    private void ModifyJam(int totalJamNumber, Func<ScoreSheetJam, ScoreSheetJam> mapper)
+    {
+        var state = GetState();
+
+        if (totalJamNumber >= state.Jams.Length || totalJamNumber < 0)
+            return;
+
+        SetState(new(
+            state.Jams.Take(totalJamNumber)
+                .Append(mapper(state.Jams[totalJamNumber]))
+                .Concat(state.Jams.Skip(totalJamNumber + 1))
+                .ToArray()));
     }
 }
 
@@ -231,14 +238,15 @@ public sealed record ScoreSheetState(ScoreSheetJam[] Jams)
 public sealed record ScoreSheetJam(
     int Period,
     int Jam,
-    string LineLabel,
     string JammerNumber,
+    string PivotNumber,
     bool Lost,
     bool Lead,
     bool Called,
     bool Injury,
     bool NoInitial,
     JamLineTrip[] Trips,
+    int? StarPassTrip,
     int JamTotal,
     int GameTotal
 )
@@ -247,14 +255,15 @@ public sealed record ScoreSheetJam(
         other is not null
         && other.Period.Equals(Period)
         && other.Jam.Equals(Jam)
-        && other.LineLabel.Equals(LineLabel)
         && other.JammerNumber.Equals(JammerNumber)
+        && other.PivotNumber.Equals(PivotNumber)
         && other.Lost.Equals(Lost)
         && other.Lead.Equals(Lead)
         && other.Called.Equals(Called)
         && other.Injury.Equals(Injury)
         && other.NoInitial.Equals(NoInitial)
         && other.Trips.SequenceEqual(Trips)
+        && other.StarPassTrip.Equals(StarPassTrip)
         && other.JamTotal.Equals(JamTotal)
         && other.GameTotal.Equals(GameTotal);
 
@@ -263,14 +272,15 @@ public sealed record ScoreSheetJam(
         var hashCode = new HashCode();
         hashCode.Add(Period);
         hashCode.Add(Jam);
-        hashCode.Add(LineLabel);
         hashCode.Add(JammerNumber);
+        hashCode.Add(PivotNumber);
         hashCode.Add(Lost);
         hashCode.Add(Lead);
         hashCode.Add(Called);
         hashCode.Add(Injury);
         hashCode.Add(NoInitial);
         hashCode.Add(Trips);
+        hashCode.Add(StarPassTrip);
         hashCode.Add(JamTotal);
         hashCode.Add(GameTotal);
         return hashCode.ToHashCode();

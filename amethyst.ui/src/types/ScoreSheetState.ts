@@ -5,15 +5,15 @@ export type ScoreSheetState = {
 export type ScoreSheetJam = {
     period: number;
     jam: number;
-    lineLabel: string;
     jammerNumber: string;
-    currentTrip: number;
+    pivotNumber: string;
     lost: boolean;
     lead: boolean;
     called: boolean;
     injury: boolean;
     noInitial: boolean;
     trips: JamLineTrip[];
+    starPassTrip: number | null;
     jamTotal: string;
     gameTotal: string;
 }

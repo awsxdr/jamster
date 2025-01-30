@@ -64,8 +64,8 @@ export const ControlPanel = ({ gameId, disabled }: ControlPanelProps) => {
             { viewConfiguration.showTimeoutList &&
                 <TimeoutList gameId={gameId} displaySide={viewConfiguration.displaySide} />
             }
-            { viewConfiguration.showScoreSheet &&
-                <ScoreSheetContainer displaySide={viewConfiguration.displaySide} />
+            { viewConfiguration.showScoreSheet && gameId &&
+                <ScoreSheetContainer gameId={gameId} displaySide={viewConfiguration.displaySide} />
             }
         </div>
     )
