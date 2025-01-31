@@ -89,11 +89,11 @@ export const TimeoutTypePanel = ({ gameId, disabled }: TimeoutTypePanelProps) =>
         sendEvent(
             gameId, 
             new TimeoutTypeSet(
-                selectedType === 'HomeTeamTimeout' ? { type: 'Team', side: TeamSide.Home }
-                : selectedType === 'HomeTeamReview' ? { type: 'Review', side: TeamSide.Home }
+                selectedType === 'HomeTeamTimeout' ? { type: 'Team', teamSide: TeamSide.Home }
+                : selectedType === 'HomeTeamReview' ? { type: 'Review', teamSide: TeamSide.Home }
                 : selectedType === 'Official' ? { type: 'Official' }
-                : selectedType === 'AwayTeamTimeout' ? { type: 'Team', side: TeamSide.Away }
-                : selectedType === 'AwayTeamReview' ? { type: 'Review', side: TeamSide.Away }
+                : selectedType === 'AwayTeamTimeout' ? { type: 'Team', teamSide: TeamSide.Away }
+                : selectedType === 'AwayTeamReview' ? { type: 'Review', teamSide: TeamSide.Away }
                 : { type: 'Untyped' }
             ));
     }
