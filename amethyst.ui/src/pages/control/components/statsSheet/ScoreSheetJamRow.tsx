@@ -60,6 +60,8 @@ export const ScoreSheetJamRow = ({ line, even, preStarPass, postStarPass, classN
         isPreThisTeamStarPass ? line.gameTotal - line.jamTotal + lineTotal
         : line.gameTotal;
 
+    const nonNullTripCount = line.trips.filter(t => t.score !== null).length;
+
     const handleLostSet = (value: boolean) => {
         if(!postStarPass) {
             onLostSet?.(value);
@@ -131,10 +133,10 @@ export const ScoreSheetJamRow = ({ line, even, preStarPass, postStarPass, classN
                     {Array.from(new Array(9 - starPassSwitchTrip)).map((_, i) => (
                         <EditableCell 
                             value={line.trips[i + starPassSwitchTrip]?.score?.toString() ?? ""}
-                            disabled={i + starPassSwitchTrip >= line.trips.length}
+                            disabled={i + starPassSwitchTrip > nonNullTripCount}
                             key={`trip-${i+2}`} 
                             className={cn(`col-start-${i + 9 + starPassSwitchTrip}`, numberCellClass, rowColorClass, className)}
-                            onValueChanged={v => handleTripScoreChanged(i + starPassSwitchTrip + 1, v)}
+                            onValueChanged={v => handleTripScoreChanged(i + starPassSwitchTrip, v)}
                         />
                     ))}
                 </>
@@ -145,7 +147,7 @@ export const ScoreSheetJamRow = ({ line, even, preStarPass, postStarPass, classN
             { (!isStarPass || isPreOtherTeamStarPass) && Array.from(new Array(9)).map((_, i) => (
                 <EditableCell 
                     value={line.trips[i]?.score?.toString() ?? ""}
-                    disabled={i > line.trips.length}
+                    disabled={i > nonNullTripCount}
                     key={`trip-${i+2}`} 
                     className={cn(`col-start-${i + 9}`, numberCellClass, rowColorClass, className)}
                     onValueChanged={v => handleTripScoreChanged(i, v)}
