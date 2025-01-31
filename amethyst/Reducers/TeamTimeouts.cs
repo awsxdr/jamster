@@ -25,7 +25,7 @@ public abstract class TeamTimeouts(TeamSide teamSide, ReducerGameContext context
     {
         var state = GetState();
 
-        var teamMatches = @event.Body.Side == teamSide;
+        var teamMatches = @event.Body.TeamSide == teamSide;
 
         var newState = (@event.Body.Type, state.CurrentTimeout, teamMatches) switch
         {

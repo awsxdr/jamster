@@ -2,13 +2,13 @@ import { EventWithBody } from "@/hooks/EventsApiHook";
 import { TeamSide } from "../TeamSide"
 
 export class SkaterOnTrack extends EventWithBody {
-    constructor(side: TeamSide, position: SkaterPosition, skaterNumber: string | null) {
-        super("SkaterOnTrack", { side, skaterNumber, position });
+    constructor(teamSide: TeamSide, position: SkaterPosition, skaterNumber: string | null) {
+        super("SkaterOnTrack", { teamSide, skaterNumber, position });
     }
 }
 
 export type SkaterOnTrackBody = {
-    side: TeamSide;
+    teamSide: TeamSide;
     skaterNumber: string | null;
     position: SkaterPosition;
 }

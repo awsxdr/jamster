@@ -2,31 +2,31 @@ import { EventWithBody } from "@/hooks/EventsApiHook";
 import { TeamSide } from "..";
 
 export class LeadMarked extends EventWithBody {
-    constructor(side: TeamSide, lead: boolean) {
-        super("LeadMarked", { side, lead });
+    constructor(teamSide: TeamSide, lead: boolean) {
+        super("LeadMarked", { teamSide, lead });
     }
 }
 
 export class LostMarked extends EventWithBody {
-    constructor(side: TeamSide, lost: boolean) {
-        super("LostMarked", { side, lost });
+    constructor(teamSide: TeamSide, lost: boolean) {
+        super("LostMarked", { teamSide, lost });
     }
 }
 
 export class CallMarked extends EventWithBody {
-    constructor(side: TeamSide, call: boolean) {
-        super("CallMarked", { side, call });
+    constructor(teamSide: TeamSide, call: boolean) {
+        super("CallMarked", { teamSide, call });
     }
 }
 
 export class StarPassMarked extends EventWithBody {
-    constructor(side: TeamSide, starPass: boolean) {
-        super("StarPassMarked", { side, starPass });
+    constructor(teamSide: TeamSide, starPass: boolean) {
+        super("StarPassMarked", { teamSide, starPass });
     }
 }
 
 export class InitialTripCompleted extends EventWithBody {
-    constructor(side: TeamSide, tripCompleted: boolean) {
-        super("InitialTripCompleted", { side, tripCompleted });
+    constructor(teamSide: TeamSide, tripCompleted: boolean) {
+        super("InitialTripCompleted", { teamSide, tripCompleted });
     }
 }

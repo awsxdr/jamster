@@ -13,6 +13,12 @@ export class ScoreSheetPivotNumberSet extends EventWithBody {
     }
 }
 
+export class ScoreSheetTripScoreSet extends EventWithBody {
+    constructor(teamSide: TeamSide, totalJamNumber: number, tripNumber: number, value: number | null) {
+        super("ScoreSheetTripScoreSet", { teamSide, totalJamNumber, tripNumber, value });
+    }
+}
+
 export class ScoreSheetLostSet extends EventWithBody {
     constructor(teamSide: TeamSide, lineNumber: number, lost: boolean) {
         super("ScoreSheetLostSet", { teamSide, totalJamNumber: lineNumber, value: lost });

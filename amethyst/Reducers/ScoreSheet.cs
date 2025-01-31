@@ -19,6 +19,7 @@ public abstract class ScoreSheet(TeamSide teamSide, ReducerGameContext context, 
     , IHandlesEvent<StarPassMarked>
     , IHandlesEvent<ScoreSheetJammerNumberSet>
     , IHandlesEvent<ScoreSheetPivotNumberSet>
+    , IHandlesEvent<ScoreSheetTripScoreSet>
     , IHandlesEvent<ScoreSheetLeadSet>
     , IHandlesEvent<ScoreSheetLostSet>
     , IHandlesEvent<ScoreSheetCalledSet>
@@ -137,15 +138,15 @@ public abstract class ScoreSheet(TeamSide teamSide, ReducerGameContext context, 
         return [];
     });
 
-    public IEnumerable<Event> Handle(StarPassMarked @event)
+    public IEnumerable<Event> Handle(StarPassMarked @event) => @event.HandleIfTeam(teamSide, () =>
     {
         ModifyLatestJam(jam => jam with
         {
-            StarPassTrip = @event.Body.TeamSide == teamSide ? (@event.Body.StarPass ? jam.Trips.Length : null) : jam.StarPassTrip,
+            StarPassTrip = @event.Body.StarPass ? jam.Trips.Length : null,
         });
 
         return [];
-    }
+    });
 
     public IEnumerable<Event> Handle(ScoreSheetJammerNumberSet @event) => @event.HandleIfTeam(teamSide, () =>
     {
@@ -157,6 +158,42 @@ public abstract class ScoreSheet(TeamSide teamSide, ReducerGameContext context, 
     public IEnumerable<Event> Handle(ScoreSheetPivotNumberSet @event) => @event.HandleIfTeam(teamSide, () =>
     {
         ModifyJam(@event.Body.TotalJamNumber, line => line with { PivotNumber = @event.Body.Value });
+
+        return [];
+    });
+
+    public IEnumerable<Event> Handle(ScoreSheetTripScoreSet @event) => @event.HandleIfTeam(teamSide, () =>
+    {
+        ModifyJam(@event.Body.TotalJamNumber, jam =>
+        {
+            if (@event.Body.TripNumber > jam.Trips.Length || @event.Body.TripNumber < 0)
+                return jam;
+
+            var trips = jam.Trips.ToArray();
+            if (@event.Body.TripNumber == trips.Length)
+                trips = trips.Append(new(@event.Body.Value)).ToArray();
+            else
+                trips[@event.Body.TripNumber] = new(@event.Body.Value);
+
+            trips = trips.Where(t => t.Score != null).ToArray();
+
+            return jam with
+            {
+                Trips = trips.Where(t => t.Score != null).ToArray(),
+            };
+        });
+
+        var state = GetState();
+        SetState(new(state.Jams
+            .Aggregate(Array.Empty<ScoreSheetJam>(), (list, jam) => list.Append(jam with
+            {
+                JamTotal = jam.Trips.Sum(t => t.Score ?? 0),
+            }).ToArray())
+            .Aggregate(Array.Empty<ScoreSheetJam>(), (list, jam) => list.Append(jam with
+            {
+                GameTotal = list.Any() ? list[^1].GameTotal + jam.JamTotal : jam.JamTotal
+            }).ToArray())
+        ));
 
         return [];
     });

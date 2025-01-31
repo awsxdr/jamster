@@ -4,7 +4,7 @@ using amethyst.Services;
 namespace amethyst.Events;
 
 public sealed class ScoreSheetTripScoreSet(Guid7 id, ScoreSheetTripScoreSetBody body) : Event<ScoreSheetTripScoreSetBody>(id, body);
-public sealed record ScoreSheetTripScoreSetBody(int TotalJamNumber, int TripNumber, string Value);
+public sealed record ScoreSheetTripScoreSetBody(TeamSide TeamSide, int TotalJamNumber, int TripNumber, int? Value) : TeamEventBody(TeamSide);
 
 public sealed class ScoreSheetLeadSet(Guid7 id, ScoreSheetStatsSetBody body) : Event<ScoreSheetStatsSetBody>(id, body);
 public sealed class ScoreSheetLostSet(Guid7 id, ScoreSheetStatsSetBody body) : Event<ScoreSheetStatsSetBody>(id, body);

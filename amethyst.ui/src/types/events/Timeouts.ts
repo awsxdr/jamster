@@ -8,7 +8,7 @@ export class TimeoutTypeSet extends EventWithBody {
 }
 type TimeoutTypeSetBody = {
     type: "Untyped" | "Team" | "Review" | "Official";
-    side?: TeamSide;
+    teamSide?: TeamSide;
 }
 
 export class TimeoutStarted extends EventWithoutBody {
@@ -24,13 +24,13 @@ export class TimeoutEnded extends EventWithoutBody {
 }
 
 export class TeamReviewRetained extends EventWithBody {
-    constructor(side: TeamSide, timeoutEventId: string) {
-        super("TeamReviewRetained", { side, timeoutEventId });
+    constructor(teamSide: TeamSide, timeoutEventId: string) {
+        super("TeamReviewRetained", { teamSide, timeoutEventId });
     }
 }
 
 export class TeamReviewLost extends EventWithBody {
-    constructor(side: TeamSide, timeoutEventId: string) {
-        super("TeamReviewLost", { side, timeoutEventId });
+    constructor(teamSide: TeamSide, timeoutEventId: string) {
+        super("TeamReviewLost", { teamSide, timeoutEventId });
     }
 }

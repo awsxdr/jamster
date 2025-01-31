@@ -4,7 +4,7 @@ import { ScoreSheetJamRow } from "./ScoreSheetJamRow";
 import { cn } from "@/lib/utils";
 import { Fragment, useMemo } from "react";
 import { ScoreSheetTimeoutRow } from "./ScoreSheetTimeoutRow";
-import { ScoreSheetCalledSet, ScoreSheetInjurySet, ScoreSheetJammerNumberSet, ScoreSheetLeadSet, ScoreSheetLostSet, ScoreSheetPivotNumberSet, ScoreSheetStarPassTripSet } from "@/types/events";
+import { ScoreSheetCalledSet, ScoreSheetInjurySet, ScoreSheetJammerNumberSet, ScoreSheetLeadSet, ScoreSheetLostSet, ScoreSheetPivotNumberSet, ScoreSheetStarPassTripSet, ScoreSheetTripScoreSet } from "@/types/events";
 import { JamEditMenu } from "./JamEditMenu";
 
 type ScoreSheetProps = {
@@ -103,6 +103,10 @@ export const ScoreSheet = ({ gameId, teamSide, descending, showTimeouts, classNa
         sendEvent(gameId, new ScoreSheetPivotNumberSet(teamSide, lineNumber, value));
     }
 
+    const handleTripScoreSet = (jamNumber: number, tripNumber: number, value: number | null) => {
+        sendEvent(gameId, new ScoreSheetTripScoreSet(teamSide, jamNumber, tripNumber, value));
+    }
+
     const handleLostSet = (lineNumber: number, value: boolean) => {
         sendEvent(gameId, new ScoreSheetLostSet(teamSide, lineNumber, value));
     }
@@ -151,6 +155,7 @@ export const ScoreSheet = ({ gameId, teamSide, descending, showTimeouts, classNa
                                         className={cn(i === 0 && "border-t-2", i === lines.length - 1 && "border-b-2")}
                                         onJammerNumberSet={v => handleJammerNumberSet(line.jamItem!.totalJamNumber, v)}
                                         onPivotNumberSet={v => handlePivotNumberSet(line.jamItem!.totalJamNumber, v)}
+                                        onTripScoreSet={(t, v) => handleTripScoreSet(line.jamItem!.totalJamNumber, t, v)}
                                         onLostSet={v => handleLostSet(line.jamItem!.totalJamNumber, v)}
                                         onLeadSet={v => handleLeadSet(line.jamItem!.totalJamNumber, v)}
                                         onCalledSet={v => handleCalledSet(line.jamItem!.totalJamNumber, v)}
@@ -176,6 +181,7 @@ export const ScoreSheet = ({ gameId, teamSide, descending, showTimeouts, classNa
                                         className={cn(i === 0 && "border-t-2", i === lines.length - 1 && "border-b-2")}
                                         onJammerNumberSet={v => handleJammerNumberSet(line.jamItem!.totalJamNumber, v)}
                                         onPivotNumberSet={v => handlePivotNumberSet(line.jamItem!.totalJamNumber, v)}
+                                        onTripScoreSet={(t, v) => handleTripScoreSet(line.jamItem!.totalJamNumber, t, v)}
                                         onLostSet={v => handleLostSet(line.jamItem!.totalJamNumber, v)}
                                         onLeadSet={v => handleLeadSet(line.jamItem!.totalJamNumber, v)}
                                         onCalledSet={v => handleCalledSet(line.jamItem!.totalJamNumber, v)}
@@ -197,6 +203,7 @@ export const ScoreSheet = ({ gameId, teamSide, descending, showTimeouts, classNa
                                         className={cn(i === 0 && "border-t-2", i === lines.length - 1 && "border-b-2")}
                                         onJammerNumberSet={v => handleJammerNumberSet(line.jamItem!.totalJamNumber, v)}
                                         onPivotNumberSet={v => handlePivotNumberSet(line.jamItem!.totalJamNumber, v)}
+                                        onTripScoreSet={(t, v) => handleTripScoreSet(line.jamItem!.totalJamNumber, t, v)}
                                         onLostSet={v => handleLostSet(line.jamItem!.totalJamNumber, v)}
                                         onLeadSet={v => handleLeadSet(line.jamItem!.totalJamNumber, v)}
                                         onCalledSet={v => handleCalledSet(line.jamItem!.totalJamNumber, v)}

@@ -30,8 +30,8 @@ public abstract class TeamJamStats(TeamSide teamSide, ReducerGameContext gameCon
         var lead =
             @event.Body switch
             {
-                _ when teamSide == @event.Body.Side => @event.Body.Lead,
-                (_, true) when teamSide != @event.Body.Side => false,
+                _ when teamSide == @event.Body.TeamSide => @event.Body.Lead,
+                (_, true) when teamSide != @event.Body.TeamSide => false,
                 _ => state.Lead
             };
 
@@ -58,8 +58,8 @@ public abstract class TeamJamStats(TeamSide teamSide, ReducerGameContext gameCon
         var call =
             @event.Body switch
             {
-                _ when teamSide == @event.Body.Side => @event.Body.Call,
-                (_, true) when teamSide != @event.Body.Side => false,
+                _ when teamSide == @event.Body.TeamSide => @event.Body.Call,
+                (_, true) when teamSide != @event.Body.TeamSide => false,
                 _ => state.Called
             };
 

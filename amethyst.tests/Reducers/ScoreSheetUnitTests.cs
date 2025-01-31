@@ -652,4 +652,49 @@ public class ScoreSheetUnitTests : ReducerUnitTest<HomeScoreSheet, ScoreSheetSta
 
         State.Jams[2].StarPassTrip.Should().Be(expectedStarPassTrip);
     }
+
+    private static TestCaseData[] ScoreSheetTripScoreSetTestCases =>
+    [
+        new(TeamSide.Home, 2, 3, new int?[]{4, 3, 2}, new int?[]{4, 3, 3}),
+        new(TeamSide.Home, 3, 4, new int?[]{4, 4, 4}, new int?[]{4, 4, 4, 4}),
+        new(TeamSide.Home, 4, 4, new int?[]{4, 4, 4}, new int?[]{4, 4, 4}),
+        new(TeamSide.Home, 0, 4, new int?[]{1, 2, 3}, new int?[]{4, 2, 3}),
+        new(TeamSide.Home, 2, null, new int?[]{1, 2, 3}, new int?[]{1, 2}),
+        new(TeamSide.Home, 3, null, new int?[]{1, 2, 3}, new int?[]{1, 2, 3}),
+        new(TeamSide.Home, 1, null, new int?[]{1, 2, 3}, new int?[]{1, 3}),
+        new(TeamSide.Away, 2, 3, new int?[]{4, 3, 2}, new int?[]{4, 3, 2}),
+    ];
+
+    [TestCaseSource(nameof(ScoreSheetTripScoreSetTestCases))]
+    public async Task ScoreSheetTripScoreSet_UpdatesStateAsExpected(TeamSide setSide, int tripToSet, int? setValue, int?[] currentTrips, int?[] expectedTrips)
+    {
+        State = new([
+            new(1, 1, "123", "555", false, true, true, false, false, [new(4), new(4), new(3)], null, 11, 11),
+            new(1, 2, "234", "555", false, false, false, false, false, [new(2)], null, 2, 13),
+            new(1, 3, "345", "666", false, false, false, false, false, currentTrips.Select(s => new JamLineTrip(s)).ToArray(), null, currentTrips.Sum(i => i ?? 0), currentTrips.Sum(i => i ?? 0) + 13),
+        ]);
+
+        await Subject.Handle(new ScoreSheetTripScoreSet(1000, new(setSide, 2, tripToSet, setValue)));
+
+        State.Jams[2].Trips.Select(t => t.Score).Should().BeEquivalentTo(expectedTrips);
+        State.Jams[2].JamTotal.Should().Be(expectedTrips.Sum(i => i ?? 0));
+        State.Jams[2].GameTotal.Should().Be(State.Jams[2].JamTotal + 13);
+    }
+
+    [Test]
+    public async Task ScoreSheetTripScoreSet_CorrectlyRecalculatesGameTotals()
+    {
+        State = new([
+            new(1, 1, "?", "?", false, false, false, false, false, [new(4), new(4), new(3)], null, 11, 11),
+            new(1, 2, "?", "?", false, false, false, false, false, [new(4), new(2)], null, 6, 17),
+            new(1, 3, "?", "?", false, false, false, false, false, [new(2)], null, 2, 19),
+            new(1, 4, "?", "?", false, false, false, false, false, [new(0)], null, 0, 19),
+            new(1, 5, "?", "?", false, false, false, false, false, [], null, 0, 19),
+            new(1, 6, "?", "?", false, false, false, false, false, [new(4), new(4), new(4), new(4), new(3)], null, 19, 38),
+        ]);
+
+        await Subject.Handle(new ScoreSheetTripScoreSet(1000, new(TeamSide.Home, 2, 0, 4)));
+
+        State.Jams.Select(j => j.GameTotal).Should().BeEquivalentTo([11, 17, 21, 21, 21, 40]);
+    }
 }

@@ -44,7 +44,7 @@ public class TimeoutList(ReducerGameContext context, ILogger<TimeoutList> logger
 
         SetState(new (
             timeouts.Take(timeouts.Length - 1)
-                .Append(timeouts.Last() with { Type = @event.Body.Type, Side = @event.Body.Side })
+                .Append(timeouts.Last() with { Type = @event.Body.Type, Side = @event.Body.TeamSide })
                 .ToArray()));
 
         return [];

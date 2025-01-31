@@ -13,7 +13,7 @@ public class CurrentTimeoutType(ReducerGameContext context)
 
     public IEnumerable<Event> Handle(TimeoutTypeSet @event)
     {
-        SetStateIfDifferent(new(@event.Body.Type, @event.Body.Side));
+        SetStateIfDifferent(new(@event.Body.Type, @event.Body.TeamSide));
 
         return [];
     }
@@ -26,4 +26,4 @@ public class CurrentTimeoutType(ReducerGameContext context)
     }
 }
 
-public sealed record CurrentTimeoutTypeState(TimeoutType Type, TeamSide? Side);
+public sealed record CurrentTimeoutTypeState(TimeoutType Type, TeamSide? TeamSide);

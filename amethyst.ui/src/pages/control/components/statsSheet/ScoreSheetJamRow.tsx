@@ -11,13 +11,14 @@ type ScoreSheetJamRowProps = {
     className?: string;
     onJammerNumberSet?: (jammerNumber: string) => void;
     onPivotNumberSet?: (pivotNumber: string) => void;
+    onTripScoreSet?: (trip: number, value: number | null) => void;
     onLostSet?: (value: boolean) => void;
     onLeadSet?: (value: boolean) => void;
     onCalledSet?: (value: boolean) => void;
     onInjurySet?: (value: boolean) => void;
 }
 
-export const ScoreSheetJamRow = ({ line, even, preStarPass, postStarPass, className, onJammerNumberSet, onPivotNumberSet, onLostSet, onLeadSet, onCalledSet, onInjurySet }: ScoreSheetJamRowProps) => {
+export const ScoreSheetJamRow = ({ line, even, preStarPass, postStarPass, className, onJammerNumberSet, onPivotNumberSet, onTripScoreSet, onLostSet, onLeadSet, onCalledSet, onInjurySet }: ScoreSheetJamRowProps) => {
 
     const rowColorClass = even ? "bg-white dark:bg-gray-900" : "bg-green-100 dark:bg-green-900";
     const rowEmphasisColorClass = even ? "bg-green-100 dark:bg-green-900" : "bg-green-200 dark:bg-green-700";
@@ -81,6 +82,16 @@ export const ScoreSheetJamRow = ({ line, even, preStarPass, postStarPass, classN
         onInjurySet?.(value);
     }
 
+    const handleTripScoreChanged = (trip: number, value: string) => {
+        const parsedValue = parseInt(value);
+        const newValue =
+            value.trim() === "" ? null
+            : Number.isNaN(parsedValue) ? 0
+            : parsedValue;
+        
+        onTripScoreSet?.(trip, newValue);
+    }
+
     return (
         <>
             <div className={cn("col-start-2 relative", numberCellClass, rowEmphasisColorClass, "border-l-2", className)}>
@@ -97,35 +108,48 @@ export const ScoreSheetJamRow = ({ line, even, preStarPass, postStarPass, classN
             <CheckCell checked={lineCalled} disabled={postStarPass} onCheckedChanged={handleCalledSet} className={cn("col-start-6", checkCellClass, "border-black", rowEmphasisColorClass, className)} />
             <CheckCell checked={lineInjury} disabled={isPreThisTeamStarPass || isPostOtherTeamStarPass} onCheckedChanged={handleInjurySet} className={cn("col-start-7", checkCellClass, "border-black", rowEmphasisColorClass, className)} />
             <CheckCell checked={lineNoInitial} className={cn("col-start-8", checkCellClass, "border-black", "border-r border-black", rowEmphasisColorClass, className)} />
-            { line.starPassTrip != null && preStarPass && (
+            { isPreThisTeamStarPass && (
                 <>
                     {Array.from(new Array(starPassSwitchTrip)).map((_, i) => (
-                        <div key={`trip-${i+2}`} className={cn(`col-start-${i + 9}`, numberCellClass, rowColorClass, className)}>{line.trips[i]?.score}</div>
+                        <EditableCell 
+                            value={line.trips[i]?.score?.toString() ?? ""}
+                            key={`trip-${i+2}`} 
+                            className={cn(`col-start-${i + 9}`, numberCellClass, rowColorClass, className)}
+                            onValueChanged={v => handleTripScoreChanged(i, v)}
+                        />
                     ))}
                     {Array.from(new Array(9 - starPassSwitchTrip)).map((_, i) => (
                         <div key={`trip-${i+2}`} className={cn(`col-start-${i + 9 + starPassSwitchTrip}`, numberCellClass, rowColorClass, rowDisabledColorClass, className)}></div>
                     ))}
                 </>
             )}
-            { line.starPassTrip !== null && postStarPass && (
+            { isPostThisTeamStarPass && (
                 <>
                     {Array.from(new Array(starPassSwitchTrip)).map((_, i) => (
                         <div key={`trip-${i+2}`} className={cn(`col-start-${i + 9}`, numberCellClass, rowColorClass, rowDisabledColorClass, className)}></div>
                     ))}
                     {Array.from(new Array(9 - starPassSwitchTrip)).map((_, i) => (
-                        <div key={`trip-${i+2}`} className={cn(`col-start-${i + 9 + starPassSwitchTrip}`, numberCellClass, rowColorClass, className)}>{line.trips[i + starPassSwitchTrip]?.score}</div>
+                        <EditableCell 
+                            value={line.trips[i + starPassSwitchTrip]?.score?.toString() ?? ""}
+                            disabled={i + starPassSwitchTrip >= line.trips.length}
+                            key={`trip-${i+2}`} 
+                            className={cn(`col-start-${i + 9 + starPassSwitchTrip}`, numberCellClass, rowColorClass, className)}
+                            onValueChanged={v => handleTripScoreChanged(i + starPassSwitchTrip + 1, v)}
+                        />
                     ))}
                 </>
             )}
-            { line.starPassTrip === null && postStarPass && Array.from(new Array(9)).map((_, i) => (
+            { isPostOtherTeamStarPass && Array.from(new Array(9)).map((_, i) => (
                 <div key={`trip-${i+2}`} className={cn(`col-start-${i + 9}`, numberCellClass, rowColorClass, rowDisabledColorClass, className)}></div>
             ))}
-            { line.starPassTrip === null && preStarPass && Array.from(new Array(9)).map((_, i) => (
-                <div key={`trip-${i+2}`} className={cn(`col-start-${i + 9}`, numberCellClass, rowColorClass, className)}>{line.trips[i]?.score}</div>
-            ))}
-            {
-                !preStarPass && !postStarPass && Array.from(new Array(9)).map((_, i) => (
-                    <div key={`trip-${i+2}`} className={cn(`col-start-${i + 9}`, numberCellClass, rowColorClass, className)}>{line.trips[i]?.score}</div>
+            { (!isStarPass || isPreOtherTeamStarPass) && Array.from(new Array(9)).map((_, i) => (
+                <EditableCell 
+                    value={line.trips[i]?.score?.toString() ?? ""}
+                    disabled={i > line.trips.length}
+                    key={`trip-${i+2}`} 
+                    className={cn(`col-start-${i + 9}`, numberCellClass, rowColorClass, className)}
+                    onValueChanged={v => handleTripScoreChanged(i, v)}
+                />
             ))}
             <div className={cn("col-start-18", numberCellClass, "border-l-2", rowColorClass, className)}>{lineTotal}</div>
             <div className={cn("col-start-19", numberCellClass, "border-l-2", rowFixedEmphasisColorClass, className)}>{lineGameTotal}</div>
