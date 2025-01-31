@@ -11,7 +11,9 @@ public delegate IGameStateStore GameStateStoreFactory();
 
 public interface IGameStateStore
 {
+    object GetState(Type stateType);
     TState GetState<TState>() where TState : class;
+    object GetKeyedState(string key, Type stateType);
     TState GetKeyedState<TState>(string key) where TState : class;
     TState GetCachedState<TState>() where TState : class;
     TState GetCachedKeyedState<TState>(string key) where TState : class;
@@ -33,8 +35,14 @@ public class GameStateStore(ILogger<GameStateStore> logger) : IGameStateStore
     private readonly Dictionary<string, object> _cachedStates = new();
     private readonly Dictionary<string, IStateUpdatedEventSource> _stateEventStream = new();
 
+    public object GetState(Type stateType) =>
+        _states[GetStateName(stateType)];
+
     public TState GetState<TState>() where TState : class =>
         (TState)_states[GetStateName<TState>()];
+
+    public object GetKeyedState(string key, Type stateType) =>
+        _states[$"{GetStateName(stateType)}_{key}"];
 
     public TState GetKeyedState<TState>(string key) where TState : class =>
         (TState) _states[$"{GetStateName<TState>()}_{key}"];
@@ -201,7 +209,7 @@ public class GameStateStore(ILogger<GameStateStore> logger) : IGameStateStore
     private static IStateUpdatedEventSource MakeEventSource(Type stateType) =>
         (IStateUpdatedEventSource)typeof(StateUpdateEventSource<>).MakeGenericType(stateType).GetConstructor([])!.Invoke([]);
 
-    private async Task<IEnumerable<Event>> Tick(IImmutableList<IReducer> reducers, Tick tick)
+    private static async Task<IEnumerable<Event>> Tick(IImmutableList<IReducer> reducers, Tick tick)
     {
         var implicitEvents = new List<Event>();
 

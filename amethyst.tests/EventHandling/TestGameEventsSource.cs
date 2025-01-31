@@ -416,7 +416,7 @@ public static class TestGameEventsSource
         .Validate(new GameStageState(Stage.AfterGame, 2, 19, true))
         .Build();
 
-    private static readonly GameTeam HomeTeam = new(
+    public static readonly GameTeam HomeTeam = new(
         new() { ["team"] =  "Test Home Team" },
         new TeamColor(Color.Black, Color.White),
         [
@@ -432,7 +432,7 @@ public static class TestGameEventsSource
             new("90", "Test Skater 10", true),
         ]);
 
-    private static readonly GameTeam AwayTeam = new(
+    public static readonly GameTeam AwayTeam = new(
         new() { ["team"] = "Test Away Team" },
         new TeamColor(Color.White, Color.Black),
         [

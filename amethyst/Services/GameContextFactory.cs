@@ -46,6 +46,7 @@ public class GameContextFactory(
         var context = _gameContexts[gameInfo.Id].Value;
         var stateStore = context.StateStore;
         stateStore.DisableNotifications();
+        context.GameClock.Stop();
         stateStore.LoadDefaultStates(context.Reducers);
 
         var game = await gameStoreFactory.GetDataStore(IGameDiscoveryService.GetGameFileName(gameInfo));
@@ -53,6 +54,7 @@ public class GameContextFactory(
         await stateStore.ApplyEvents(context.Reducers, events);
 
         stateStore.EnableNotifications();
+        context.GameClock.Run();
         stateStore.ForceNotify();
     }
 

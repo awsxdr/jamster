@@ -92,18 +92,20 @@ public class EventIntegrationTests : EventBusIntegrationTest
         Func<IGameStateStore, object> GetStateGetter(string? key, Type stateType) =>
             key is null
                 ? typeof(IGameStateStore)
-                    .GetMethod(nameof(IGameStateStore.GetState))!
+                    .GetMethods()
+                    .Single(m => m is { Name: nameof(IGameStateStore.GetState), IsGenericMethod: true })
                     .MakeGenericMethod(stateType)
                     .Map(m => (Func<IGameStateStore, object>)(s => m.Invoke(s, [])!))
                 : typeof(IGameStateStore)
-                    .GetMethod(nameof(IGameStateStore.GetKeyedState))!
+                    .GetMethods()
+                    .Single(m => m is { Name: nameof(IGameStateStore.GetKeyedState), IsGenericMethod: true })
                     .MakeGenericMethod(stateType)
                     .Map(m => (Func<IGameStateStore, object>)(s => m.Invoke(s, [key])!));
 
         object[] GetAllStates() => stateGetters.Select(g => g(StateStore)).ToArray();
     }
 
-    private static Event[] GetEvents(Type eventSourceType, string eventSourceName) =>
+    public static Event[] GetEvents(Type eventSourceType, string eventSourceName) =>
         eventSourceType.GetProperty(eventSourceName)?.GetValue(null) as Event[]
         ?? throw new ArgumentException();
 }

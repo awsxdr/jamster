@@ -1,11 +1,14 @@
 ﻿using System.Collections.Immutable;
 using amethyst.DataStores;
+using amethyst.Domain;
 using amethyst.Events;
 using amethyst.Reducers;
 using amethyst.Services;
+using amethyst.tests.EventHandling;
 using Autofac;
 using Autofac.Extras.Moq;
 using FluentAssertions;
+using Func;
 using Moq;
 
 namespace amethyst.tests;
@@ -16,6 +19,7 @@ public class EventBusIntegrationTests
     private AutoMock _mocker;
     private ImmutableList<ReducerFactory> _reducerFactories;
     private IGameStateStore _stateStore;
+    private List<Event> _events;
 
     private Lazy<IEventBus> _subject;
     private IEventBus Subject => _subject.Value;
@@ -23,17 +27,32 @@ public class EventBusIntegrationTests
     [SetUp]
     public void Setup()
     {
+        _events = new List<Event>();
         _mocker = AutoMock.GetLoose(builder =>
         {
             builder.Register(_ => _reducerFactories).As<IEnumerable<ReducerFactory>>().SingleInstance();
             builder.RegisterType<GameStateStore>().AsImplementedInterfaces().SingleInstance();
             builder.RegisterType<GameContextFactory>().AsImplementedInterfaces().SingleInstance();
             builder.RegisterType<EventBus>().As<IEventBus>().SingleInstance();
+            builder.RegisterType<GameClock>().As<IGameClock>().SingleInstance();
         });
 
         _mocker.Mock<IGameDataStore>()
             .Setup(mock => mock.GetEvents())
-            .Returns(() => []);
+            .Returns(() => _events);
+
+        _mocker.Mock<IGameDataStore>()
+            .Setup(mock => mock.AddEvent(It.IsAny<Event>()))
+            .Callback((Event @event) => _events.Add(@event))
+            .Returns((Event @event) => @event.Id);
+
+        _mocker.Mock<IGameDataStore>()
+            .Setup(mock => mock.DeleteEvent(It.IsAny<Guid>()))
+            .Callback((Guid eventId) => _events.RemoveAll(e => e.Id == eventId));
+
+        _mocker.Mock<IGameDataStore>()
+            .Setup(mock => mock.GetEvent(It.IsAny<Guid>()))
+            .Returns((Guid eventId) => _events.SingleOrDefault(e => e.Id == eventId)?.Map(Result.Succeed) ?? Result<Event>.Fail<GameDataStore.EventNotFoundError>());
 
         _mocker.Mock<IGameDataStoreFactory>()
             .Setup(mock => mock.GetDataStore(It.IsAny<string>()))
@@ -84,6 +103,68 @@ public class EventBusIntegrationTests
         
         _stateStore.GetState<ComplexStateTestReducerState>().Count.Should().Be(testCount);
     }
+
+    [Test]
+    public async Task RemoveEvent_RestoresStateAsExpected()
+    {
+        _reducerFactories = typeof(Reducer<>).Assembly.GetExportedTypes()
+            .Where(type => !type.IsAbstract && type.IsAssignableTo(typeof(IReducer)))
+            .Select(type => (ReducerFactory)(_ => (IReducer)_mocker.Create(type)))
+            .ToImmutableList();
+
+        var game = new GameInfo(Guid.NewGuid(), "Test game");
+        var homeTeam = TestGameEventsSource.HomeTeam;
+        var awayTeam = TestGameEventsSource.AwayTeam;
+
+        await AddEvent(new TeamSet(0_000, new(TeamSide.Home, homeTeam)));
+        await AddEvent(new TeamSet(0_000, new(TeamSide.Away, awayTeam)));
+        await AddEvent(new SkaterOnTrack(10_000, new(TeamSide.Home, homeTeam.Roster[0].Number, SkaterPosition.Jammer)));
+        await AddEvent(new SkaterOnTrack(10_500, new(TeamSide.Home, homeTeam.Roster[1].Number, SkaterPosition.Pivot)));
+        await AddEvent(new SkaterOnTrack(11_000, new(TeamSide.Away, awayTeam.Roster[0].Number, SkaterPosition.Jammer)));
+        await AddEvent(new SkaterOnTrack(11_500, new(TeamSide.Away, awayTeam.Roster[1].Number, SkaterPosition.Pivot)));
+        await AddEvent(new JamStarted(40_000));
+        await AddEvent(new LeadMarked(50_000, new(TeamSide.Home, true)));
+        await AddEvent(new ScoreModifiedRelative(60_000, new(TeamSide.Home, 4)));
+        await AddEvent(new InitialTripCompleted(61_000, new(TeamSide.Away, true)));
+        await AddEvent(new CallMarked(70_000, new(TeamSide.Home, true)));
+        await AddEvent(new ScoreModifiedRelative(72_000, new(TeamSide.Home, 2)));
+        await AddEvent(new TimeoutStarted(97_000));
+        await AddEvent(new TimeoutTypeSet(98000, new(TimeoutType.Official, null)));
+
+        var gameStageState = _stateStore.GetState<GameStageState>();
+        var states = GetAllStates(game);
+
+        var jamStartedEvent = await AddEvent(new JamStarted(110_000));
+        Thread.Sleep(1000);
+        var jamEndedEvent = await AddEvent(new JamEnded(111_000));
+        Thread.Sleep(1000);
+
+        await Subject.RemoveEvent(game, jamEndedEvent.Id);
+        Thread.Sleep(100);
+        await Subject.RemoveEvent(game, jamStartedEvent.Id);
+        Thread.Sleep(100);
+
+        var gameStageStateAfterUndo = _stateStore.GetState<GameStageState>();
+        var statesAfterUndo = GetAllStates(game);
+
+        //states.Should().BeEquivalentTo(statesAfterUndo);
+        gameStageStateAfterUndo.Should().BeEquivalentTo(gameStageState);
+
+        return;
+
+        Task<Event> AddEvent<TEvent>(TEvent @event) where TEvent : Event =>
+            Subject.AddEvent(game, @event);
+    }
+
+    private object[] GetAllStates(GameInfo game) =>
+        _reducerFactories
+            .Select(r => r(new ReducerGameContext(game, _stateStore)))
+            .Select(r =>
+                r.GetStateKey() is Some<string> key
+                    ? _stateStore.GetKeyedState(key.Value, r.StateType)
+                    : _stateStore.GetState(r.StateType)
+            )
+            .ToArray();
 
     // ReSharper disable once ClassNeverInstantiated.Local
     private sealed class ComplexStateTestReducer(ReducerGameContext context) 

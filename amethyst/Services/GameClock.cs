@@ -7,13 +7,14 @@ namespace amethyst.Services;
 public interface IGameClock : IDisposable
 {
     void Run();
+    void Stop();
 }
 
 public class GameClock(GameInfo game, IEnumerable<ITickReceiverAsync> receivers, IEventBus eventBus, ISystemTime systemTime, ILogger<GameClock> logger) : IGameClock
 {
     public delegate IGameClock Factory(GameInfo game, IEnumerable<ITickReceiverAsync> receivers);
 
-    public int MillisecondsBetweenFrames { get; init; } = 10;
+    public int TicksBetweenFrames { get; init; } = 10;
 
     private volatile bool _isRunning;
 
@@ -41,9 +42,14 @@ public class GameClock(GameInfo game, IEnumerable<ITickReceiverAsync> receivers,
                     }
                 }
 
-                Thread.Sleep(MillisecondsBetweenFrames);
+                Thread.Sleep(TicksBetweenFrames);
             }
         });
+    }
+
+    public void Stop()
+    {
+        _isRunning = false;
     }
 
     public void Dispose()
