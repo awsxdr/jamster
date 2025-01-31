@@ -357,6 +357,51 @@ public class ScoreSheetUnitTests : ReducerUnitTest<HomeScoreSheet, ScoreSheetSta
     }
 
     [Test]
+    public async Task ScoreSheetPivotNumberSet_WhenJamLineExists_AndTeamMatches_SetsPivotNumberToValue()
+    {
+        State = new([
+            new(1, 1, "123", "555", false, true, true, false, false, [new(4), new(4), new(3)], null, 11, 11),
+            new(1, 2, "234", "555", false, false, false, false, false, [new(2)], null, 2, 13),
+            new(1, 3, "?", "?", false, false, false, false, false, [new(4), new(4), new(null)], null, 8, 21),
+        ]);
+
+        var expectedState = new ScoreSheetState(State.Jams.Select(j => j).ToArray());
+        expectedState.Jams[1] = expectedState.Jams[1] with { PivotNumber = "4444" };
+
+        await Subject.Handle(new ScoreSheetPivotNumberSet(1000, new(TeamSide.Home, 1, "4444")));
+
+        State.Should().Be(expectedState);
+    }
+
+    [Test]
+    public async Task ScoreSheetPivotNumberSet_WhenJamLineDoesNotExist_DoesNotChangeState()
+    {
+        var originalState = State = new([
+            new(1, 1, "123", "555", false, true, true, false, false, [new(4), new(4), new(3)], null, 11, 11),
+            new(1, 2, "234", "555", false, false, false, false, false, [new(2)], null, 2, 13),
+            new(1, 3, "?", "?", false, false, false, false, false, [new(4), new(4), new(null)], null, 8, 21),
+        ]);
+
+        await Subject.Handle(new ScoreSheetPivotNumberSet(1000, new(TeamSide.Home, 10, "4444")));
+
+        State.Should().Be(originalState);
+    }
+
+    [Test]
+    public async Task ScoreSheetPivotNumberSet_WhenTeamDoesNotMatch_DoesNotChangeState()
+    {
+        var originalState = State = new([
+            new(1, 1, "123", "555", false, true, true, false, false, [new(4), new(4), new(3)], null, 11, 11),
+            new(1, 2, "234", "555", false, false, false, false, false, [new(2)], null, 2, 13),
+            new(1, 3, "?", "?", false, false, false, false, false, [new(4), new(4), new(null)], null, 8, 21),
+        ]);
+
+        await Subject.Handle(new ScoreSheetPivotNumberSet(1000, new(TeamSide.Away, 1, "4444")));
+
+        State.Should().Be(originalState);
+    }
+
+    [Test]
     public async Task ScoreSheetLeadSet_WhenJamLineExists_AndTeamMatches_SetsLeadToValue([Values] bool isLead)
     {
         State = new([

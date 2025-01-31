@@ -4,13 +4,14 @@ import { ScoreSheetJamRow } from "./ScoreSheetJamRow";
 import { cn } from "@/lib/utils";
 import { Fragment, useMemo } from "react";
 import { ScoreSheetTimeoutRow } from "./ScoreSheetTimeoutRow";
-import { ScoreSheetInjurySet, ScoreSheetJammerNumberSet, ScoreSheetLostSet, ScoreSheetStarPassTripSet } from "@/types/events";
+import { ScoreSheetCalledSet, ScoreSheetInjurySet, ScoreSheetJammerNumberSet, ScoreSheetLeadSet, ScoreSheetLostSet, ScoreSheetPivotNumberSet, ScoreSheetStarPassTripSet } from "@/types/events";
 import { JamEditMenu } from "./JamEditMenu";
 
 type ScoreSheetProps = {
     gameId: string;
     teamSide: TeamSide;
     descending?: boolean;
+    showTimeouts?: boolean;
     className?: string;
 }
 
@@ -22,7 +23,7 @@ type ScoreSheetItem = {
     timeoutItem?: TimeoutListItem;
 }
 
-export const ScoreSheet = ({ gameId, teamSide, descending, className }: ScoreSheetProps) => {
+export const ScoreSheet = ({ gameId, teamSide, descending, showTimeouts, className }: ScoreSheetProps) => {
 
     const scoreSheet = useScoreSheetState(teamSide);
     const opponentScoreSheet = useScoreSheetState(teamSide === TeamSide.Home ? TeamSide.Away : TeamSide.Home);
@@ -40,7 +41,10 @@ export const ScoreSheet = ({ gameId, teamSide, descending, className }: ScoreShe
 
     const { timeouts } = useTimeoutListState() ?? { timeouts: [] };
 
-    const timeoutItems: ScoreSheetItem[] = timeouts.map((t, i) => ({ ...t, lineNumber: i, type: "timeout", timeoutItem: t }));
+    const timeoutItems: ScoreSheetItem[] = showTimeouts
+        ? timeouts.map((t, i) => ({ ...t, lineNumber: i, type: "timeout", timeoutItem: t }))
+        : [];
+
     const jamItems: ScoreSheetItem[] = [
             ...(scoreSheet?.jams ?? [])
         ].map((j, i) => ({ 
@@ -54,13 +58,18 @@ export const ScoreSheet = ({ gameId, teamSide, descending, className }: ScoreShe
             ? [{...j, type: "preStarPass"}, {...j, type: "postStarPass"}]
             : [j]
         )
-        .map((j, i) => ({
-            ...j,
-            jamItem: {
-                ...j.jamItem,
-                even: i % 2 === 0,
-            }
-        }))
+        .reduce((aggregate, item) => ({
+            period: item.period,
+            index: aggregate.period === item.period ? aggregate.index + 1 : 0,
+            items: [...aggregate.items, {
+                ...item,
+                jamItem: {
+                    ...item.jamItem,
+                    even: aggregate.period === item.period ? (aggregate.index % 2 === 1) : true,
+                }
+            }]
+        }), { period: 0, index: 0, items: [] as ScoreSheetItem[] })
+        .items;
 
     const typeOrder = ["jam", "preStarPass", "postStarPass", "timeout"];
 
@@ -90,8 +99,20 @@ export const ScoreSheet = ({ gameId, teamSide, descending, className }: ScoreShe
         sendEvent(gameId, new ScoreSheetJammerNumberSet(teamSide, lineNumber, value));
     }
 
+    const handlePivotNumberSet = (lineNumber: number, value: string) => {
+        sendEvent(gameId, new ScoreSheetPivotNumberSet(teamSide, lineNumber, value));
+    }
+
     const handleLostSet = (lineNumber: number, value: boolean) => {
         sendEvent(gameId, new ScoreSheetLostSet(teamSide, lineNumber, value));
+    }
+
+    const handleLeadSet = (lineNumber: number, value: boolean) => {
+        sendEvent(gameId, new ScoreSheetLeadSet(teamSide, lineNumber, value));
+    }
+
+    const handleCalledSet = (lineNumber: number, value: boolean) => {
+        sendEvent(gameId, new ScoreSheetCalledSet(teamSide, lineNumber, value));
     }
 
     const handleInjurySet = (lineNumber: number, value: boolean) => {
@@ -129,7 +150,10 @@ export const ScoreSheet = ({ gameId, teamSide, descending, className }: ScoreShe
                                         even={line.jamItem!.even}
                                         className={cn(i === 0 && "border-t-2", i === lines.length - 1 && "border-b-2")}
                                         onJammerNumberSet={v => handleJammerNumberSet(line.jamItem!.totalJamNumber, v)}
+                                        onPivotNumberSet={v => handlePivotNumberSet(line.jamItem!.totalJamNumber, v)}
                                         onLostSet={v => handleLostSet(line.jamItem!.totalJamNumber, v)}
+                                        onLeadSet={v => handleLeadSet(line.jamItem!.totalJamNumber, v)}
+                                        onCalledSet={v => handleCalledSet(line.jamItem!.totalJamNumber, v)}
                                         onInjurySet={v => handleInjurySet(line.jamItem!.totalJamNumber, v)}
                                     />
                                 </>
@@ -151,7 +175,10 @@ export const ScoreSheet = ({ gameId, teamSide, descending, className }: ScoreShe
                                         even={line.jamItem!.even}
                                         className={cn(i === 0 && "border-t-2", i === lines.length - 1 && "border-b-2")}
                                         onJammerNumberSet={v => handleJammerNumberSet(line.jamItem!.totalJamNumber, v)}
+                                        onPivotNumberSet={v => handlePivotNumberSet(line.jamItem!.totalJamNumber, v)}
                                         onLostSet={v => handleLostSet(line.jamItem!.totalJamNumber, v)}
+                                        onLeadSet={v => handleLeadSet(line.jamItem!.totalJamNumber, v)}
+                                        onCalledSet={v => handleCalledSet(line.jamItem!.totalJamNumber, v)}
                                         onInjurySet={v => handleInjurySet(line.jamItem!.totalJamNumber, v)}
                                     />
                                 </>
@@ -169,7 +196,10 @@ export const ScoreSheet = ({ gameId, teamSide, descending, className }: ScoreShe
                                         even={line.jamItem!.even}
                                         className={cn(i === 0 && "border-t-2", i === lines.length - 1 && "border-b-2")}
                                         onJammerNumberSet={v => handleJammerNumberSet(line.jamItem!.totalJamNumber, v)}
+                                        onPivotNumberSet={v => handlePivotNumberSet(line.jamItem!.totalJamNumber, v)}
                                         onLostSet={v => handleLostSet(line.jamItem!.totalJamNumber, v)}
+                                        onLeadSet={v => handleLeadSet(line.jamItem!.totalJamNumber, v)}
+                                        onCalledSet={v => handleCalledSet(line.jamItem!.totalJamNumber, v)}
                                         onInjurySet={v => handleInjurySet(line.jamItem!.totalJamNumber, v)}
                                     />
                                 </>

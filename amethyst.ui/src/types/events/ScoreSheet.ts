@@ -7,9 +7,27 @@ export class ScoreSheetJammerNumberSet extends EventWithBody {
     }
 }
 
+export class ScoreSheetPivotNumberSet extends EventWithBody {
+    constructor(teamSide: TeamSide, totalJamNumber: number, pivotNumber: string) {
+        super("ScoreSheetPivotNumberSet", { teamSide, totalJamNumber, value: pivotNumber });
+    }
+}
+
 export class ScoreSheetLostSet extends EventWithBody {
     constructor(teamSide: TeamSide, lineNumber: number, lost: boolean) {
         super("ScoreSheetLostSet", { teamSide, totalJamNumber: lineNumber, value: lost });
+    }
+}
+
+export class ScoreSheetLeadSet extends EventWithBody {
+    constructor(teamSide: TeamSide, lineNumber: number, lost: boolean) {
+        super("ScoreSheetLeadSet", { teamSide, totalJamNumber: lineNumber, value: lost });
+    }
+}
+
+export class ScoreSheetCalledSet extends EventWithBody {
+    constructor(teamSide: TeamSide, lineNumber: number, lost: boolean) {
+        super("ScoreSheetCalledSet", { teamSide, totalJamNumber: lineNumber, value: lost });
     }
 }
 

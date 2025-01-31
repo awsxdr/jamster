@@ -18,6 +18,7 @@ public abstract class ScoreSheet(TeamSide teamSide, ReducerGameContext context, 
     , IHandlesEvent<CallMarked>
     , IHandlesEvent<StarPassMarked>
     , IHandlesEvent<ScoreSheetJammerNumberSet>
+    , IHandlesEvent<ScoreSheetPivotNumberSet>
     , IHandlesEvent<ScoreSheetLeadSet>
     , IHandlesEvent<ScoreSheetLostSet>
     , IHandlesEvent<ScoreSheetCalledSet>
@@ -149,6 +150,13 @@ public abstract class ScoreSheet(TeamSide teamSide, ReducerGameContext context, 
     public IEnumerable<Event> Handle(ScoreSheetJammerNumberSet @event) => @event.HandleIfTeam(teamSide, () =>
     {
         ModifyJam(@event.Body.TotalJamNumber, line => line with { JammerNumber = @event.Body.Value });
+
+        return [];
+    });
+
+    public IEnumerable<Event> Handle(ScoreSheetPivotNumberSet @event) => @event.HandleIfTeam(teamSide, () =>
+    {
+        ModifyJam(@event.Body.TotalJamNumber, line => line with { PivotNumber = @event.Body.Value });
 
         return [];
     });

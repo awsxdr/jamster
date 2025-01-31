@@ -1,4 +1,4 @@
-import { Button, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, Slider } from "@/components/ui"
+import { Button, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuPortal, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger, Slider } from "@/components/ui"
 import { cn } from "@/lib/utils";
 import { Check, EllipsisVertical, Star, Trash } from "lucide-react"
 import { MouseEvent, useEffect, useState } from "react";
@@ -52,7 +52,16 @@ export const JamEditMenu = ({ starPassTrip, className, onStarPassTripChanged }: 
                         <span className="w-3 text-center">{starPassValue}</span>
                     </DropdownMenuItem>
                 )}
-                <DropdownMenuItem><Trash /> Delete</DropdownMenuItem>
+                <DropdownMenuSub>
+                    <DropdownMenuSubTrigger>
+                        <Trash /> Delete
+                    </DropdownMenuSubTrigger>
+                    <DropdownMenuPortal>
+                        <DropdownMenuSubContent>
+                            <DropdownMenuItem className="bg-destructive text-destructive-foreground">Confirm</DropdownMenuItem>
+                        </DropdownMenuSubContent>
+                    </DropdownMenuPortal>
+                </DropdownMenuSub>
             </DropdownMenuContent>
         </DropdownMenu>
     )

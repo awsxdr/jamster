@@ -15,8 +15,10 @@ public sealed record ScoreSheetStatsSetBody(TeamSide TeamSide, int TotalJamNumbe
 public sealed class ScoreSheetInjurySet(Guid7 id, ScoreSheetInjurySetBody body) : Event<ScoreSheetInjurySetBody>(id, body);
 public sealed record ScoreSheetInjurySetBody(int TotalJamNumber, bool Value);
 
-public sealed class ScoreSheetJammerNumberSet(Guid7 id, ScoreSheetJammerNumberSetBody body) : Event<ScoreSheetJammerNumberSetBody>(id, body);
-public sealed record ScoreSheetJammerNumberSetBody(TeamSide TeamSide, int TotalJamNumber, string Value) : TeamEventBody(TeamSide);
+public sealed class ScoreSheetJammerNumberSet(Guid7 id, ScoreSheetSkaterNumberSetBody body) : Event<ScoreSheetSkaterNumberSetBody>(id, body);
+public sealed class ScoreSheetPivotNumberSet(Guid7 id, ScoreSheetSkaterNumberSetBody body) : Event<ScoreSheetSkaterNumberSetBody>(id, body);
+public sealed record ScoreSheetSkaterNumberSetBody(TeamSide TeamSide, int TotalJamNumber, string Value) : TeamEventBody(TeamSide);
+
 
 public sealed class ScoreSheetStarPassTripSet(Guid7 id, ScoreSheetStarPassTripSetBody body) : Event<ScoreSheetStarPassTripSetBody>(id, body);
 public sealed record ScoreSheetStarPassTripSetBody(TeamSide TeamSide, int TotalJamNumber, int? StarPassTrip) : TeamEventBody(TeamSide);

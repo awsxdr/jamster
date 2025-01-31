@@ -22,4 +22,5 @@ export * from './skeleton';
 export * from './slider';
 export * from './switch';
 export * from './table';
+export * from './toggle';
 export * from './tooltip';
