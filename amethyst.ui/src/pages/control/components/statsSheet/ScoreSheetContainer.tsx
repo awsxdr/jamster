@@ -1,6 +1,6 @@
 import { DisplaySide, TeamSide } from "@/types";
 import { ScoreSheet } from "./ScoreSheet";
-import { Button, Card, CardContent, CardHeader, Collapsible, CollapsibleContent, CollapsibleTrigger, Toggle, Tooltip, TooltipTrigger } from "@/components/ui";
+import { Button, Card, CardContent, CardHeader, Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui";
 import { ArrowDown01, ArrowUp10, ChevronRight, Timer } from "lucide-react";
 import { useState } from "react";
 import { useI18n } from "@/hooks";
