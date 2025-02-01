@@ -1,10 +1,9 @@
-﻿using amethyst.DataStores;
-using amethyst.Domain;
+﻿using amethyst.Domain;
 using amethyst.Events;
 using amethyst.Reducers;
 using amethyst.Services;
 using FluentAssertions;
-using Moq;
+
 using static amethyst.tests.DataGenerator;
 
 namespace amethyst.tests.Reducers;
@@ -32,6 +31,7 @@ public class JamClockUnitTests : ReducerUnitTest<JamClock, JamClockState>
         var randomTick = GetRandomTick();
 
         State = new JamClockState(true, randomTick, 0, 0);
+        MockState<RulesState>(new(Rules.DefaultRules));
 
         var secondTick = randomTick + 10000;
         var ticksPassed = secondTick - randomTick;
@@ -49,8 +49,13 @@ public class JamClockUnitTests : ReducerUnitTest<JamClock, JamClockState>
     public async Task JamStart_WhenClockRunning_AndPreviousJamRanToLength_StartsNewJam()
     {
         State = new JamClockState(true, 0, 0, 0);
+        MockState<RulesState>(new(Rules.DefaultRules with
+        {
+            JamRules = Rules.DefaultRules.JamRules with { Duration = Domain.Tick.FromSeconds(33) },
+            LineupRules = Rules.DefaultRules.LineupRules with { Duration = Domain.Tick.FromSeconds(44) }
+        }));
 
-        var newJamStartTick = JamClock.JamLengthInTicks + LineupClock.LineupDurationInTicks;
+        var newJamStartTick = Domain.Tick.FromSeconds(33 + 44);
 
         await ((ITickReceiver)Subject).TickAsync(newJamStartTick - 1);
         await Subject.Handle(new JamStarted(newJamStartTick));
@@ -136,18 +141,27 @@ public class JamClockUnitTests : ReducerUnitTest<JamClock, JamClockState>
     public async Task JamClockSet_SetsJamClock()
     {
         State = new JamClockState(true, 0, 10000, 10);
+        MockState<RulesState>(new(Rules.DefaultRules with
+        {
+            JamRules = Rules.DefaultRules.JamRules with
+            {
+                Duration = Domain.Tick.FromSeconds(123)
+            }
+        }));
 
         await Subject.Handle(new JamClockSet(20000, new(30)));
 
-        State.StartTick.Should().Be(20000 - (JamClock.JamLengthInTicks - 30000));
-        State.TicksPassed.Should().Be(JamClock.JamLengthInTicks - 30000);
-        State.SecondsPassed.Should().Be((int)((JamClock.JamLengthInTicks - 30000) / 1000));
+        State.StartTick.Should().Be(20000 - Domain.Tick.FromSeconds(123 - 30));
+        State.TicksPassed.Should().Be(Domain.Tick.FromSeconds(123 - 30));
+        State.SecondsPassed.Should().Be(Domain.Tick.FromSeconds(123 - 30).Seconds);
     }
 
     [Test]
     public async Task Tick_WhenStillTimeInJam_UpdatesTicksPassed()
     {
         State = new(true, 0, 0, 0);
+        MockState<RulesState>(new(Rules.DefaultRules));
+
         await Tick(10000);
 
         State.TicksPassed.Should().Be(10000);
@@ -158,6 +172,7 @@ public class JamClockUnitTests : ReducerUnitTest<JamClock, JamClockState>
     public async Task Tick_WhenOverJamTimeLimit_SendsJamEndedEvent()
     {
         State = new(true, 0, 0, 0);
+        MockState<RulesState>(new(Rules.DefaultRules));
 
         var result = await Tick(130 * 1000);
 

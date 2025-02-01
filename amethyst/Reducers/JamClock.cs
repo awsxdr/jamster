@@ -11,17 +11,17 @@ public sealed class JamClock(ReducerGameContext gameContext, ILogger<JamClock> l
     , IHandlesEvent<TimeoutStarted>
     , IHandlesEvent<CallMarked>
     , IHandlesEvent<JamClockSet>
+    , IDependsOnState<RulesState>
     , ITickReceiver
 {
     protected override JamClockState DefaultState => new(false, 0, 0, 0);
 
-    public const long JamLengthInTicks = 2 * 60 * 1000;
-
     public IEnumerable<Event> Handle(JamStarted @event)
     {
         var state = GetState();
+        RulesState rules = GetState<RulesState>();
 
-        if (state is { IsRunning: true, TicksPassed: < JamLengthInTicks })
+        if (state.IsRunning && state.TicksPassed < rules.Rules.JamRules.Duration)
             return [];
 
         logger.LogDebug("Starting jam clock");
@@ -63,9 +63,10 @@ public sealed class JamClock(ReducerGameContext gameContext, ILogger<JamClock> l
     public IEnumerable<Event> Handle(JamClockSet @event)
     {
         var state = GetState();
+        var rules = GetState<RulesState>();
 
         var ticksRemaining = Domain.Tick.FromSeconds(@event.Body.SecondsRemaining);
-        var ticksPassed = JamLengthInTicks - ticksRemaining;
+        var ticksPassed = rules.Rules.JamRules.Duration - ticksRemaining;
 
         SetState(state with
         {
@@ -91,12 +92,13 @@ public sealed class JamClock(ReducerGameContext gameContext, ILogger<JamClock> l
         };
 
         SetState(newState);
+        var rules = GetState<RulesState>();
 
-        if (ticksPassed <= JamLengthInTicks) return [];
+        if (ticksPassed <= rules.Rules.JamRules.Duration) return [];
 
         logger.LogDebug("Jam clock expired, ending jam");
 
-        return [new JamEnded(Guid7.FromTick(state.StartTick + JamLengthInTicks))];
+        return [new JamEnded(Guid7.FromTick(state.StartTick + rules.Rules.JamRules.Duration))];
 
     }
 }

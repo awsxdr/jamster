@@ -44,7 +44,7 @@ public class LineupClockUnitTests : ReducerUnitTest<LineupClock, LineupClockStat
         State = new(false, randomTick, randomTick, 0);
 
         MockState(new TimeoutClockState(false, 0, 0, 0, 0));
-        MockState(new PeriodClockState(true, false, 0, 0, PeriodClock.PeriodLengthInTicks - 10000, (int)((PeriodClock.PeriodLengthInTicks - 10000) / 1000)));
+        MockState(new PeriodClockState(true, false, 0, 0, Rules.DefaultRules.PeriodRules.Duration - 10000, (int)((Rules.DefaultRules.PeriodRules.Duration - 10000) / 1000)));
 
         var secondRandomTick = randomTick + Random.Shared.Next(1, 100000);
         await Subject.Handle(new JamEnded(secondRandomTick));

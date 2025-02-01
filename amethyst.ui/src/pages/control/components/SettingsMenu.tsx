@@ -1,6 +1,6 @@
 import { Button, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui";
 import { useCurrentGame, useI18n } from "@/hooks";
-import { History, List, Settings } from "lucide-react";
+import { History, List, NotebookText, Settings } from "lucide-react";
 import { Link } from "react-router-dom";
 
 type SettingsMenuProps = {
@@ -27,6 +27,12 @@ export const SettingsMenu = ({ disabled }: SettingsMenuProps) => {
                             <Link to={`/games/${currentGame?.id}`}>
                                 <List />
                                 {translate("ScoreboardControl.SettingsMenu.Settings")}
+                            </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem disabled={disabled} asChild>
+                            <Link to={`/games/${currentGame?.id}/rules`}>
+                                <NotebookText />
+                                {translate("ScoreboardControl.SettingsMenu.Rules")}
                             </Link>
                         </DropdownMenuItem>
                         <DropdownMenuItem disabled={disabled} asChild>

@@ -13,8 +13,6 @@ public sealed class LineupClock(ReducerGameContext gameContext, ILogger<LineupCl
     , IDependsOnState<TimeoutClockState>
     , ITickReceiver
 {
-    public static readonly Tick LineupDurationInTicks = 30 * 1000;
-
     protected override LineupClockState DefaultState => new(false, 0, 0, 0);
 
     public IEnumerable<Event> Handle(JamStarted @event)

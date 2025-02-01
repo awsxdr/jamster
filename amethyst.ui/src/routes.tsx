@@ -45,6 +45,10 @@ export const Routes = () => {
             element: <MainMenu content={<GameEdit />} />
         },
         {
+            path: '/games/:gameId/rules',
+            element: <MainMenu content={<WorkInProgress />} />
+        },
+        {
             path: '/games/:gameId/timeline',
             element: <MainMenu content={<Timeline />} />
         },
