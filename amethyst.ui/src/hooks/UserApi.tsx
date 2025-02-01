@@ -22,7 +22,6 @@ export const useUserApi: () => UserApi = () => {
     }
 
     const downloadUsers = async (userNames: string[]) => {
-
         const requestUrl = `${API_URL}/api/users/file?${userNames.map(u => `userNames=${encodeURIComponent(u)}`).join("&")}`;
         const response = await fetch(requestUrl);
         const blobUrl = URL.createObjectURL(await response.blob());
