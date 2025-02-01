@@ -1,6 +1,9 @@
-﻿namespace amethyst.Domain;
+﻿using Func;
 
-public sealed record StatsBook(Igrf Igrf);
+namespace amethyst.Domain;
+
+public sealed record StatsBook(Igrf Igrf, ScoreSheetCollection ScoreSheets);
+
 
 public sealed record Igrf(GameLocation Location, GameDetails GameDetails, GameTeams Teams, GameSummary GameSummary);
 
@@ -17,3 +20,13 @@ public sealed record PeriodSummary(int HomeTeamPenalties, int HomeTeamScore, int
 
 public sealed record Signatories(Signatory HomeTeamCaptain, Signatory AwayTeamCaptain, Signatory HeadReferee, Signatory HeadNso);
 public sealed record Signatory(string SkateName, string LegalName);
+
+
+public sealed record ScoreSheetCollection(
+    ScoreSheet HomePeriod1,
+    ScoreSheet AwayPeriod1,
+    ScoreSheet HomePeriod2,
+    ScoreSheet AwayPeriod2);
+public sealed record ScoreSheet(string ScoreKeeper, string JammerRef, ScoreSheetLine[] Lines);
+public sealed record ScoreSheetLine(Union<int, string> Jam, string JammerNumber, bool Lost, bool Lead, bool Call, bool Injury, bool NoInitial, ScoreSheetTrip[] Trips);
+public sealed record ScoreSheetTrip(int? Score);

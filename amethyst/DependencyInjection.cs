@@ -15,13 +15,15 @@ internal static class DependencyInjection
     {
         var serviceTypes =
             Assembly.GetExecutingAssembly().GetTypes()
-                .Where(t => t.Namespace == $"{nameof(amethyst)}.{nameof(Services)}")
+                .Where(t => t.Namespace?.StartsWith($"{nameof(amethyst)}.{nameof(Services)}") ?? false)
                 .Where(t => t is { IsAbstract: false, IsGenericType: false, IsNested: false })
                 .Where(t => !t.IsAssignableTo<MulticastDelegate>())
                 .ToArray();
 
         foreach (var type in serviceTypes)
         {
+            if (type.GetCustomAttribute<DoNotRegisterAttribute>() is not null) continue;
+
             var singleton = type.GetCustomAttribute<SingletonAttribute>() is not null;
 
             var registration = builder.RegisterType(type).AsImplementedInterfaces();
@@ -96,3 +98,6 @@ internal static class DependencyInjection
 
 [AttributeUsage(AttributeTargets.Class)]
 public sealed class SingletonAttribute : Attribute;
+
+[AttributeUsage(AttributeTargets.Class)]
+public sealed class DoNotRegisterAttribute : Attribute;

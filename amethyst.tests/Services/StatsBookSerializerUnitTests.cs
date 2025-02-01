@@ -1,6 +1,6 @@
 ﻿using System.Reflection;
 using amethyst.Domain;
-using amethyst.Services;
+using amethyst.Services.Stats;
 using FluentAssertions;
 using Func;
 

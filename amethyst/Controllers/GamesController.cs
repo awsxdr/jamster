@@ -1,6 +1,7 @@
 ﻿using amethyst.DataStores;
 using amethyst.Domain;
 using amethyst.Services;
+using amethyst.Services.Stats;
 using Func;
 using Microsoft.AspNetCore.Mvc;
 
@@ -11,6 +12,8 @@ public class GamesController(
     IGameDiscoveryService gameDiscoveryService,
     IGameContextFactory contextFactory,
     ISystemStateStore systemStateStore,
+    IGameExporter gameExporter,
+    IStatsBookSerializer statsBookSerializer,
     ILogger<GamesController> logger
     ) : Controller
 {
@@ -38,7 +41,6 @@ public class GamesController(
     [HttpPost]
     public async Task<ActionResult<GameModel>> UploadGame(
         IFormFile statsBookFile, 
-        [FromServices] IStatsBookSerializer statsBookSerializer,
         [FromServices] IGameImporter gameImporter)
     {
         if (statsBookFile.ContentType != "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
@@ -59,14 +61,32 @@ public class GamesController(
     [HttpGet("{gameId:guid}")]
     public async Task<ActionResult<GameModel>> GetGame(Guid gameId)
     {
-        logger.LogDebug("Getting game {gameId}", gameId);
-
-        return await gameDiscoveryService.GetExistingGame(gameId) switch
+        switch (HttpContext.Request.Headers.Accept)
         {
-            Success<GameInfo> s => (GameModel)s.Value,
-            Failure<GameFileNotFoundForIdError> => NotFound(),
-            var r => throw new UnexpectedResultException(r)
-        };
+            case "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
+            {
+                    return await gameDiscoveryService.GetExistingGame(gameId)
+                            .ThenMap(gameExporter.Export)
+                            .Then(statsBookSerializer.Serialize) switch
+                    {
+                        Success<byte[]> s => File(s.Value, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
+                        Failure<GameFileNotFoundForIdError> => NotFound(),
+                        var r => throw new UnexpectedResultException(r)
+                    };
+            }
+
+            default:
+            {
+                logger.LogDebug("Getting game {gameId}", gameId);
+
+                return await gameDiscoveryService.GetExistingGame(gameId) switch
+                {
+                    Success<GameInfo> s => (GameModel)s.Value,
+                    Failure<GameFileNotFoundForIdError> => NotFound(),
+                    var r => throw new UnexpectedResultException(r)
+                };
+            }
+        }
     }
 
     [HttpDelete("{gameId:guid}")]
