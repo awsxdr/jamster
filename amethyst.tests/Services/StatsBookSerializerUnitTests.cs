@@ -8,6 +8,10 @@ namespace amethyst.tests.Services;
 
 public class StatsBookSerializerUnitTests : UnitTest<StatsBookSerializer>
 {
+    protected override StatsBookSerializer SubjectFactory() =>
+            Create<Func<IIgrfSerializer, IScoreSheetSerializer, StatsBookSerializer>>()
+                (Create<IgrfSerializer>(), Create<ScoreSheetSerializer>());
+
     [Test]
     public async Task DeserializeStream_ShouldDeserializeValidStatsbookCorrectly()
     {
