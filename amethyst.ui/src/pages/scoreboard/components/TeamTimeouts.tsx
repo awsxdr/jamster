@@ -50,9 +50,9 @@ export const TeamTimeouts = ({ side }: TeamTimeoutsProps) => {
     return (
         <div className={cn("flex flex-col grow h-full mh-full", SCOREBOARD_GAP_CLASS_NAME)}>
             <ScoreboardComponent className="flex flex-col py-1 md:py-2 items-center text-center grow-[3]">
-                { Array.from(new Array(timeouts?.numberRemaining ?? 3)).map((_, i) => (<TimeoutSymbol key={i} state={TimeoutSymbolState.Default} />))}
+                { Array.from(new Array(3 - (timeouts?.numberTaken ?? 0))).map((_, i) => (<TimeoutSymbol key={i} state={TimeoutSymbolState.Default} />))}
                 { timeoutActive && <TimeoutSymbol state={TimeoutSymbolState.Default} active /> }
-                { Array.from(new Array((timeoutActive ? 2 : 3) - (timeouts?.numberRemaining ?? 3))).map((_, i) => (<TimeoutSymbol key={3 - i} state={TimeoutSymbolState.Hidden} />))}
+                { Array.from(new Array((timeouts?.numberTaken ?? 0) - (timeoutActive ? 1 : 0))).map((_, i) => (<TimeoutSymbol key={3 - i} state={TimeoutSymbolState.Hidden} />))}
             </ScoreboardComponent>
             <ScoreboardComponent className="flex flex-col py-2 items-center text-center grow">
                 <TimeoutSymbol state={reviewSymbolState} active={timeouts?.currentTimeout === TimeoutInUse.Review} />

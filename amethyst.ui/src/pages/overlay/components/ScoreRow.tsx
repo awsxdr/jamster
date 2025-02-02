@@ -56,11 +56,11 @@ export const ScoreRow = ({ side }: ScoreRowProps) => {
             </div>
             <div className="grow">{teamName}</div>
             <div className="h-full flex flex-col justify-between py-[2px]">
-                { Array.from(new Array(timeouts?.numberRemaining ?? 3)).map((_, i) => (
+                { Array.from(new Array(3 - (timeouts?.numberTaken ?? 0))).map((_, i) => (
                     <div key={i} className={cn(timeoutItemClassName, "bg-black")}></div>
                 ))}
                 { timeoutActive && <div className={cn(timeoutItemClassName, "bg-black animate-pulse-full-fast")}></div> }
-                { Array.from(new Array((timeoutActive ? 2 : 3) - (timeouts?.numberRemaining ?? 3))).map((_, i) => (
+                { Array.from(new Array((timeouts?.numberTaken ?? 0) - (timeoutActive ? 1 : 0))).map((_, i) => (
                     <div key={i} className={timeoutItemClassName}></div>
                 ))}
                 {

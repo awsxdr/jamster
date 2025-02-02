@@ -1,4 +1,4 @@
-﻿using System.Collections.Immutable;
+using System.Collections.Immutable;
 using amethyst.Events;
 using amethyst.Reducers;
 using amethyst.Services;
@@ -9,7 +9,7 @@ namespace amethyst.tests.EventHandling;
 
 public class EventIntegrationTests : EventBusIntegrationTest
 {
-    [TestCase( typeof(TestGameEventsSource), nameof(TestGameEventsSource.FullGame))]
+    [TestCase(typeof(TestGameEventsSource), nameof(TestGameEventsSource.FullGame))]
     [TestCase(typeof(TestGameEventsSource), nameof(TestGameEventsSource.TwoJamsWithScores))]
     [TestCase(typeof(TestGameEventsSource), nameof(TestGameEventsSource.SingleJamStartedWithoutEndingIntermission))]
     [TestCase(typeof(TestGameEventsSource), nameof(TestGameEventsSource.OfficialReviewDuringIntermission))]

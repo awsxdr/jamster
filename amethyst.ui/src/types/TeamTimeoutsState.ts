@@ -1,7 +1,7 @@
 import { ReviewStatus, TimeoutInUse } from ".";
 
 export type TeamTimeoutsState = {
-    numberRemaining: number,
+    numberTaken: number,
     reviewStatus: ReviewStatus,
     currentTimeout: TimeoutInUse,
 };

@@ -45,10 +45,10 @@ export const TimeoutTypePanel = ({ gameId, disabled }: TimeoutTypePanelProps) =>
     const awayTeamName = useMemo(() => getTeamName(awayTeam, "Away"), [awayTeam]);
 
     const compoundType = useMemo<CompoundTimeoutType>(() =>
-        timeoutType?.type === TimeoutType.Team && timeoutType?.side === TeamSide.Home ? 'HomeTeamTimeout'
-        : timeoutType?.type === TimeoutType.Team && timeoutType?.side === TeamSide.Away ? 'AwayTeamTimeout'
-        : timeoutType?.type === TimeoutType.Review && timeoutType?.side === TeamSide.Home ? 'HomeTeamReview'
-        : timeoutType?.type === TimeoutType.Review && timeoutType?.side === TeamSide.Away ? 'AwayTeamReview'
+        timeoutType?.type === TimeoutType.Team && timeoutType?.teamSide === TeamSide.Home ? 'HomeTeamTimeout'
+        : timeoutType?.type === TimeoutType.Team && timeoutType?.teamSide === TeamSide.Away ? 'AwayTeamTimeout'
+        : timeoutType?.type === TimeoutType.Review && timeoutType?.teamSide === TeamSide.Home ? 'HomeTeamReview'
+        : timeoutType?.type === TimeoutType.Review && timeoutType?.teamSide === TeamSide.Away ? 'AwayTeamReview'
         : timeoutType?.type === TimeoutType.Official ? 'Official'
         : 'Untyped'
     , [timeoutType]);

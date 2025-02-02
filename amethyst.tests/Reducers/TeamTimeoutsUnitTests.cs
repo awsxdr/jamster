@@ -152,19 +152,19 @@ public class TeamTimeoutsUnitTests : ReducerUnitTest<HomeTeamTimeouts, TeamTimeo
     public static IEnumerable<TestCaseData> TimeoutTypeSetTestCases =>
     [
         new TestCaseData(
-                new TeamTimeoutsState(3, ReviewStatus.Unused, TimeoutInUse.None),
+                new TeamTimeoutsState(0, ReviewStatus.Unused, TimeoutInUse.None),
                 new TimeoutTypeSetBody(TimeoutType.Team, TeamSide.Home),
-                new TeamTimeoutsState(2, ReviewStatus.Unused, TimeoutInUse.Timeout))
-            .SetName("Team timeout for this team when none running sets type and decrements remaining"),
+                new TeamTimeoutsState(1, ReviewStatus.Unused, TimeoutInUse.Timeout))
+            .SetName("Team timeout for this team when none running sets type and increments taken"),
         new TestCaseData(
                 new TeamTimeoutsState(2, ReviewStatus.Unused, TimeoutInUse.Timeout),
                 new TimeoutTypeSetBody(TimeoutType.Team, TeamSide.Home),
                 new TeamTimeoutsState(2, ReviewStatus.Unused, TimeoutInUse.Timeout))
             .SetName("Team timeout for this team when timeout already running does not change state"),
         new TestCaseData(
-                new TeamTimeoutsState(3, ReviewStatus.Unused, TimeoutInUse.Review),
+                new TeamTimeoutsState(0, ReviewStatus.Unused, TimeoutInUse.Review),
                 new TimeoutTypeSetBody(TimeoutType.Team, TeamSide.Home),
-                new TeamTimeoutsState(2, ReviewStatus.Unused, TimeoutInUse.Timeout))
+                new TeamTimeoutsState(1, ReviewStatus.Unused, TimeoutInUse.Timeout))
             .SetName("Team timeout for this team when review running changes review to timeout and does not charge for it"),
         new TestCaseData(
                 new TeamTimeoutsState(3, ReviewStatus.Unused, TimeoutInUse.None),
@@ -172,9 +172,9 @@ public class TeamTimeoutsUnitTests : ReducerUnitTest<HomeTeamTimeouts, TeamTimeo
                 new TeamTimeoutsState(3, ReviewStatus.Unused, TimeoutInUse.None))
             .SetName("Team timeout for other team when none running does not change state"),
         new TestCaseData(
-                new TeamTimeoutsState(2, ReviewStatus.Unused, TimeoutInUse.Timeout),
+                new TeamTimeoutsState(1, ReviewStatus.Unused, TimeoutInUse.Timeout),
                 new TimeoutTypeSetBody(TimeoutType.Team, TeamSide.Away),
-                new TeamTimeoutsState(3, ReviewStatus.Unused, TimeoutInUse.None))
+                new TeamTimeoutsState(0, ReviewStatus.Unused, TimeoutInUse.None))
             .SetName("Team timeout for other team when timeout already running refunds timeout"),
         new TestCaseData(
                 new TeamTimeoutsState(3, ReviewStatus.Unused, TimeoutInUse.Review),
@@ -187,9 +187,9 @@ public class TeamTimeoutsUnitTests : ReducerUnitTest<HomeTeamTimeouts, TeamTimeo
                 new TeamTimeoutsState(3, ReviewStatus.Unused, TimeoutInUse.Review))
             .SetName("Review for this team when none running sets type"),
         new TestCaseData(
-                new TeamTimeoutsState(2, ReviewStatus.Unused, TimeoutInUse.Timeout),
+                new TeamTimeoutsState(1, ReviewStatus.Unused, TimeoutInUse.Timeout),
                 new TimeoutTypeSetBody(TimeoutType.Review, TeamSide.Home),
-                new TeamTimeoutsState(3, ReviewStatus.Unused, TimeoutInUse.Review))
+                new TeamTimeoutsState(0, ReviewStatus.Unused, TimeoutInUse.Review))
             .SetName("Review for this team when timeout running changes timeout to review and refunds timeout"),
         new TestCaseData(
                 new TeamTimeoutsState(3, ReviewStatus.Unused, TimeoutInUse.Review),
@@ -202,9 +202,9 @@ public class TeamTimeoutsUnitTests : ReducerUnitTest<HomeTeamTimeouts, TeamTimeo
                 new TeamTimeoutsState(3, ReviewStatus.Unused, TimeoutInUse.None))
             .SetName("Review for other team when none running does not change state"),
         new TestCaseData(
-                new TeamTimeoutsState(2, ReviewStatus.Unused, TimeoutInUse.Timeout),
+                new TeamTimeoutsState(1, ReviewStatus.Unused, TimeoutInUse.Timeout),
                 new TimeoutTypeSetBody(TimeoutType.Review, TeamSide.Away),
-                new TeamTimeoutsState(3, ReviewStatus.Unused, TimeoutInUse.None))
+                new TeamTimeoutsState(0, ReviewStatus.Unused, TimeoutInUse.None))
             .SetName("Review for other team when timeout running stops and refunds timeout"),
         new TestCaseData(
                 new TeamTimeoutsState(3, ReviewStatus.Unused, TimeoutInUse.Review),
@@ -217,9 +217,9 @@ public class TeamTimeoutsUnitTests : ReducerUnitTest<HomeTeamTimeouts, TeamTimeo
                 new TeamTimeoutsState(3, ReviewStatus.Unused, TimeoutInUse.None))
             .SetName("Official timeout when none running does not change state"),
         new TestCaseData(
-                new TeamTimeoutsState(2, ReviewStatus.Unused, TimeoutInUse.Timeout),
+                new TeamTimeoutsState(1, ReviewStatus.Unused, TimeoutInUse.Timeout),
                 new TimeoutTypeSetBody(TimeoutType.Official, null),
-                new TeamTimeoutsState(3, ReviewStatus.Unused, TimeoutInUse.None))
+                new TeamTimeoutsState(0, ReviewStatus.Unused, TimeoutInUse.None))
             .SetName("Official timeout when timeout running stops and refunds timeout"),
         new TestCaseData(
                 new TeamTimeoutsState(3, ReviewStatus.Unused, TimeoutInUse.Review),
@@ -232,9 +232,9 @@ public class TeamTimeoutsUnitTests : ReducerUnitTest<HomeTeamTimeouts, TeamTimeo
                 new TeamTimeoutsState(3, ReviewStatus.Unused, TimeoutInUse.None))
             .SetName("Untyped timeout when none running does not change state"),
         new TestCaseData(
-                new TeamTimeoutsState(2, ReviewStatus.Unused, TimeoutInUse.Timeout),
+                new TeamTimeoutsState(1, ReviewStatus.Unused, TimeoutInUse.Timeout),
                 new TimeoutTypeSetBody(TimeoutType.Untyped, null),
-                new TeamTimeoutsState(3, ReviewStatus.Unused, TimeoutInUse.None))
+                new TeamTimeoutsState(0, ReviewStatus.Unused, TimeoutInUse.None))
             .SetName("Untyped timeout when timeout running stops and refunds timeout"),
         new TestCaseData(
                 new TeamTimeoutsState(3, ReviewStatus.Unused, TimeoutInUse.Review),

@@ -3,5 +3,5 @@ import { TimeoutType } from "./TimeoutType"
 
 export type CurrentTimeoutTypeState = {
     type: TimeoutType,
-    side?: TeamSide,
+    teamSide?: TeamSide,
 }
