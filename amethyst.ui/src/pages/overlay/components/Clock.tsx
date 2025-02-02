@@ -8,7 +8,7 @@ export const Clock = () => {
     const { translate } = useI18n();
 
     const { stage, ...game } = useGameStageState() ?? { stage: Stage.BeforeGame, periodNumber: 0, jamNumber: 0, periodIsFinalized: false };
-    const { type: timeoutType, side: timeoutSide } = useCurrentTimeoutTypeState() ?? { };
+    const { type: timeoutType, teamSide: timeoutSide } = useCurrentTimeoutTypeState() ?? { };
 
     const { team: { color: homeTimeoutColors } } = useTeamDetailsState(TeamSide.Home) ?? { team: { } };
     const { team: { color: awayTimeoutColors } } = useTeamDetailsState(TeamSide.Away) ?? { team: { } };
