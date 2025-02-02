@@ -1,4 +1,4 @@
-using System.Collections.Immutable;
+﻿using System.Collections.Immutable;
 using amethyst.Events;
 using amethyst.Reducers;
 using amethyst.Services;
@@ -13,6 +13,7 @@ public class EventIntegrationTests : EventBusIntegrationTest
     [TestCase(typeof(TestGameEventsSource), nameof(TestGameEventsSource.TwoJamsWithScores))]
     [TestCase(typeof(TestGameEventsSource), nameof(TestGameEventsSource.SingleJamStartedWithoutEndingIntermission))]
     [TestCase(typeof(TestGameEventsSource), nameof(TestGameEventsSource.OfficialReviewDuringIntermission))]
+    [TestCase(typeof(TestGameEventsSource), nameof(TestGameEventsSource.CustomRules))]
     public async Task EventSources_UpdateStatesAsExpected(Type eventSourceType, string eventSourceName)
     {
         var events = GetEvents(eventSourceType, eventSourceName);

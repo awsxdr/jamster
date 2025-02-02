@@ -1,4 +1,4 @@
-using amethyst.Domain;
+﻿using amethyst.Domain;
 using amethyst.Events;
 using amethyst.Reducers;
 
@@ -201,6 +201,65 @@ public static class TestGameEventsSource
             new GameStageState(Stage.Intermission, 1, 15, false),
             new TimeoutClockState(false, tick - Tick.FromSeconds(106), tick - Tick.FromSeconds(15), Tick.FromSeconds(91) - 1, 90),
             new IntermissionClockState(true, false, Tick.FromSeconds(120), tick + Tick.FromSeconds(105), 120 - 15)
+        ])
+        .Build();
+
+    public static Event[] CustomRules => new EventsBuilder(0, [])
+        .Event<TeamSet>(0).WithBody(new TeamSetBody(TeamSide.Home, new GameTeam(HomeTeam.Names, HomeTeam.Color, HomeTeam.Roster)))
+        .Event<TeamSet>(0).WithBody(new TeamSetBody(TeamSide.Away, new GameTeam(AwayTeam.Names, AwayTeam.Color, AwayTeam.Roster)))
+        .Event<RulesetSet>(0).WithBody(new RulesetSetBody(new(
+            PeriodRules: new(
+                PeriodCount: 5,
+                Duration: Tick.FromSeconds(10 * 60),
+                PeriodEndBehavior.Immediately),
+            JamRules: new(
+                ResetJamNumbersBetweenPeriods: false,
+                Duration: Tick.FromSeconds(60)),
+            LineupRules: new(
+                Duration: Tick.FromSeconds(45),
+                OvertimeDuration: Tick.FromSeconds(2 * 60)),
+            TimeoutRules: new(
+                TeamTimeoutDuration: Tick.FromSeconds(30),
+                PeriodClockBehavior: TimeoutPeriodClockStopBehavior.OfficialTimeout,
+                TeamTimeoutAllowance: 5,
+                ResetBehavior: TimeoutResetBehavior.Period),
+            PenaltyRules: new(
+                FoulOutPenaltyCount: 10),
+            IntermissionRules: new(
+                Duration: Tick.FromSeconds(5 * 60))
+        )))
+        .Wait(30)
+        .Event<JamStarted>(0).GetTick(out var periodStartTick)
+        .Validate(tick => [
+            new GameStageState(Stage.Jam, 1, 1, false),
+            new JamClockState(true, tick, 0, 0),
+            new PeriodClockState(true, false, tick, 0, 0, 0),
+            ("Home", new TeamTimeoutsState(0, ReviewStatus.Unused, TimeoutInUse.None)),
+            ("Away", new TeamTimeoutsState(0, ReviewStatus.Unused, TimeoutInUse.None))
+        ])
+        .Wait(61)
+        .Validate(tick => [
+            new GameStageState(Stage.Lineup, 1, 1, false),
+            new LineupClockState(true, tick - 1000, 1000, 1),
+        ])
+        .Event<TimeoutStarted>(1).GetTick(out var timeoutStartTick)
+        .Validate(tick => [
+            new GameStageState(Stage.Timeout, 1, 1, false),
+            new TimeoutClockState(true, timeoutStartTick, 0, tick - timeoutStartTick, (tick - timeoutStartTick).Seconds),
+            new PeriodClockState(true, false, periodStartTick, 0, tick - periodStartTick, (tick - periodStartTick).Seconds),
+        ])
+        .Event<TimeoutTypeSet>(1).WithBody(new TimeoutTypeSetBody(TimeoutType.Official, null))
+        .Validate(tick => [
+            new GameStageState(Stage.Timeout, 1, 1, false),
+            new TimeoutClockState(true, timeoutStartTick, 0, tick - timeoutStartTick, (tick - timeoutStartTick).Seconds),
+            new PeriodClockState(false, false, periodStartTick, 0, timeoutStartTick - periodStartTick, (timeoutStartTick - periodStartTick).Seconds),
+        ])
+        .Wait(10)
+        .Event<TimeoutTypeSet>(1).WithBody(new TimeoutTypeSetBody(TimeoutType.Team, TeamSide.Home))
+        .Validate(tick => [
+            new GameStageState(Stage.Timeout, 1, 1, false),
+            new TimeoutClockState(true, timeoutStartTick, 0, tick - timeoutStartTick, (tick - timeoutStartTick).Seconds),
+            new PeriodClockState(true, false, periodStartTick, 0, tick - periodStartTick, (tick - periodStartTick).Seconds)
         ])
         .Build();
 

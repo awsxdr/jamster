@@ -221,6 +221,41 @@ public class PeriodClockUnitTests : ReducerUnitTest<PeriodClock, PeriodClockStat
     }
 
     [Test]
+    public async Task TimeoutStarted_WhenAllTimeoutTypesDoNotStopClockDueToRules_DoesNotStopClock()
+    {
+        var originalState = State = new(true, false, 0, 0, 0, 0);
+        MockState<RulesState>(new(Rules.DefaultRules with
+        {
+            TimeoutRules = Rules.DefaultRules.TimeoutRules with
+            {
+                PeriodClockBehavior = TimeoutPeriodClockStopBehavior.OfficialReview
+            }
+        }));
+
+        await Subject.Handle(new TimeoutStarted(10000));
+
+        State.Should().Be(originalState);
+    }
+
+    [Test]
+    public async Task TimeoutTypeSet_WhenTimeoutTypeShouldStopPeriodClock_StopsPeriodClockAtTimeoutStart()
+    {
+        State = new(true, false, 0, 0, 10000, 10);
+        MockState<RulesState>(new(Rules.DefaultRules with
+        {
+            TimeoutRules = Rules.DefaultRules.TimeoutRules with
+            {
+                PeriodClockBehavior = TimeoutPeriodClockStopBehavior.OfficialTimeout
+            }
+        }));
+        MockState<TimeoutTypeState>(new(CompoundTimeoutType.Untyped, 7000));
+
+        await Subject.Handle(new TimeoutTypeSet(12000, new(TimeoutType.Official, TeamSide.Home)));
+
+        State.Should().Be(new PeriodClockState(false, false, 0, 0, 7000, 7));
+    }
+
+    [Test]
     public async Task TimeoutEnded_WhenPeriodExpired_SendsPeriodEnded()
     {
         State = State with { HasExpired = true, IsRunning = false };
