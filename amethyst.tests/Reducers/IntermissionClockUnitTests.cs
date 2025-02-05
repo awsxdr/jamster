@@ -9,7 +9,7 @@ public class IntermissionClockUnitTests : ReducerUnitTest<IntermissionClock, Int
     [Test]
     public async Task IntermissionEnded_WhenClockIsRunning_StopsClock()
     {
-        State = new(true, false, Rules.DefaultRules.IntermissionRules.Duration, 20000, 10);
+        State = new(true, false, Domain.Tick.FromSeconds(Rules.DefaultRules.IntermissionRules.DurationInSeconds), 20000, 10);
         MockState<RulesState>(new(Rules.DefaultRules));
 
         await Subject.Handle(new IntermissionEnded(15000));
@@ -20,7 +20,7 @@ public class IntermissionClockUnitTests : ReducerUnitTest<IntermissionClock, Int
     [Test]
     public async Task IntermissionEnded_WhenClockIsNotRunning_DoesNotChangeState()
     {
-        State = new(false, false, Rules.DefaultRules.IntermissionRules.Duration, 20000, 10);
+        State = new(false, false, Domain.Tick.FromSeconds(Rules.DefaultRules.IntermissionRules.DurationInSeconds), 20000, 10);
         var originalState = State;
 
         await Subject.Handle(new IntermissionEnded(15000));
@@ -36,7 +36,7 @@ public class IntermissionClockUnitTests : ReducerUnitTest<IntermissionClock, Int
         {
             IntermissionRules = Rules.DefaultRules.IntermissionRules with
             {
-                Duration = Domain.Tick.FromSeconds(123)
+                DurationInSeconds = 123
             }
         }));
 
@@ -74,7 +74,7 @@ public class IntermissionClockUnitTests : ReducerUnitTest<IntermissionClock, Int
     [Test]
     public async Task IntermissionClockSet_SetsClock()
     {
-        State = new(true, false, Rules.DefaultRules.IntermissionRules.Duration, 15000, 15);
+        State = new(true, false, Domain.Tick.FromSeconds(Rules.DefaultRules.IntermissionRules.DurationInSeconds), 15000, 15);
         MockState<PeriodClockState>(new(true, true, 0, 0, 0, 0));
 
         await Subject.Handle(new IntermissionClockSet(10000, new(20)));
@@ -113,8 +113,8 @@ public class IntermissionClockUnitTests : ReducerUnitTest<IntermissionClock, Int
     [Test]
     public async Task TimeoutStarted_WhenPeriodExpired_StopsClock()
     {
-        State = new(true, false, Rules.DefaultRules.IntermissionRules.Duration, 20000, 10);
-        MockState<PeriodClockState>(new(false, true, 0, Rules.DefaultRules.PeriodRules.Duration, Rules.DefaultRules.PeriodRules.Duration, Rules.DefaultRules.PeriodRules.Duration.Seconds));
+        State = new(true, false, Domain.Tick.FromSeconds(Rules.DefaultRules.IntermissionRules.DurationInSeconds), 20000, 10);
+        MockState<PeriodClockState>(new(false, true, 0, Domain.Tick.FromSeconds(Rules.DefaultRules.PeriodRules.DurationInSeconds), Domain.Tick.FromSeconds(Rules.DefaultRules.PeriodRules.DurationInSeconds), Rules.DefaultRules.PeriodRules.DurationInSeconds));
 
         await Subject.Handle(new TimeoutStarted(15000));
 
@@ -125,7 +125,7 @@ public class IntermissionClockUnitTests : ReducerUnitTest<IntermissionClock, Int
     public async Task TimeoutEnded_WhenPeriodExpired_ResetsClock()
     {
         State = new(true, false, 30000, 15000, 10);
-        MockState<PeriodClockState>(new(false, true, 0, Rules.DefaultRules.PeriodRules.Duration, Rules.DefaultRules.PeriodRules.Duration, Rules.DefaultRules.PeriodRules.Duration.Seconds));
+        MockState<PeriodClockState>(new(false, true, 0, Domain.Tick.FromSeconds(Rules.DefaultRules.PeriodRules.DurationInSeconds), Domain.Tick.FromSeconds(Rules.DefaultRules.PeriodRules.DurationInSeconds), Rules.DefaultRules.PeriodRules.DurationInSeconds));
 
         await Subject.Handle(new TimeoutEnded(5000));
 
@@ -138,7 +138,7 @@ public class IntermissionClockUnitTests : ReducerUnitTest<IntermissionClock, Int
     [Test]
     public async Task Tick_WhenClockIsRunning_SetsNewTime()
     {
-        State = new(true, false, Rules.DefaultRules.IntermissionRules.Duration, 30000, 10);
+        State = new(true, false, Domain.Tick.FromSeconds(Rules.DefaultRules.IntermissionRules.DurationInSeconds), 30000, 10);
 
         await Tick(22000);
 
@@ -151,7 +151,7 @@ public class IntermissionClockUnitTests : ReducerUnitTest<IntermissionClock, Int
     [Test]
     public async Task Tick_WhenClockIsRunning_AndTargetTickHasPassed_MarksClockAsExpired()
     {
-        State = new(true, false, Rules.DefaultRules.IntermissionRules.Duration, 30000, 10);
+        State = new(true, false, Domain.Tick.FromSeconds(Rules.DefaultRules.IntermissionRules.DurationInSeconds), 30000, 10);
 
         await Tick(30001);
 

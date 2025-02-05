@@ -13,6 +13,8 @@ public class PeriodClockUnitTests : ReducerUnitTest<PeriodClock, PeriodClockStat
     [Test]
     public async Task JamStart_WhenPeriodClockStopped_StartsPeriod()
     {
+        MockState<RulesState>(new(Rules.DefaultRules));
+
         var randomTick = GetRandomTick();
 
         await Subject.Handle(new JamStarted(randomTick));
@@ -28,6 +30,7 @@ public class PeriodClockUnitTests : ReducerUnitTest<PeriodClock, PeriodClockStat
     public async Task JamStart_WhenPeriodClockStopped_AlignsSecondsToStartTick()
     {
         State = new(false, false, 0, 1234, 1234, 1);
+        MockState<RulesState>(new(Rules.DefaultRules));
 
         await Subject.Handle(new JamStarted(10789));
 
@@ -60,7 +63,7 @@ public class PeriodClockUnitTests : ReducerUnitTest<PeriodClock, PeriodClockStat
         {
             PeriodRules = Rules.DefaultRules.PeriodRules with
             {
-                Duration = periodLength,
+                DurationInSeconds = periodLength.Seconds,
             }
         }));
 
@@ -82,8 +85,8 @@ public class PeriodClockUnitTests : ReducerUnitTest<PeriodClock, PeriodClockStat
         State.IsRunning.Should().BeFalse();
         State.LastStartTick.Should().Be(lastStartTick);
         State.TicksPassedAtLastStart.Should().Be(ticksPassedAtLastStart);
-        State.TicksPassed.Should().Be(ticksPassedAtLastStart + 12100);
-        State.SecondsPassed.Should().Be(periodLength.Seconds + 2);
+        State.TicksPassed.Should().Be(periodLength);
+        State.SecondsPassed.Should().Be(periodLength.Seconds);
     }
 
     [Test]
@@ -94,7 +97,7 @@ public class PeriodClockUnitTests : ReducerUnitTest<PeriodClock, PeriodClockStat
         {
             PeriodRules = Rules.DefaultRules.PeriodRules with
             {
-                Duration = periodLength,
+                DurationInSeconds = periodLength.Seconds,
             }
         }));
 
@@ -123,7 +126,7 @@ public class PeriodClockUnitTests : ReducerUnitTest<PeriodClock, PeriodClockStat
         {
             PeriodRules = Rules.DefaultRules.PeriodRules with
             {
-                Duration = periodLength,
+                DurationInSeconds = periodLength.Seconds,
             }
         }));
 
@@ -150,7 +153,7 @@ public class PeriodClockUnitTests : ReducerUnitTest<PeriodClock, PeriodClockStat
     public async Task JamEnded_WhenPeriodClockNotRunning_DoesNotChangeState()
     {
         var lastStartTick = GetRandomTick();
-        var ticksPassedAtLastStart = Rules.DefaultRules.PeriodRules.Duration - 20000;
+        var ticksPassedAtLastStart = Domain.Tick.FromSeconds(Rules.DefaultRules.PeriodRules.DurationInSeconds - 20);
 
         State = new(
             false,
@@ -175,7 +178,7 @@ public class PeriodClockUnitTests : ReducerUnitTest<PeriodClock, PeriodClockStat
         {
             PeriodRules = Rules.DefaultRules.PeriodRules with
             {
-                Duration = periodLength,
+                DurationInSeconds = periodLength.Seconds,
             }
         }));
 
@@ -203,7 +206,7 @@ public class PeriodClockUnitTests : ReducerUnitTest<PeriodClock, PeriodClockStat
     public async Task TimeoutStarted_WhenPeriodClockNotRunning_DoesNotChangeState()
     {
         var lastStartTick = GetRandomTick();
-        var ticksPassedAtLastStart = Rules.DefaultRules.PeriodRules.Duration - 20000;
+        var ticksPassedAtLastStart = Domain.Tick.FromSeconds(Rules.DefaultRules.PeriodRules.DurationInSeconds - 20);
 
         State = new(
             false,
@@ -256,21 +259,56 @@ public class PeriodClockUnitTests : ReducerUnitTest<PeriodClock, PeriodClockStat
     }
 
     [Test]
+    public async Task TimeoutTypeSet_WhenTimeoutTypeShouldStopPeriodClock_AndPeriodClockAlreadyExpired_StopsPeriodClockAtTimeoutStart()
+    {
+        State = new(false, true, 0, 0, 10000, 10);
+        MockState<RulesState>(new(Rules.DefaultRules with
+        {
+            TimeoutRules = Rules.DefaultRules.TimeoutRules with
+            {
+                PeriodClockBehavior = TimeoutPeriodClockStopBehavior.OfficialTimeout
+            }
+        }));
+        MockState<TimeoutTypeState>(new(CompoundTimeoutType.Untyped, 7000));
+
+        await Subject.Handle(new TimeoutTypeSet(12000, new(TimeoutType.Official, TeamSide.Home)));
+
+        State.Should().Be(new PeriodClockState(false, false, 0, 0, 7000, 7));
+    }
+
+    [Test]
     public async Task TimeoutEnded_WhenPeriodExpired_SendsPeriodEnded()
     {
         State = State with { HasExpired = true, IsRunning = false };
 
-        var implicitEvents = await Subject.Handle(new TimeoutEnded(Rules.DefaultRules.PeriodRules.Duration + 10000));
+        var implicitEvents = await Subject.Handle(new TimeoutEnded(Domain.Tick.FromSeconds(Rules.DefaultRules.PeriodRules.DurationInSeconds + 10)));
 
         implicitEvents.OfType<PeriodEnded>().Should().ContainSingle();
     }
 
     [Test]
+    public async Task PeriodEnded_StopsAndExpiresPeriodClock()
+    {
+        State = new(true, false, 0, 0, 10000, 10);
+        MockState<RulesState>(new(Rules.DefaultRules with
+        {
+            PeriodRules = Rules.DefaultRules.PeriodRules with
+            {
+                PeriodEndBehavior = PeriodEndBehavior.Manual,
+            }
+        }));
+
+        await Subject.Handle(new PeriodEnded(20000));
+
+        State.Should().Be(new PeriodClockState(false, true, 0, 0, 20000, 20));
+    }
+
+    [Test]
     public async Task PeriodFinalized_ResetsPeriodClock()
     {
-        State = new(false, true, 0, 0, Rules.DefaultRules.PeriodRules.Duration, (int) (Rules.DefaultRules.PeriodRules.Duration / 1000));
+        State = new(false, true, 0, 0, Domain.Tick.FromSeconds(Rules.DefaultRules.PeriodRules.DurationInSeconds), Rules.DefaultRules.PeriodRules.DurationInSeconds);
 
-        await Subject.Handle(new PeriodFinalized(Rules.DefaultRules.PeriodRules.Duration + 30000));
+        await Subject.Handle(new PeriodFinalized(Domain.Tick.FromSeconds(Rules.DefaultRules.PeriodRules.DurationInSeconds + 30)));
 
         State.IsRunning.Should().BeFalse();
         State.TicksPassedAtLastStart.Should().Be(0);
@@ -298,7 +336,7 @@ public class PeriodClockUnitTests : ReducerUnitTest<PeriodClock, PeriodClockStat
         {
             PeriodRules = Rules.DefaultRules.PeriodRules with
             {
-                Duration = periodLength,
+                DurationInSeconds = periodLength.Seconds,
             }
         }));
 
@@ -319,7 +357,7 @@ public class PeriodClockUnitTests : ReducerUnitTest<PeriodClock, PeriodClockStat
         {
             PeriodRules = Rules.DefaultRules.PeriodRules with
             {
-                Duration = periodLength,
+                DurationInSeconds = periodLength.Seconds,
             }
         }));
 
@@ -345,7 +383,7 @@ public class PeriodClockUnitTests : ReducerUnitTest<PeriodClock, PeriodClockStat
         {
             PeriodRules = Rules.DefaultRules.PeriodRules with
             {
-                Duration = periodLength,
+                DurationInSeconds = periodLength.Seconds,
             }
         }));
 
@@ -367,7 +405,7 @@ public class PeriodClockUnitTests : ReducerUnitTest<PeriodClock, PeriodClockStat
         {
             PeriodRules = Rules.DefaultRules.PeriodRules with
             {
-                Duration = periodLength,
+                DurationInSeconds = periodLength.Seconds,
             }
         }));
 
@@ -402,7 +440,7 @@ public class PeriodClockUnitTests : ReducerUnitTest<PeriodClock, PeriodClockStat
         {
             PeriodRules = Rules.DefaultRules.PeriodRules with
             {
-                Duration = periodLength,
+                DurationInSeconds = periodLength.Seconds,
             }
         }));
 
@@ -428,15 +466,19 @@ public class PeriodClockUnitTests : ReducerUnitTest<PeriodClock, PeriodClockStat
         State.SecondsPassed.Should().Be(periodLength.Seconds);
     }
 
-    [Test]
-    public async Task Tick_WhenPeriodClockRunning_AndPeriodClockExpired_AndJamNotRunning_RaisesPeriodEndedEvent()
+    [TestCase(PeriodEndBehavior.AnytimeOutsideJam, true)]
+    [TestCase(PeriodEndBehavior.Immediately, true)]
+    [TestCase(PeriodEndBehavior.Manual, false)]
+    [TestCase(PeriodEndBehavior.OnJamEnd, false)]
+    public async Task Tick_WhenPeriodClockRunning_AndPeriodClockExpired_AndJamNotRunning_RaisesPeriodEndedEventIfRuleConfigured(PeriodEndBehavior periodEndBehavior, bool eventExpected)
     {
         var periodLength = Domain.Tick.FromSeconds(1234);
         MockState<RulesState>(new(Rules.DefaultRules with
         {
             PeriodRules = Rules.DefaultRules.PeriodRules with
             {
-                Duration = periodLength,
+                DurationInSeconds = periodLength.Seconds,
+                PeriodEndBehavior = periodEndBehavior,
             }
         }));
 
@@ -460,8 +502,15 @@ public class PeriodClockUnitTests : ReducerUnitTest<PeriodClock, PeriodClockStat
         var updateTick = lastStartTick + ticksPassed + 1000;
         var result = await Tick(updateTick);
 
-        var implicitEvent = result.Should().ContainSingle().Which.Should().BeAssignableTo<PeriodEnded>().Which;
-        implicitEvent.Tick.Should().Be(lastStartTick + periodLength / 2);
+        if (eventExpected)
+        {
+            var implicitEvent = result.Should().ContainSingle().Which.Should().BeAssignableTo<PeriodEnded>().Which;
+            implicitEvent.Tick.Should().Be(lastStartTick + periodLength / 2);
+        }
+        else
+        {
+            result.Should().BeEmpty();
+        }
     }
 
     [Test]
@@ -472,7 +521,7 @@ public class PeriodClockUnitTests : ReducerUnitTest<PeriodClock, PeriodClockStat
         {
             PeriodRules = Rules.DefaultRules.PeriodRules with
             {
-                Duration = periodLength,
+                DurationInSeconds = periodLength.Seconds,
             }
         }));
 
@@ -503,15 +552,54 @@ public class PeriodClockUnitTests : ReducerUnitTest<PeriodClock, PeriodClockStat
     }
 
     [Test]
+    public async Task Tick_WhenPeriodStopSetToManual_DoesNotLimitPassedTime()
+    {
+        var periodLength = Domain.Tick.FromSeconds(1234);
+        MockState<RulesState>(new(Rules.DefaultRules with
+        {
+            PeriodRules = Rules.DefaultRules.PeriodRules with
+            {
+                DurationInSeconds = periodLength.Seconds,
+                PeriodEndBehavior = PeriodEndBehavior.Manual,
+            }
+        }));
+
+        GetMock<IGameStateStore>()
+            .Setup(mock => mock.GetState<JamClockState>())
+            .Returns(new JamClockState(false, 0, 0, 0));
+
+        var lastStartTick = GetRandomTick();
+        var ticksPassedAtLastStart = periodLength / 2;
+        var ticksPassed = periodLength / 2 + 10000;
+
+        State = new(
+            true,
+            false,
+            lastStartTick,
+            ticksPassedAtLastStart,
+            ticksPassed,
+            (int)(ticksPassed / 1000)
+        );
+
+        await Tick(lastStartTick + ticksPassed + 1000);
+
+        State.IsRunning.Should().BeTrue();
+        State.LastStartTick.Should().Be(lastStartTick);
+        State.TicksPassedAtLastStart.Should().Be(ticksPassedAtLastStart);
+        State.TicksPassed.Should().Be(ticksPassedAtLastStart + ticksPassed + 1000);
+        State.SecondsPassed.Should().Be((ticksPassedAtLastStart + ticksPassed).Seconds + 1);
+    }
+
+    [Test]
     public async Task Tick_WhenPeriodClockNotRunning_DoesNotChangeState()
     {
         State = new(
             false,
             true,
             GetRandomTick(),
-            Rules.DefaultRules.PeriodRules.Duration / 2,
-            Rules.DefaultRules.PeriodRules.Duration / 2,
-            (int) (Rules.DefaultRules.PeriodRules.Duration / 2 / 1000));
+            Domain.Tick.FromSeconds(Rules.DefaultRules.PeriodRules.DurationInSeconds / 2),
+            Domain.Tick.FromSeconds(Rules.DefaultRules.PeriodRules.DurationInSeconds / 2),
+            Rules.DefaultRules.PeriodRules.DurationInSeconds / 2);
 
         var originalState = State;
 

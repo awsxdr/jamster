@@ -52,25 +52,25 @@ export const ScoreboardControl = () => {
         <>
             <title>{translate("ScoreboardControl.Title")} | {translate("Main.Title")}</title>
             <NewGameDialogContainer open={newGameDialogOpen} onOpenChange={setNewGameDialogOpen}>
-                <GameToolbar 
-                    games={games} 
-                    currentGame={currentGame} 
-                    onCurrentGameIdChanged={setCurrentGame} 
-                    selectedGameId={selectedGameId} 
-                    onSelectedGameIdChanged={updateSelectedGameId}
-                />
-                <Separator />
-                <div className="px-0 sm:px-1 md:px-2 xl:px-5">
-                    <GameStateContextProvider gameId={selectedGameId}>
+                <GameStateContextProvider gameId={selectedGameId}>
+                    <GameToolbar 
+                        games={games} 
+                        currentGame={currentGame} 
+                        onCurrentGameIdChanged={setCurrentGame} 
+                        selectedGameId={selectedGameId} 
+                        onSelectedGameIdChanged={updateSelectedGameId}
+                    />
+                    <Separator />
+                    <div className="px-0 sm:px-1 md:px-2 xl:px-5">
                         <ControlPanel 
                             gameId={selectedGameId}
                         />
-                    </GameStateContextProvider>
-                    <NewGameDialog 
-                        onNewGameCreated={handleNewGameCreated}
-                        onCancelled={handleNewGameCancelled}
-                    />
-                </div>
+                        <NewGameDialog 
+                            onNewGameCreated={handleNewGameCreated}
+                            onCancelled={handleNewGameCancelled}
+                        />
+                    </div>
+                </GameStateContextProvider>
             </NewGameDialogContainer>
         </>
     );

@@ -11,11 +11,12 @@ public class IntermissionClock(ReducerGameContext context, ILogger<IntermissionC
     , IHandlesEvent<IntermissionEnded>
     , IHandlesEvent<TimeoutStarted>
     , IHandlesEvent<TimeoutEnded>
+    , IHandlesEvent<RulesetSet>
     , ITickReceiver
     , IDependsOnState<PeriodClockState>
     , IDependsOnState<RulesState>
 {
-    protected override IntermissionClockState DefaultState => new(false, true, Rules.DefaultRules.IntermissionRules.Duration, 0, 0);
+    protected override IntermissionClockState DefaultState => new(false, true, Domain.Tick.FromSeconds(Rules.DefaultRules.IntermissionRules.DurationInSeconds), 0, 0);
 
     public IEnumerable<Event> Handle(IntermissionStarted @event)
     {
@@ -64,7 +65,7 @@ public class IntermissionClock(ReducerGameContext context, ILogger<IntermissionC
         {
             IsRunning = false, 
             HasExpired = true, 
-            InitialDurationTicks = rules.Rules.IntermissionRules.Duration,
+            InitialDurationTicks = Domain.Tick.FromSeconds(rules.Rules.IntermissionRules.DurationInSeconds),
             TargetTick = 0,
         });
 
@@ -99,6 +100,16 @@ public class IntermissionClock(ReducerGameContext context, ILogger<IntermissionC
             IsRunning = true,
             SecondsRemaining = state.InitialDurationTicks.Seconds,
             TargetTick = @event.Tick + state.InitialDurationTicks,
+        });
+
+        return [];
+    }
+
+    public IEnumerable<Event> Handle(RulesetSet @event)
+    {
+        SetState(GetState() with
+        {
+            InitialDurationTicks = Domain.Tick.FromSeconds(@event.Body.Rules.IntermissionRules.DurationInSeconds),
         });
 
         return [];

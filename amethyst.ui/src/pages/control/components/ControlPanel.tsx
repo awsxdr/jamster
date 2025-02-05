@@ -60,7 +60,7 @@ export const ControlPanel = ({ gameId, disabled }: ControlPanelProps) => {
                     }
                 </div>
             )}
-            { viewConfiguration.showClocks && <ClocksContainer /> }
+            { gameId && viewConfiguration.showClocks && <ClocksContainer gameId={gameId} /> }
             { viewConfiguration.showTimeoutList &&
                 <TimeoutList gameId={gameId} displaySide={viewConfiguration.displaySide} />
             }

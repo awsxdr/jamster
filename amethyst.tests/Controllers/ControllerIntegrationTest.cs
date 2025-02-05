@@ -2,7 +2,6 @@ using System.Diagnostics;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 
 using amethyst.DataStores;
 using amethyst.Services;
@@ -27,7 +26,7 @@ public abstract class ControllerIntegrationTest
     protected GameDataStoreFactory? GameDataStoreFactory { get; private set; }
     private readonly string _runPath;
 
-    protected JsonSerializerOptions SerializerOptions { get; } = new(JsonSerializerDefaults.Web);
+    protected JsonSerializerOptions SerializerOptions { get; } = Program.JsonSerializerOptions;
 
     protected ControllerIntegrationTest()
     {
@@ -54,8 +53,6 @@ public abstract class ControllerIntegrationTest
     [OneTimeSetUp]
     public virtual void OneTimeSetup()
     {
-        SerializerOptions.Converters.Add(new JsonStringEnumConverter());
-
         Client = _applicationFactory.CreateClient();
         Client.GetAsync("/").Wait();
 
@@ -167,7 +164,7 @@ public abstract class ControllerIntegrationTest
                 })
             .AddJsonProtocol(config =>
             {
-                config.PayloadSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+                config.PayloadSerializerOptions = Program.JsonSerializerOptions;
             })
             .Build();
 

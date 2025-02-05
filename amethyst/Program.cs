@@ -6,6 +6,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using amethyst;
 using amethyst.DataStores;
+using amethyst.Domain;
 using amethyst.Hubs;
 using amethyst.Services;
 using Autofac.Extensions.DependencyInjection;
@@ -56,12 +57,13 @@ builder.Services
     .AddControllers()
     .AddJsonOptions(options =>
     {
-        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+        options.JsonSerializerOptions.Converters.Clear();
+        options.JsonSerializerOptions.Converters.AddAll(JsonSerializerOptions.Converters);
     });
 
 builder.Services.AddSignalR().AddJsonProtocol(options =>
 {
-    options.PayloadSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    options.PayloadSerializerOptions = JsonSerializerOptions;
 });
 
 builder.Services.AddEndpointsApiExplorer();
@@ -297,6 +299,7 @@ public partial class Program
     private static JsonSerializerOptions GetSerializerOptions()
     {
         var serializerOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web);
+        serializerOptions.Converters.Add(new JsonNumberEnumConverter<TimeoutPeriodClockStopBehavior>());
         serializerOptions.Converters.Add(new JsonStringEnumConverter());
         return serializerOptions;
     }

@@ -16,10 +16,12 @@ export const TooltipToggleButton = forwardRef<HTMLButtonElement, TooltipToggleBu
 ) => {
     return (
         <Tooltip>
-            <TooltipTrigger>
-                <Toggle {...props} ref={ref}>
-                    { children }
-                </Toggle>
+            <TooltipTrigger asChild>
+                <div className="inline">
+                    <Toggle {...props} ref={ref}>
+                        { children }
+                    </Toggle>
+                </div>
             </TooltipTrigger>
             <TooltipContent className="max-w-72 bg-accent text-accent-foreground border-accent-foreground shadow-xl">
                 {description}

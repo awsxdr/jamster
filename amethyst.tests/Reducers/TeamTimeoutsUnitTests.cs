@@ -27,10 +27,28 @@ public class TeamTimeoutsUnitTests : ReducerUnitTest<HomeTeamTimeouts, TeamTimeo
     public async Task PeriodFinalized_ResetsReviewUsage(ReviewStatus status)
     {
         State = new(3, status, TimeoutInUse.None);
+        MockState<RulesState>(new(Rules.DefaultRules));
 
         await Subject.Handle(new PeriodFinalized(0));
 
         State.ReviewStatus.Should().Be(ReviewStatus.Unused);
+    }
+
+    [Test]
+    public async Task PeriodFinalized_WhenRulesSayToDoSo_ResetsTimeoutUsage()
+    {
+        State = new(3, ReviewStatus.Unused, TimeoutInUse.None);
+        MockState<RulesState>(new(Rules.DefaultRules with
+        {
+            TimeoutRules = Rules.DefaultRules.TimeoutRules with
+            {
+                ResetBehavior = TimeoutResetBehavior.Period
+            }
+        }));
+
+        await Subject.Handle(new PeriodFinalized(0));
+
+        State.NumberTaken.Should().Be(0);
     }
 
     [Test]

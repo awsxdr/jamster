@@ -15,6 +15,7 @@ public abstract class TeamTimeouts(TeamSide teamSide, ReducerGameContext context
     , IHandlesEvent<JamStarted>
     , IHandlesEvent<TeamReviewRetained>
     , IHandlesEvent<TeamReviewLost>
+    , IDependsOnState<RulesState>
 {
     protected override TeamTimeoutsState DefaultState => new(0, ReviewStatus.Unused, TimeoutInUse.None);
 
@@ -61,7 +62,14 @@ public abstract class TeamTimeouts(TeamSide teamSide, ReducerGameContext context
 
     public IEnumerable<Event> Handle(PeriodFinalized @event)
     {
-        SetStateIfDifferent(GetState() with { ReviewStatus = ReviewStatus.Unused });
+        var rules = GetState<RulesState>().Rules;
+        var state = GetState();
+
+        SetStateIfDifferent(state with
+        {
+            ReviewStatus = ReviewStatus.Unused,
+            NumberTaken = rules.TimeoutRules.ResetBehavior == TimeoutResetBehavior.Period ? 0 : state.NumberTaken,
+        });
 
         return [];
     }

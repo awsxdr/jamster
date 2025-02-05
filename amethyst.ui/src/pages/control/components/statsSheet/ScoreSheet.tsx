@@ -133,8 +133,9 @@ export const ScoreSheet = ({ gameId, teamSide, descending, showTimeouts, classNa
             <div className="text-lg text-center block xl:hidden">{teamName}</div>
             { periods.map((lines, lineNumber) => (
                 <Fragment key={`line-${lineNumber}`}>
-                    <div>Period {lines[0]?.period}</div>
+                    <div key={`period-header-${lineNumber}`}>Period {lines[0]?.period}</div>
                     <div 
+                        key={`period-${lineNumber}`}
                         className={cn(
                             "border-r-2 border-black dark:border-gray-400",
                             "grid grid-flow-row grid-cols-[1fr_2fr_4fr_1fr_1fr_1fr_1fr_1fr_3fr_3fr_3fr_3fr_3fr_3fr_3fr_3fr_3fr_3fr_3fr]",
@@ -143,8 +144,9 @@ export const ScoreSheet = ({ gameId, teamSide, descending, showTimeouts, classNa
                     >
                         { lines.map((line, i) => 
                             line.type === "jam" ? (
-                                <>
+                                <Fragment key={`jam-${i}`}>
                                     <JamEditMenu 
+                                        key={`jamEdit-${lineNumber}-column-${i}`} 
                                         starPassTrip={null} 
                                         onStarPassTripChanged={passTrip => handleStarPassTripChanged(line.jamItem!.totalJamNumber, passTrip)} 
                                     />
@@ -161,36 +163,33 @@ export const ScoreSheet = ({ gameId, teamSide, descending, showTimeouts, classNa
                                         onCalledSet={v => handleCalledSet(line.jamItem!.totalJamNumber, v)}
                                         onInjurySet={v => handleInjurySet(line.jamItem!.totalJamNumber, v)}
                                     />
-                                </>
+                                </Fragment>
                             ) : line.type === "timeout" ? (
-                                <>
-                                    <ScoreSheetTimeoutRow 
-                                        key={`jamLine-${lineNumber}-column-${i}`} 
-                                        timeout={line.timeoutItem!} 
-                                        sheetSide={teamSide} 
-                                        className={cn(i === 0 && "border-t-2", i === lines.length - 1 && "border-b-2")}
-                                    />
-                                </>
+                                <ScoreSheetTimeoutRow 
+                                    key={`jam-${i}`}
+                                    timeout={line.timeoutItem!} 
+                                    sheetSide={teamSide} 
+                                    className={cn(i === 0 && "border-t-2", i === lines.length - 1 && "border-b-2")}
+                                />
                             ) : line.type === "preStarPass" ? (
-                                <>
-                                    <ScoreSheetJamRow 
-                                        preStarPass
-                                        key={`jamLine-${lineNumber}-column-${i}`} 
-                                        line={line.jamItem!} 
-                                        even={line.jamItem!.even}
-                                        className={cn(i === 0 && "border-t-2", i === lines.length - 1 && "border-b-2")}
-                                        onJammerNumberSet={v => handleJammerNumberSet(line.jamItem!.totalJamNumber, v)}
-                                        onPivotNumberSet={v => handlePivotNumberSet(line.jamItem!.totalJamNumber, v)}
-                                        onTripScoreSet={(t, v) => handleTripScoreSet(line.jamItem!.totalJamNumber, t, v)}
-                                        onLostSet={v => handleLostSet(line.jamItem!.totalJamNumber, v)}
-                                        onLeadSet={v => handleLeadSet(line.jamItem!.totalJamNumber, v)}
-                                        onCalledSet={v => handleCalledSet(line.jamItem!.totalJamNumber, v)}
-                                        onInjurySet={v => handleInjurySet(line.jamItem!.totalJamNumber, v)}
-                                    />
-                                </>
+                                <ScoreSheetJamRow 
+                                    preStarPass
+                                    key={`jam-${i}`}
+                                    line={line.jamItem!} 
+                                    even={line.jamItem!.even}
+                                    className={cn(i === 0 && "border-t-2", i === lines.length - 1 && "border-b-2")}
+                                    onJammerNumberSet={v => handleJammerNumberSet(line.jamItem!.totalJamNumber, v)}
+                                    onPivotNumberSet={v => handlePivotNumberSet(line.jamItem!.totalJamNumber, v)}
+                                    onTripScoreSet={(t, v) => handleTripScoreSet(line.jamItem!.totalJamNumber, t, v)}
+                                    onLostSet={v => handleLostSet(line.jamItem!.totalJamNumber, v)}
+                                    onLeadSet={v => handleLeadSet(line.jamItem!.totalJamNumber, v)}
+                                    onCalledSet={v => handleCalledSet(line.jamItem!.totalJamNumber, v)}
+                                    onInjurySet={v => handleInjurySet(line.jamItem!.totalJamNumber, v)}
+                                />
                             ) : line.type === "postStarPass" ? (
-                                <>
+                                <Fragment key={`jam-${i}`}>
                                     <JamEditMenu 
+                                        key={`jamEdit-${lineNumber}-column-${i}`} 
                                         starPassTrip={line.jamItem!.starPassTrip} 
                                         className="row-span-2 self-stretch" 
                                         onStarPassTripChanged={passTrip => handleStarPassTripChanged(line.jamItem!.totalJamNumber, passTrip)}
@@ -209,7 +208,7 @@ export const ScoreSheet = ({ gameId, teamSide, descending, showTimeouts, classNa
                                         onCalledSet={v => handleCalledSet(line.jamItem!.totalJamNumber, v)}
                                         onInjurySet={v => handleInjurySet(line.jamItem!.totalJamNumber, v)}
                                     />
-                                </>
+                                </Fragment>
                             ) : (<></>)
                         )}
                     </div>

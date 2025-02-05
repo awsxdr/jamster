@@ -4,6 +4,7 @@ export * from './JamLineup';
 export * from './Jams';
 export * from './JamStats';
 export * from './Period';
+export * from './Rules';
 export * from './Scores';
 export * from './ScoreSheet';
 export * from './Team';

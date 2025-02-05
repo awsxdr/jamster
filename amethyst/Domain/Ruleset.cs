@@ -1,4 +1,6 @@
-﻿namespace amethyst.Domain;
+﻿using System.Text.Json.Serialization;
+
+namespace amethyst.Domain;
 
 public record Ruleset(
     PeriodRules PeriodRules,
@@ -11,22 +13,22 @@ public record Ruleset(
 
 public record PeriodRules(
     int PeriodCount,
-    Tick Duration,
+    int DurationInSeconds,
     PeriodEndBehavior PeriodEndBehavior
 );
 
 public record JamRules(
     bool ResetJamNumbersBetweenPeriods,
-    Tick Duration
+    int DurationInSeconds
 );
 
 public record LineupRules(
-    Tick Duration,
-    Tick OvertimeDuration
+    int DurationInSeconds,
+    int OvertimeDurationInSeconds
 );
 
 public record TimeoutRules(
-    Tick TeamTimeoutDuration,
+    int TeamTimeoutDurationInSeconds,
     TimeoutPeriodClockStopBehavior PeriodClockBehavior,
     int TeamTimeoutAllowance,
     TimeoutResetBehavior ResetBehavior
@@ -37,7 +39,7 @@ public record PenaltyRules(
 );
 
 public record IntermissionRules(
-    Tick Duration
+    int DurationInSeconds
 );
 
 public enum PeriodEndBehavior

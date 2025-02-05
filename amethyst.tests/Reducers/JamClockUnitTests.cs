@@ -51,8 +51,8 @@ public class JamClockUnitTests : ReducerUnitTest<JamClock, JamClockState>
         State = new JamClockState(true, 0, 0, 0);
         MockState<RulesState>(new(Rules.DefaultRules with
         {
-            JamRules = Rules.DefaultRules.JamRules with { Duration = Domain.Tick.FromSeconds(33) },
-            LineupRules = Rules.DefaultRules.LineupRules with { Duration = Domain.Tick.FromSeconds(44) }
+            JamRules = Rules.DefaultRules.JamRules with { DurationInSeconds = 33 },
+            LineupRules = Rules.DefaultRules.LineupRules with { DurationInSeconds = 44 }
         }));
 
         var newJamStartTick = Domain.Tick.FromSeconds(33 + 44);
@@ -145,7 +145,7 @@ public class JamClockUnitTests : ReducerUnitTest<JamClock, JamClockState>
         {
             JamRules = Rules.DefaultRules.JamRules with
             {
-                Duration = Domain.Tick.FromSeconds(123)
+                DurationInSeconds = 123
             }
         }));
 

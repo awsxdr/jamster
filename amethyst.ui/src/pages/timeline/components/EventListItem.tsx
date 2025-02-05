@@ -11,7 +11,7 @@ type EventListItemProps = {
     onEventDeleted: (eventId: string) => void;
 }
 
-const TIME_REGEX = /^((?<h>\d+):)?((?<m>\d{1,2}):)?(?<s>\d{1,2})(\.(?<ms>\d+))?$/;
+const TIME_REGEX = /^(?:(?<h>\d+):){0,1}?(?:(?<m>\d{1,2}):)?(?<s>\d{1,2})?(?:\.(?<ms>\d+))?$/;
 
 export const EventListItem = ({ event, minTime, onEventMoved, onEventDeleted }: EventListItemProps) => {
     const getTime = (tick: number) => {

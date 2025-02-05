@@ -13,6 +13,7 @@ export * from './LineupClockState';
 export * from './OverlayConfiguration';
 export * from './PeriodClockState';
 export * from './ReviewStatus';
+export * from './Ruleset';
 export * from './ScoreSheetState';
 export * from './SetCurrentGameModel';
 export * from './Skater';

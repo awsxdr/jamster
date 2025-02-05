@@ -28,8 +28,11 @@ export const Clock = ({ name, editing, seconds, isRunning, direction, startValue
         : 0;
 
     const formatTime = (totalSeconds: number) => {
-        const minutes = Math.floor(totalSeconds / 60);
-        const seconds = totalSeconds % 60;
+
+        const nonNegativeTotalSeconds = Math.max(0, totalSeconds);
+
+        const minutes = Math.floor(nonNegativeTotalSeconds / 60);
+        const seconds = nonNegativeTotalSeconds % 60;
 
         return minutes > 0 ? `${minutes}:${seconds.toString().padStart(2, '0')}` : `${seconds}`;
     }

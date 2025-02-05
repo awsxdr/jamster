@@ -4,12 +4,13 @@ public readonly struct Tick(long value)
 {
     public const long MaxValue = long.MaxValue & 0x0000ffffffffffff;
     public const long MinValue = 0;
+    public const int TicksPerSecond = 1000;
 
     private readonly long _value = value;
 
-    public static Tick FromSeconds(int seconds) => seconds * 1000;
+    public static Tick FromSeconds(int seconds) => seconds * TicksPerSecond;
 
-    public int Seconds => (int)(_value / 1000);
+    public int Seconds => (int)(_value / TicksPerSecond);
 
     public static implicit operator long(Tick tick) => tick._value;
     public static implicit operator Tick(long tick) => new(tick);

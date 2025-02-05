@@ -132,7 +132,7 @@ public class TeamJamStatsUnitTests : ReducerUnitTest<HomeTeamJamStats, TeamJamSt
     public async Task JamEnded_WhenLead_MarksJammerAsCall()
     {
         State = new(true, false, false, false, false);
-        MockState<TimeoutClockState>(new(false, 0, 0, 0, 0));
+        MockState<TimeoutClockState>(new(false, 0, 0, TimeoutClockStopReason.None, 0, 0));
 
         var implicitEvents = await Subject.Handle(new JamEnded(0));
 
@@ -146,7 +146,7 @@ public class TeamJamStatsUnitTests : ReducerUnitTest<HomeTeamJamStats, TeamJamSt
     public async Task JamEnded_WhenNotLead_DoesNotMarkJammerAsCall()
     {
         State = new(false, false, false, false, false);
-        MockState<TimeoutClockState>(new(false, 0, 0, 0, 0));
+        MockState<TimeoutClockState>(new(false, 0, 0, TimeoutClockStopReason.None, 0, 0));
 
         var implicitEvents = await Subject.Handle(new JamEnded(0));
 
@@ -159,7 +159,7 @@ public class TeamJamStatsUnitTests : ReducerUnitTest<HomeTeamJamStats, TeamJamSt
     public async Task JamEnded_WhenCausedByTimeout_DoesNotMarkJammerAsCall()
     {
         State = new(true, false, false, false, true);
-        MockState<TimeoutClockState>(new(true, 0, 0, 10, 0));
+        MockState<TimeoutClockState>(new(true, 0, 0, TimeoutClockStopReason.None, 10, 0));
 
         var implicitEvents = await Subject.Handle(new JamEnded(10));
 
