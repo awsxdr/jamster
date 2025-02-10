@@ -9,8 +9,8 @@ namespace amethyst.Services.Stats;
 
 [Serializable]
 [XmlType(AnonymousType = true, Namespace = "http://schemas.openxmlformats.org/spreadsheetml/2006/main")]
-[XmlRoot(Namespace = "http://schemas.openxmlformats.org/spreadsheetml/2006/main", IsNullable = false)]
-public class sst
+[XmlRoot(Namespace = "http://schemas.openxmlformats.org/spreadsheetml/2006/main", IsNullable = false, ElementName = "sst")]
+public class SharedStrings
 {
 
     [XmlElement("si")]
