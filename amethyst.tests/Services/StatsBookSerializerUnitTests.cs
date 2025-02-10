@@ -1,8 +1,10 @@
-﻿using System.Reflection;
+﻿using System.IO.Compression;
+using System.Reflection;
 using amethyst.Domain;
 using amethyst.Services.Stats;
 using FluentAssertions;
 using Func;
+using Moq;
 
 namespace amethyst.tests.Services;
 
@@ -15,6 +17,10 @@ public class StatsBookSerializerUnitTests : UnitTest<StatsBookSerializer>
     [Test]
     public async Task DeserializeStream_ShouldDeserializeValidStatsbookCorrectly()
     {
+        GetMock<IStatsBookValidator>()
+            .Setup(mock => mock.ValidateStatsBook(It.IsAny<ZipArchive>()))
+            .ReturnsAsync(Result.Succeed(new StatsBookInfo("Test")));
+
         await using var file = GetTestFile("ValidStatsbook1.xlsx");
 
         var result = await Subject.DeserializeStream(file);
