@@ -64,7 +64,7 @@ export const Routes = () => {
         },
         {
             path: '/plt',
-            element: <MainMenu content={<PenaltyLineup />} />
+            element: <MainMenu content={<WorkInProgress />} />
         },
         {
             path: '/rulesets',
