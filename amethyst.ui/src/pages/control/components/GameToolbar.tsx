@@ -1,17 +1,11 @@
-import { Button } from "@/components/ui/button"
-import { GameSelectMenu } from "./GameSelectMenu"
-import { ChevronDown, ChevronUp, Repeat, SquarePlus } from "lucide-react"
-import { ConfirmMakeCurrentDialog } from "./ConfirmMakeCurrentDialog";
-import { GameInfo } from "@/types";
-import { useI18n } from "@/hooks/I18nHook";
-import { NewGameDialogTrigger } from "../../../components/NewGameDialog";
-import { ViewMenu } from "./ViewMenu";
-import { MobileSidebarTrigger } from "@/components/MobileSidebarTrigger";
-import { useSidebar } from "@/components/ui";
 import { useState } from "react";
-import { UserMenu } from "./UserMenu";
-import { SettingsMenu } from "./SettingsMenu";
+import { ChevronDown, ChevronUp, Repeat, SquarePlus } from "lucide-react"
+import { MobileSidebarTrigger, NewGameDialogTrigger } from "@/components";
+import { Button, useSidebar } from "@/components/ui"
+import { useI18n } from "@/hooks";
 import { cn } from "@/lib/utils";
+import { GameInfo } from "@/types";
+import { ConfirmMakeCurrentDialog, GameSelectMenu, SettingsMenu, UserMenu, ViewMenu } from "."
 
 type GameToolbarProps = {
     games: GameInfo[];

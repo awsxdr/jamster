@@ -1,7 +1,7 @@
-import { ComboBox } from "@/components/ui/combobox";
-import { useI18n } from "@/hooks/I18nHook";
-import { GameInfo } from "@/types";
 import { useMemo } from "react";
+import { ComboBox } from "@/components/ui";
+import { GameInfo } from "@/types";
+import { useI18n } from "@/hooks";
 
 type GameSelectMenuProps = {
     games: GameInfo[];

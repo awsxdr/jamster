@@ -11,6 +11,7 @@ import { Overlay } from "./pages/overlay/Overlay";
 import { Settings } from "./pages/settings";
 import { Timeline } from "./pages/timeline/Timeline";
 import { UsersManagement } from "./pages/users/UsersManagement";
+import { PenaltyLineup } from "./pages/penaltyLineup";
 
 export const Routes = () => {
     const router = createBrowserRouter([
@@ -64,7 +65,7 @@ export const Routes = () => {
         },
         {
             path: '/plt',
-            element: <MainMenu content={<WorkInProgress />} />
+            element: <MainMenu content={<PenaltyLineup />} />
         },
         {
             path: '/rulesets',
