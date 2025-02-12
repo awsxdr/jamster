@@ -1,10 +1,9 @@
 import { useMemo, ChangeEvent, useState, useEffect } from "react";
 import { Button, Input, Label, Popover, PopoverContent, PopoverTrigger, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui"
-import { ColorSlider } from "./ColorSlider";
 import { Color, HslColor } from "@/types";
-import { ColorSpace } from "./ColorSpace";
 import { useI18n } from "@/hooks/I18nHook";
 import { cn } from "@/lib/utils";
+import { ColorSlider, ColorSpace } from ".";
 
 type ColorSelectButtonProps = {
     color: HslColor;

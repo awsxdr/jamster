@@ -4,7 +4,7 @@ import { Color, HslColor, TeamColor } from "@/types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { ColorSelectButton } from "./ColorSelectButton";
+import { ColorSelectButton } from "../../../components/ColorSelectButton";
 import { Plus } from "lucide-react";
 import { ChangeEvent, useMemo, useState } from "react";
 

@@ -1,4 +1,7 @@
 export * from './ColorBlock';
+export * from './ColorSelectButton';
+export * from './ColorSlider';
+export * from './ColorSpace';
 export * from './MobileSidebarTrigger';
 export * from './NewGameDialog';
 export * from './RadioButtonGroup';

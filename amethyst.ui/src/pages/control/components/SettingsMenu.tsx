@@ -1,9 +1,9 @@
+import { useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
+import { History, List, NotebookText, Settings } from "lucide-react";
 import { Button, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui";
 import { useCurrentGame, useI18n } from "@/hooks";
-import { History, List, NotebookText, Settings } from "lucide-react";
-import { Link, useSearchParams } from "react-router-dom";
-import { RulesDialog, RulesDialogContainer, RulesDialogTrigger } from "./RulesDialog";
-import { useState } from "react";
+import { RulesDialog, RulesDialogContainer, RulesDialogTrigger } from ".";
 
 type SettingsMenuProps = {
     disabled?: boolean;

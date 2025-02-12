@@ -1,5 +1,5 @@
 import { Button, Collapsible, CollapsibleContent, CollapsibleTrigger, Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from "@components/ui"
-import { Captions, ChartNoAxesCombined, ChevronDown, ChevronLeft, ChevronRight, CircleHelp, ClipboardPenLine, Grid3X3, Keyboard, List, MonitorCog, Shirt, TvMinimal, Users } from "lucide-react"
+import { Captions, ChartNoAxesCombined, ChevronDown, ChevronLeft, ChevronRight, CircleHelp, ClipboardPenLine, Grid3X3, Keyboard, List, Settings, Shirt, TvMinimal, Users } from "lucide-react"
 import { ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { LanguageMenu } from "./LanguageMenu";
@@ -91,15 +91,10 @@ const sidebarItems: SidebarGroupList = {
         collapsible: false,
         items: [
             {
-                title: "DisplaySettings",
-                href: "/settings/display",
-                icon: <MonitorCog />
+                title: "Settings",
+                href: "/settings",
+                icon: <Settings />
             },
-            {
-                title: "OverlaySettings",
-                href: "/settings/overlay",
-                icon: <Captions />
-            }
         ],
     },
 }

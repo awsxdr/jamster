@@ -3,14 +3,12 @@ import { CurrentGameScoreboard } from "./pages/scoreboard";
 import { MainMenu } from "./pages/menu";
 import { TitlePage } from "./pages/title";
 import { ScoreboardControl } from "./pages/control";
-import { TeamsManagement } from "./pages/teams/TeamsManagement";
-import { TeamEdit } from "./pages/teams/TeamEdit";
+import { TeamsManagement, TeamEdit } from "./pages/teams";
 import { WorkInProgress } from "./pages/WorkInProgress/WorkInProgress";
 import { GamesManagement } from "./pages/games/GamesManagement";
 import { GameEdit } from "./pages/games/GameEdit";
 import { Overlay } from "./pages/overlay/Overlay";
-import { ScoreboardSettings } from "./pages/scoreboardSettings/ScoreboardSettings";
-import { OverlaySettings } from "./pages/overlaySettings/OverlaySettings";
+import { Settings } from "./pages/settings";
 import { Timeline } from "./pages/timeline/Timeline";
 import { UsersManagement } from "./pages/users/UsersManagement";
 
@@ -66,7 +64,7 @@ export const Routes = () => {
         },
         {
             path: '/plt',
-            element: <MainMenu content={<WorkInProgress />} />
+            element: <MainMenu content={<PenaltyLineup />} />
         },
         {
             path: '/rulesets',
@@ -77,12 +75,8 @@ export const Routes = () => {
             element: <MainMenu content={<WorkInProgress />} />
         },
         {
-            path: '/settings/display',
-            element: <MainMenu content={<ScoreboardSettings />} />
-        },
-        {
-            path: '/settings/overlay',
-            element: <MainMenu content={<OverlaySettings />} />
+            path: '/settings',
+            element: <MainMenu content={<Settings />} />
         },
         {
             path: '/users',

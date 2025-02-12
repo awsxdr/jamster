@@ -1,7 +1,7 @@
 import { Button, Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, Form, FormControl, FormField, FormItem, FormLabel, FormMessage, Input, TooltipProvider } from "@/components/ui";
 import { Color, HslColor, TeamColor } from "@/types";
 import { PropsWithChildren, useEffect, useState } from "react";
-import { ColorSelectButton } from "./ColorSelectButton";
+import { ColorSelectButton } from "@/components";
 import { Loader2 } from "lucide-react";
 import { useI18n } from "@/hooks/I18nHook";
 import { DialogDescription } from "@radix-ui/react-dialog";

@@ -4,7 +4,7 @@ import { useI18n, useTeamApi, useTeamColorMap } from "@/hooks";
 import { cn } from "@/lib/utils";
 import { Color, HslColor, StringMap, Team, TeamColor } from "@/types";
 import { Check, Pencil, Trash, X } from "lucide-react"
-import { ColorSelectButton } from "./ColorSelectButton";
+import { ColorSelectButton } from "@/components";
 import { useColorInputSchema } from "./ColorInput";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";

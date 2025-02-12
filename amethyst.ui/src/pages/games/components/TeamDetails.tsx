@@ -1,7 +1,7 @@
 import { Color, GameSkater, GameTeam } from "@/types";
 import { GameRosterTable } from "./GameRosterTable";
 import { Button, Card, CardContent, Collapsible, CollapsibleContent, CollapsibleTrigger, Input, Label, Separator } from "@/components/ui";
-import { ColorSelectButton } from "@/pages/teams/components/ColorSelectButton";
+import { ColorSelectButton } from "@/components/ColorSelectButton";
 import { ChangeEvent, FocusEvent, PropsWithChildren, useMemo, useState } from "react";
 import { ChevronsDown, ChevronsUp } from "lucide-react";
 import { GameRosterInput } from "./GameRosterInput";

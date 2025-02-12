@@ -15,7 +15,7 @@ public class StatsBookSerializerUnitTests : UnitTest<StatsBookSerializer>
                 (Create<IgrfSerializer>(), Create<ScoreSheetSerializer>());
 
     [Test]
-    public async Task DeserializeStream_ShouldDeserializeValidStatsbookCorrectly()
+    public async Task DeserializeStream_ShouldDeserializeValidStatsBookCorrectly()
     {
         GetMock<IStatsBookValidator>()
             .Setup(mock => mock.ValidateStatsBook(It.IsAny<ZipArchive>()))
