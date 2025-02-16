@@ -10,6 +10,7 @@ export * from './InputControls';
 export * from './JamClockState';
 export * from './JamLineupState';
 export * from './LineupClockState';
+export * from './LineupSheetState';
 export * from './OverlayConfiguration';
 export * from './PeriodClockState';
 export * from './ReviewStatus';

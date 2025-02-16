@@ -7,7 +7,7 @@ import { TripScore } from "./TripScore";
 import { JamScore } from "./JamScore";
 import { JamStats } from "./JamStats";
 import { TeamLineup } from "./TeamLineup";
-import { CallMarked, InitialTripCompleted, LastTripDeleted, LeadMarked, LostMarked, ScoreModifiedRelative, SkaterOnTrack, SkaterPosition, StarPassMarked } from "@/types/events";
+import { CallMarked, InitialTripCompleted, LastTripDeleted, LeadMarked, LostMarked, ScoreModifiedRelative, SkaterOffTrack, SkaterOnTrack, SkaterPosition, StarPassMarked } from "@/types/events";
 import { cn } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui";
 import { SeparatedCollection } from "@/components";
@@ -69,8 +69,15 @@ export const TeamControls = ({ gameId, side, disabled, className }: TeamControls
         }
     }
 
-    const handleLineupSelected = (position: SkaterPosition, number: string | null) =>
-        sendEventIfIdSet(new SkaterOnTrack(side, position, number));
+    const handleLineupSelected = (position: SkaterPosition, number: string | null, currentNumber: string | undefined) => {
+        if(number === null) {
+            if(currentNumber !== undefined) {
+                sendEventIfIdSet(new SkaterOffTrack(side, currentNumber))
+            }
+        } else {
+            sendEventIfIdSet(new SkaterOnTrack(side, position, number));
+        }
+    }
 
     const handleLeadChanged = (side: TeamSide, value: boolean) => {
         sendEventIfIdSet(new LeadMarked(side, value));

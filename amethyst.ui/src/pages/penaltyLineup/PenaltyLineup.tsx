@@ -1,10 +1,11 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 
 import { Separator } from "@/components/ui";
 import { GameStateContextProvider, useCurrentGame, useGamesList, useI18n } from "@/hooks";
 
-import { GameToolbar, Lineup } from "./components";
+import { GameToolbar } from "./components";
+import { PenaltyLineupTable } from "./components/PenaltyLineupTable";
 
 export const PenaltyLineup = () => {
 
@@ -21,6 +22,12 @@ export const PenaltyLineup = () => {
         setSelectedGameId(gameId);
     }, [setSelectedGameId]);
 
+    useEffect(() => {
+        if (!selectedGameId && currentGame) {
+            updateSelectedGameId(currentGame.id);
+        }
+    }, [currentGame, selectedGameId]);
+
     return (
         <>
             <title>{translate("Title")} | {translate("Main.Title", { ignorePrefix: true })}</title>
@@ -32,11 +39,11 @@ export const PenaltyLineup = () => {
                     onSelectedGameIdChanged={updateSelectedGameId}
                 />
                 <Separator />
-                <div className="flex flex-col p-1 md:p-2 xl:p-5 gap-1 md:gap-2 xl:gap-5">
-                    <Lineup />
-                    <div className="flex gap-1 pt-2">
+                { selectedGameId && (
+                    <div className="flex flex-col p-1 md:p-2 xl:p-5 gap-1 md:gap-2 xl:gap-5">
+                        <PenaltyLineupTable gameId={selectedGameId} />
                     </div>
-                </div>
+                )}
             </GameStateContextProvider>
         </>
     );

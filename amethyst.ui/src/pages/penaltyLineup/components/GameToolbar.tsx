@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react"
 import { MobileSidebarTrigger } from "@/components";
-import { Button, useSidebar } from "@/components/ui"
+import { Button } from "@/components/ui"
 import { cn } from "@/lib/utils";
 import { GameInfo } from "@/types";
 import { GameSelectMenu, ViewMenu } from "."
+import { useIsMobile } from "@/hooks";
 
 type GameToolbarProps = {
     games: GameInfo[];
@@ -16,7 +17,7 @@ type GameToolbarProps = {
 
 export const GameToolbar = ({ games, currentGame, selectedGameId, onSelectedGameIdChanged, disabled }: GameToolbarProps) => {
 
-    const { isMobile } = useSidebar();
+    const isMobile = useIsMobile();
     const [showGameSelect, setShowGameSelect] = useState(true);
 
     return (

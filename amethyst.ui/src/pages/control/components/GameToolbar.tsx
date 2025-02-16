@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { ChevronDown, ChevronUp, Repeat, SquarePlus } from "lucide-react"
 import { MobileSidebarTrigger, NewGameDialogTrigger } from "@/components";
-import { Button, useSidebar } from "@/components/ui"
-import { useI18n } from "@/hooks";
+import { Button } from "@/components/ui"
+import { useI18n, useIsMobile } from "@/hooks";
 import { cn } from "@/lib/utils";
 import { GameInfo } from "@/types";
 import { ConfirmMakeCurrentDialog, GameSelectMenu, SettingsMenu, UserMenu, ViewMenu } from "."
@@ -19,7 +19,7 @@ type GameToolbarProps = {
 export const GameToolbar = ({ games, currentGame, onCurrentGameIdChanged, selectedGameId, onSelectedGameIdChanged, disabled }: GameToolbarProps) => {
 
     const { translate } = useI18n();
-    const { isMobile } = useSidebar();
+    const isMobile = useIsMobile();
     const [showGameSelect, setShowGameSelect] = useState(true);
 
     return (
