@@ -9,7 +9,8 @@ namespace amethyst.Reducers;
 public abstract class ScoreSheet(TeamSide teamSide, ReducerGameContext context, ILogger _)
     : Reducer<ScoreSheetState>(context)
     , IHandlesEvent<JamStarted>
-    , IHandlesEvent<SkaterOnTrack>
+    , IHandlesEvent<SkaterAddedToJam>
+    , IHandlesEvent<SkaterRemovedFromJam>
     , IHandlesEvent<InitialTripCompleted>
     , IHandlesEvent<TripCompleted>
     , IHandlesEvent<ScoreModifiedRelative>
@@ -60,22 +61,29 @@ public abstract class ScoreSheet(TeamSide teamSide, ReducerGameContext context, 
         return [];
     }
 
-    public IEnumerable<Event> Handle(SkaterOnTrack @event) => @event.HandleIfTeam(teamSide, () =>
+    public IEnumerable<Event> Handle(SkaterAddedToJam @event) => @event.HandleIfTeam(teamSide, () =>
     {
-        var gameStage = GetState<GameStageState>();
-        if (gameStage.Stage != Stage.Jam)
-            return [];
-
         switch (@event.Body.Position)
         {
             case SkaterPosition.Jammer:
-                ModifyLatestJam(jam => jam with { JammerNumber = @event.Body.SkaterNumber ?? string.Empty });
+                ModifyJam(@event.Body.Period, @event.Body.Jam, jam => jam with { JammerNumber = @event.Body.SkaterNumber });
                 break;
 
             case SkaterPosition.Pivot:
-                ModifyLatestJam(jam => jam with { PivotNumber = @event.Body.SkaterNumber ?? string.Empty });
+                ModifyJam(@event.Body.Period, @event.Body.Jam, jam => jam with { PivotNumber = @event.Body.SkaterNumber });
                 break;
         }
+
+        return [];
+    });
+
+    public IEnumerable<Event> Handle(SkaterRemovedFromJam @event) => @event.HandleIfTeam(teamSide, () =>
+    {
+        ModifyJam(@event.Body.Period, @event.Body.Jam, jam => jam with
+        {
+            JammerNumber = jam.JammerNumber == @event.Body.SkaterNumber ? string.Empty : jam.JammerNumber,
+            PivotNumber = jam.PivotNumber == @event.Body.SkaterNumber ? string.Empty : jam.PivotNumber,
+        });
 
         return [];
     });
@@ -254,6 +262,18 @@ public abstract class ScoreSheet(TeamSide teamSide, ReducerGameContext context, 
             state.Jams.Take(state.Jams.Length - 1)
                 .Append(mapper(state.Jams[^1]))
                 .ToArray()));
+    }
+
+    private void ModifyJam(int period, int jam, Func<ScoreSheetJam, ScoreSheetJam> mapper)
+    {
+        var state = GetState();
+
+        var totalJamNumber = state.Jams.Select((jam, totalJamNumber) => (Jam: jam, TotalJamNumber: totalJamNumber)).Where(j => j.Jam.Jam == jam && j.Jam.Period == period).Select(j => j.TotalJamNumber).ToArray();
+
+        if (!totalJamNumber.Any())
+            return;
+
+        ModifyJam(totalJamNumber[0], mapper);
     }
 
     private void ModifyJam(int totalJamNumber, Func<ScoreSheetJam, ScoreSheetJam> mapper)

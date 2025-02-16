@@ -11,7 +11,7 @@ public class ScoreSheetUnitTests : ReducerUnitTest<HomeScoreSheet, ScoreSheetSta
     public async Task JamStarted_WhenNoPreviousJam_CreatesNewJamWithExpectedDefaults()
     {
         State = new([]);
-        MockKeyedState<JamLineupState>(nameof(TeamSide.Home), new("123", "321"));
+        MockKeyedState<JamLineupState>(nameof(TeamSide.Home), new("123", "321", [null, null, null]));
         MockState<GameStageState>(new(Stage.Jam, 2, 6, false));
 
         await Subject.Handle(new JamStarted(0));
@@ -35,7 +35,7 @@ public class ScoreSheetUnitTests : ReducerUnitTest<HomeScoreSheet, ScoreSheetSta
     public async Task JamStarted_WhenPreviousJam_AddsJamWithExpectedGameTotal()
     {
         State = new([new(1, 1, "123", "555", false, true, true, false, false, [new(4), new(4)], null, 8, 8)]);
-        MockKeyedState<JamLineupState>(nameof(TeamSide.Home), new("123", "321"));
+        MockKeyedState<JamLineupState>(nameof(TeamSide.Home), new("123", "321", [null, null, null]));
         MockState<GameStageState>(new(Stage.Jam, 1, 2, false));
 
         await Subject.Handle(new JamStarted(0));
@@ -48,7 +48,7 @@ public class ScoreSheetUnitTests : ReducerUnitTest<HomeScoreSheet, ScoreSheetSta
     public async Task JamStarted_WhenJammerNumberNotSetAtJamStart_SetsJammerNumberAsQuestionMark()
     {
         State = new([]);
-        MockKeyedState<JamLineupState>(nameof(TeamSide.Home), new(null, "321"));
+        MockKeyedState<JamLineupState>(nameof(TeamSide.Home), new(null, "321", [null, null, null]));
         MockState<GameStageState>(new(Stage.Jam, 2, 6, false));
 
         await Subject.Handle(new JamStarted(0));
@@ -59,49 +59,89 @@ public class ScoreSheetUnitTests : ReducerUnitTest<HomeScoreSheet, ScoreSheetSta
     }
 
     [Test]
-    public async Task SkaterOnTrack_WhenGameStageNotInJam_AndSkaterIsJammer_AndTeamMatches_DoesNotChangeState([Values] Stage gameStage)
+    public async Task SkaterAddedToJam_WhenJamDoesNotExistInSheet_AndSkaterIsJammer_AndTeamMatches_DoesNotChangeState([Values] Stage gameStage)
     {
         if (gameStage == Stage.Jam) return;
 
         var jam = new ScoreSheetJam(1, 1, "321", "555", false, false, false, false, false, [], null, 0, 0);
         State = new([jam]);
-        MockState<GameStageState>(new(gameStage, 1, 2, false));
 
-        await Subject.Handle(new SkaterOnTrack(1000, new(TeamSide.Home, "123", SkaterPosition.Jammer)));
+        await Subject.Handle(new SkaterAddedToJam(1000, new(TeamSide.Home, 1, 2, "123", SkaterPosition.Jammer)));
 
         State.Jams.Should().ContainSingle().Which.Should().Be(jam);
     }
 
     [Test]
-    public async Task SkaterOnTrack_WhenGameStageInJam_AndSkaterIsJammer_AndTeamMatches_SetsJammerNumber()
+    public async Task SkaterAddedToJam_WhenJamExistsInSheet_AndSkaterIsJammer_AndTeamMatches_SetsJammerNumber()
     {
         State = new([new(1, 1, "321", "555", false, false, false, false, false, [], null, 0, 0)]);
-        MockState<GameStageState>(new(Stage.Jam, 1, 2, false));
 
-        await Subject.Handle(new SkaterOnTrack(1000, new(TeamSide.Home, "123", SkaterPosition.Jammer)));
+        await Subject.Handle(new SkaterAddedToJam(1000, new(TeamSide.Home, 1, 1, "123", SkaterPosition.Jammer)));
 
         State.Jams.Should().ContainSingle().Which.JammerNumber.Should().Be("123");
     }
 
     [Test]
-    public async Task SkaterOnTrack_WhenGameStageInJam_AndSkaterIsPivot_AndTeamMatches_SetsPivotNumber()
+    public async Task SkaterAddedToJam_WhenJamExistsInSheet_AndSkaterIsPivot_AndTeamMatches_SetsPivotNumber()
     {
         State = new([new(1, 1, "321", "555", false, false, false, false, false, [], null, 0, 0)]);
-        MockState<GameStageState>(new(Stage.Jam, 1, 2, false));
 
-        await Subject.Handle(new SkaterOnTrack(1000, new(TeamSide.Home, "123", SkaterPosition.Pivot)));
+        await Subject.Handle(new SkaterAddedToJam(1000, new(TeamSide.Home, 1, 1, "123", SkaterPosition.Pivot)));
 
         State.Jams.Should().ContainSingle().Which.PivotNumber.Should().Be("123");
     }
 
     [Test]
-    public async Task SkaterOnTrack_WhenGameStageInJam_AndSkaterIsJammer_AndTeamDoesNotMatch_DoesNotChangeState()
+    public async Task SkaterAddedToJam_WhenJamExistsInSheet_AndSkaterIsJammer_AndTeamDoesNotMatch_DoesNotChangeState()
     {
         var jam = new ScoreSheetJam(1, 1, "321", "555", false, false, false, false, false, [], null, 0, 0);
         State = new([jam]);
-        MockState<GameStageState>(new(Stage.Jam, 1, 2, false));
 
-        await Subject.Handle(new SkaterOnTrack(1000, new(TeamSide.Away, "123", SkaterPosition.Jammer)));
+        await Subject.Handle(new SkaterAddedToJam(1000, new(TeamSide.Away, 1, 1, "123", SkaterPosition.Jammer)));
+
+        State.Jams.Should().ContainSingle().Which.Should().Be(jam);
+    }
+
+    [Test]
+    public async Task SkaterRemovedFromJam_WhenJamExistsInSheet_AndSkaterNumberIsJammer_RemovesJammerFromJam()
+    {
+        var jam = new ScoreSheetJam(1, 1, "321", "123", false, false, false, false, false, [], null, 0, 0);
+        State = new([jam]);
+
+        await Subject.Handle(new SkaterRemovedFromJam(1000, new(TeamSide.Home, 1, 1, "321")));
+
+        State.Jams.Should().ContainSingle().Which.JammerNumber.Should().Be(string.Empty);
+    }
+
+    [Test]
+    public async Task SkaterRemovedFromJam_WhenJamExistsInSheet_AndSkaterNumberIsPivot_RemovesPivotFromJam()
+    {
+        var jam = new ScoreSheetJam(1, 1, "321", "123", false, false, false, false, false, [], null, 0, 0);
+        State = new([jam]);
+
+        await Subject.Handle(new SkaterRemovedFromJam(1000, new(TeamSide.Home, 1, 1, "123")));
+
+        State.Jams.Should().ContainSingle().Which.PivotNumber.Should().Be(string.Empty);
+    }
+
+    [Test]
+    public async Task SkaterRemovedFromJam_WhenJamExistsInSheet_AndSkaterNumberIsNeitherJammerNorPivot_DoesNotChangeState()
+    {
+        var jam = new ScoreSheetJam(1, 1, "321", "123", false, false, false, false, false, [], null, 0, 0);
+        State = new([jam]);
+
+        await Subject.Handle(new SkaterRemovedFromJam(1000, new(TeamSide.Home, 1, 1, "555")));
+
+        State.Jams.Should().ContainSingle().Which.Should().Be(jam);
+    }
+
+    [Test]
+    public async Task SkaterRemovedFromJam_WhenJamExistsInSheet_AndTeamDoesNotMatch_DoesNotChangeState()
+    {
+        var jam = new ScoreSheetJam(1, 1, "321", "123", false, false, false, false, false, [], null, 0, 0);
+        State = new([jam]);
+
+        await Subject.Handle(new SkaterRemovedFromJam(1000, new(TeamSide.Away, 1, 1, "123")));
 
         State.Jams.Should().ContainSingle().Which.Should().Be(jam);
     }

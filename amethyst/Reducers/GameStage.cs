@@ -18,14 +18,15 @@ public class GameStage(ReducerGameContext context, ILogger<GameStage> logger)
     , IDependsOnState<RulesState>
     , IDependsOnState<TimeoutTypeState>
 {
-    protected override GameStageState DefaultState => new(Stage.BeforeGame, 0, 0, false);
+    protected override GameStageState DefaultState => new(Stage.BeforeGame, 1, 0, false);
 
     public IEnumerable<Event> Handle(IntermissionEnded @event)
     {
         var state = GetState();
         var newState = state.Stage switch
         {
-            Stage.BeforeGame or Stage.Intermission => state with { Stage = Stage.Lineup, PeriodNumber = state.PeriodNumber + 1 },
+            Stage.Intermission => state with { Stage = Stage.Lineup, PeriodNumber = state.PeriodNumber + 1 },
+            Stage.BeforeGame => state with { Stage = Stage.Lineup },
             _ => state
         };
 

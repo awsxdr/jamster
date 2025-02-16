@@ -10,7 +10,7 @@ public static class TestGameEventsSource
         .Event<TeamSet>(0).WithBody(new TeamSetBody(TeamSide.Home, new GameTeam(HomeTeam.Names, HomeTeam.Color, HomeTeam.Roster)))
         .Event<TeamSet>(0).WithBody(new TeamSetBody(TeamSide.Away, new GameTeam(AwayTeam.Names, AwayTeam.Color, AwayTeam.Roster)))
         .Validate(
-            new GameStageState(Stage.BeforeGame, 0, 0, false),
+            new GameStageState(Stage.BeforeGame, 1, 0, false),
             ("Home", new TeamDetailsState(new GameTeam(HomeTeam.Names, HomeTeam.Color, HomeTeam.Roster))),
             ("Away", new TeamDetailsState(new GameTeam(AwayTeam.Names, AwayTeam.Color, AwayTeam.Roster)))
         )
@@ -141,7 +141,7 @@ public static class TestGameEventsSource
         .Build();
 
     public static Event[] SingleJamStartedWithoutEndingIntermission => new EventsBuilder(0, [])
-        .Validate(new GameStageState(Stage.BeforeGame, 0, 0, false))
+        .Validate(new GameStageState(Stage.BeforeGame, 1, 0, false))
         .Event<JamStarted>(30)
         .Validate(new GameStageState(Stage.Jam, 1, 1, false))
         .Build();
@@ -370,11 +370,11 @@ public static class TestGameEventsSource
         .Build();
 
     public static Event[] FullGame => new EventsBuilder(0, [])
-        .Validate(new GameStageState(Stage.BeforeGame, 0, 0, false))
+        .Validate(new GameStageState(Stage.BeforeGame, 1, 0, false))
         .Event<TeamSet>(0).WithBody(new TeamSetBody(TeamSide.Home, new GameTeam(HomeTeam.Names, HomeTeam.Color, HomeTeam.Roster)))
         .Event<TeamSet>(0).WithBody(new TeamSetBody(TeamSide.Away, new GameTeam(AwayTeam.Names, AwayTeam.Color, AwayTeam.Roster)))
         .Validate(
-            new GameStageState(Stage.BeforeGame, 0, 0, false),
+            new GameStageState(Stage.BeforeGame, 1, 0, false),
             ("Home", new TeamDetailsState(new GameTeam(HomeTeam.Names, HomeTeam.Color, HomeTeam.Roster))),
             ("Away", new TeamDetailsState(new GameTeam(AwayTeam.Names, AwayTeam.Color, AwayTeam.Roster)))
         )
@@ -387,15 +387,15 @@ public static class TestGameEventsSource
         .Validate(
             ("Home", new TeamTimeoutsState(0, ReviewStatus.Unused, TimeoutInUse.None)),
             ("Away", new TeamTimeoutsState(0, ReviewStatus.Unused, TimeoutInUse.None)),
-            ("Home", new JamLineupState(HomeTeam.Roster[3].Number, HomeTeam.Roster[6].Number)),
-            ("Away", new JamLineupState(AwayTeam.Roster[2].Number, AwayTeam.Roster[7].Number))
+            ("Home", new JamLineupState(HomeTeam.Roster[3].Number, HomeTeam.Roster[6].Number, [null, null, null])),
+            ("Away", new JamLineupState(AwayTeam.Roster[2].Number, AwayTeam.Roster[7].Number, [null, null, null]))
         )
         .Event<JamStarted>(120 + 30) // Jam that runs for full duration
         .Validate(
             ("Home", new TeamTimeoutsState(0, ReviewStatus.Unused, TimeoutInUse.None)),
             ("Away", new TeamTimeoutsState(0, ReviewStatus.Unused, TimeoutInUse.None)),
-            ("Home", new JamLineupState(null, null)),
-            ("Away", new JamLineupState(null, null))
+            ("Home", new JamLineupState(null, null, [null, null, null])),
+            ("Away", new JamLineupState(null, null, [null, null, null]))
         )
         .Wait(0)
         .Event<JamStarted>(57) // Jam that is called
