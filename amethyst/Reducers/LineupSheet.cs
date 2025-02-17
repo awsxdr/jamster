@@ -66,7 +66,7 @@ public abstract class LineupSheet(TeamSide teamSide, ReducerGameContext context)
     {
         var state = GetState();
 
-        var totalJamNumber = state.Jams.Select((jam, totalJamNumber) => (Jam: jam, TotalJamNumber: totalJamNumber)).Where(j => j.Jam.Jam == jam && j.Jam.Period == period).Select(j => j.TotalJamNumber).ToArray();
+        var totalJamNumber = state.Jams.Select((lineupJam, totalJamNumber) => (Jam: lineupJam, TotalJamNumber: totalJamNumber)).Where(j => j.Jam.Jam == jam && j.Jam.Period == period).Select(j => j.TotalJamNumber).ToArray();
 
         if (!totalJamNumber.Any())
             return;
