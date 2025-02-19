@@ -13,6 +13,7 @@ export * from './LineupClockState';
 export * from './LineupPosition';
 export * from './LineupSheetState';
 export * from './OverlayConfiguration';
+export * from './PenaltyBoxState';
 export * from './PeriodClockState';
 export * from './ReviewStatus';
 export * from './Ruleset';

@@ -6,7 +6,7 @@ using Func;
 
 namespace amethyst.Reducers;
 
-public abstract class ScoreSheet(TeamSide teamSide, ReducerGameContext context, ILogger _)
+public abstract class ScoreSheet(TeamSide teamSide, ReducerGameContext context)
     : Reducer<ScoreSheetState>(context)
     , IHandlesEvent<JamStarted>
     , IHandlesEvent<SkaterAddedToJam>
@@ -353,7 +353,7 @@ public sealed record ScoreSheetJam(
 }
 public record JamLineTrip(int? Score);
 
-public sealed class HomeScoreSheet(ReducerGameContext gameContext, ILogger<HomeScoreSheet> logger)
-    : ScoreSheet(TeamSide.Home, gameContext, logger);
-public sealed class AwayScoreSheet(ReducerGameContext gameContext, ILogger<AwayScoreSheet> logger)
-    : ScoreSheet(TeamSide.Away, gameContext, logger);
+public sealed class HomeScoreSheet(ReducerGameContext gameContext)
+    : ScoreSheet(TeamSide.Home, gameContext);
+public sealed class AwayScoreSheet(ReducerGameContext gameContext)
+    : ScoreSheet(TeamSide.Away, gameContext);

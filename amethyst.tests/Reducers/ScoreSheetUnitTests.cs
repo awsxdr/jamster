@@ -12,7 +12,7 @@ public class ScoreSheetUnitTests : ReducerUnitTest<HomeScoreSheet, ScoreSheetSta
     {
         State = new([]);
         MockKeyedState<JamLineupState>(nameof(TeamSide.Home), new("123", "321", [null, null, null]));
-        MockState<GameStageState>(new(Stage.Jam, 2, 6, false));
+        MockState<GameStageState>(new(Stage.Jam, 2, 6, 20, false));
 
         await Subject.Handle(new JamStarted(0));
 
@@ -36,7 +36,7 @@ public class ScoreSheetUnitTests : ReducerUnitTest<HomeScoreSheet, ScoreSheetSta
     {
         State = new([new(1, 1, "123", "555", false, true, true, false, false, [new(4), new(4)], null, 8, 8)]);
         MockKeyedState<JamLineupState>(nameof(TeamSide.Home), new("123", "321", [null, null, null]));
-        MockState<GameStageState>(new(Stage.Jam, 1, 2, false));
+        MockState<GameStageState>(new(Stage.Jam, 1, 2, 2, false));
 
         await Subject.Handle(new JamStarted(0));
 
@@ -49,7 +49,7 @@ public class ScoreSheetUnitTests : ReducerUnitTest<HomeScoreSheet, ScoreSheetSta
     {
         State = new([]);
         MockKeyedState<JamLineupState>(nameof(TeamSide.Home), new(null, "321", [null, null, null]));
-        MockState<GameStageState>(new(Stage.Jam, 2, 6, false));
+        MockState<GameStageState>(new(Stage.Jam, 2, 6, 20, false));
 
         await Subject.Handle(new JamStarted(0));
 

@@ -11,12 +11,14 @@ type PenaltyLineupRowProps = {
     position: LineupPosition;
     even: boolean;
     penalties: RecordedPenalty[];
+    inBox: boolean;
     disableBox?: boolean;
     onPositionClicked?: (position: LineupPosition) => void;
+    onBoxClicked?: (inBox: boolean) => void;
     onPenaltyClicked?: (index: number) => void;
 }
 
-export const PenaltyLineupRow = ({ skater, position, even, penalties, disableBox, onPositionClicked, onPenaltyClicked }: PenaltyLineupRowProps) => {
+export const PenaltyLineupRow = ({ skater, position, even, penalties, inBox, disableBox, onPositionClicked, onBoxClicked, onPenaltyClicked }: PenaltyLineupRowProps) => {
 
     const { translate } = useI18n({ prefix: "PenaltyLineup.PenaltyLineupRow." })
 
@@ -43,6 +45,10 @@ export const PenaltyLineupRow = ({ skater, position, even, penalties, disableBox
     const largeNumberClass = "flex justify-center items-center text-sm sm:text-base md:text-lg";
 
     const buttonClass = "rounded-none w-full px-1 md:px-4 border-0";
+
+    const handleBoxClicked = () => {
+        onBoxClicked?.(!inBox);
+    }
 
     const handlePenaltyClicked = (index: number) => {
         onPenaltyClicked?.(index);
@@ -89,11 +95,12 @@ export const PenaltyLineupRow = ({ skater, position, even, penalties, disableBox
                     onClick={onPositionClicked}
                 />
             </div>
-            <div className={cn("col-start-6", cellClass, lineupRowClassAccent)}>
+            <div className={cn("col-start-6", cellClass, lineupRowClassAccent, "border-l")}>
                 <Button 
-                    className={cn(buttonClass, lineupRowClassAccent)}
-                    variant="outline"
+                    className={cn(buttonClass, !inBox && lineupRowClassAccent)}
+                    variant={inBox ? "default" : "outline"}
                     disabled={disableBox}
+                    onClick={handleBoxClicked}
                 >
                     <span className="sm:hidden">{translate("Box.Short")}x</span>
                     <span className="hidden sm:inline lg:hidden">{translate("Box.Medium")}</span>

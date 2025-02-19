@@ -38,7 +38,7 @@ public abstract class LineupSheet(TeamSide teamSide, ReducerGameContext context)
                     .Where(n => n != null)
                     .Except([@event.Body.SkaterNumber])
                     .Map(x => @event.Body.Position == SkaterPosition.Blocker ? x.Append(@event.Body.SkaterNumber) : x)
-                    .TakeLast(3)
+                    .TakeLast(jam.PivotNumber is not null && jam.PivotNumber != @event.Body.SkaterNumber || @event.Body.Position == SkaterPosition.Pivot ? 3 : 4)
                     .Pad(3, null)
                     .ToArray()
         });

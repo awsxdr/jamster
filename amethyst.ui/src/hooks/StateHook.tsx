@@ -2,7 +2,7 @@ import { createContext, PropsWithChildren, useCallback, useContext, useEffect, u
 import { useHubConnection } from "./SignalRHubConnection";
 import { HubConnection } from "@microsoft/signalr";
 import { useGameApi } from "./GameApiHook";
-import { GameStageState, TripScoreState, TeamDetailsState, TeamScoreState, TeamSide, TeamTimeoutsState, JamLineupState, TimeoutListState, PeriodClockState, TimeoutClockState, JamClockState, LineupClockState, UndoListState, ScoreSheetState, RulesState, LineupSheetState } from "@/types";
+import { GameStageState, TripScoreState, TeamDetailsState, TeamScoreState, TeamSide, TeamTimeoutsState, JamLineupState, TimeoutListState, PeriodClockState, TimeoutClockState, JamClockState, LineupClockState, UndoListState, ScoreSheetState, RulesState, LineupSheetState, PenaltyBoxState } from "@/types";
 import { CurrentTimeoutTypeState } from "@/types/CurrentTimeoutTypeState";
 import { TeamJamStatsState } from "@/types/TeamJamStatsState";
 import { v4 as uuidv4 } from 'uuid';
@@ -58,6 +58,7 @@ export const useClocks = () => ({
 export const useUndoListState = () => useGameState<UndoListState>("UndoListState");
 export const useScoreSheetState = (side: TeamSide) => useGameState<ScoreSheetState>(`ScoreSheetState_${TeamSide[side]}`);
 export const useLineupSheetState = (side: TeamSide) => useGameState<LineupSheetState>(`LineupSheetState_${TeamSide[side]}`);
+export const usePenaltyBoxState = (side: TeamSide) => useGameState<PenaltyBoxState>(`PenaltyBoxState_${TeamSide[side]}`);
 export const useRulesState = () => useGameState<RulesState>("RulesState");
 
 export const useGameState = <TState,>(stateName: string) => {

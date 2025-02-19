@@ -18,7 +18,7 @@ public class GameStage(ReducerGameContext context, ILogger<GameStage> logger)
     , IDependsOnState<RulesState>
     , IDependsOnState<TimeoutTypeState>
 {
-    protected override GameStageState DefaultState => new(Stage.BeforeGame, 1, 0, false);
+    protected override GameStageState DefaultState => new(Stage.BeforeGame, 1, 0, 0, false);
 
     public IEnumerable<Event> Handle(IntermissionEnded @event)
     {
@@ -43,10 +43,26 @@ public class GameStage(ReducerGameContext context, ILogger<GameStage> logger)
 
         var newState = state.Stage switch
         {
-            Stage.BeforeGame => state with { Stage = Stage.Jam, JamNumber = 1, PeriodNumber = 1 },
-            Stage.Intermission => state with { Stage = Stage.Jam, JamNumber = rules.JamRules.ResetJamNumbersBetweenPeriods ? 1 : state.JamNumber + 1 },
+            Stage.BeforeGame => state with
+            {
+                Stage = Stage.Jam, 
+                JamNumber = 1,
+                TotalJamNumber = 1,
+                PeriodNumber = 1, 
+            },
+            Stage.Intermission => state with
+            {
+                Stage = Stage.Jam, 
+                JamNumber = rules.JamRules.ResetJamNumbersBetweenPeriods ? 1 : state.JamNumber + 1,
+                TotalJamNumber = state.TotalJamNumber + 1,
+            },
             Stage.Jam => state,
-            _ => state with { Stage = Stage.Jam, JamNumber = state.JamNumber + 1}
+            _ => state with
+            {
+                Stage = Stage.Jam, 
+                JamNumber = state.JamNumber + 1,
+                TotalJamNumber = state.TotalJamNumber + 1,
+            }
         } with { PeriodIsFinalized = false };
 
         if (SetStateIfDifferent(newState))
@@ -182,13 +198,13 @@ public class GameStage(ReducerGameContext context, ILogger<GameStage> logger)
 
         var newState = state switch
         {
-            (Stage.Intermission, _, _, false) => state with
+            (Stage.Intermission, _, _, _, false) => state with
             {
                 JamNumber = rules.JamRules.ResetJamNumbersBetweenPeriods ? 0 : state.JamNumber,
                 PeriodNumber = state.PeriodNumber + 1,
                 PeriodIsFinalized = true,
             },
-            (Stage.AfterGame, _, _, false) => state with {PeriodIsFinalized = true},
+            (Stage.AfterGame, _, _, _, false) => state with {PeriodIsFinalized = true},
             _ => state
         };
 
@@ -199,7 +215,7 @@ public class GameStage(ReducerGameContext context, ILogger<GameStage> logger)
     }
 }
 
-public record GameStageState(Stage Stage, int PeriodNumber, int JamNumber, bool PeriodIsFinalized);
+public record GameStageState(Stage Stage, int PeriodNumber, int JamNumber, int TotalJamNumber, bool PeriodIsFinalized);
 
 public enum Stage
 {

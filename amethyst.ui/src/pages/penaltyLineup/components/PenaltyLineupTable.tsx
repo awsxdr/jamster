@@ -1,21 +1,23 @@
 import { Button } from "@/components/ui";
-import { useEvents, useGameStageState, useI18n, useLineupSheetState, useTeamDetailsState } from "@/hooks";
+import { useEvents, useGameStageState, useI18n, useLineupSheetState, usePenaltyBoxState, useTeamDetailsState } from "@/hooks";
 import { cn } from "@/lib/utils";
 import { LineupPosition, StringMap, TeamSide } from "@/types";
 import { useEffect, useMemo, useState } from "react";
 import { PenaltyDialog, RecordedPenalty } from "./PenaltyDialog";
-import { SkaterAddedToJam, SkaterPosition, SkaterRemovedFromJam } from "@/types/events";
+import { SkaterAddedToJam, SkaterPosition, SkaterReleasedFromBox, SkaterRemovedFromJam, SkaterSatInBox } from "@/types/events";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { PenaltyLineupRow } from "./PenaltyLineupRow";
 
 type PenaltyLineupTableProps = {
+    teamSide: TeamSide;
     gameId: string;
 }
 
-export const PenaltyLineupTable = ({ gameId }: PenaltyLineupTableProps) => {
+export const PenaltyLineupTable = ({ teamSide, gameId }: PenaltyLineupTableProps) => {
     const { translate } = useI18n({ prefix: "PenaltyLineup.PenaltyLineupTable."});
-    const { team } = useTeamDetailsState(TeamSide.Home) ?? {};
-    const { jams } = useLineupSheetState(TeamSide.Home) ?? { jams: [] };
+    const { team } = useTeamDetailsState(teamSide) ?? {};
+    const { jams } = useLineupSheetState(teamSide) ?? { jams: [] };
+    const penaltyBox = usePenaltyBoxState(teamSide) ?? { skaters: [] };
     const gameStage = useGameStageState();
     const { sendEvent } = useEvents();
     const [penaltyDialogOpen, setPenaltyDialogOpen] = useState(false);
@@ -40,7 +42,7 @@ export const PenaltyLineupTable = ({ gameId }: PenaltyLineupTableProps) => {
             return;
         }
 
-        setTotalJamNumber(jams.findIndex(j => j.jam === gameStage.jamNumber && j.period === gameStage.periodNumber));
+        setTotalJamNumber(jams.findIndex(j => j.jam === gameStage.jamNumber + 1 && j.period === gameStage.periodNumber));
 
     }, [jams, gameStage])
 
@@ -79,18 +81,26 @@ export const PenaltyLineupTable = ({ gameId }: PenaltyLineupTableProps) => {
 
         if(position === LineupPosition.Bench) {
             sendEvent(gameId, new SkaterRemovedFromJam(
-                TeamSide.Home, 
+                teamSide, 
                 currentJam.period,
                 currentJam.jam,
                 skaterNumber
             ));
         } else {
             sendEvent(gameId, new SkaterAddedToJam(
-                TeamSide.Home,
+                teamSide,
                 currentJam.period,
                 currentJam.jam,
                 position as unknown as SkaterPosition, 
                 skaterNumber));
+        }
+    }
+
+    const handleBoxClicked = (skaterNumber: string, inBox: boolean) => {
+        if(inBox) {
+            sendEvent(gameId, new SkaterSatInBox(teamSide, skaterNumber));
+        } else {
+            sendEvent(gameId, new SkaterReleasedFromBox(teamSide, skaterNumber));
         }
     }
 
@@ -134,7 +144,7 @@ export const PenaltyLineupTable = ({ gameId }: PenaltyLineupTableProps) => {
                         <span className="hidden md:inline">{translate("PreviousJam")}</span>
                     </Button>
                 </div>
-                <div className={cn("col-start-2 col-span-4 gap-2", headerClass, headerTextClass, "items-center md:items-end")}>
+                <div className={cn("col-start-2 col-span-3 gap-2", headerClass, headerTextClass, "items-center md:items-end")}>
                     <span>
                         <span className="md:hidden">{translate("Period.Short")}</span>
                         <span className="hidden md:inline">{translate("Period.Long")}</span>
@@ -147,7 +157,7 @@ export const PenaltyLineupTable = ({ gameId }: PenaltyLineupTableProps) => {
                         { currentJam?.jam }
                     </span>
                 </div>
-                <div className={cn("col-start-6 flex items-end", headerClass)}>
+                <div className={cn("col-start-5 flex items-end", headerClass)}>
                     <Button 
                         className="w-full"
                         disabled={totalJamNumber >= jams.length - 1 || totalJamNumber === -1} 
@@ -157,7 +167,7 @@ export const PenaltyLineupTable = ({ gameId }: PenaltyLineupTableProps) => {
                         <ChevronRight />
                     </Button>
                 </div>
-                <div className={cn("col-start-7 col-span-9", headerClass)}></div>
+                <div className={cn("col-start-6 col-span-10", headerClass)}></div>
                 <div className={cn("col-start-16", headerClass, headerTextClass)}>
                     <span className="hidden sm:inline 2xl:hidden text-xs lg:text-base">{translate("FouloutExpulsion.Short")}</span>
                     <span className="hidden 2xl:inline">{translate("FouloutExpulsion.Long")}</span>
@@ -173,8 +183,10 @@ export const PenaltyLineupTable = ({ gameId }: PenaltyLineupTableProps) => {
                         skater={s} 
                         position={skaterPositions?.[s.number] ?? LineupPosition.Bench}
                         penalties={skaterPenalties[s.number]!}
+                        inBox={penaltyBox.skaters.includes(s.number)}
                         disableBox={(currentJam?.jam ?? -1) < gameStage.jamNumber || currentJam?.period !== gameStage.periodNumber}
                         onPositionClicked={(position: LineupPosition) => handlePositionClicked(s.number, position)}
+                        onBoxClicked={inBox => handleBoxClicked(s.number, inBox)}
                         onPenaltyClicked={(index: number) => handlePenaltyClicked(s.number, index)} 
                     />
                 ))}

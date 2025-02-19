@@ -3,6 +3,7 @@ export * from './Intermission';
 export * from './JamLineup';
 export * from './Jams';
 export * from './JamStats';
+export * from './Penalties';
 export * from './Period';
 export * from './Rules';
 export * from './Scores';

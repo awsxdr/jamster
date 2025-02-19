@@ -279,7 +279,7 @@ public class UsersControllerIntegrationTests : ControllerIntegrationTest
 
     private class TestConfiguration1
     {
-        public string Value { get; set; }
+        public string Value { get; set; } = string.Empty;
     }
 
     private class TestConfiguration2

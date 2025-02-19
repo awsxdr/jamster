@@ -13,7 +13,9 @@ public abstract class JamLineup(TeamSide teamSide, ReducerGameContext context, I
     , IHandlesEvent<SkaterOffTrack>
     , IHandlesEvent<SkaterRemovedFromJam>
     , IHandlesEvent<JamEnded>
+    , IHandlesEvent<SkaterSubstitutedInBox>
     , IDependsOnState<GameStageState>
+    , IDependsOnState<PenaltyBoxState>
 {
     protected override JamLineupState DefaultState => new(null, null, [null, null, null]);
 
@@ -52,13 +54,21 @@ public abstract class JamLineup(TeamSide teamSide, ReducerGameContext context, I
         SetState(@event.Body.Position switch
         {
             SkaterPosition.Jammer => stateWithSkaterRemoved with { JammerNumber = @event.Body.SkaterNumber },
-            SkaterPosition.Pivot => stateWithSkaterRemoved with { PivotNumber = @event.Body.SkaterNumber },
+            SkaterPosition.Pivot => stateWithSkaterRemoved with
+            {
+                PivotNumber = @event.Body.SkaterNumber,
+                BlockerNumbers = stateWithSkaterRemoved.BlockerNumbers
+                    .Where(s => s != null)
+                    .TakeLast(stateWithSkaterRemoved.PivotNumber is not null || @event.Body.Position == SkaterPosition.Pivot ? 3 : 4)
+                    .Pad(3, null)
+                    .ToArray(),
+            },
             SkaterPosition.Blocker => stateWithSkaterRemoved with
             {
                 BlockerNumbers = stateWithSkaterRemoved.BlockerNumbers
                     .Where(s => s != null)
                     .Append(@event.Body.SkaterNumber)
-                    .TakeLast(3)
+                    .TakeLast(stateWithSkaterRemoved.PivotNumber is not null || @event.Body.Position == SkaterPosition.Pivot ? 3 : 4)
                     .Pad(3, null)
                     .ToArray()
             },
@@ -105,10 +115,40 @@ public abstract class JamLineup(TeamSide teamSide, ReducerGameContext context, I
     {
         logger.LogDebug("Clearing jam lineup for {team} team due to jam end", teamSide);
 
+        var state = GetState();
+        var penaltyBox = GetKeyedState<PenaltyBoxState>(teamSide.ToString());
+
         SetState(DefaultState);
 
-        return [];
+        return penaltyBox.Skaters.Select(s => new SkaterOnTrack(@event.Tick, new(
+            teamSide, 
+            s,
+            state.JammerNumber == s ? SkaterPosition.Jammer
+                : state.PivotNumber == s ? SkaterPosition.Pivot
+                : SkaterPosition.Blocker)));
     }
+
+    public IEnumerable<Event> Handle(SkaterSubstitutedInBox @event) => @event.HandleIfTeam(teamSide, () =>
+    {
+        var state = GetState();
+
+        var position =
+            state.JammerNumber == @event.Body.OriginalSkaterNumber ? SkaterPosition.Jammer
+            : state.PivotNumber == @event.Body.OriginalSkaterNumber ? SkaterPosition.Pivot
+            : state.BlockerNumbers.Contains(@event.Body.OriginalSkaterNumber) ? SkaterPosition.Blocker
+            : (SkaterPosition?)null;
+
+        if (position is null)
+            return [];
+
+        logger.LogDebug("Skater {oldNumber} substituted in box by {newNumber}", @event.Body.OriginalSkaterNumber, @event.Body.NewSkaterNumber);
+
+        return
+        [
+            new SkaterOffTrack(@event.Tick, new(teamSide, @event.Body.OriginalSkaterNumber)),
+            new SkaterOnTrack(@event.Tick, new(teamSide, @event.Body.NewSkaterNumber, (SkaterPosition)position)),
+        ];
+    });
 }
 
 public sealed record JamLineupState(string? JammerNumber, string? PivotNumber, string?[] BlockerNumbers)

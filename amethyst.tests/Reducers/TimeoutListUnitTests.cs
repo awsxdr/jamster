@@ -11,7 +11,7 @@ public class TimeoutListUnitTests : ReducerUnitTest<TimeoutList, TimeoutListStat
     public async Task TimeoutStarted_AddsTimeoutToList()
     {
         var @event = new TimeoutStarted(0);
-        MockState<GameStageState>(new(Stage.Lineup, 2, 5, false));
+        MockState<GameStageState>(new(Stage.Lineup, 2, 5, 19, false));
 
         await Subject.Handle(@event);
 
@@ -61,7 +61,7 @@ public class TimeoutListUnitTests : ReducerUnitTest<TimeoutList, TimeoutListStat
         State = new([
             new(0, TimeoutType.Team, 1, 1, TeamSide.Home, null, false)
         ]);
-        MockState<GameStageState>(new(Stage.Lineup, 2, 5, false));
+        MockState<GameStageState>(new(Stage.Lineup, 2, 5, 19, false));
 
         var eventIds = State.Timeouts.Select(t => t.EventId).ToArray();
 
@@ -81,7 +81,7 @@ public class TimeoutListUnitTests : ReducerUnitTest<TimeoutList, TimeoutListStat
         State = new([
             new(0, TimeoutType.Team, 1, 1, TeamSide.Home, 12, false)
         ]);
-        MockState<GameStageState>(new(Stage.Lineup, 2, 5, false));
+        MockState<GameStageState>(new(Stage.Lineup, 2, 5, 19, false));
 
         var eventIds = State.Timeouts.Select(t => t.EventId).ToArray();
 

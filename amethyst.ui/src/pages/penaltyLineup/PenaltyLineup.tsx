@@ -6,6 +6,7 @@ import { GameStateContextProvider, useCurrentGame, useGamesList, useI18n } from 
 
 import { GameToolbar } from "./components";
 import { PenaltyLineupTable } from "./components/PenaltyLineupTable";
+import { TeamSide } from "@/types";
 
 export const PenaltyLineup = () => {
 
@@ -41,7 +42,7 @@ export const PenaltyLineup = () => {
                 <Separator />
                 { selectedGameId && (
                     <div className="flex flex-col p-1 md:p-2 xl:p-5 gap-1 md:gap-2 xl:gap-5">
-                        <PenaltyLineupTable gameId={selectedGameId} />
+                        <PenaltyLineupTable teamSide={TeamSide.Home} gameId={selectedGameId} />
                     </div>
                 )}
             </GameStateContextProvider>

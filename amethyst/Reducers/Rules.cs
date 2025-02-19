@@ -34,6 +34,8 @@ public class Rules(ReducerGameContext context, ILogger<Rules> logger)
 
     public IEnumerable<Event> Handle(RulesetSet @event)
     {
+        logger.LogDebug("Changing rules for game");
+
         var rules = @event.Body.Rules;
 
         SetState(new(new(
