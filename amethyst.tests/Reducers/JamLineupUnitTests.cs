@@ -337,4 +337,67 @@ public class JamLineupUnitTests : ReducerUnitTest<HomeTeamJamLineup, JamLineupSt
         implicitEvents.Where(e => e is SkaterOffTrack { Body: { SkaterNumber: "2", TeamSide: TeamSide.Home } }).Should().ContainSingle();
         implicitEvents.Where(e => e is SkaterOnTrack { Body: { SkaterNumber: "6", TeamSide: TeamSide.Home } }).Should().ContainSingle();
     }
+
+
+    [Test]
+    public async Task PenaltyAssessed_WhenAgainstJammer_AndLeadMarked_RaisesLostMarkedEvent()
+    {
+        State = new("123", "1", ["2", "3", "4"]);
+        MockKeyedState<TeamJamStatsState>(nameof(TeamSide.Home), new(false, true, false, false, false));
+        MockKeyedState<TeamJamStatsState>(nameof(TeamSide.Away), new(false, false, false, false, false));
+
+        var implicitEvents = await Subject.Handle(new PenaltyAssessed(0, new(TeamSide.Home, "123", "X")));
+
+        implicitEvents.OfType<LostMarked>().Should().ContainSingle()
+            .Which.Body.Lost.Should().BeTrue();
+    }
+
+    [Test]
+    public async Task PenaltyAssessed_WhenAgainstJammer_AndLeadMarkedForOpponent_DoesNotRaiseLostMarkedEvent()
+    {
+        State = new("123", "1", ["2", "3", "4"]);
+        MockKeyedState<TeamJamStatsState>(nameof(TeamSide.Home), new(false, false, false, false, false));
+        MockKeyedState<TeamJamStatsState>(nameof(TeamSide.Away), new(true, false, false, false, false));
+
+        var implicitEvents = await Subject.Handle(new PenaltyAssessed(0, new(TeamSide.Home, "123", "X")));
+
+        implicitEvents.OfType<LostMarked>().Should().BeEmpty();
+    }
+
+    [Test]
+    public async Task PenaltyAssessed_WhenAgainstJammer_AndLeadNotMarkedForEitherTeam_RaisesLostMarkedEvent()
+    {
+        State = new("123", "1", ["2", "3", "4"]);
+        MockKeyedState<TeamJamStatsState>(nameof(TeamSide.Home), new(false, false, false, false, false));
+        MockKeyedState<TeamJamStatsState>(nameof(TeamSide.Away), new(false, false, false, false, false));
+
+        var implicitEvents = await Subject.Handle(new PenaltyAssessed(0, new(TeamSide.Home, "123", "X")));
+
+        implicitEvents.OfType<LostMarked>().Should().ContainSingle()
+            .Which.Body.Lost.Should().BeTrue();
+    }
+
+    [Test]
+    public async Task PenaltyAssessed_WhenNotAgainstJammer_DoesNotRaiseLostMarkedEvent()
+    {
+        State = new("123", "1", ["2", "3", "4"]);
+        MockKeyedState<TeamJamStatsState>(nameof(TeamSide.Home), new(false, false, false, false, false));
+        MockKeyedState<TeamJamStatsState>(nameof(TeamSide.Away), new(false, false, false, false, false));
+
+        var implicitEvents = await Subject.Handle(new PenaltyAssessed(0, new(TeamSide.Home, "1", "X")));
+
+        implicitEvents.OfType<LostMarked>().Should().BeEmpty();
+    }
+
+    [Test]
+    public async Task PenaltyAssessed_WhenTeamDoesNotMatch_DoesNotRaiseLostMarkedEvent()
+    {
+        State = new("123", "1", ["2", "3", "4"]);
+        MockKeyedState<TeamJamStatsState>(nameof(TeamSide.Home), new(false, false, false, false, false));
+        MockKeyedState<TeamJamStatsState>(nameof(TeamSide.Away), new(false, false, false, false, false));
+
+        var implicitEvents = await Subject.Handle(new PenaltyAssessed(0, new(TeamSide.Away, "123", "X")));
+
+        implicitEvents.OfType<LostMarked>().Should().BeEmpty();
+    }
 }

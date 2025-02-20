@@ -1,8 +1,8 @@
 import { cn } from "@/lib/utils";
-import { RecordedPenalty } from "./PenaltyDialog";
+import { Penalty } from "@/types";
 
 type PenaltyCellProps = {
-    penalty?: RecordedPenalty;
+    penalty?: Penalty;
     className?: string;
     onClick?: () => void;
 }
@@ -12,13 +12,13 @@ export const PenaltyCell = ({penalty, className, onClick}: PenaltyCellProps) => 
         <div 
             className={cn(
                 className,
-                "flex flex-col xl:flex-row xl:gap-2 text-xs xl:text-sm font-bold text-center justify-center align-center items-center", 
+                "flex flex-col xl:flex-row xl:gap-2 text-xs xl:text-sm font-bold text-center justify-center align-center items-center cursor-pointer", 
             )} 
             onClick={onClick}
         >
             {penalty && (
                 <>
-                    <div>{penalty.penaltyCode}</div>
+                    <div>{penalty.code}</div>
                     <div>{penalty.period}-{penalty.jam}</div>
                 </>
             )}

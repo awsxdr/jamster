@@ -1,40 +1,36 @@
 import { Button, Command, CommandItem, CommandList, Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, ScrollArea } from "@/components/ui";
+import { useGameStageState, useGameSummaryState } from "@/hooks";
+import { Penalty } from "@/types";
 import { useEffect, useState } from "react";
 
-type Penalty = {
+type PenaltyDefinition = {
     code: string;
-    name: string;
+    nameKey: string;
 }
 
-const PENALTIES: Penalty[] = [
-    { code: "?", name: "Unknown" },
-    { code: "A", name: "High block" },
-    { code: "B", name: "Back block" },
-    { code: "C", name: "Illegal contact" },
-    { code: "D", name: "Direction" },
-    { code: "E", name: "Leg block" },
-    { code: "F", name: "Forearm" },
-    { code: "G", name: "Misconduct" },
-    { code: "H", name: "Head block" },
-    { code: "I", name: "Illegal procedure" },
-    { code: "L", name: "Low block" },
-    { code: "M", name: "Multiplayer" },
-    { code: "N", name: "Interference" },
-    { code: "P", name: "Illegal position" },
-    { code: "X", name: "Cut" },
+const PENALTIES: PenaltyDefinition[] = [
+    { code: "?", nameKey: "Unknown" },
+    { code: "A", nameKey: "High block" },
+    { code: "B", nameKey: "Back block" },
+    { code: "C", nameKey: "Illegal contact" },
+    { code: "D", nameKey: "Direction" },
+    { code: "E", nameKey: "Leg block" },
+    { code: "F", nameKey: "Forearm" },
+    { code: "G", nameKey: "Misconduct" },
+    { code: "H", nameKey: "Head block" },
+    { code: "I", nameKey: "Illegal procedure" },
+    { code: "L", nameKey: "Low block" },
+    { code: "M", nameKey: "Multiplayer" },
+    { code: "N", nameKey: "Interference" },
+    { code: "P", nameKey: "Illegal position" },
+    { code: "X", nameKey: "Cut" },
 ];
-
-export type RecordedPenalty = {
-    penaltyCode: string;
-    period: number;
-    jam: number;
-}
 
 type PenaltyDialogProps = {
     open: boolean;
-    currentPenalty?: RecordedPenalty;
+    currentPenalty?: Penalty;
     onOpenChanged?: (open: boolean) => void;
-    onAccept?: (penalty: RecordedPenalty) => void;
+    onAccept?: (penalty: Penalty) => void;
 }
 
 export const PenaltyDialog = ({ open, currentPenalty, onOpenChanged, onAccept }: PenaltyDialogProps) => {
@@ -42,10 +38,12 @@ export const PenaltyDialog = ({ open, currentPenalty, onOpenChanged, onAccept }:
     const [penaltyCode, setPenaltyCode] = useState("?");
     const [period, setPeriod] = useState(1);
     const [jam, setJam] = useState(1);
-
+    const { periodJamCounts } = useGameSummaryState() ?? { periodJamCounts: [] };
+    const { periodNumber } = useGameStageState() ?? { periodNumber: 1 };
+    
     useEffect(() => {
         if(currentPenalty) {
-            setPenaltyCode(currentPenalty.penaltyCode);
+            setPenaltyCode(currentPenalty.code);
             setPeriod(currentPenalty.period);
             setJam(currentPenalty.jam);
         } else {
@@ -56,15 +54,15 @@ export const PenaltyDialog = ({ open, currentPenalty, onOpenChanged, onAccept }:
 
     }, [currentPenalty]);
 
-    const minPeriod = 1;
-    const maxPeriod = 2;
 
     const handlePenaltySelected = (value: string) => {
         setPenaltyCode(value);
+        onAccept?.({ code: value, period, jam, served: false })
+        onOpenChanged?.(false);
     }
 
     const handleAccept = () => {
-        onAccept?.({ penaltyCode, period, jam });
+        onAccept?.({ code: penaltyCode, period, jam, served: false });
     }
 
     return (
@@ -82,15 +80,43 @@ export const PenaltyDialog = ({ open, currentPenalty, onOpenChanged, onAccept }:
                     <div className="flex justify-around">
                         <div className="flex gap-2 items-center">
                             Period
-                            <Button size="sm" className="h-5 w-5 p-0" onClick={() => setPeriod(p => Math.max(minPeriod, p - 1))}>-</Button>
+                            <Button 
+                                size="sm" 
+                                className="h-5 w-5 p-0" 
+                                disabled={period === 1}
+                                onClick={() => setPeriod(p => Math.max(1, p - 1))}
+                            >
+                                -
+                            </Button>
                             <span className="text-lg">{period}</span>
-                            <Button size="sm" className="w-5 h-5 p-0" onClick={() => setPeriod(p => Math.min(maxPeriod, p + 1))}>+</Button>
+                            <Button 
+                                size="sm" 
+                                className="w-5 h-5 p-0" 
+                                disabled={period >= periodNumber}
+                                onClick={() => setPeriod(p => Math.min(periodNumber, p + 1))}
+                            >
+                                +
+                            </Button>
                         </div>
                         <div className="flex gap-2 items-center">
                             Jam
-                            <Button size="sm" className="h-5 w-5 p-0" onClick={() => setJam(j => Math.max(1, j - 1))}>-</Button>
+                            <Button 
+                                size="sm" 
+                                className="h-5 w-5 p-0" 
+                                disabled={jam === 1}
+                                onClick={() => setJam(j => Math.max(1, j - 1))}
+                            >
+                                -
+                            </Button>
                             <span className="text-lg">{jam}</span>
-                            <Button size="sm" className="w-5 h-5 p-0" onClick={() => setJam(j => j + 1)}>+</Button>
+                            <Button 
+                                size="sm" 
+                                className="w-5 h-5 p-0" 
+                                disabled={jam >= periodJamCounts[period - 1]}
+                                onClick={() => setJam(j => j + 1)}
+                            >
+                                +
+                            </Button>
                         </div>
                     </div>
                     <ScrollArea className="h-full max-h-[60vh]">
@@ -98,7 +124,7 @@ export const PenaltyDialog = ({ open, currentPenalty, onOpenChanged, onAccept }:
                             <CommandList className="h-full max-h-full">
                                 { PENALTIES.map(p => (
                                     <CommandItem key={p.code} value={p.code} onSelect={handlePenaltySelected}>
-                                        <span className="font-bold">{p.code}</span> - {p.name}
+                                        <span className="font-bold">{p.code}</span> - {p.nameKey}
                                     </CommandItem>
                                 ))}
                             </CommandList>
@@ -109,8 +135,13 @@ export const PenaltyDialog = ({ open, currentPenalty, onOpenChanged, onAccept }:
                     <DialogClose asChild>
                         <Button variant="secondary">Cancel</Button>
                     </DialogClose>
+                    { currentPenalty && (
+                        <DialogClose asChild>
+                            <Button onClick={handleAccept} variant="destructive">Delete</Button>
+                        </DialogClose>
+                    )}
                     <DialogClose asChild>
-                        <Button onClick={handleAccept}>Add</Button>
+                        <Button onClick={handleAccept}>{currentPenalty ? "Update" : "Add"}</Button>
                     </DialogClose>
                 </DialogFooter>
             </DialogContent>

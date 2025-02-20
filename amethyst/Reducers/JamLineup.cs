@@ -14,8 +14,10 @@ public abstract class JamLineup(TeamSide teamSide, ReducerGameContext context, I
     , IHandlesEvent<SkaterRemovedFromJam>
     , IHandlesEvent<JamEnded>
     , IHandlesEvent<SkaterSubstitutedInBox>
+    , IHandlesEvent<PenaltyAssessed>
     , IDependsOnState<GameStageState>
     , IDependsOnState<PenaltyBoxState>
+    , IDependsOnState<TeamJamStatsState>
 {
     protected override JamLineupState DefaultState => new(null, null, [null, null, null]);
 
@@ -148,6 +150,21 @@ public abstract class JamLineup(TeamSide teamSide, ReducerGameContext context, I
             new SkaterOffTrack(@event.Tick, new(teamSide, @event.Body.OriginalSkaterNumber)),
             new SkaterOnTrack(@event.Tick, new(teamSide, @event.Body.NewSkaterNumber, (SkaterPosition)position)),
         ];
+    });
+
+    public IEnumerable<Event> Handle(PenaltyAssessed @event) => @event.HandleIfTeam(teamSide, () =>
+    {
+        var state = GetState();
+
+        if (@event.Body.SkaterNumber != state.JammerNumber)
+            return [];
+
+        var opponentStats = GetKeyedState<TeamJamStatsState>(teamSide == TeamSide.Home ? nameof(TeamSide.Away) : nameof(TeamSide.Home));
+
+        if (opponentStats.Lead)
+            return [];
+
+        return [new LostMarked(@event.Id, new(teamSide, true))];
     });
 }
 

@@ -1,10 +1,10 @@
 import { Button } from "@/components/ui";
-import { useEvents, useGameStageState, useI18n, useLineupSheetState, usePenaltyBoxState, useTeamDetailsState } from "@/hooks";
+import { useEvents, useGameStageState, useI18n, useLineupSheetState, usePenaltyBoxState, usePenaltySheetState, useTeamDetailsState } from "@/hooks";
 import { cn } from "@/lib/utils";
-import { LineupPosition, StringMap, TeamSide } from "@/types";
+import { LineupPosition, Penalty, StringMap, TeamSide } from "@/types";
 import { useEffect, useMemo, useState } from "react";
-import { PenaltyDialog, RecordedPenalty } from "./PenaltyDialog";
-import { SkaterAddedToJam, SkaterPosition, SkaterReleasedFromBox, SkaterRemovedFromJam, SkaterSatInBox } from "@/types/events";
+import { PenaltyDialog } from "./PenaltyDialog";
+import { PenaltyAssessed, SkaterAddedToJam, SkaterPosition, SkaterReleasedFromBox, SkaterRemovedFromJam, SkaterSatInBox } from "@/types/events";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { PenaltyLineupRow } from "./PenaltyLineupRow";
 
@@ -19,23 +19,17 @@ export const PenaltyLineupTable = ({ teamSide, gameId }: PenaltyLineupTableProps
     const { jams } = useLineupSheetState(teamSide) ?? { jams: [] };
     const penaltyBox = usePenaltyBoxState(teamSide) ?? { skaters: [] };
     const gameStage = useGameStageState();
+    const penaltySheet = usePenaltySheetState(teamSide) ?? { lines: [] };
     const { sendEvent } = useEvents();
     const [penaltyDialogOpen, setPenaltyDialogOpen] = useState(false);
     const [editingSkaterNumber, setEditingSkaterNumber] = useState("");
     const [editingIndex, setEditingIndex] = useState(0);
-    const [editingPenalty, setEditingPenalty] = useState<RecordedPenalty>();
+    const [editingPenalty, setEditingPenalty] = useState<Penalty>();
     const [totalJamNumber, setTotalJamNumber] = useState(-1);
 
-    const [skaterPenalties, setSkaterPenalties] = useState<StringMap<RecordedPenalty[]>>({});
-
-    useEffect(() => {
-        if(!team) {
-            return;
-        }
-
-        setSkaterPenalties(team.roster.reduce((map, s) => ({ ...map, [s.number]: [] }), {} as StringMap<RecordedPenalty[]>));
-
-    }, [team]);
+    const skaterPenalties = useMemo(() => 
+        penaltySheet.lines.reduce((map, line) => ({ ...map, [line.skaterNumber]: line.penalties }), {} as StringMap<Penalty[]>), 
+    [penaltySheet]);
 
     useEffect(() => {
         if(totalJamNumber > -1 || !gameStage) {
@@ -116,14 +110,15 @@ export const PenaltyLineupTable = ({ teamSide, gameId }: PenaltyLineupTableProps
         setPenaltyDialogOpen(true);
     }
 
-    const handlePenaltyAccept = (penalty: RecordedPenalty) => {
+    const handlePenaltyAccept = (penalty: Penalty) => {
         const selectedSkaterPenalties = [...skaterPenalties[editingSkaterNumber]!];
         if(editingIndex < selectedSkaterPenalties.length) {
             selectedSkaterPenalties[editingIndex] = penalty;
         } else {
             selectedSkaterPenalties.push(penalty);
         }
-        setSkaterPenalties(p => ({ ...p, [editingSkaterNumber]: selectedSkaterPenalties }));
+        
+        sendEvent(gameId, new PenaltyAssessed(teamSide, editingSkaterNumber, penalty.code));
     }
 
     return (
@@ -135,35 +130,35 @@ export const PenaltyLineupTable = ({ teamSide, gameId }: PenaltyLineupTableProps
             >
                 <div className={cn("col-start-1 flex items-end", headerClass)}>
                     <Button 
-                        className="w-full"
+                        className="w-full p-0"
                         variant="secondary" 
                         disabled={totalJamNumber <= 0} 
                         onClick={() => setTotalJamNumber(i => i - 1)}
                     >
                         <ChevronLeft />
-                        <span className="hidden md:inline">{translate("PreviousJam")}</span>
+                        <span className="hidden lg:inline">{translate("PreviousJam")}</span>
                     </Button>
                 </div>
                 <div className={cn("col-start-2 col-span-3 gap-2", headerClass, headerTextClass, "items-center md:items-end")}>
                     <span>
-                        <span className="md:hidden">{translate("Period.Short")}</span>
-                        <span className="hidden md:inline">{translate("Period.Long")}</span>
+                        <span className="lg:hidden">{translate("Period.Short")}</span>
+                        <span className="hidden lg:inline">{translate("Period.Long")}</span>
                         { currentJam?.period }
                     </span>
                     <span>-</span>
                     <span>
-                        <span className="md:hidden">{translate("Jam.Short")}</span>
-                        <span className="hidden md:inline">{translate("Jam.Long")}</span>
+                        <span className="lg:hidden">{translate("Jam.Short")}</span>
+                        <span className="hidden lg:inline">{translate("Jam.Long")}</span>
                         { currentJam?.jam }
                     </span>
                 </div>
                 <div className={cn("col-start-5 flex items-end", headerClass)}>
                     <Button 
-                        className="w-full"
+                        className="w-full p-0"
                         disabled={totalJamNumber >= jams.length - 1 || totalJamNumber === -1} 
                         onClick={() => setTotalJamNumber(i => i + 1)}
                     >
-                        <span className="hidden md:inline">{translate("NextJam")}</span>
+                        <span className="hidden lg:inline">{translate("NextJam")}</span>
                         <ChevronRight />
                     </Button>
                 </div>

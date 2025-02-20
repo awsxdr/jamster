@@ -15,7 +15,7 @@ public class GameSummary(ReducerGameContext context)
     , IDependsOnState<GameStageState>
     , IDependsOnState<PenaltySheetState>
 {
-    protected override GameSummaryState DefaultState => new(GameProgress.Upcoming, new([], 0), new([], 0), new([], 0), new([], 0), []);
+    protected override GameSummaryState DefaultState => new(GameProgress.Upcoming, new([], 0), new([], 0), new([], 0), new([], 0), Enumerable.Repeat(0, Rules.DefaultRules.PeriodRules.PeriodCount).ToArray());
 
     public IEnumerable<Event> Handle(RulesetSet @event)
     {

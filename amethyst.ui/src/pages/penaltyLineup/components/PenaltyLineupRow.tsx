@@ -1,5 +1,4 @@
-import { GameSkater, LineupPosition } from "@/types";
-import { RecordedPenalty } from "./PenaltyDialog";
+import { GameSkater, LineupPosition, Penalty } from "@/types";
 import { PositionButton } from "./PositionButton";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui";
@@ -10,7 +9,7 @@ type PenaltyLineupRowProps = {
     skater: GameSkater;
     position: LineupPosition;
     even: boolean;
-    penalties: RecordedPenalty[];
+    penalties: Penalty[];
     inBox: boolean;
     disableBox?: boolean;
     onPositionClicked?: (position: LineupPosition) => void;
@@ -97,7 +96,7 @@ export const PenaltyLineupRow = ({ skater, position, even, penalties, inBox, dis
             </div>
             <div className={cn("col-start-6", cellClass, lineupRowClassAccent, "border-l")}>
                 <Button 
-                    className={cn(buttonClass, !inBox && lineupRowClassAccent)}
+                    className={cn(buttonClass, penalties.some(p => !p.served) && "underline", !inBox && lineupRowClassAccent)}
                     variant={inBox ? "default" : "outline"}
                     disabled={disableBox}
                     onClick={handleBoxClicked}
@@ -154,8 +153,8 @@ export const PenaltyLineupRow = ({ skater, position, even, penalties, inBox, dis
             />
             <div className={cn("col-start-16", cellClass, "border-l", penaltyRowClassFullAccent)}>                
             </div>
-            <div className={cn("col-start-16", cellClass, "border-l border-r", penaltyRowClassAccent, largeNumberClass)}>  
-                {penalties?.filter(p => p.penaltyCode).length}
+            <div className={cn("col-start-16", cellClass, "border-l border-r-2", penaltyRowClassAccent, largeNumberClass)}>  
+                {penalties?.filter(p => p.code).length}
             </div>
         </>
     )

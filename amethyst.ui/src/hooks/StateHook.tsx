@@ -2,7 +2,7 @@ import { createContext, PropsWithChildren, useCallback, useContext, useEffect, u
 import { useHubConnection } from "./SignalRHubConnection";
 import { HubConnection } from "@microsoft/signalr";
 import { useGameApi } from "./GameApiHook";
-import { GameStageState, TripScoreState, TeamDetailsState, TeamScoreState, TeamSide, TeamTimeoutsState, JamLineupState, TimeoutListState, PeriodClockState, TimeoutClockState, JamClockState, LineupClockState, UndoListState, ScoreSheetState, RulesState, LineupSheetState, PenaltyBoxState } from "@/types";
+import { GameStageState, TripScoreState, TeamDetailsState, TeamScoreState, TeamSide, TeamTimeoutsState, JamLineupState, TimeoutListState, PeriodClockState, TimeoutClockState, JamClockState, LineupClockState, UndoListState, ScoreSheetState, RulesState, LineupSheetState, PenaltyBoxState, GameSummaryState, PenaltySheetState } from "@/types";
 import { CurrentTimeoutTypeState } from "@/types/CurrentTimeoutTypeState";
 import { TeamJamStatsState } from "@/types/TeamJamStatsState";
 import { v4 as uuidv4 } from 'uuid';
@@ -59,6 +59,8 @@ export const useUndoListState = () => useGameState<UndoListState>("UndoListState
 export const useScoreSheetState = (side: TeamSide) => useGameState<ScoreSheetState>(`ScoreSheetState_${TeamSide[side]}`);
 export const useLineupSheetState = (side: TeamSide) => useGameState<LineupSheetState>(`LineupSheetState_${TeamSide[side]}`);
 export const usePenaltyBoxState = (side: TeamSide) => useGameState<PenaltyBoxState>(`PenaltyBoxState_${TeamSide[side]}`);
+export const usePenaltySheetState = (side: TeamSide) => useGameState<PenaltySheetState>(`PenaltySheetState_${TeamSide[side]}`);
+export const useGameSummaryState = () => useGameState<GameSummaryState>("GameSummaryState");
 export const useRulesState = () => useGameState<RulesState>("RulesState");
 
 export const useGameState = <TState,>(stateName: string) => {
@@ -129,6 +131,7 @@ export const GameStateContextProvider = ({ gameId, children }: PropsWithChildren
                 console.warn("Attempt to unwatch state with invalid handle", handle);
             }
 
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const { [handle]: _, ...newNotifier } = sn[stateName] ?? {};
             return {
                 ...sn,
