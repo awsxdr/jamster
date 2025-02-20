@@ -32,8 +32,25 @@ public static class TestGameEventsSource
         ])
         .Wait(20)
         .Event<LeadMarked>(12).WithBody(new LeadMarkedBody(TeamSide.Home, true))
+        .Event<PenaltyAssessed>(1).WithBody(new PenaltyAssessedBody(TeamSide.Away, AwayTeam.Roster[0].Number, "X"))
+        .Event<PenaltyAssessed>(1).WithBody(new PenaltyAssessedBody(TeamSide.Home, HomeTeam.Roster[2].Number, "C"))
+        .Event<PenaltyAssessed>(1).WithBody(new PenaltyAssessedBody(TeamSide.Away, AwayTeam.Roster[3].Number, "P"))
+        .Validate([
+            ("Home", GetPenaltySheetState(HomeTeam, [new(HomeTeam.Roster[2].Number, [new("C", 1, 1, false)])])),
+            ("Away", GetPenaltySheetState(AwayTeam, [
+                new(AwayTeam.Roster[0].Number, [new("X", 1, 1, false)]),
+                new(AwayTeam.Roster[3].Number, [new("P", 1, 1, false)]),
+            ])),
+        ])
         .Event<SkaterSatInBox>(1).GetTick(out var skaterInBoxTick1).WithBody(new SkaterSatInBoxBody(TeamSide.Away, AwayTeam.Roster[0].Number))
         .Event<SkaterSatInBox>(1).GetTick(out var skaterInBoxTick2).WithBody(new SkaterSatInBoxBody(TeamSide.Home, HomeTeam.Roster[2].Number))
+        .Validate([
+            ("Home", GetPenaltySheetState(HomeTeam, [new(HomeTeam.Roster[2].Number, [new("C", 1, 1, true)])])),
+            ("Away", GetPenaltySheetState(AwayTeam, [
+                new(AwayTeam.Roster[0].Number, [new("X", 1, 1, true)]),
+                new(AwayTeam.Roster[3].Number, [new("P", 1, 1, false)]),
+            ])),
+        ])
         .Event<SkaterSatInBox>(1).GetTick(out var skaterInBoxTick3).WithBody(new SkaterSatInBoxBody(TeamSide.Away, AwayTeam.Roster[3].Number))
         .Validate(tick => [
             ("Home", new PenaltyBoxState([HomeTeam.Roster[2].Number])),
@@ -42,6 +59,11 @@ public static class TestGameEventsSource
             ("Away", new BoxTripsState([
                 new(1, 1, 1, AwayTeam.Roster[0].Number, null, [], skaterInBoxTick1, 0, tick - skaterInBoxTick1, (tick - skaterInBoxTick1).Seconds),
                 new(1, 1, 1, AwayTeam.Roster[3].Number, null, [], skaterInBoxTick3, 0, tick - skaterInBoxTick3, (tick - skaterInBoxTick3).Seconds),
+            ])),
+            ("Home", GetPenaltySheetState(HomeTeam, [new(HomeTeam.Roster[2].Number, [new("C", 1, 1, true)])])),
+            ("Away", GetPenaltySheetState(AwayTeam, [
+                new(AwayTeam.Roster[0].Number, [new("X", 1, 1, true)]),
+                new(AwayTeam.Roster[3].Number, [new("P", 1, 1, true)]),
             ])),
         ])
         .Event<JamEnded>(10).GetTick(out var jamEndTick)
@@ -719,4 +741,13 @@ public static class TestGameEventsSource
             new("8273", "Test Skater 9", true),
             new("984", "Test Skater 10", true),
         ]);
+
+    public static PenaltySheetState GetPenaltySheetState(GameTeam team, PenaltySheetLine[] modifiedLines) =>
+        new(
+            team.Roster.Select(s =>
+                    new PenaltySheetLine(
+                        s.Number,
+                        modifiedLines.SingleOrDefault(l => l.SkaterNumber == s.Number)?.Penalties ?? []))
+                .ToArray()
+        );
 }

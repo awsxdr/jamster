@@ -2,6 +2,8 @@
 using amethyst.Domain;
 using amethyst.Reducers;
 
+using GameSummary = amethyst.Domain.GameSummary;
+
 namespace amethyst.Services;
 
 public interface IGameExporter
@@ -51,17 +53,22 @@ public class GameExporter(IGameContextFactory contextFactory) : IGameExporter
 
     private GameSummary GetGameSummary(IGameStateStore stateStore)
     {
-        var homeScoreSheet = stateStore.GetKeyedState<ScoreSheetState>(nameof(TeamSide.Home));
-        var awayScoreSheet = stateStore.GetKeyedState<ScoreSheetState>(nameof(TeamSide.Away));
-
-        var homePeriod1Total = homeScoreSheet.Jams.LastOrDefault(j => j.Period == 1)?.GameTotal ?? 0;
-        var awayPeriod1Total = awayScoreSheet.Jams.LastOrDefault(j => j.Period == 1)?.GameTotal ?? 0;
-        var homePeriod2Total = homeScoreSheet.Jams.LastOrDefault(j => j.Period == 2)?.GameTotal ?? homePeriod1Total;
-        var awayPeriod2Total = awayScoreSheet.Jams.LastOrDefault(j => j.Period == 2)?.GameTotal ?? awayPeriod1Total;
+        var gameSummaryState = stateStore.GetState<GameSummaryState>();
+        var rules = stateStore.GetState<RulesState>().Rules;
 
         return new(
-            new(0, homePeriod1Total, 0, awayPeriod1Total),
-            new(0, homePeriod2Total - homePeriod1Total, 0, awayPeriod2Total - awayPeriod1Total)
+            new(
+                gameSummaryState.HomePenalties.PeriodTotals[0],
+                gameSummaryState.HomeScore.PeriodTotals[0],
+                gameSummaryState.AwayPenalties.PeriodTotals[0],
+                gameSummaryState.AwayScore.PeriodTotals[0]),
+            rules.PeriodRules.PeriodCount >= 2
+            ? new(
+                gameSummaryState.HomePenalties.PeriodTotals[1],
+                gameSummaryState.HomeScore.PeriodTotals[1],
+                gameSummaryState.AwayPenalties.PeriodTotals[1],
+                gameSummaryState.AwayScore.PeriodTotals[1])
+            : new(0, 0, 0, 0)
         );
     }
 
