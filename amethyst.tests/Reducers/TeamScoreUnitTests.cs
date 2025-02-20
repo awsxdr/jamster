@@ -20,20 +20,6 @@ public class TeamScoreUnitTests : ReducerUnitTest<HomeTeamScore, TeamScoreState>
         State.Should().Be(new TeamScoreState(expectedScore, expectedJamScore));
     }
 
-    [TestCase(TeamSide.Home, 5, 5, 0)]
-    [TestCase(TeamSide.Home, -5, 0, 0)]
-    [TestCase(TeamSide.Away, 5, 10, 3)]
-    [TestCase(TeamSide.Home, 8, 8, 1)]
-    [TestCase(TeamSide.Home, 12, 12, 5)]
-    public async Task ScoreSet_UpdatesScoreAsExpected(TeamSide teamSide, int value, int expectedScore, int expectedJamScore)
-    {
-        State = new(10, 3);
-
-        await Subject.Handle(new ScoreSet(0, new(teamSide, value)));
-
-        State.Should().Be(new TeamScoreState(expectedScore, expectedJamScore));
-    }
-
     [TestCase(10, 5, TeamSide.Home, 3, 7, 2)]
     [TestCase(3, 3, TeamSide.Home, 4, 0, 0)]
     [TestCase(10, 5, TeamSide.Home, null, 10, 5)]

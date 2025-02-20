@@ -36,30 +36,6 @@ public class TripScoreUnitTests : ReducerUnitTest<HomeTripScore, TripScoreState>
     }
 
     [Test]
-    public async Task ScoreSet_SetsTripScoreToNull()
-    {
-        State = new(3, 1, 0);
-        MockState(new JamClockState(true, 0, 0, 0));
-
-        await Subject.Handle(new ScoreSet(1000, new(TeamSide.Home, 20)));
-
-        State.Score.Should().Be(null);
-        State.LastScoreTick.Should().Be(1000);
-    }
-
-    [Test]
-    public async Task ScoreSet_IgnoresEventsForOtherTeam()
-    {
-        State = new(3, 1, 123);
-        MockState(new JamClockState(true, 0, 0, 0));
-
-        await Subject.Handle(new ScoreSet(1000, new(TeamSide.Away, 20)));
-
-        State.Score.Should().Be(3);
-        State.LastScoreTick.Should().Be(123);
-    }
-
-    [Test]
     public async Task JamEnded_WhenTripHasScore_SendsTripCompletedEvent_AndSendsScoreModifiedBy0Event()
     {
         State = new(3, 1, 0);

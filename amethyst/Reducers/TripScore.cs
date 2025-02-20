@@ -2,14 +2,12 @@
 using amethyst.Events;
 using amethyst.Extensions;
 using amethyst.Services;
-using Func;
 
 namespace amethyst.Reducers;
 
 public abstract class TripScore(TeamSide teamSide, ReducerGameContext context, ILogger logger)
     : Reducer<TripScoreState>(context)
     , IHandlesEvent<ScoreModifiedRelative>
-    , IHandlesEvent<ScoreSet>
     , IHandlesEvent<JamStarted>
     , IHandlesEvent<JamEnded>
     , IHandlesEvent<LastTripDeleted>
@@ -39,15 +37,6 @@ public abstract class TripScore(TeamSide teamSide, ReducerGameContext context, I
                 : @event.Body.Value)),
             LastScoreTick = @event.Tick,
         });
-
-        return [];
-    });
-
-    public IEnumerable<Event> Handle(ScoreSet @event) => @event.HandleIfTeam(teamSide, () =>
-    {
-        logger.LogDebug("Resetting trip score due to absolute score being set");
-
-        SetState(new(null, 0, @event.Tick));
 
         return [];
     });

@@ -2,14 +2,12 @@
 using amethyst.Events;
 using amethyst.Extensions;
 using amethyst.Services;
-using Func;
 
 namespace amethyst.Reducers;
 
 public abstract class TeamScore(TeamSide teamSide, ReducerGameContext gameContext, ILogger logger)
     : Reducer<TeamScoreState>(gameContext)
     , IHandlesEvent<ScoreModifiedRelative>
-    , IHandlesEvent<ScoreSet>
     , IHandlesEvent<JamStarted>
     , IHandlesEvent<LastTripDeleted>
     , IDependsOnState<TripScoreState>
@@ -26,20 +24,6 @@ public abstract class TeamScore(TeamSide teamSide, ReducerGameContext gameContex
         var state = GetState();
 
         state = new TeamScoreState(Score: Math.Max(0, state.Score + @event.Body.Value), JamScore: Math.Max(0, state.JamScore + @event.Body.Value));
-
-        SetState(state);
-
-        return [];
-    });
-
-    public IEnumerable<Event> Handle(ScoreSet @event) => @event.HandleIfTeam(teamSide, () =>
-    {
-        logger.LogDebug("Setting {teamSide} score to {points} points", teamSide, @event.Body.Value);
-
-        var state = GetState();
-
-        var newScoreValue = Math.Max(0, @event.Body.Value);
-        state = new TeamScoreState(Score: newScoreValue, JamScore: Math.Max(0, state.JamScore + newScoreValue - state.Score));
 
         SetState(state);
 
