@@ -8,10 +8,11 @@ type PositionButtonProps = {
     targetPosition: LineupPosition;
     className?: string;
     rowClassName?: string;
+    compact?: boolean;
     onClick?: (position: LineupPosition) => void;
 }
 
-export const PositionButton = ({ position, targetPosition, className, rowClassName, onClick }: PositionButtonProps) => {
+export const PositionButton = ({ position, targetPosition, className, rowClassName, compact, onClick }: PositionButtonProps) => {
     const { translate } = useI18n({ prefix: "PenaltyLineup.PenaltyButton." })
 
     return (
@@ -20,8 +21,8 @@ export const PositionButton = ({ position, targetPosition, className, rowClassNa
             variant={position === targetPosition ? "default" : "outline" }
             onClick={() => onClick?.(targetPosition)}
         >
-            <span className="lg:hidden">{translate(`${targetPosition}.Short`)}</span>
-            <span className="hidden lg:inline">{translate(`${targetPosition}.Long`)}</span>
+            <span className={cn(!compact && "lg:hidden")}>{translate(`${targetPosition}.Short`)}</span>
+            <span className={cn("hidden", !compact && "lg:inline")}>{translate(`${targetPosition}.Long`)}</span>
         </Button>
     );
 }

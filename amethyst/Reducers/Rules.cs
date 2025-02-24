@@ -27,7 +27,10 @@ public class Rules(ReducerGameContext context, ILogger<Rules> logger)
         PenaltyRules: new(
             FoulOutPenaltyCount: 7),
         IntermissionRules: new(
-            DurationInSeconds: 15 * 60)
+            DurationInSeconds: 15 * 60),
+        InjuryRules: new(
+            JamsToSitOutFollowingInjury: 3,
+            NumberOfAllowableInjuriesPerPeriod: 2)
     );
 
     protected override RulesState DefaultState => new(DefaultRules);
@@ -57,7 +60,10 @@ public class Rules(ReducerGameContext context, ILogger<Rules> logger)
             PenaltyRules: new(
                 FoulOutPenaltyCount: Constrain(rules.PenaltyRules.FoulOutPenaltyCount, 1, 20)),
             IntermissionRules: new(
-                DurationInSeconds: Constrain(rules.IntermissionRules.DurationInSeconds, 1, 24 * 60 * 60))
+                DurationInSeconds: Constrain(rules.IntermissionRules.DurationInSeconds, 1, 24 * 60 * 60)),
+            InjuryRules: new(
+                JamsToSitOutFollowingInjury: Constrain(rules.InjuryRules.JamsToSitOutFollowingInjury, 1, 100),
+                NumberOfAllowableInjuriesPerPeriod: Constrain(rules.InjuryRules.NumberOfAllowableInjuriesPerPeriod, 1, 100))
         )));
 
         return [];

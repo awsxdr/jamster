@@ -25,6 +25,18 @@ export class SkaterRemovedFromJam extends EventWithBody {
     }
 }
 
+export class SkaterInjuryAdded extends EventWithBody {
+    constructor(teamSide: TeamSide, skaterNumber: string) {
+        super("SkaterInjuryAdded", { teamSide, skaterNumber });
+    }
+}
+
+export class SkaterInjuryRemoved extends EventWithBody {
+    constructor(teamSide: TeamSide, skaterNumber: string, totalJamNumberStart: number) {
+        super("SkaterInjuryRemoved", { teamSide, skaterNumber, totalJamNumberStart });
+    }
+}
+
 export enum SkaterPosition {
     Jammer = 'Jammer',
     Pivot = 'Pivot',

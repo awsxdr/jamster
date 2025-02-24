@@ -1,9 +1,36 @@
 import { GameSkater, LineupPosition, Penalty } from "@/types";
 import { PositionButton } from "./PositionButton";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui";
+import { Button, DropdownMenuContent, DropdownMenuItem } from "@/components/ui";
 import { PenaltyCell } from "./PenaltyCell";
 import { useI18n } from "@/hooks";
+import { Bandage, EllipsisVertical, NotebookPen } from "lucide-react";
+import { DropdownMenu, DropdownMenuTrigger } from "@radix-ui/react-dropdown-menu";
+import { PropsWithChildren } from "react";
+
+type RowMenuProps = {
+    disableNotes?: boolean;
+}
+
+const RowMenu = ({ disableNotes, children }: PropsWithChildren<RowMenuProps>) => {
+    return (
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                { children }
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+                <DropdownMenuItem>
+                    <Bandage />
+                    Add injury
+                </DropdownMenuItem>
+                <DropdownMenuItem disabled={disableNotes}>
+                    <NotebookPen />
+                    Notes
+                </DropdownMenuItem>
+            </DropdownMenuContent>
+        </DropdownMenu>
+    )
+}
 
 type PenaltyLineupRowProps = {
     skater: GameSkater;
@@ -11,13 +38,16 @@ type PenaltyLineupRowProps = {
     even: boolean;
     penalties: Penalty[];
     inBox: boolean;
+    injured: boolean;
+    compact?: boolean;
     disableBox?: boolean;
     onPositionClicked?: (position: LineupPosition) => void;
     onBoxClicked?: (inBox: boolean) => void;
     onPenaltyClicked?: (index: number) => void;
+    onInjuryAdded?: () => void;
 }
 
-export const PenaltyLineupRow = ({ skater, position, even, penalties, inBox, disableBox, onPositionClicked, onBoxClicked, onPenaltyClicked }: PenaltyLineupRowProps) => {
+export const PenaltyLineupRow = ({ skater, position, even, penalties, inBox, injured, compact, disableBox, onPositionClicked, onBoxClicked, onPenaltyClicked }: PenaltyLineupRowProps) => {
 
     const { translate } = useI18n({ prefix: "PenaltyLineup.PenaltyLineupRow." })
 
@@ -43,7 +73,7 @@ export const PenaltyLineupRow = ({ skater, position, even, penalties, inBox, dis
 
     const largeNumberClass = "flex justify-center items-center text-sm sm:text-base md:text-lg";
 
-    const buttonClass = "rounded-none w-full px-1 md:px-4 border-0";
+    const buttonClass = "rounded-none w-full px-1 md:px-4 border-0 h-full";
 
     const handleBoxClicked = () => {
         onBoxClicked?.(!inBox);
@@ -55,105 +85,126 @@ export const PenaltyLineupRow = ({ skater, position, even, penalties, inBox, dis
 
     return (
         <>
-            <div className={cn("col-start-1", "border-l-2", cellClass, largeNumberClass, lineupRowClassAccent)}>
-                {skater.number}
+            <div className="col-start-1">
+                <RowMenu disableNotes={position === LineupPosition.Bench}>
+                    <Button variant="ghost" size="icon" className={cn("hidden px-2 text-center w-full h-full", !compact && "lg:inline")}>
+                        <EllipsisVertical />
+                    </Button>
+                </RowMenu>
             </div>
-            <div className={cn("col-start-2", "border-l", cellClass, lineupRowClass)}>
+            <div className={cn("col-start-2", "border-l-2", cellClass, largeNumberClass, lineupRowClassAccent)}>
+                <RowMenu disableNotes={position === LineupPosition.Bench}>
+                    <Button variant="ghost" className={cn("w-full h-full text-sm sm:text-base md:text-lg p-0 font-normal flex-col justify-center items-center gap-0", !compact && "lg:hidden")}>
+                        { injured && <Bandage className="text-yellow-600" /> }
+                        <span>{skater.number}</span>
+                    </Button>
+                </RowMenu>
+                <div className={cn("hidden flex-row justify-center gap-1 items-center w-full", !compact && "lg:flex")}>
+                    { injured && <Bandage className="text-yellow-600" /> }
+                    <span>{skater.number}</span>
+                </div>
+            </div>
+            <div className={cn("col-start-3", "border-l", cellClass, lineupRowClass)}>
                 <PositionButton 
                     position={position} 
                     targetPosition={LineupPosition.Bench} 
                     className={buttonClass} 
                     rowClassName={lineupRowClass}
-                    onClick={onPositionClicked}
-                />
-            </div>
-            <div className={cn("col-start-3", cellClass, lineupRowClass)}>
-                <PositionButton 
-                    position={position} 
-                    targetPosition={LineupPosition.Jammer} 
-                    className={buttonClass} 
-                    rowClassName={lineupRowClass}
+                    compact={compact}
                     onClick={onPositionClicked}
                 />
             </div>
             <div className={cn("col-start-4", cellClass, lineupRowClass)}>
                 <PositionButton 
                     position={position} 
-                    targetPosition={LineupPosition.Pivot} 
+                    targetPosition={LineupPosition.Jammer} 
                     className={buttonClass} 
                     rowClassName={lineupRowClass}
+                    compact={compact}
                     onClick={onPositionClicked}
                 />
             </div>
             <div className={cn("col-start-5", cellClass, lineupRowClass)}>
                 <PositionButton 
                     position={position} 
-                    targetPosition={LineupPosition.Blocker} 
+                    targetPosition={LineupPosition.Pivot} 
                     className={buttonClass} 
                     rowClassName={lineupRowClass}
+                    compact={compact}
                     onClick={onPositionClicked}
                 />
             </div>
-            <div className={cn("col-start-6", cellClass, lineupRowClassAccent, "border-l")}>
+            <div className={cn("col-start-6", cellClass, lineupRowClass)}>
+                <PositionButton 
+                    position={position} 
+                    targetPosition={LineupPosition.Blocker} 
+                    className={buttonClass} 
+                    rowClassName={lineupRowClass}
+                    compact={compact}
+                    onClick={onPositionClicked}
+                />
+            </div>
+            <div className={cn("col-start-7", cellClass, lineupRowClassAccent, "border-l")}>
                 <Button 
                     className={cn(buttonClass, penalties.some(p => !p.served) && "underline", !inBox && lineupRowClassAccent)}
                     variant={inBox ? "default" : "outline"}
                     disabled={disableBox}
                     onClick={handleBoxClicked}
                 >
-                    <span className="sm:hidden">{translate("Box.Short")}x</span>
-                    <span className="hidden sm:inline lg:hidden">{translate("Box.Medium")}</span>
-                    <span className="hidden lg:inline">{translate("Box.Long")}</span>
+                    <span className="sm:hidden">{translate("Box.Short")}</span>
+                    <span className={cn("hidden sm:inline", !compact && "lg:hidden")}>{translate("Box.Medium")}</span>
+                    <span className={cn("hidden", !compact && "lg:inline")}>{translate("Box.Long")}</span>
                 </Button>
             </div>
             <PenaltyCell 
                 penalty={penalties?.[0]}
                 onClick={() => handlePenaltyClicked(0)} 
-                className={cn("col-start-7", "border-l", cellClass, penaltyRowClass)}
+                compact={compact}
+                className={cn("col-start-8", "border-l", cellClass, penaltyRowClass)}
             />
             <PenaltyCell 
                 penalty={penalties?.[1]}
                 onClick={() => handlePenaltyClicked(1)} 
-                className={cn("col-start-8", cellClass, penaltyRowClass)}
+                className={cn("col-start-9", cellClass, penaltyRowClass)}
             />
             <PenaltyCell 
                 penalty={penalties?.[2]}
                 onClick={() => handlePenaltyClicked(2)} 
-                className={cn("col-start-9", cellClass, penaltyRowClass)}
+                className={cn("col-start-10", cellClass, penaltyRowClass)}
             />
             <PenaltyCell 
                 penalty={penalties?.[3]}
                 onClick={() => handlePenaltyClicked(3)} 
-                className={cn("col-start-10", cellClass, penaltyRowClass)}
+                className={cn("col-start-11", cellClass, penaltyRowClass)}
             />
             <PenaltyCell 
                 penalty={penalties?.[4]}
                 onClick={() => handlePenaltyClicked(4)} 
-                className={cn("col-start-11", cellClass, penaltyRowClass)}
+                className={cn("col-start-12", cellClass, penaltyRowClass)}
             />
             <PenaltyCell 
                 penalty={penalties?.[5]}
                 onClick={() => handlePenaltyClicked(5)} 
-                className={cn("col-start-12", cellClass, penaltyRowClass)}
+                className={cn("col-start-13", cellClass, penaltyRowClass)}
             />
             <PenaltyCell 
                 penalty={penalties?.[6]}
                 onClick={() => handlePenaltyClicked(6)} 
-                className={cn("col-start-13", "border-l", cellClass, penaltyRowClass)}
+                className={cn("col-start-14", "border-l", cellClass, penaltyRowClass)}
             />
             <PenaltyCell 
                 penalty={penalties?.[7]}
                 onClick={() => handlePenaltyClicked(7)} 
-                className={cn("col-start-14", cellClass, penaltyRowClass)}
+                className={cn("col-start-15", cellClass, penaltyRowClass)}
             />
             <PenaltyCell 
                 penalty={penalties?.[8]}
                 onClick={() => handlePenaltyClicked(8)} 
-                className={cn("col-start-15", cellClass, penaltyRowClass)}
+                className={cn("col-start-16", cellClass, penaltyRowClass)}
             />
-            <div className={cn("col-start-16", cellClass, "border-l", penaltyRowClassFullAccent)}>                
+            <div className={cn("col-start-17", cellClass, "border-l", penaltyRowClassFullAccent)}>                
             </div>
-            <div className={cn("col-start-16", cellClass, "border-l border-r-2", penaltyRowClassAccent, largeNumberClass)}>  
+            <div className={cn("col-start-18", cellClass, "border-l border-r-2", penaltyRowClassAccent, largeNumberClass)}>  
                 {penalties?.filter(p => p.code).length}
             </div>
         </>

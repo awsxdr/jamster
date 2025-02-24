@@ -352,7 +352,10 @@ public static class TestGameEventsSource
         PenaltyRules: new(
             FoulOutPenaltyCount: 10),
         IntermissionRules: new(
-            DurationInSeconds: 5 * 60)
+            DurationInSeconds: 5 * 60),
+        InjuryRules: new(
+            JamsToSitOutFollowingInjury: 3,
+            NumberOfAllowableInjuriesPerPeriod: 2)
     );
 
     public static Event[] CustomRules => new EventsBuilder(0, [])

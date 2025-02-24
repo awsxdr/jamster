@@ -1,7 +1,7 @@
 import { RadioButtonGroup } from "@/components/RadioButtonGroup";
 import { useI18n, useJamLineupState, useTeamDetailsState } from "@/hooks";
 import { TeamSide } from "@/types";
-import { SkaterPosition } from "@/types/events/JamLineup";
+import { SkaterPosition } from "@/types/events/Lineup";
 
 type TeamLineupProps = {
     side: TeamSide;

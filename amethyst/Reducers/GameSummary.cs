@@ -15,7 +15,14 @@ public class GameSummary(ReducerGameContext context)
     , IDependsOnState<GameStageState>
     , IDependsOnState<PenaltySheetState>
 {
-    protected override GameSummaryState DefaultState => new(GameProgress.Upcoming, new([], 0), new([], 0), new([], 0), new([], 0), Enumerable.Repeat(0, Rules.DefaultRules.PeriodRules.PeriodCount).ToArray());
+    protected override GameSummaryState DefaultState => new(
+        GameProgress.Upcoming,
+        new(Enumerable.Repeat(0, Rules.DefaultRules.PeriodRules.PeriodCount).ToArray(), 0),
+        new(Enumerable.Repeat(0, Rules.DefaultRules.PeriodRules.PeriodCount).ToArray(), 0),
+        new(Enumerable.Repeat(0, Rules.DefaultRules.PeriodRules.PeriodCount).ToArray(), 0),
+        new(Enumerable.Repeat(0, Rules.DefaultRules.PeriodRules.PeriodCount).ToArray(), 0),
+        Enumerable.Repeat(0, Rules.DefaultRules.PeriodRules.PeriodCount).ToArray()
+    );
 
     public IEnumerable<Event> Handle(RulesetSet @event)
     {
@@ -107,7 +114,7 @@ public class GameSummary(ReducerGameContext context)
         var state = GetState();
         var gameStage = GetState<GameStageState>();
 
-        var jamCounts = state.PeriodJamCounts;
+        var jamCounts = state.PeriodJamCounts.ToArray();
         jamCounts[gameStage.PeriodNumber - 1] = gameStage.JamNumber;
 
         SetState(state with
@@ -138,7 +145,19 @@ public sealed record GameSummaryState(
     ScoreSummary AwayScore,
     PenaltySummary HomePenalties,
     PenaltySummary AwayPenalties,
-    int[] PeriodJamCounts);
+    int[] PeriodJamCounts)
+{
+    public bool Equals(GameSummaryState? other) =>
+        other is not null
+        && other.GameProgress.Equals(GameProgress)
+        && other.HomeScore.Equals(HomeScore)
+        && other.AwayScore.Equals(AwayScore)
+        && other.HomePenalties.Equals(HomePenalties)
+        && other.AwayPenalties.Equals(AwayPenalties)
+        && other.PeriodJamCounts.SequenceEqual(PeriodJamCounts);
+
+    public override int GetHashCode() => HashCode.Combine((int)GameProgress, HomeScore, AwayScore, HomePenalties, AwayPenalties, PeriodJamCounts);
+}
 
 public enum GameProgress
 {
@@ -147,5 +166,22 @@ public enum GameProgress
     Finished,
 }
 
-public sealed record ScoreSummary(int[] PeriodTotals, int GrandTotal);
-public sealed record PenaltySummary(int[] PeriodTotals, int GrandTotal);
+public sealed record ScoreSummary(int[] PeriodTotals, int GrandTotal)
+{
+    public bool Equals(ScoreSummary? other) =>
+        other is not null
+        && other.PeriodTotals.SequenceEqual(PeriodTotals)
+        && other.GrandTotal.Equals(GrandTotal);
+
+    public override int GetHashCode() => HashCode.Combine(PeriodTotals, GrandTotal);
+}
+
+public sealed record PenaltySummary(int[] PeriodTotals, int GrandTotal)
+{
+    public bool Equals(PenaltySummary? other) =>
+        other is not null
+        && other.PeriodTotals.SequenceEqual(PeriodTotals)
+        && other.GrandTotal.Equals(GrandTotal);
+
+    public override int GetHashCode() => HashCode.Combine(PeriodTotals, GrandTotal);
+}

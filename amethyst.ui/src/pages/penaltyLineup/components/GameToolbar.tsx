@@ -3,7 +3,7 @@ import { ChevronDown, ChevronUp } from "lucide-react"
 import { MobileSidebarTrigger } from "@/components";
 import { Button } from "@/components/ui"
 import { cn } from "@/lib/utils";
-import { GameInfo } from "@/types";
+import { DisplaySide, GameInfo } from "@/types";
 import { GameSelectMenu, ViewMenu } from "."
 import { useIsMobile } from "@/hooks";
 
@@ -11,11 +11,13 @@ type GameToolbarProps = {
     games: GameInfo[];
     currentGame?: GameInfo;
     selectedGameId?: string;
+    displaySide: DisplaySide;
     onSelectedGameIdChanged: (gameId: string) => void;
+    onDisplaySideChanged: (side: DisplaySide) => void;
     disabled?: boolean;
 }
 
-export const GameToolbar = ({ games, currentGame, selectedGameId, onSelectedGameIdChanged, disabled }: GameToolbarProps) => {
+export const GameToolbar = ({ games, currentGame, selectedGameId, displaySide, onSelectedGameIdChanged, onDisplaySideChanged, disabled }: GameToolbarProps) => {
 
     const isMobile = useIsMobile();
     const [showGameSelect, setShowGameSelect] = useState(true);
@@ -26,7 +28,7 @@ export const GameToolbar = ({ games, currentGame, selectedGameId, onSelectedGame
                 <div className="flex grow justify-between">
                     <MobileSidebarTrigger />
                     <div className="flex grow justify-end gap-2">
-                        <ViewMenu disabled={disabled} />
+                        <ViewMenu displaySide={displaySide} onDisplaySideChanged={onDisplaySideChanged} disabled={disabled} />
                         <Button variant="ghost" className="inline" disabled={disabled} onClick={() => setShowGameSelect(v => !v)}>
                             { showGameSelect ? <ChevronUp /> : <ChevronDown /> }
                         </Button>
@@ -46,7 +48,7 @@ export const GameToolbar = ({ games, currentGame, selectedGameId, onSelectedGame
                     </div>
                     { !isMobile &&
                         <div className="flex justify-end gap-2">
-                            <ViewMenu disabled={disabled} />
+                            <ViewMenu displaySide={displaySide} onDisplaySideChanged={onDisplaySideChanged} disabled={disabled} />
                         </div>
                     }
                 </>

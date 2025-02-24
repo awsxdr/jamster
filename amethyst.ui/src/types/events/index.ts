@@ -1,6 +1,6 @@
 export * from './Clock';
 export * from './Intermission';
-export * from './JamLineup';
+export * from './Lineup';
 export * from './Jams';
 export * from './JamStats';
 export * from './Penalties';

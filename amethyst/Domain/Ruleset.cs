@@ -8,7 +8,8 @@ public record Ruleset(
     LineupRules LineupRules,
     TimeoutRules TimeoutRules,
     PenaltyRules PenaltyRules,
-    IntermissionRules IntermissionRules
+    IntermissionRules IntermissionRules,
+    InjuryRules InjuryRules
 );
 
 public record PeriodRules(
@@ -40,6 +41,11 @@ public record PenaltyRules(
 
 public record IntermissionRules(
     int DurationInSeconds
+);
+
+public record InjuryRules(
+    int JamsToSitOutFollowingInjury,
+    int NumberOfAllowableInjuriesPerPeriod
 );
 
 public enum PeriodEndBehavior

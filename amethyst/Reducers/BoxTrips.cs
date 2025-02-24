@@ -5,6 +5,7 @@ using amethyst.Services;
 
 namespace amethyst.Reducers;
 
+//TODO: Handle skater added to bench while in box
 public abstract class BoxTrips(TeamSide teamSide, ReducerGameContext context, ILogger logger) 
     : Reducer<BoxTripsState>(context)
     , IHandlesEvent<SkaterSatInBox>

@@ -1,13 +1,15 @@
 import { Eye, Maximize2 } from "lucide-react"
 import { Button, DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui"
 import { useI18n, useWakeLock } from "@/hooks";
-import { DisplaySide, TeamSide } from "@/types";
+import { DisplaySide } from "@/types";
 
 type ViewMenuProps = {
+    displaySide: DisplaySide;
+    onDisplaySideChanged: (side: DisplaySide) => void;
     disabled?: boolean;
 }
 
-export const ViewMenu = ({ disabled }: ViewMenuProps) => {
+export const ViewMenu = ({ displaySide, onDisplaySideChanged, disabled }: ViewMenuProps) => {
 
     const IconSpacer = () => (<span className="w-[16px]"></span>);
     const { acquireWakeLock, releaseWakeLock } = useWakeLock();
@@ -31,7 +33,7 @@ export const ViewMenu = ({ disabled }: ViewMenuProps) => {
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-56">
-                <DropdownMenuRadioGroup value={TeamSide.Home}>
+                <DropdownMenuRadioGroup value={displaySide} onValueChange={v => onDisplaySideChanged(DisplaySide[v as keyof typeof DisplaySide])}>
                     <DropdownMenuRadioItem disabled={disabled} value={DisplaySide.Both}>{translate("ViewMenu.BothTeams")}</DropdownMenuRadioItem>
                     <DropdownMenuRadioItem disabled={disabled} value={DisplaySide.Home}>{translate("ViewMenu.HomeTeam")}</DropdownMenuRadioItem>
                     <DropdownMenuRadioItem disabled={disabled} value={DisplaySide.Away}>{translate("ViewMenu.AwayTeam")}</DropdownMenuRadioItem>

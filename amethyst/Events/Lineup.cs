@@ -15,10 +15,8 @@ public sealed record SkaterAddedToJamBody(TeamSide TeamSide, int Period, int Jam
 public sealed class SkaterRemovedFromJam(Guid7 id, SkaterRemovedFromJamBody body) : Event<SkaterRemovedFromJamBody>(id, body);
 public sealed record SkaterRemovedFromJamBody(TeamSide TeamSide, int Period, int Jam, string SkaterNumber) : TeamEventBody(TeamSide);
 
-public enum SkaterPosition
-{
-    Jammer,
-    Pivot,
-    Blocker
-}
+public sealed class SkaterInjuryAdded(Guid7 id, SkaterInjuryAddedBody body) : Event<SkaterInjuryAddedBody>(id, body);
+public sealed record SkaterInjuryAddedBody(TeamSide TeamSide, string SkaterNumber) : TeamEventBody(TeamSide);
 
+public sealed class SkaterInjuryRemoved(Guid7 id, SkaterInjuryRemovedBody body) : Event<SkaterInjuryRemovedBody>(id, body);
+public sealed record SkaterInjuryRemovedBody(TeamSide TeamSide, string SkaterNumber, int TotalJamNumberStart) : TeamEventBody(TeamSide);
