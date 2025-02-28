@@ -1,7 +1,8 @@
-import { Button, Command, CommandItem, CommandList, Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, ScrollArea } from "@/components/ui";
-import { useGameStageState, useGameSummaryState } from "@/hooks";
+import { Button, Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, ScrollArea } from "@/components/ui";
+import { useGameSummaryState, useI18n } from "@/hooks";
 import { Penalty } from "@/types";
-import { useEffect, useState } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 
 type PenaltyDefinition = {
     code: string;
@@ -10,19 +11,19 @@ type PenaltyDefinition = {
 
 const PENALTIES: PenaltyDefinition[] = [
     { code: "?", nameKey: "Unknown" },
-    { code: "A", nameKey: "High block" },
-    { code: "B", nameKey: "Back block" },
-    { code: "C", nameKey: "Illegal contact" },
+    { code: "A", nameKey: "HighBlock" },
+    { code: "B", nameKey: "BackBlock" },
+    { code: "C", nameKey: "IllegalContact" },
     { code: "D", nameKey: "Direction" },
-    { code: "E", nameKey: "Leg block" },
+    { code: "E", nameKey: "LegBlock" },
     { code: "F", nameKey: "Forearm" },
     { code: "G", nameKey: "Misconduct" },
-    { code: "H", nameKey: "Head block" },
-    { code: "I", nameKey: "Illegal procedure" },
-    { code: "L", nameKey: "Low block" },
+    { code: "H", nameKey: "HeadBlock" },
+    { code: "I", nameKey: "IllegalProcedure" },
+    { code: "L", nameKey: "LowBlock" },
     { code: "M", nameKey: "Multiplayer" },
     { code: "N", nameKey: "Interference" },
-    { code: "P", nameKey: "Illegal position" },
+    { code: "P", nameKey: "IllegalPosition" },
     { code: "X", nameKey: "Cut" },
 ];
 
@@ -31,38 +32,62 @@ type PenaltyDialogProps = {
     currentPenalty?: Penalty;
     onOpenChanged?: (open: boolean) => void;
     onAccept?: (penalty: Penalty) => void;
+    onDelete?: () => void;
 }
 
-export const PenaltyDialog = ({ open, currentPenalty, onOpenChanged, onAccept }: PenaltyDialogProps) => {
+export const PenaltyDialog = ({ open, currentPenalty, onOpenChanged, onAccept, onDelete }: PenaltyDialogProps) => {
 
     const [penaltyCode, setPenaltyCode] = useState("?");
-    const [period, setPeriod] = useState(1);
-    const [jam, setJam] = useState(1);
+    const [totalJam, setTotalJam] = useState(1);
     const { periodJamCounts } = useGameSummaryState() ?? { periodJamCounts: [] };
-    const { periodNumber } = useGameStageState() ?? { periodNumber: 1 };
-    
+    const { translate } = useI18n({ prefix: "PenaltyLineup.PenaltyDialog." });
+
     useEffect(() => {
-        if(currentPenalty) {
-            setPenaltyCode(currentPenalty.code);
-            setPeriod(currentPenalty.period);
-            setJam(currentPenalty.jam);
-        } else {
+        if(!currentPenalty) {
             setPenaltyCode("?");
-            setPeriod(1);
-            setJam(1);
+            return;
         }
 
+        setPenaltyCode(currentPenalty.code);
+        setTotalJam(periodJamCounts.slice(0, currentPenalty.period - 1).reduce((total, jamCount) => total + jamCount, currentPenalty.jam));
     }, [currentPenalty]);
 
+    const maxTotalJam = useMemo(() => periodJamCounts.reduce((total, count) => total + count, 0), [periodJamCounts]);
+
+    const { period, jam } = useMemo(() => {
+        const currentPeriod = periodJamCounts.reduce((periods, jamCount, index) => [
+            ...periods, 
+            {
+                period: index + 1, 
+                startJam: (periods[index - 1]?.endJam ?? 0) + 1,
+                endJam: (periods[index - 1]?.endJam ?? 0) + jamCount
+            }],
+            [] as { period: number, startJam: number, endJam: number }[])
+            .filter(p => p.startJam <= totalJam)
+            .at(-1);
+        
+        return {
+            period: currentPeriod?.period ?? 1,
+            jam: totalJam - (currentPeriod?.startJam ?? 0) + 1
+        };
+    }, [totalJam]);
 
     const handlePenaltySelected = (value: string) => {
         setPenaltyCode(value);
-        onAccept?.({ code: value, period, jam, served: false })
-        onOpenChanged?.(false);
+
+        if(!currentPenalty) {
+            onAccept?.({ code: value, period, jam, served: false })
+            onOpenChanged?.(false);
+        }
     }
 
     const handleAccept = () => {
         onAccept?.({ code: penaltyCode, period, jam, served: false });
+        onOpenChanged?.(false);
+    }
+
+    const handleDelete = () => {
+        onDelete?.();
     }
 
     return (
@@ -70,79 +95,52 @@ export const PenaltyDialog = ({ open, currentPenalty, onOpenChanged, onAccept }:
             <DialogContent>
                 <DialogHeader>
                     <DialogTitle>
-                        Add penalty
+                        { currentPenalty ? translate("EditTitle") : translate("AddTitle") }
                     </DialogTitle>
                     <DialogDescription>
-                        Pick a penalty to add to the skater
+                        { currentPenalty ? translate("EditDescription") : translate("AddDescription") }
                     </DialogDescription>
                 </DialogHeader>
-                <div>
+                <div className="flex flex-col gap-2">
                     <div className="flex justify-around">
-                        <div className="flex gap-2 items-center">
-                            Period
-                            <Button 
-                                size="sm" 
-                                className="h-5 w-5 p-0" 
-                                disabled={period === 1}
-                                onClick={() => setPeriod(p => Math.max(1, p - 1))}
-                            >
-                                -
-                            </Button>
-                            <span className="text-lg">{period}</span>
-                            <Button 
-                                size="sm" 
-                                className="w-5 h-5 p-0" 
-                                disabled={period >= periodNumber}
-                                onClick={() => setPeriod(p => Math.min(periodNumber, p + 1))}
-                            >
-                                +
-                            </Button>
-                        </div>
-                        <div className="flex gap-2 items-center">
-                            Jam
-                            <Button 
-                                size="sm" 
-                                className="h-5 w-5 p-0" 
-                                disabled={jam === 1}
-                                onClick={() => setJam(j => Math.max(1, j - 1))}
-                            >
-                                -
-                            </Button>
-                            <span className="text-lg">{jam}</span>
-                            <Button 
-                                size="sm" 
-                                className="w-5 h-5 p-0" 
-                                disabled={jam >= periodJamCounts[period - 1]}
-                                onClick={() => setJam(j => j + 1)}
-                            >
-                                +
-                            </Button>
-                        </div>
+                        { currentPenalty && (
+                            <div className="flex justify-between w-full items-center">
+                                <Button size="icon" disabled={totalJam <= 1} onClick={() => setTotalJam(j => j - 1)}><ChevronLeft /></Button>
+                                { translate("PeriodJam").replace("{period}", period.toString()).replace("{jam}", jam.toString()) }
+                                <Button size="icon" disabled={totalJam > maxTotalJam} onClick={() => setTotalJam(j => j + 1)}><ChevronRight /></Button>
+                            </div>
+                        )}
                     </div>
                     <ScrollArea className="h-full max-h-[60vh]">
-                        <Command value={penaltyCode}>
-                            <CommandList className="h-full max-h-full">
-                                { PENALTIES.map(p => (
-                                    <CommandItem key={p.code} value={p.code} onSelect={handlePenaltySelected}>
-                                        <span className="font-bold">{p.code}</span> - {p.nameKey}
-                                    </CommandItem>
-                                ))}
-                            </CommandList>
-                        </Command>
+                        <div className="flex flex-col">
+                            { PENALTIES.map(p => (
+                                <Button 
+                                    key={p.code} 
+                                    variant={penaltyCode === p.code ? "secondary" : "ghost"} 
+                                    className="justify-start flex flex-row text-base"
+                                    onClick={() => handlePenaltySelected(p.code)}
+                                >
+                                    <div className="font-bold">{p.code}</div>
+                                    <div className="font-normal">-</div>
+                                    <div className="font-normal">{translate(`Penalty.${p.nameKey}.Name`)}</div>
+                                    <div className="font-light italic text-wrap text-left text-sm">{translate(`Penalty.${p.nameKey}.Alternatives`)}</div>
+                                </Button>
+                            ))}
+                        </div>
                     </ScrollArea>
                 </div>
                 <DialogFooter>
                     <DialogClose asChild>
-                        <Button variant="secondary">Cancel</Button>
+                        <Button variant="secondary">{translate("Cancel")}</Button>
                     </DialogClose>
                     { currentPenalty && (
-                        <DialogClose asChild>
-                            <Button onClick={handleAccept} variant="destructive">Delete</Button>
-                        </DialogClose>
+                        <>
+                            <DialogClose asChild>
+                                <Button onClick={handleDelete} variant="destructive">{translate("Delete")}</Button>
+                            </DialogClose>
+                            <Button onClick={handleAccept}>{translate("Update")}</Button>
+                        </>
                     )}
-                    <DialogClose asChild>
-                        <Button onClick={handleAccept}>{currentPenalty ? "Update" : "Add"}</Button>
-                    </DialogClose>
                 </DialogFooter>
             </DialogContent>
         </Dialog>

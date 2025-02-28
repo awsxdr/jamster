@@ -7,6 +7,7 @@ export * from './GameSkater';
 export * from './GameStageState';
 export * from './GameSummaryState';
 export * from './GameTeam';
+export * from './InjuriesState';
 export * from './InputControls';
 export * from './JamClockState';
 export * from './JamLineupState';

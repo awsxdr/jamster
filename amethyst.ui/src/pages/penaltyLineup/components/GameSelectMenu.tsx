@@ -30,9 +30,9 @@ const GameSelectMenuGroup = ({ items, group, title }: GameSelectMenuGroupProps) 
     return (
         filteredItems.length > 0
         ? (
-            <SelectGroup>
+            <SelectGroup className="max-w-[90vw]">
                 <SelectLabel>{title}</SelectLabel>
-                { filteredItems.map(i => <SelectItem key={i.value} value={i.value} className="text-wrap max-w-full">{i.text}</SelectItem>) }
+                { filteredItems.map(i => <SelectItem key={i.value} value={i.value} className="text-wrap w-full">{i.text}</SelectItem>) }
             </SelectGroup>
         ) : (
             <></>
@@ -83,16 +83,16 @@ export const GameSelectMenu = ({ games, currentGame, selectedGameId, disabled, o
     }, [games, currentGame]);
 
     return (
-        <div className="flex grow justify-center">
+        <div className="flex justify-center w-3xl max-w-[100vw]">
             <Select
                 value={selectedGameId}
                 disabled={disabled}
                 onValueChange={onSelectedGameIdChanged}
             >
-                <SelectTrigger className="max-w-xl">
-                    <SelectValue placeholder={translate("SelectGame")} />
+                <SelectTrigger>
+                    <SelectValue placeholder={translate("SelectGame")} className="overflow-hidden text-ellipsis" />
                 </SelectTrigger>
-                <SelectContent className="max-w-xl">
+                <SelectContent className="w-150 max-w-[90vw]">
                     <GameSelectMenuGroup items={items} group={GameGroup.Current} title={translate("Current")} />
                     <GameSelectMenuGroup items={items} group={GameGroup.Running} title={translate("Running")} />
                     <GameSelectMenuGroup items={items} group={GameGroup.Upcoming} title={translate("Upcoming")} />

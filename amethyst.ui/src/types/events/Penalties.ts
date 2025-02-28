@@ -30,3 +30,30 @@ export class PenaltyRescinded extends EventWithBody {
         super("PenaltyRescinded", { teamSide, skaterNumber, penaltyCode, period, jam });
     }
 }
+
+export class PenaltyUpdated extends EventWithBody {
+    constructor(teamSide: TeamSide, skaterNumber: string, originalPenaltyCode: string, originalPeriod: number, originalJam: number, newPenaltyCode: string, newPeriod: number, newJam: number) {
+        super("PenaltyUpdated", {
+            teamSide,
+            skaterNumber,
+            originalPenaltyCode,
+            originalPeriod,
+            originalJam,
+            newPenaltyCode,
+            newPeriod,
+            newJam
+        });
+    }
+}
+
+export class SkaterExpelled extends EventWithBody {
+    constructor(teamSide: TeamSide, skaterNumber: string, penaltyCode: string, period: number, jam: number) {
+        super("SkaterExpelled", { teamSide, skaterNumber, penaltyCode, period, jam });
+    }
+}
+
+export class ExpulsionCleared extends EventWithBody {
+    constructor(teamSide: TeamSide, skaterNumber: string) {
+        super("ExpulsionCleared", { teamSide, skaterNumber });
+    }
+}

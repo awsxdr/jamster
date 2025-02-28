@@ -12,9 +12,9 @@ export const PenaltyCell = ({penalty, className, compact, onClick}: PenaltyCellP
     return (
         <div 
             className={cn(
-                className,
                 "flex flex-col",
                 "text-xs font-bold text-center justify-center align-center items-center cursor-pointer", 
+                className,
                 !compact && "xl:flex-row xl:gap-2 xl:text-sm",
             )} 
             onClick={onClick}
