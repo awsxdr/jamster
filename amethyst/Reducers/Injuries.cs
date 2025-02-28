@@ -10,6 +10,7 @@ public abstract class Injuries(TeamSide teamSide, ReducerGameContext context, IL
     , IHandlesEvent<SkaterInjuryAdded>
     , IHandlesEvent<SkaterInjuryRemoved>
     , IHandlesEvent<JamEnded>
+    , IHandlesEvent<PeriodFinalized>
     , IDependsOnState<GameStageState>
     , IDependsOnState<RulesState>
 {
@@ -81,9 +82,37 @@ public abstract class Injuries(TeamSide teamSide, ReducerGameContext context, IL
 
         return [];
     }
+
+    public IEnumerable<Event> Handle(PeriodFinalized @event)
+    {
+        var state = GetState();
+        var rules = GetState<RulesState>().Rules;
+        var gameStage = GetState<GameStageState>();
+
+        SetState(new(
+            state.Injuries.Select(i =>
+            {
+                if (i.Expired)
+                    return i;
+
+                return i with { Expired = gameStage.TotalJamNumber >= i.TotalJamNumberStart + rules.InjuryRules.JamsToSitOutFollowingInjury };
+            })
+            .ToArray()
+        ));
+
+        return [];
+    }
 }
 
-public sealed record InjuriesState(Injury[] Injuries);
+public sealed record InjuriesState(Injury[] Injuries)
+{
+    public bool Equals(InjuriesState? other) =>
+        other is not null
+        && other.Injuries.SequenceEqual(Injuries);
+
+    public override int GetHashCode() => Injuries.GetHashCode();
+}
+
 public sealed record Injury(string SkaterNumber, int Period, int Jam, int TotalJamNumberStart, bool Expired);
 
 public sealed class HomeInjuries(ReducerGameContext context, ILogger<HomeInjuries> logger) : Injuries(TeamSide.Home, context, logger);

@@ -110,4 +110,34 @@ public class InjuriesUnitTests : ReducerUnitTest<HomeInjuries, InjuriesState>
 
         State.Injuries.Last().Expired.Should().Be(expiryExpected);
     }
+
+    [Test]
+    public async Task PeriodFinalized_ExpiresInjuriesWhichArePastDuration()
+    {
+        State = new([
+            new("1", 1, 5, 5, true),
+            new("2", 1, 19, 19, false),
+            new("3", 1, 5, 5, true),
+            new("3", 1, 10, 10, false),
+            new("4", 1, 5, 5, true),
+            new("4", 1, 18, 18, false),
+            new("5", 1, 5, 5, true),
+            new("5", 1, 17, 17, false),
+        ]);
+        MockState<RulesState>(new(Rules.DefaultRules));
+        MockState<GameStageState>(new(Stage.Intermission, 2, 0, 20, true));
+
+        await Subject.Handle(new PeriodFinalized(0));
+
+        State.Should().Be(new InjuriesState([
+            new("1", 1, 5, 5, true),
+            new("2", 1, 19, 19, false),
+            new("3", 1, 5, 5, true),
+            new("3", 1, 10, 10, true),
+            new("4", 1, 5, 5, true),
+            new("4", 1, 18, 18, false),
+            new("5", 1, 5, 5, true),
+            new("5", 1, 17, 17, true),
+        ]));
+    }
 }
