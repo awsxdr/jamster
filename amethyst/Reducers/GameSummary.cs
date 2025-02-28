@@ -10,6 +10,7 @@ public class GameSummary(ReducerGameContext context)
     , IHandlesEvent<ScoreModifiedRelative>
     , IHandlesEvent<PenaltyAssessed>
     , IHandlesEvent<PenaltyRescinded>
+    , IHandlesEvent<PenaltyUpdated>
     , IHandlesEvent<JamStarted>
     , IHandlesEvent<PeriodFinalized>
     , IDependsOnState<GameStageState>
@@ -88,6 +89,28 @@ public class GameSummary(ReducerGameContext context)
     }
 
     public IEnumerable<Event> Handle(PenaltyRescinded @event)
+    {
+        var state = GetState();
+        var penaltySheet = GetKeyedState<PenaltySheetState>(@event.Body.TeamSide.ToString());
+        var skaterPenalties = penaltySheet.Lines.SingleOrDefault(l => l.SkaterNumber == @event.Body.SkaterNumber)?.Penalties;
+
+        if (skaterPenalties == null)
+            return [];
+
+        var newPeriodCounts = new PenaltySummary(
+            state.HomePenalties.PeriodTotals.Select((_, i) => skaterPenalties.Count(p => p.Period == i + 1)).ToArray(),
+            skaterPenalties.Length);
+
+        SetState(state with
+        {
+            HomePenalties = @event.Body.TeamSide == TeamSide.Home ? newPeriodCounts : state.HomePenalties,
+            AwayPenalties = @event.Body.TeamSide == TeamSide.Away ? newPeriodCounts : state.AwayPenalties,
+        });
+
+        return [];
+    }
+
+    public IEnumerable<Event> Handle(PenaltyUpdated @event)
     {
         var state = GetState();
         var penaltySheet = GetKeyedState<PenaltySheetState>(@event.Body.TeamSide.ToString());

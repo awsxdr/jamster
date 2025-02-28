@@ -148,4 +148,20 @@ public class LineupSheetUnitTests : ReducerUnitTest<HomeLineupSheet, LineupSheet
 
         State.Should().Be(expectedResult);
     }
+
+    [Test]
+    public async Task PeriodFinalized_MovesLastJamOnSheetToStartOfNextPeriod()
+    {
+        State = new([
+            new(1, 1, "11", "12", ["13", "14", "15"]),
+            new(1, 2, "1", "2", ["3", "4", "5"]),
+        ]);
+
+        await Subject.Handle(new PeriodFinalized(0));
+
+        State.Should().Be(new LineupSheetState([
+            new(1, 1, "11", "12", ["13", "14", "15"]),
+            new(2, 1, "1", "2", ["3", "4", "5"]),
+        ]));
+    }
 }

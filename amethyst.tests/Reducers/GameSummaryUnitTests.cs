@@ -75,7 +75,7 @@ public class GameSummaryUnitTests : ReducerUnitTest<GameSummary, GameSummaryStat
         );
         MockState<GameStageState>(new(Stage.Jam, period, 10, 10, false));
         MockKeyedState<PenaltySheetState>(team.ToString(), new([
-            new("123", [new("X", 1, 3, true), new("X", 1, 6, true), new("X", 1, 9, true), new("X", 2, 3, true), new("X", 2, 6, true), new("X", 2, 9, true)])
+            new("123", null, [new("X", 1, 3, true), new("X", 1, 6, true), new("X", 1, 9, true), new("X", 2, 3, true), new("X", 2, 6, true), new("X", 2, 9, true)])
         ]));
         MockKeyedState<PenaltySheetState>(team == TeamSide.Home ? nameof(TeamSide.Away) : nameof(TeamSide.Home), new([]));
 
@@ -100,7 +100,7 @@ public class GameSummaryUnitTests : ReducerUnitTest<GameSummary, GameSummaryStat
         );
         MockState<GameStageState>(new(Stage.Jam, period, 10, 10, false));
         MockKeyedState<PenaltySheetState>(team.ToString(), new([
-            new("123", [new("X", 1, 3, true), new("X", 1, 6, true), new("X", 1, 9, true), new("X", 2, 3, true), new("X", 2, 6, true), new("X", 2, 9, true)])
+            new("123", null, [new("X", 1, 3, true), new("X", 1, 6, true), new("X", 1, 9, true), new("X", 2, 3, true), new("X", 2, 6, true), new("X", 2, 9, true)])
         ]));
         MockKeyedState<PenaltySheetState>(team == TeamSide.Home ? nameof(TeamSide.Away) : nameof(TeamSide.Home), new([]));
 
@@ -110,6 +110,27 @@ public class GameSummaryUnitTests : ReducerUnitTest<GameSummary, GameSummaryStat
 
         penaltySummary.PeriodTotals[period - 1].Should().Be(3);
         penaltySummary.GrandTotal.Should().Be(6);
+    }
+
+    [Test]
+    public async Task PenaltyUpdated_UpdatesPenaltyCounts()
+    {
+        State = new(
+            GameProgress.InProgress,
+            new([0, 0], 0),
+            new([0, 0], 0),
+            new([0, 0], 0),
+            new([0, 0], 0),
+            [10, 10]
+        );
+        MockKeyedState<PenaltySheetState>(nameof(TeamSide.Home), new([
+            new("123", null, [new("X", 1, 3, true), new("X", 1, 6, true), new("X", 1, 9, true), new("X", 2, 3, true), new("X", 2, 6, true), new("X", 2, 9, true)])
+        ]));
+        MockKeyedState<PenaltySheetState>(nameof(TeamSide.Away), new([]));
+
+        await Subject.Handle(new PenaltyUpdated(0, new(TeamSide.Home, "123", "?", 1, 1, "?", 1, 1)));
+
+        State.HomePenalties.Should().Be(new PenaltySummary([3, 3], 6));
     }
 
     [Test]

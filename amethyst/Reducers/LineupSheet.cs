@@ -2,7 +2,6 @@
 using amethyst.Events;
 using amethyst.Extensions;
 using amethyst.Services;
-using Func;
 
 namespace amethyst.Reducers;
 
@@ -11,6 +10,7 @@ public abstract class LineupSheet(TeamSide teamSide, ReducerGameContext context)
     , IHandlesEvent<JamEnded>
     , IHandlesEvent<SkaterAddedToJam>
     , IHandlesEvent<SkaterRemovedFromJam>
+    , IHandlesEvent<PeriodFinalized>
     , IDependsOnState<GameStageState>
 {
     protected override LineupSheetState DefaultState => new([new(1, 1, null, null, [null, null, null])]);
@@ -23,7 +23,7 @@ public abstract class LineupSheet(TeamSide teamSide, ReducerGameContext context)
         var state = GetState();
         var gameStage = GetState<GameStageState>();
 
-        SetState(new(state.Jams.Append(new(gameStage.PeriodNumber, gameStage.JamNumber + 1, null, null, [null, null, null])).ToArray()));
+        SetState(new(Enumerable.Append(state.Jams, new(gameStage.PeriodNumber, gameStage.JamNumber + 1, null, null, [null, null, null])).ToArray()));
 
         return [];
     }
@@ -61,6 +61,23 @@ public abstract class LineupSheet(TeamSide teamSide, ReducerGameContext context)
 
         return [];
     });
+
+    public IEnumerable<Event> Handle(PeriodFinalized @event)
+    {
+        var state = GetState();
+
+        var jams = state.Jams.ToArray();
+
+        jams[^1] = jams[^1] with
+        {
+            Period = jams[^1].Period + 1,
+            Jam = 1
+        };
+
+        SetState(new(jams));
+
+        return [];
+    }
 
     private void ModifyJam(int period, int jam, Func<LineupSheetJam, LineupSheetJam> mapper)
     {
