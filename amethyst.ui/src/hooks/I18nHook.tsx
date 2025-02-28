@@ -80,7 +80,7 @@ export const I18nContextProvider = ({ usageKey, defaultLanguage, languages, chil
             return makeDevTranslation(languages[defaultLanguage][key]);
         }
 
-        if(!translations[key]) {
+        if(translations[key] === undefined) {
             console.warn("Translation missing for key", key);
         }
         
