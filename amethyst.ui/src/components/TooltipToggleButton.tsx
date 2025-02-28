@@ -29,3 +29,4 @@ export const TooltipToggleButton = forwardRef<HTMLButtonElement, TooltipToggleBu
         </Tooltip>
     );
 });
+TooltipToggleButton.displayName = "TooltipToggleButton";

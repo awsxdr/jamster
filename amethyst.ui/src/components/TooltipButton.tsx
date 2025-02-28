@@ -1,14 +1,17 @@
 import { forwardRef, PropsWithChildren, ReactNode } from "react";
 import { Button, ButtonProps, Tooltip, TooltipContent, TooltipTrigger } from "./ui";
+import { cn } from "@/lib/utils";
 
 export type TooltipButtonProps = {
     description: ReactNode;
-    ref?: React.LegacyRef<HTMLButtonElement>;
+    notify?: boolean;
 } & ButtonProps;
 
 export const TooltipButton = forwardRef<HTMLButtonElement, TooltipButtonProps>(({ 
         children, 
         description,
+        notify,
+        className,
         ...props 
     }: PropsWithChildren<TooltipButtonProps>,
     ref
@@ -16,9 +19,16 @@ export const TooltipButton = forwardRef<HTMLButtonElement, TooltipButtonProps>((
     return (
         <Tooltip>
             <TooltipTrigger asChild>
-                <Button {...props} ref={ref}>
-                    { children }
-                </Button>
+                <div className="relative inline">
+                    { notify && (
+                        <Button className={cn(className, "animate-ping-small pointer-events-none absolute left-0 top-0")} {...props} ref={ref}>
+                            { children }
+                        </Button>
+                    )}
+                    <Button {...props} className={cn(className)} ref={ref}>
+                        { children }
+                    </Button>
+                </div>
             </TooltipTrigger>
             <TooltipContent className="max-w-72 bg-accent text-accent-foreground border-accent-foreground shadow-xl">
                 {description}
@@ -26,3 +36,4 @@ export const TooltipButton = forwardRef<HTMLButtonElement, TooltipButtonProps>((
         </Tooltip>
     );
 });
+TooltipButton.displayName = "";

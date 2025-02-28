@@ -11,6 +11,7 @@ export default {
 		animation: {
 			'pulse-full-fast': 'pulse-full 1s cubic-bezier(0.4, 0, 0.6, 1) infinite',
 			'pulse-scale': 'pulse-scale 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+			'ping-small': 'ping-small 2s cubic-bezier(0, 0, 0.2, 1) infinite',
 		},
   		borderRadius: {
   			lg: 'var(--radius)',
@@ -88,6 +89,12 @@ export default {
 				},
 				'20%': {
 					transform: "scale(1.1)",
+				},
+			},
+			'ping-small': {
+				'100%': {
+					opacity: 0,
+					transform: "scale(1.5)",
 				},
 			},
 		}
