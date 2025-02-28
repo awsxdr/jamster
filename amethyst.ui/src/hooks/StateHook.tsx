@@ -2,7 +2,7 @@ import { createContext, PropsWithChildren, useCallback, useContext, useEffect, u
 import { useHubConnection } from "./SignalRHubConnection";
 import { HubConnection } from "@microsoft/signalr";
 import { useGameApi } from "./GameApiHook";
-import { GameStageState, TripScoreState, TeamDetailsState, TeamScoreState, TeamSide, TeamTimeoutsState, JamLineupState, TimeoutListState, PeriodClockState, TimeoutClockState, JamClockState, LineupClockState, UndoListState, ScoreSheetState, RulesState, LineupSheetState, PenaltyBoxState, GameSummaryState, PenaltySheetState } from "@/types";
+import { GameStageState, TripScoreState, TeamDetailsState, TeamScoreState, TeamSide, TeamTimeoutsState, JamLineupState, TimeoutListState, PeriodClockState, TimeoutClockState, JamClockState, LineupClockState, UndoListState, ScoreSheetState, RulesState, LineupSheetState, PenaltyBoxState, GameSummaryState, PenaltySheetState, InjuriesState, StringMap } from "@/types";
 import { CurrentTimeoutTypeState } from "@/types/CurrentTimeoutTypeState";
 import { TeamJamStatsState } from "@/types/TeamJamStatsState";
 import { v4 as uuidv4 } from 'uuid';
@@ -28,7 +28,7 @@ const GameStateContext = createContext<GameStateContextProps>({
 });
 
 type GameStateContextProviderProps = {
-    gameId: string | undefined,
+    gameId: string,
 };
 
 type StateNotifier = { [handle: CallbackHandle]: (genericState: object) => void };
@@ -48,6 +48,7 @@ export const useJamClockState = () => useGameState<JamClockState>("JamClockState
 export const useLineupClockState = () => useGameState<LineupClockState>("LineupClockState");
 export const useTimeoutClockState = () => useGameState<TimeoutClockState>("TimeoutClockState");
 export const useIntermissionClockState = () => useGameState<IntermissionClockState>("IntermissionClockState");
+export const useInjuriesState = (side: TeamSide) => useGameState<InjuriesState>(`InjuriesState_${TeamSide[side]}`);
 export const useClocks = () => ({
     periodClock: usePeriodClockState(),
     jamClock: useJamClockState(),
@@ -66,18 +67,6 @@ export const useRulesState = () => useGameState<RulesState>("RulesState");
 export const useGameState = <TState,>(stateName: string) => {
     const context = useContext(GameStateContext);
     const [value, setValue] = useState<TState>();
-    const gameApi = useGameApi();
-
-    const getInitialState = useCallback(async (stateName: string) => {
-        if(context.gameId) {
-            return await gameApi.getGameState<TState>(context.gameId, stateName);
-        }
-        return undefined;
-    }, [context.gameId]);
-
-    useEffect(() => {
-        getInitialState(stateName).then(setValue);
-    }, [setValue, context.gameId]);
 
     useEffect(() => {
         const handle = context.watchState<TState>(stateName, setValue);
@@ -98,6 +87,34 @@ type CallbackHandle = string;
 
 export const GameStateContextProvider = ({ gameId, children }: PropsWithChildren<GameStateContextProviderProps>) => {
     const [stateNotifiers, setStateNotifiers] = useState<StateNotifierMap>({});
+    const [states, setStates] = useState<StringMap<object>>({});
+    const gameApi = useGameApi();
+
+    const getInitialState = useCallback(async <TState,>(stateName: string) => {
+        if(!gameId) {
+            return undefined;
+        }
+
+        const value: TState = await gameApi.getGameState<TState>(gameId, stateName);
+
+        if(!value) {
+            return undefined;
+        }
+
+        setStates(s => ({ ...s, [stateName]: value }));
+        notify(stateName, value!);
+
+        return value;
+    }, [gameId, states, stateNotifiers]);
+
+    useEffect(() => {
+        if(!gameId) {
+            return;
+        }
+
+        Object.keys(states).forEach(getInitialState);
+
+    }, [gameId]);
 
     const handleConnectionDisconnect = async () => {
         if(!connection) return;
@@ -108,21 +125,30 @@ export const GameStateContextProvider = ({ gameId, children }: PropsWithChildren
     }
 
     const { connection, isConnected } = useHubConnection(gameId && `game/${gameId}`, handleConnectionDisconnect);
-
-    const watchState = <TState,>(stateName: string, onStateChange: StateChanged<TState>): CallbackHandle => {
+    console.log("1");
+    const watchState = useCallback(<TState,>(stateName: string, onStateChange: StateChanged<TState>): CallbackHandle => {
         
         const newId = uuidv4();
+
+        if(Object.keys(states).includes(stateName)) {
+            onStateChange(states[stateName] as TState);
+        } else {
+            getInitialState(stateName).then(v => v && onStateChange(v as TState));
+        }
 
         setStateNotifiers(sn => ({
                 ...sn,
                 [stateName]: {
                     ...(sn[stateName] ?? {}),
-                    [newId]: genericState => onStateChange(genericState as TState)
+                    [newId]: genericState => {
+                        onStateChange(genericState as TState);
+                        setStates(s => ({ ...s, [stateName]: genericState }));
+                    }
                 }
             }));
 
         return newId;
-    }
+    }, [states]);
 
     const unwatchState = (stateName: string, handle: CallbackHandle) => {
         setStateNotifiers(sn => {
@@ -159,6 +185,9 @@ export const GameStateContextProvider = ({ gameId, children }: PropsWithChildren
     }, [connection, stateNotifiers]);
 
     const notify = useCallback((stateName: string, state: object) => {
+        if(!stateNotifiers[stateName]) {
+            return;
+        }
         Object.values(stateNotifiers[stateName])?.forEach(n => n(state));
     }, [gameId, stateNotifiers]);
 
