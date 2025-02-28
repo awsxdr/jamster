@@ -19,10 +19,14 @@ export const SCOREBOARD_TEXT_PADDING_CLASS_NAME = "p-1 md:p-2 lg:p-3 xl:p-5";
 
 export const CurrentGameScoreboard = () => {
     const { currentGame } = useCurrentGame();
+
+    if(!currentGame) {
+        return <></>
+    }
   
     return (
         <I18nContextProvider usageKey="scoreboard" defaultLanguage='en' languages={languages}>
-            <GameStateContextProvider gameId={currentGame?.id}>
+            <GameStateContextProvider gameId={currentGame.id}>
                 <Scoreboard />
             </GameStateContextProvider>
         </I18nContextProvider>
@@ -34,7 +38,7 @@ export const Scoreboard = () => {
     const { translate, setLanguage } = useI18n();
 
     const hasConnection = useHasServerConnection();
-    const gameStage = useGameStageState() ?? { stage: Stage.BeforeGame, periodNumber: 0, jamNumber: 0, periodIsFinalized: false };
+    const gameStage = useGameStageState() ?? { stage: Stage.BeforeGame, periodNumber: 0, jamNumber: 0, totalJamNumber: 0, periodIsFinalized: false };
 
     const [fullScreenButtonVisible, setFullScreenButtonVisible] = useState(false);
     const [userInteracting, setUserInteracting] = useState(0);

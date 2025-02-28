@@ -8,7 +8,7 @@ import { LineupRow } from "./components/LineupRow";
 import languages from '@/i18n';
 
 type OverlayContextProps = {
-    gameId?: string;
+    gameId: string;
 }
 
 const OverlayContext = ({ children, gameId }: PropsWithChildren<OverlayContextProps>) => (
@@ -92,6 +92,10 @@ export const Overlay = () => {
     const { currentGame } = useCurrentGame();
 
     const gameId = useMemo(() => searchParams.get('gameId') || currentGame?.id, [searchParams, currentGame]);
+
+    if(!gameId) {
+        return (<></>);
+    }
 
     return (
         <OverlayContext gameId={gameId}>

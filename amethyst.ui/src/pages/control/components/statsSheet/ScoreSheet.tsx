@@ -124,7 +124,6 @@ export const ScoreSheet = ({ gameId, teamSide, descending, showTimeouts, classNa
     }
 
     const handleStarPassTripChanged = (jamNumber: number, starPassTrip: number | null) => {
-        console.log(new ScoreSheetStarPassTripSet(teamSide, jamNumber, starPassTrip));
         sendEvent(gameId, new ScoreSheetStarPassTripSet(teamSide, jamNumber, starPassTrip));
     }
 

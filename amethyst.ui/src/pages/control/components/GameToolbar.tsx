@@ -30,7 +30,7 @@ export const GameToolbar = ({ games, currentGame, onCurrentGameIdChanged, select
                     <div className="flex grow justify-end gap-2">
                         <UserMenu disabled={disabled} />
                         <ViewMenu disabled={disabled} />
-                        <SettingsMenu disabled={disabled} />
+                        { selectedGameId && <SettingsMenu gameId={selectedGameId} disabled={disabled} /> }
                         <Button variant="ghost" className="inline" disabled={disabled} onClick={() => setShowGameSelect(v => !v)}>
                             { showGameSelect ? <ChevronUp /> : <ChevronDown /> }
                         </Button>
@@ -68,7 +68,7 @@ export const GameToolbar = ({ games, currentGame, onCurrentGameIdChanged, select
                         <div className="flex justify-end gap-2">
                             <UserMenu disabled={disabled} />
                             <ViewMenu disabled={disabled} />
-                            <SettingsMenu disabled={disabled} />
+                            { selectedGameId && <SettingsMenu gameId={selectedGameId} disabled={disabled} /> }
                         </div>
                     }
                 </>

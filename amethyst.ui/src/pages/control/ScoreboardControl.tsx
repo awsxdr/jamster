@@ -52,25 +52,27 @@ export const ScoreboardControl = () => {
         <>
             <title>{translate("ScoreboardControl.Title")} | {translate("Main.Title")}</title>
             <NewGameDialogContainer open={newGameDialogOpen} onOpenChange={setNewGameDialogOpen}>
-                <GameStateContextProvider gameId={selectedGameId}>
-                    <GameToolbar 
-                        games={games} 
-                        currentGame={currentGame} 
-                        onCurrentGameIdChanged={setCurrentGame} 
-                        selectedGameId={selectedGameId} 
-                        onSelectedGameIdChanged={updateSelectedGameId}
-                    />
-                    <Separator />
-                    <div className="px-0 sm:px-1 md:px-2 xl:px-5">
-                        <ControlPanel 
-                            gameId={selectedGameId}
-                        />
-                        <NewGameDialog 
-                            onNewGameCreated={handleNewGameCreated}
-                            onCancelled={handleNewGameCancelled}
-                        />
-                    </div>
-                </GameStateContextProvider>
+                <GameToolbar 
+                    games={games} 
+                    currentGame={currentGame} 
+                    onCurrentGameIdChanged={setCurrentGame} 
+                    selectedGameId={selectedGameId} 
+                    onSelectedGameIdChanged={updateSelectedGameId}
+                />
+                { selectedGameId && (
+                    <GameStateContextProvider gameId={selectedGameId}>
+                        <Separator />
+                        <div className="px-0 sm:px-1 md:px-2 xl:px-5">
+                            <ControlPanel 
+                                gameId={selectedGameId}
+                            />
+                            <NewGameDialog 
+                                onNewGameCreated={handleNewGameCreated}
+                                onCancelled={handleNewGameCancelled}
+                            />
+                        </div>
+                    </GameStateContextProvider>
+                )}
             </NewGameDialogContainer>
         </>
     );
