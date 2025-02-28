@@ -17,11 +17,13 @@ using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc.ApiExplorer;
 using Microsoft.AspNetCore.SignalR;
 using NLog;
+using NLog.Config;
+using NLog.Extensions.Logging;
+using NLog.Layouts;
+using NLog.Targets;
 using NLog.Web;
 using LogLevel = NLog.LogLevel;
 using MicrosoftLogLevel = Microsoft.Extensions.Logging.LogLevel;
-
-var logger = LogManager.Setup().LoadConfigurationFromFile().GetCurrentClassLogger();
 
 var parseCommandLineResult = Parser.Default.ParseArguments<CommandLineOptions>(SkipCommandLineParse ? [] : args);
 
@@ -32,6 +34,9 @@ var commandLineOptions = parseCommandLineResult.Value;
 var builder = WebApplication.CreateBuilder(args);
 
 RunningEnvironment.IsDevelopment = builder.Environment.IsDevelopment();
+
+var logger = LogManager.Setup().LoadConfiguration(GetLoggingConfiguration).GetCurrentClassLogger();
+
 LogManager.Configuration.Variables["rootPath"] = RunningEnvironment.RootPath;
 
 var hostUrl = GetHostUrl();
@@ -84,8 +89,6 @@ Directory.CreateDirectory(Path.Combine(databasesPath, GameDataStore.GamesFolderN
 
 builder.Logging.ClearProviders();
 builder.Host.UseNLog();
-
-LogManager.Configuration.FindRuleByName("console-default")?.SetLoggingLevels(MapLogLevel(commandLineOptions.LoggingLevel), LogLevel.Off);
 
 var app = builder.Build();
 
@@ -175,6 +178,34 @@ finally
 }
 
 return;
+
+void GetLoggingConfiguration(ISetupLoadConfigurationBuilder config)
+{
+    config.Configuration.AddTarget("file", new FileTarget
+    {
+        FileName = Layout.FromString($@"{RunningEnvironment.RootPath}\logs\amethyst-${{shortdate}}.log"),
+        Layout = Layout.FromString("${longdate}|${event-properties:item=EventId:whenEmpty=0}|${level:uppercase=true}|${logger}|${message} ${exception:format=tostring}|url: ${aspnet-request-url}|action: ${aspnet-mvc-action}"),
+    });
+
+    config.Configuration.AddTarget("console", new ColoredConsoleTarget
+    {
+        Layout = Layout.FromString("${level:uppercase=true} ${message} ${exception:format=tostring)"),
+        WordHighlightingRules =
+        {
+            new("FATAL", ConsoleOutputColor.White, ConsoleOutputColor.DarkRed),
+            new("ERROR", ConsoleOutputColor.Red, ConsoleOutputColor.Black),
+            new("WARN", ConsoleOutputColor.Yellow, ConsoleOutputColor.Black),
+            new("INFO", ConsoleOutputColor.Green, ConsoleOutputColor.Black),
+            new("DEBUG", ConsoleOutputColor.Blue, ConsoleOutputColor.Black),
+            new("TRACE", ConsoleOutputColor.Gray, ConsoleOutputColor.Black),
+        }
+    });
+
+    config.Configuration.AddRule(LogLevel.Error, LogLevel.Fatal, config.Configuration.FindTargetByName("console"));
+    config.Configuration.AddRule(MapLogLevel(commandLineOptions.LoggingLevel), LogLevel.Fatal, config.Configuration.FindTargetByName("console"), "amethyst.*");
+
+    config.Configuration.AddRule(MapLogLevel(commandLineOptions.FileLoggingLevel), LogLevel.Fatal, config.Configuration.FindTargetByName("file"));
+}
 
 LogLevel MapLogLevel(MicrosoftLogLevel logLevel) => LogLevel.FromOrdinal((int)logLevel);
 
@@ -316,6 +347,9 @@ public sealed class CommandLineOptions
     [Option('s', "ssl", Required = false, Default = false, HelpText = "Set to 'true' to use secure communications; otherwise 'false'.")]
     public bool UseSsl { get; set; }
 
-    [Option('l', "log", Required = false, Default = MicrosoftLogLevel.Warning, HelpText = "Set the logging level. Options are 'Trace', 'Debug', 'Information', 'Warning', 'Error', 'Critical', and 'None'.")]
+    [Option('l', "log", Required = false, Default = MicrosoftLogLevel.Warning, HelpText = "Set the logging level for console output. Options are 'Trace', 'Debug', 'Information', 'Warning', 'Error', 'Critical', and 'None'.")]
     public MicrosoftLogLevel LoggingLevel { get; set; }
+
+    [Option("file-log", Required = false, Default = MicrosoftLogLevel.Warning, HelpText = "Set the logging level for file output. Options are 'Trace', 'Debug', 'Information', 'Warning', 'Error', 'Critical', and 'None'.")]
+    public MicrosoftLogLevel FileLoggingLevel { get; set; }
 }
