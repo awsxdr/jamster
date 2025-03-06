@@ -70,6 +70,8 @@ export const GamesListContextProvider = ({ children }: PropsWithChildren) => {
         connection?.on("GamesListChanged", (games: GameInfo[]) => {
             notify(games);
         });
+
+        return () => connection?.off("GamesListChanged");
     }, [connection, notify]);
 
     return (

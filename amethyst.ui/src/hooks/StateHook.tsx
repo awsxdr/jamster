@@ -125,7 +125,7 @@ export const GameStateContextProvider = ({ gameId, children }: PropsWithChildren
     }
 
     const { connection, isConnected } = useHubConnection(gameId && `game/${gameId}`, handleConnectionDisconnect);
-    console.log("1");
+
     const watchState = useCallback(<TState,>(stateName: string, onStateChange: StateChanged<TState>): CallbackHandle => {
         
         const newId = uuidv4();
@@ -193,6 +193,8 @@ export const GameStateContextProvider = ({ gameId, children }: PropsWithChildren
 
     useEffect(() => {
         connection?.on("StateChanged", notify);
+
+        return () => connection?.off("StateChanged", notify);
     }, [connection, notify]);
 
     const hasConnection = isConnected;

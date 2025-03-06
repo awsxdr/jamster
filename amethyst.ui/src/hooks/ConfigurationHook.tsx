@@ -113,6 +113,8 @@ export const ConfigurationContextProvider = ({ children }: PropsWithChildren) =>
 
     useEffect(() => {
         connection?.on("ConfigurationChanged", notify);
+
+        return () => connection?.off("ConfigurationChanged", notify);
     }, [connection, notify]);
 
     return (

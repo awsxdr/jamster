@@ -15,7 +15,6 @@ type ViewMenuProps = {
 
 export const ViewMenu = ({ displaySide, pltDisplayType, onDisplaySideChanged, onPltDisplayTypeChanged, disabled }: ViewMenuProps) => {
 
-    const IconSpacer = () => (<span className="w-[16px]"></span>);
     const { acquireWakeLock, releaseWakeLock } = useWakeLock();
     const { translate } = useI18n();
     
@@ -63,9 +62,9 @@ export const ViewMenu = ({ displaySide, pltDisplayType, onDisplaySideChanged, on
                         <DropdownMenuRadioItem value="Both">Both</DropdownMenuRadioItem>
                     </DropdownMenuRadioGroup>
                 </DropdownMenuGroup>
+                <DropdownMenuSeparator />
                 <DropdownMenuGroup>
                     <DropdownMenuItem disabled={disabled} onClick={handleFullScreenClick}>
-                        <IconSpacer />
                         <Maximize2 />
                         {translate("ViewMenu.FullScreen")}
                     </DropdownMenuItem>

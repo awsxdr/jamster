@@ -77,6 +77,8 @@ export const SystemStateContextProvider = ({ children }: PropsWithChildren) => {
         connection?.on("CurrentGameChanged", (game: GameInfo) => {
             currentGameNotifiers.forEach(n => n(game));
         });
+
+        return () => connection?.off("CurrentGameChanged");
     }, [connection]);
 
     return (
