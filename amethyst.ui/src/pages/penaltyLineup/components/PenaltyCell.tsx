@@ -1,14 +1,16 @@
+import { CSSProperties } from "react";
 import { cn } from "@/lib/utils";
 import { Penalty } from "@/types";
 
 type PenaltyCellProps = {
     penalty?: Penalty;
     className?: string;
+    style?: CSSProperties;
     compact?: boolean;
     onClick?: () => void;
 }
 
-export const PenaltyCell = ({penalty, className, compact, onClick}: PenaltyCellProps) => {
+export const PenaltyCell = ({penalty, className, style, compact, onClick}: PenaltyCellProps) => {
     return (
         <div 
             className={cn(
@@ -17,6 +19,7 @@ export const PenaltyCell = ({penalty, className, compact, onClick}: PenaltyCellP
                 className,
                 !compact && "xl:flex-row xl:gap-2 xl:text-sm",
             )} 
+            style={style}
             onClick={onClick}
         >
             {penalty && (

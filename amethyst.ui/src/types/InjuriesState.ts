@@ -2,7 +2,7 @@ export type InjuriesState = {
     injuries: Injury[];
 }
 
-type Injury = {
+export type Injury = {
     skaterNumber: string;
     period: number;
     jam: number;

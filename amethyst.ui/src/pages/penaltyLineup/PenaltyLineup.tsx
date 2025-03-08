@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 
 import { Separator } from "@/components/ui";
-import { GameStateContextProvider, useCurrentGame, useGamesList, useI18n } from "@/hooks";
+import { GameStateContextProvider, useCurrentGame, useI18n } from "@/hooks";
 
 import { GameToolbar, PltDisplayType } from "./components";
 import { PenaltyLineupTable } from "./components/PenaltyLineupTable";
@@ -11,7 +11,6 @@ import { DisplaySide, TeamSide } from "@/types";
 export const PenaltyLineup = () => {
 
     const { translate } = useI18n({ prefix: "PenaltyLineup." });
-    const games = useGamesList();
     const [ searchParams, setSearchParams ] = useSearchParams();
     const { currentGame } = useCurrentGame();
 
@@ -72,7 +71,6 @@ export const PenaltyLineup = () => {
         <>
             <title>{translate("Title")} | {translate("Main.Title", { ignorePrefix: true })}</title>
             <GameToolbar 
-                    games={games} 
                     currentGame={currentGame} 
                     selectedGameId={selectedGameId} 
                     displaySide={team}

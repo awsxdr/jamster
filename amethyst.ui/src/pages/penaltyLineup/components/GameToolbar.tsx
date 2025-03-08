@@ -5,12 +5,11 @@ import { Button } from "@/components/ui"
 import { cn } from "@/lib/utils";
 import { DisplaySide, GameInfo } from "@/types";
 import { GameSelectMenu, ViewMenu } from "."
-import { useIsMobile } from "@/hooks";
+import { useGamesList, useIsMobile } from "@/hooks";
 
 type PltDisplayType = "None" | "Both" | "Penalties" | "Lineup";
 
 type GameToolbarProps = {
-    games: GameInfo[];
     currentGame?: GameInfo;
     selectedGameId?: string;
     displaySide: DisplaySide;
@@ -21,8 +20,9 @@ type GameToolbarProps = {
     disabled?: boolean;
 }
 
-export const GameToolbar = ({ games, currentGame, selectedGameId, displaySide, pltDisplayType, onSelectedGameIdChanged, onDisplaySideChanged, onPltDisplayTypeChanged, disabled }: GameToolbarProps) => {
+export const GameToolbar = ({ currentGame, selectedGameId, displaySide, pltDisplayType, onSelectedGameIdChanged, onDisplaySideChanged, onPltDisplayTypeChanged, disabled }: GameToolbarProps) => {
 
+    const games = useGamesList();
     const isMobile = useIsMobile();
     const [showGameSelect, setShowGameSelect] = useState(true);
 
