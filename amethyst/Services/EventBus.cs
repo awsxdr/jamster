@@ -60,7 +60,15 @@ public class EventBus(
         @event.Id = persistResult.Value;
 
         logger.LogDebug("Applying event {eventId} ({eventType}) to game {gameId}", @event.Id, @event.GetType().Name, game.Id);
-        await gameContext.StateStore.ApplyEvents(gameContext.Reducers, @event);
+        var additionalEventsToPersist = await gameContext.StateStore.ApplyEvents(gameContext.Reducers, @event);
+
+        foreach (var additionalEvent in additionalEventsToPersist)
+        {
+            var result = await PersistEventToDatabase(game, additionalEvent);
+
+            if(result is Failure failure)
+                logger.LogError("Error persisting additional event to database: {error}", failure.GetError());
+        }
 
         return @event;
     }
@@ -132,8 +140,14 @@ public class EventBus(
         try
         {
             var dataStore = await gameStoreFactory.GetDataStore(databaseName);
-            return dataStore.GetEvent(eventId).Then(_ =>
+            return dataStore.GetEvent(eventId).Then(@event =>
             {
+                if (@event is IReplaceOnDelete replace)
+                {
+                    var newEvent = replace.GetDeletionReplacement();
+                    dataStore.AddEvent(newEvent);
+                }
+
                 dataStore.DeleteEvent(eventId);
                 return Result.Succeed();
             });

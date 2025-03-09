@@ -99,7 +99,7 @@ public class GameStage(ReducerGameContext context, ILogger<GameStage> logger)
         }
         else
         {
-            logger.LogDebug("Setting game state to Lineup after jam end");
+            logger.LogDebug("Setting game state to Lineup after jam end. Period {period}, jam {jam}", state.PeriodNumber, state.JamNumber);
             SetState(state with { Stage = Stage.Lineup });
         }
 

@@ -51,6 +51,7 @@ public interface IHandlesEvent<in TEvent> : IHandlesEventAsync<TEvent>
 }
 
 public interface IHandlesEventAsync<in TEvent>
+    where TEvent : Event
 {
     Task<IEnumerable<Event>> HandleAsync(TEvent @event);
 }

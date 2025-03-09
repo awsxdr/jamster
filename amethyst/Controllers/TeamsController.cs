@@ -129,7 +129,7 @@ public record TeamWithRosterModel(
     Guid Id,
     Dictionary<string, string> Names,
     Dictionary<string, TeamColor> Colors,
-    List<Skater> Roster,
+    Skater[] Roster,
     DateTimeOffset LastUpdateTime)
 {
     public static explicit operator Team(TeamWithRosterModel model) =>
@@ -150,7 +150,7 @@ public record TeamWithRosterModel(
     public override int GetHashCode() => HashCode.Combine(Id, Names.SequenceHashCode(), Colors.SequenceHashCode(), Roster.SequenceHashCode(), LastUpdateTime.GetHashCode());
 }
 
-public record RosterModel(List<Skater> Roster)
+public record RosterModel(Skater[] Roster)
 {
-    public static explicit operator RosterModel(List<Skater> skaters) => new(skaters);
+    public static explicit operator RosterModel(Skater[] skaters) => new(skaters);
 }

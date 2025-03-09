@@ -18,7 +18,6 @@ using Microsoft.AspNetCore.Mvc.ApiExplorer;
 using Microsoft.AspNetCore.SignalR;
 using NLog;
 using NLog.Config;
-using NLog.Extensions.Logging;
 using NLog.Layouts;
 using NLog.Targets;
 using NLog.Web;
@@ -315,8 +314,8 @@ ApiDescription HandleApiDescriptionConflicts(IEnumerable<ApiDescription> apiDesc
 
 public partial class Program
 {
-    public static bool SkipCommandLineParse { get; set; } = false;
-    public static bool SkipFirstRunSetup { get; set; } = false;
+    public static bool SkipCommandLineParse { get; set; }
+    public static bool SkipFirstRunSetup { get; set; }
     public static JsonSerializerOptions JsonSerializerOptions { get; } = GetSerializerOptions();
 
     private static void MapHub<THub>(WebApplication app, string pattern) where THub : Hub =>
@@ -336,20 +335,26 @@ public partial class Program
     }
 }
 
-public sealed class CommandLineOptions
+namespace amethyst
 {
-    [Option('p', "port", Required = false, Default = (ushort)8000, HelpText = "Set the host to expose the application on. Value must be between 1 and 65535.")]
-    public ushort Port { get; set; }
+    // ReSharper disable once ClassNeverInstantiated.Global
+    // ReSharper disable UnusedAutoPropertyAccessor.Global
+    public sealed class CommandLineOptions
+    {
+        [Option('p', "port", Required = false, Default = (ushort)8000, HelpText = "Set the host to expose the application on. Value must be between 1 and 65535.")]
+        public ushort Port { get; set; }
 
-    [Option('h', "hostname", Required = false, Default = "0.0.0.0", HelpText = "Set the IP address or host name to use to host the application.")]
-    public string Hostname { get; set; } = string.Empty;
+        [Option('h', "hostname", Required = false, Default = "0.0.0.0", HelpText = "Set the IP address or host name to use to host the application.")]
+        public string Hostname { get; set; } = string.Empty;
 
-    [Option('s', "ssl", Required = false, Default = false, HelpText = "Set to 'true' to use secure communications; otherwise 'false'.")]
-    public bool UseSsl { get; set; }
+        [Option('s', "ssl", Required = false, Default = false, HelpText = "Set to 'true' to use secure communications; otherwise 'false'.")]
+        public bool UseSsl { get; set; }
 
-    [Option('l', "log", Required = false, Default = MicrosoftLogLevel.Warning, HelpText = "Set the logging level for console output. Options are 'Trace', 'Debug', 'Information', 'Warning', 'Error', 'Critical', and 'None'.")]
-    public MicrosoftLogLevel LoggingLevel { get; set; }
+        [Option('l', "log", Required = false, Default = MicrosoftLogLevel.Warning, HelpText = "Set the logging level for console output. Options are 'Trace', 'Debug', 'Information', 'Warning', 'Error', 'Critical', and 'None'.")]
+        public MicrosoftLogLevel LoggingLevel { get; set; }
 
-    [Option("file-log", Required = false, Default = MicrosoftLogLevel.Warning, HelpText = "Set the logging level for file output. Options are 'Trace', 'Debug', 'Information', 'Warning', 'Error', 'Critical', and 'None'.")]
-    public MicrosoftLogLevel FileLoggingLevel { get; set; }
+        [Option("file-log", Required = false, Default = MicrosoftLogLevel.Warning, HelpText = "Set the logging level for file output. Options are 'Trace', 'Debug', 'Information', 'Warning', 'Error', 'Critical', and 'None'.")]
+        public MicrosoftLogLevel FileLoggingLevel { get; set; }
+    }
+    // ReSharper restore UnusedAutoPropertyAccessor.Global
 }

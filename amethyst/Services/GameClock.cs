@@ -34,7 +34,12 @@ public class GameClock(GameInfo game, IEnumerable<ITickReceiverAsync> receivers,
                     {
                         var implicitEvents = await receiver.TickAsync(tick);
                         foreach (var @event in implicitEvents)
-                            await eventBus.AddEventWithoutPersisting(game, @event);
+                        {
+                            if (@event is IAlwaysPersisted)
+                                await eventBus.AddEvent(game, @event);
+                            else
+                                await eventBus.AddEventWithoutPersisting(game, @event);
+                        }
                     }
                     catch (Exception ex)
                     {

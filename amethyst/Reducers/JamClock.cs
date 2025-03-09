@@ -4,17 +4,19 @@ using amethyst.Services;
 
 namespace amethyst.Reducers;
 
-public sealed class JamClock(ReducerGameContext gameContext, ILogger<JamClock> logger) 
+public sealed class JamClock(ReducerGameContext gameContext, IEventBus eventBus, ILogger<JamClock> logger) 
     : Reducer<JamClockState>(gameContext)
     , IHandlesEvent<JamStarted>
     , IHandlesEvent<JamEnded>
+    , IHandlesEvent<JamExpired>
     , IHandlesEvent<TimeoutStarted>
     , IHandlesEvent<CallMarked>
     , IHandlesEvent<JamClockSet>
+    , IHandlesEvent<JamAutoExpiryDisabled>
     , IDependsOnState<RulesState>
     , ITickReceiver
 {
-    protected override JamClockState DefaultState => new(false, 0, 0, 0);
+    protected override JamClockState DefaultState => new(false, 0, 0, 0, true);
 
     public IEnumerable<Event> Handle(JamStarted @event)
     {
@@ -26,19 +28,39 @@ public sealed class JamClock(ReducerGameContext gameContext, ILogger<JamClock> l
 
         logger.LogDebug("Starting jam clock");
 
-        SetState(new(true, @event.Tick, 0, 0));
+        SetState(state with
+        {
+            IsRunning = true,
+            StartTick = @event.Tick,
+            TicksPassed = 0,
+            SecondsPassed = 0,
+        });
 
         return [];
     }
 
     public IEnumerable<Event> Handle(JamEnded @event)
     {
+        var state = GetState();
+
+        if (!state.IsRunning)
+            return [];
+
         logger.LogDebug("Stopping jam clock due to jam end");
 
-        SetState(GetState() with {IsRunning = false});
+        SetState(state with
+        {
+            IsRunning = false,
+            AutoExpire = true,
+            TicksPassed = @event.Tick - state.StartTick,
+            SecondsPassed = ((Tick) @event.Tick - state.StartTick).Seconds,
+        });
 
         return [];
     }
+
+    public IEnumerable<Event> Handle(JamExpired @event) =>
+        [new JamEnded(@event.Tick)];
 
     public IEnumerable<Event> Handle(TimeoutStarted @event)
     {
@@ -78,6 +100,13 @@ public sealed class JamClock(ReducerGameContext gameContext, ILogger<JamClock> l
         return [];
     }
 
+    public IEnumerable<Event> Handle(JamAutoExpiryDisabled @event)
+    {
+        SetState(GetState() with { AutoExpire = false });
+
+        return [];
+    }
+
     public IEnumerable<Event> Tick(Tick tick)
     {
         var state = GetState();
@@ -96,11 +125,16 @@ public sealed class JamClock(ReducerGameContext gameContext, ILogger<JamClock> l
 
         if (ticksPassed <= Domain.Tick.FromSeconds(rules.Rules.JamRules.DurationInSeconds)) return [];
 
+        if (!state.AutoExpire)
+        {
+            logger.LogDebug("Jam clock expired but still running");
+            return [];
+        }
+
         logger.LogDebug("Jam clock expired, ending jam");
 
-        return [new JamEnded(Guid7.FromTick(state.StartTick + Domain.Tick.FromSeconds(rules.Rules.JamRules.DurationInSeconds)))];
-
+        return [new JamExpired(state.StartTick + Domain.Tick.FromSeconds(rules.Rules.JamRules.DurationInSeconds))];
     }
 }
 
-public record JamClockState(bool IsRunning, long StartTick, [property: IgnoreChange] long TicksPassed, int SecondsPassed);
+public record JamClockState(bool IsRunning, long StartTick, [property: IgnoreChange] long TicksPassed, int SecondsPassed, bool AutoExpire);

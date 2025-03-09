@@ -2,7 +2,6 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using amethyst.Services;
-using Func;
 using amethyst.Domain;
 
 namespace amethyst.Events;
@@ -43,6 +42,20 @@ public abstract class Event<TBody>(Guid7 id, TBody body) : Event(id)
 public interface IPeriodClockAligned;
 
 public interface IShownInUndo;
+
+public interface IReplaceOnDelete
+{
+    Event GetDeletionReplacement();
+}
+
+public interface IReplaceOnDelete<out TEvent> : IReplaceOnDelete
+    where TEvent : Event
+{
+    Event IReplaceOnDelete.GetDeletionReplacement() => GetDeletionReplacement();
+    new TEvent GetDeletionReplacement();
+}
+
+public interface IAlwaysPersisted;
 
 public interface IUntypedEvent
 {

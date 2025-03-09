@@ -3,7 +3,6 @@ using System.Reflection;
 using amethyst.Domain;
 using amethyst.Events;
 using amethyst.Reducers;
-using Func;
 
 namespace amethyst.Services;
 
@@ -20,7 +19,7 @@ public interface IGameStateStore
     void SetState<TState>(TState state) where TState : class;
     void SetKeyedState<TState>(string key, TState state) where TState : class;
     void LoadDefaultStates(IImmutableList<IReducer> reducers);
-    Task ApplyEvents(IImmutableList<IReducer> reducers, params Event[] events);
+    Task<IEnumerable<Event>> ApplyEvents(IImmutableList<IReducer> reducers, params Event[] events);
     Result<object> GetStateByName(string stateName);
     void WatchState<TState>(string stateName, Func<TState, Task> onStateUpdate) where TState : class;
     void WatchStateByName(string stateName, Func<object, Task> onStateUpdate);
@@ -96,19 +95,22 @@ public class GameStateStore(ILogger<GameStateStore> logger) : IGameStateStore
 
     private record EventDetails(Event Event, Guid7? SourceEventId);
 
-    public async Task ApplyEvents(IImmutableList<IReducer> reducers, params Event[] events)
+    public async Task<IEnumerable<Event>> ApplyEvents(IImmutableList<IReducer> reducers, params Event[] events)
     {
         CacheStates();
 
         try
         {
+            var eventsToPersist = new List<Event>();
             var queuedEvents = new Queue<EventDetails>(events.OrderBy(e => e.Id).Select(e => new EventDetails(e, null)));
 
             while (queuedEvents.TryDequeue(out var @event))
             {
                 var tickImplicitEvents = (await Tick(reducers, @event.Event.Tick - 1)).ToArray();
 
-                if (tickImplicitEvents.Any())
+                eventsToPersist.AddRange(tickImplicitEvents.Where(e => e is IAlwaysPersisted));
+
+                if (tickImplicitEvents.Length > 0)
                 {
                     queuedEvents = new Queue<EventDetails>(
                         queuedEvents
@@ -126,6 +128,8 @@ public class GameStateStore(ILogger<GameStateStore> logger) : IGameStateStore
                     // ReSharper disable once AccessToModifiedClosure
                     queuedEvents = new Queue<EventDetails>(queuedEvents.Concat(implicitEvents.Select(e => new EventDetails(e, @event.Event.Id))).OrderBy(e => e.Event.Id));
             }
+
+            return eventsToPersist;
         }
         catch (Exception ex)
         {

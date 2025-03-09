@@ -71,7 +71,7 @@ public class TeamsDataStore : DataStore, ITeamsDataStore
 
     public Result SetRoster(Guid teamId, IEnumerable<Skater> skaters) =>
         _teamsTable.Get(teamId)
-                .ThenMap(team => team with {Roster = skaters.ToList()})
+                .ThenMap(team => team with {Roster = skaters.ToArray()})
                 .Then(_teamsTable.Update, teamId)
             switch
             {

@@ -4,7 +4,7 @@ public sealed record Team(
     Guid Id,
     Dictionary<string, string> Names,
     Dictionary<string, TeamColor> Colors,
-    List<Skater> Roster,
+    Skater[] Roster,
     DateTimeOffset LastUpdateTime
 )
 {
