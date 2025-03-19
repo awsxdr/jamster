@@ -1,6 +1,5 @@
 ﻿using amethyst.Domain;
 using System.IO.Compression;
-using Func;
 
 namespace amethyst.Services.Stats;
 

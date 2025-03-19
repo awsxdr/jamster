@@ -1,5 +1,4 @@
 ﻿using amethyst.Services;
-using Func;
 using Microsoft.AspNetCore.SignalR;
 
 namespace amethyst.Hubs;

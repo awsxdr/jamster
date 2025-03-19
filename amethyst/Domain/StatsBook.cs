@@ -1,6 +1,4 @@
-﻿using Func;
-
-namespace amethyst.Domain;
+﻿namespace amethyst.Domain;
 
 public sealed record StatsBook(Igrf Igrf, ScoreSheetCollection ScoreSheets);
 

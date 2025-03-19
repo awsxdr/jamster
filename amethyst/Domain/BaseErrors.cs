@@ -1,5 +1,3 @@
-﻿using Func;
-
-namespace amethyst.Domain;
+﻿namespace amethyst.Domain;
 
 public class NotFoundError : ResultError;

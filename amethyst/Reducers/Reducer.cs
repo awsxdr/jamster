@@ -1,9 +1,7 @@
-﻿using Func;
+﻿using amethyst.Events;
+using amethyst.Services;
 
 namespace amethyst.Reducers;
-
-using Events;
-using Services;
 
 public delegate IReducer ReducerFactory(ReducerGameContext gameContext);
 

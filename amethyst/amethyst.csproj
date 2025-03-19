@@ -26,6 +26,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Using Include="amethyst.Extensions" />
     <Using Include="Func" />
   </ItemGroup>
 

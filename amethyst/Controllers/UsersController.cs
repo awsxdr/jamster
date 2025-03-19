@@ -5,7 +5,6 @@ using amethyst.Configurations;
 using amethyst.DataStores;
 using amethyst.Domain;
 using amethyst.Services;
-using Func;
 using Microsoft.AspNetCore.Mvc;
 
 namespace amethyst.Controllers;

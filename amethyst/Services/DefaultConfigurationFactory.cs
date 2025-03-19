@@ -1,5 +1,4 @@
 ﻿using amethyst.Configurations;
-using Func;
 
 namespace amethyst.Services;
 

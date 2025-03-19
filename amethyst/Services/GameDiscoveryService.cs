@@ -1,9 +1,7 @@
 ﻿using amethyst.DataStores;
-using Func;
+using amethyst.Domain;
 
 namespace amethyst.Services;
-
-using Domain;
 
 public interface IGameDiscoveryService
 {

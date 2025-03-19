@@ -1,6 +1,5 @@
 ﻿using amethyst.Domain;
 using amethyst.Events;
-using amethyst.Extensions;
 using amethyst.Services;
 
 namespace amethyst.Reducers;

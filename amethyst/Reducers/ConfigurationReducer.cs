@@ -1,6 +1,5 @@
 ﻿using amethyst.Events;
 using amethyst.Services;
-using Func;
 
 namespace amethyst.Reducers;
 

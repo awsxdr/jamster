@@ -1,7 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using amethyst.Services;
 using DotNext.Threading;
-using Func;
 using Microsoft.AspNetCore.SignalR;
 
 namespace amethyst.Hubs;

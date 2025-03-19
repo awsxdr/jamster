@@ -2,7 +2,6 @@
 using System.Text.Json.Nodes;
 using amethyst.Services;
 using amethyst.Events;
-using Func;
 
 namespace amethyst.DataStores;
 

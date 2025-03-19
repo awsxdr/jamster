@@ -1,6 +1,4 @@
-﻿using Func;
-
-namespace amethyst.Services.Stats;
+﻿namespace amethyst.Services.Stats;
 
 public interface IBlankStatsBookStore
 {

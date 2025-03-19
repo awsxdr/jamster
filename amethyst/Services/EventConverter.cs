@@ -1,7 +1,5 @@
 ﻿using System.Collections.Immutable;
 using amethyst.Events;
-using amethyst.Extensions;
-using Func;
 
 namespace amethyst.Services;
 

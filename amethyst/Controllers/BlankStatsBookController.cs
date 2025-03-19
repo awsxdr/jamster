@@ -1,6 +1,5 @@
 ﻿using amethyst.Domain;
 using amethyst.Services.Stats;
-using Func;
 using Microsoft.AspNetCore.Mvc;
 using static amethyst.Services.Stats.StatsBookValidator;
 

@@ -2,7 +2,6 @@
 using System.Xml;
 using System.Xml.Linq;
 using System.Xml.Serialization;
-using Func;
 
 namespace amethyst.Services.Stats;
 

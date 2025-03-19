@@ -1,8 +1,6 @@
 ﻿using amethyst.DataStores;
 using amethyst.Events;
-using amethyst.Extensions;
 using amethyst.Reducers;
-using Func;
 
 namespace amethyst.Services;
 

@@ -1,6 +1,5 @@
 ﻿using System.Collections.Concurrent;
 using System.Diagnostics;
-using amethyst.Extensions;
 
 namespace amethyst.Services;
 

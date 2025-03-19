@@ -1,13 +1,11 @@
 ﻿using System.Collections.Concurrent;
+using amethyst.DataStores;
 using amethyst.Domain;
+using amethyst.Events;
 using amethyst.Reducers;
 using DotNext.Threading;
 
 namespace amethyst.Services;
-
-using DataStores;
-using Events;
-using Func;
 
 public interface IEventBus
 {

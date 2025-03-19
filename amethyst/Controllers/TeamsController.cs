@@ -2,7 +2,6 @@
 using amethyst.Domain;
 using amethyst.Services;
 using DotNext.Collections.Generic;
-using Func;
 using Microsoft.AspNetCore.Mvc;
 
 namespace amethyst.Controllers;

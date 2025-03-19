@@ -1,6 +1,5 @@
 ﻿using System.Text.Json;
 using amethyst.Services;
-using Func;
 
 namespace amethyst.DataStores;
 

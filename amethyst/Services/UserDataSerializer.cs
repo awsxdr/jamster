@@ -2,7 +2,6 @@
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using amethyst.Configurations;
-using Func;
 
 namespace amethyst.Services;
 

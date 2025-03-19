@@ -2,7 +2,6 @@
 using System.Text.Json.Nodes;
 using amethyst.Domain;
 using amethyst.Services;
-using Func;
 using Microsoft.AspNetCore.Mvc;
 
 namespace amethyst.Controllers;

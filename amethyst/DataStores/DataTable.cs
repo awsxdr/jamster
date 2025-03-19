@@ -1,7 +1,6 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Nodes;
 using amethyst.Domain;
-using Func;
 using SQLite;
 
 namespace amethyst.DataStores;

@@ -2,7 +2,6 @@
 using amethyst.Domain;
 using amethyst.Services;
 using amethyst.Services.Stats;
-using Func;
 using Microsoft.AspNetCore.Mvc;
 
 namespace amethyst.Controllers;

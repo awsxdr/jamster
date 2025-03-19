@@ -1,6 +1,4 @@
 ﻿using amethyst.DataStores;
-using amethyst.Extensions;
-using Func;
 
 namespace amethyst.Services;
 

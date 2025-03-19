@@ -1,6 +1,4 @@
-﻿using Func;
-
-namespace amethyst.Domain;
+﻿namespace amethyst.Domain;
 
 public class UnexpectedResultException(Result result) : Exception
 {
