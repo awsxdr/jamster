@@ -16,7 +16,7 @@ internal static class DependencyInjection
         var serviceTypes =
             Assembly.GetExecutingAssembly().GetTypes()
                 .Where(t => t.Namespace?.StartsWith($"{nameof(amethyst)}.{nameof(Services)}") ?? false)
-                .Where(t => t is { IsAbstract: false, IsGenericType: false, IsNested: false })
+                .Where(t => t is { IsAbstract: false, IsGenericType: false, IsNested: false, IsClass: true })
                 .Where(t => !t.IsAssignableTo<MulticastDelegate>())
                 .ToArray();
 
