@@ -7,6 +7,8 @@ import { GameStateContextProvider, useCurrentGame, useI18n } from "@/hooks";
 import { GameToolbar, PltDisplayType } from "./components";
 import { PenaltyLineupTable } from "./components/PenaltyLineupTable";
 import { DisplaySide, TeamSide } from "@/types";
+import { BoxTripList } from "./components/BoxTripList";
+import { ConnectionLostAlert } from "@/components/ConnectionLostAlert";
 
 export const PenaltyLineup = () => {
 
@@ -82,6 +84,7 @@ export const PenaltyLineup = () => {
             { selectedGameId && (
                 <GameStateContextProvider gameId={selectedGameId}>
                     <Separator />
+                    <ConnectionLostAlert />
                     { selectedGameId && display !== "None" && (
                         <div className="flex flex-col 2xl:flex-row">
                             { team !== DisplaySide.Away && (
@@ -96,6 +99,8 @@ export const PenaltyLineup = () => {
                             )}
                         </div>
                     )}
+                    <Separator />
+                    <BoxTripList teamSide={TeamSide.Home} />
                 </GameStateContextProvider>
             )}
         </>

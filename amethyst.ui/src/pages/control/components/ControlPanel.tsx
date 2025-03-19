@@ -4,10 +4,9 @@ import { ControlPanelViewConfiguration, DEFAULT_CONTROL_PANEL_VIEW_CONFIGURATION
 import { ClocksContainer } from "./ClocksContainer";
 import { TimeoutTypePanel } from "./TimeoutTypePanel";
 import { useCurrentUserConfiguration, useGameStageState, useHasServerConnection } from "@/hooks";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui";
-import { WifiOff } from "lucide-react";
 import { TimeoutList } from "./TimeoutList";
 import { ScoreSheetContainer } from "./statsSheet/ScoreSheetContainer";
+import { ConnectionLostAlert } from "@/components/ConnectionLostAlert";
 
 type ControlPanelProps = {
     gameId?: string;
@@ -31,13 +30,7 @@ export const ControlPanel = ({ gameId, disabled }: ControlPanelProps) => {
 
     return (
         <div className="flex flex-col gap-2 pt-2 pb-2">
-            { !hasConnection &&
-                <Alert className="rounded-none" variant="destructive">
-                    <WifiOff />
-                    <AlertTitle className="ml-2">Connection lost</AlertTitle>
-                    <AlertDescription className="ml-2">Connection to the server has been lost. Please check that the software is running and that your connection to the computer running it is working.</AlertDescription>
-                </Alert>
-            }
+            <ConnectionLostAlert />
             { viewConfiguration.showClockControls && <MainControls gameId={gameId} disabled={disabled} /> }
             { viewConfiguration.showClockControls && <TimeoutTypePanel gameId={gameId} disabled={disabled} /> }
             { (viewConfiguration.showLineupControls || viewConfiguration.showScoreControls || viewConfiguration.showStatsControls) && (

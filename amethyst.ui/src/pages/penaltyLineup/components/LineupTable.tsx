@@ -6,7 +6,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { MenuColumn, SkaterNumberColumn } from ".";
 import { useEffect, useMemo, useState } from "react";
 import { SkaterPositionColumn } from "./SkaterPositionColumn";
-import { SkaterAddedToJam, SkaterInjuryAdded, SkaterPosition, SkaterRemovedFromJam } from "@/types/events";
+import { SkaterAddedToJam, SkaterInjuryAdded, SkaterPosition, SkaterReleasedFromBox, SkaterRemovedFromJam, SkaterSatInBox } from "@/types/events";
 import { PenaltyBoxColumn } from "./PenaltyBoxColumn";
 
 type LineupTableProps = {
@@ -107,6 +107,13 @@ export const LineupTable = ({
         }
     }
 
+    const handleBoxClicked = (skaterNumber: string, currentlyInBox: boolean) => {
+        if(currentlyInBox) {
+            sendEvent(gameId, new SkaterReleasedFromBox(teamSide, skaterNumber));
+        } else {
+            sendEvent(gameId, new SkaterSatInBox(teamSide, skaterNumber));
+        }
+    }
 
     if(!skaterPositions) {
         return (<></>);
@@ -123,7 +130,7 @@ export const LineupTable = ({
         <>
             <div className={cn("col-start-2 row-start-1 flex items-end", headerClassName)}>
                 <Button 
-                    className="w-full p-0 lg:p-2"
+                    className="w-full p-0 lg:p-2 rounded-none"
                     variant="secondary" 
                     disabled={totalJamNumber <= 0} 
                     onClick={() => setTotalJamNumber(t => t - 1)}
@@ -132,7 +139,7 @@ export const LineupTable = ({
                     <span className={cn("hidden", !compact && "lg:inline")}>{translate("PreviousJam")}</span>
                 </Button>
             </div>
-            <div className={cn("col-start-3 col-span-4 row-start-1 gap-2", headerClassName, headerTextClassName, "items-center md:items-end")}>
+            <div className={cn("col-start-3 col-span-4 row-start-1 gap-2", headerClassName, headerTextClassName, "items-center")}>
                 <span>
                     <span className={cn(!compact && "lg:hidden")}>{translate("Period.Short")}</span>
                     <span className={cn("hidden", !compact && "lg:inline")}>{translate("Period.Long")}</span>
@@ -147,7 +154,7 @@ export const LineupTable = ({
             </div>
             <div className={cn("col-start-7 row-start-1 flex items-end", headerClassName)}>
                 <Button 
-                    className="w-full p-0 lg:p-2"
+                    className="w-full p-0 lg:p-2 rounded-none"
                     disabled={totalJamNumber >= jams.length - 1 || totalJamNumber === -1} 
                     onClick={() => setTotalJamNumber(t => t + 1)}
                 >
@@ -155,7 +162,7 @@ export const LineupTable = ({
                     <ChevronRight />
                 </Button>
             </div>
-            <MenuColumn skaterPositions={skaterPositions} onInjuryAdded={handleInjuryAdded} />
+            <MenuColumn skaterNumbers={skaterNumbers} skaterPositions={skaterPositions} onInjuryAdded={handleInjuryAdded} />
             <SkaterNumberColumn 
                 skaterNumbers={skaterNumbers}
                 skaterPositions={skaterPositions} 
@@ -206,8 +213,10 @@ export const LineupTable = ({
             />
             <PenaltyBoxColumn
                 teamSide={teamSide}
+                skaterNumbers={skaterNumbers}
                 skaterPenalties={skaterPenalties}
                 compact={compact}
+                onClick={handleBoxClicked}
             />
             <div className="col-start-2 col-span-6 border-t border-black">
             </div>
