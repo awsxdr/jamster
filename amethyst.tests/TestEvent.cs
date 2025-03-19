@@ -13,3 +13,8 @@ public class TestEventBody
 public class TestAlignedEvent(Guid7 id) : Event(id), IPeriodClockAligned;
 
 public class TestUndoEvent(Guid7 id) : Event(id), IShownInUndo;
+
+public class TestReplacedEvent(Guid7 id) : Event(id), IShownInUndo, IReplaceOnDelete<TestEvent>
+{
+    public TestEvent GetDeletionReplacement() => new(Tick, new() { Value = "Replaced" });
+}

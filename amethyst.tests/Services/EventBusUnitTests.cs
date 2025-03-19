@@ -149,4 +149,19 @@ public class EventBusUnitTests : UnitTest<EventBus>
 
         result.Should().BeFailure<EventBus.EventDeletionFailedError>();
     }
+
+    [Test]
+    public async Task RemoveEvent_WhenEventShouldBeReplacedOnDeletion_PersistsNewEvent()
+    {
+        var eventId = Guid7.NewGuid();
+
+        GetMock<IGameDataStore>()
+            .Setup(mock => mock.GetEvent(eventId))
+            .Returns(Result.Succeed<Event>(new TestReplacedEvent(eventId)));
+
+        await Subject.RemoveEvent(_game, eventId);
+
+        GetMock<IGameDataStore>()
+            .Verify(mock => mock.AddEvent(It.Is<Event>(e => e.Tick == eventId.Tick)), Times.Once);
+    }
 }

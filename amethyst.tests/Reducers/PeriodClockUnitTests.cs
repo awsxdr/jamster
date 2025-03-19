@@ -46,7 +46,7 @@ public class PeriodClockUnitTests : ReducerUnitTest<PeriodClock, PeriodClockStat
         Tick ticksPassed = Random.Shared.Next(1000);
         State = new(true, false, 0, 0, ticksPassed, ticksPassed.Seconds);
 
-        MockState(new JamClockState(false, 0, ticksPassed, ticksPassed.Seconds));
+        MockState(new JamClockState(false, 0, ticksPassed, ticksPassed.Seconds, true));
 
         var originalState = State;
 
@@ -78,7 +78,7 @@ public class PeriodClockUnitTests : ReducerUnitTest<PeriodClock, PeriodClockStat
             ticksPassedAtLastStart + 12000,
             (int) ((ticksPassedAtLastStart + 12000) / 1000));
 
-        MockState(new JamClockState(true, 0, 10000, 10));
+        MockState(new JamClockState(true, 0, 10000, 10, true));
 
         await Subject.Handle(new JamEnded(lastStartTick + 12100));
 
@@ -111,7 +111,7 @@ public class PeriodClockUnitTests : ReducerUnitTest<PeriodClock, PeriodClockStat
             ticksPassedAtLastStart + 12000,
             (int)((ticksPassedAtLastStart + 12000) / 1000));
 
-        MockState(new JamClockState(false, 0, 0, 0));
+        MockState(new JamClockState(false, 0, 0, 0, true));
 
         var result = await Subject.Handle(new JamEnded(12100));
 
@@ -399,7 +399,7 @@ public class PeriodClockUnitTests : ReducerUnitTest<PeriodClock, PeriodClockStat
     [Test]
     public async Task Tick_WhenPeriodClockRunning_AndPeriodClockNotExpired_UpdatesTicksPassedBasedOnLastStartTick()
     {
-        MockState(new JamClockState(true, 0, 0, 0));
+        MockState(new JamClockState(true, 0, 0, 0, true));
         var periodLength = Domain.Tick.FromSeconds(1234);
         MockState<RulesState>(new(Rules.DefaultRules with
         {
@@ -434,7 +434,7 @@ public class PeriodClockUnitTests : ReducerUnitTest<PeriodClock, PeriodClockStat
     [Test]
     public async Task Tick_WhenPeriodClockRunning_AndPeriodClockExpired_AndJamRunning_SetsTicksPassedToPeriodDuration_AndDoesNotStopClock()
     {
-        MockState(new JamClockState(true, 0, 0, 0));
+        MockState(new JamClockState(true, 0, 0, 0, true));
         var periodLength = Domain.Tick.FromSeconds(1234);
         MockState<RulesState>(new(Rules.DefaultRules with
         {
@@ -484,7 +484,7 @@ public class PeriodClockUnitTests : ReducerUnitTest<PeriodClock, PeriodClockStat
 
         GetMock<IGameStateStore>()
             .Setup(mock => mock.GetState<JamClockState>())
-            .Returns(new JamClockState(false, 0, 0, 0));
+            .Returns(new JamClockState(false, 0, 0, 0, true));
 
         var lastStartTick = GetRandomTick();
         var ticksPassedAtLastStart = periodLength / 2;
@@ -527,7 +527,7 @@ public class PeriodClockUnitTests : ReducerUnitTest<PeriodClock, PeriodClockStat
 
         GetMock<IGameStateStore>()
             .Setup(mock => mock.GetState<JamClockState>())
-            .Returns(new JamClockState(false, 0, 0, 0));
+            .Returns(new JamClockState(false, 0, 0, 0, true));
 
         var lastStartTick = GetRandomTick();
         var ticksPassedAtLastStart = periodLength / 2;
@@ -566,7 +566,7 @@ public class PeriodClockUnitTests : ReducerUnitTest<PeriodClock, PeriodClockStat
 
         GetMock<IGameStateStore>()
             .Setup(mock => mock.GetState<JamClockState>())
-            .Returns(new JamClockState(false, 0, 0, 0));
+            .Returns(new JamClockState(false, 0, 0, 0, true));
 
         var lastStartTick = GetRandomTick();
         var ticksPassedAtLastStart = periodLength / 2;

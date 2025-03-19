@@ -16,7 +16,7 @@ public class TripScoreUnitTests : ReducerUnitTest<HomeTripScore, TripScoreState>
     public async Task ScoreModifiedRelative_WhenJamRunning_SetsTripScoreAsExpected(int? startScore, int value, long lastUpdateTick, long eventTick, TeamSide teamSide, int expectedScore, long expectedTick)
     {
         State = new(startScore, 0, lastUpdateTick);
-        MockState(new JamClockState(true, 0, 0, 0));
+        MockState(new JamClockState(true, 0, 0, 0, true));
 
         await Subject.Handle(new ScoreModifiedRelative(eventTick, new(teamSide, value)));
 
@@ -28,7 +28,7 @@ public class TripScoreUnitTests : ReducerUnitTest<HomeTripScore, TripScoreState>
     public async Task ScoreModifiedRelative_WhenJamNotRunning_DoesNotResetTripScoreBeforeAdjusting()
     {
         State = new(3, 1, 0);
-        MockState(new JamClockState(false, 0, 0, 0));
+        MockState(new JamClockState(false, 0, 0, 0, true));
 
         await Subject.Handle(new ScoreModifiedRelative(TripScore.TripScoreResetTimeInTicks + Domain.Tick.FromSeconds(2), new(TeamSide.Home, 1)));
 
@@ -39,7 +39,7 @@ public class TripScoreUnitTests : ReducerUnitTest<HomeTripScore, TripScoreState>
     public async Task JamEnded_WhenTripHasScore_SendsTripCompletedEvent_AndSendsScoreModifiedBy0Event()
     {
         State = new(3, 1, 0);
-        MockState(new JamClockState(true, 0, 0, 0));
+        MockState(new JamClockState(true, 0, 0, 0, true));
 
         var implicitEvents = await Subject.Handle(new JamEnded(1000));
         implicitEvents = implicitEvents.ToArray();
@@ -58,7 +58,7 @@ public class TripScoreUnitTests : ReducerUnitTest<HomeTripScore, TripScoreState>
     public async Task JamEnded_WhenTripScoreIsNull_SendsScoreModifiedBy0Event()
     {
         State = new(null, 1, 0);
-        MockState(new JamClockState(true, 0, 0, 0));
+        MockState(new JamClockState(true, 0, 0, 0, true));
 
         var implicitEvents = await Subject.Handle(new JamEnded(1000));
 
@@ -72,7 +72,7 @@ public class TripScoreUnitTests : ReducerUnitTest<HomeTripScore, TripScoreState>
     public async Task JamEnded_WhenNoTripsInJam_DoesNotSendEvents()
     {
         State = new(null, 0, 0);
-        MockState(new JamClockState(true, 0, 0, 0));
+        MockState(new JamClockState(true, 0, 0, 0, true));
 
         var implicitEvents = await Subject.Handle(new JamEnded(1000));
 
@@ -83,7 +83,7 @@ public class TripScoreUnitTests : ReducerUnitTest<HomeTripScore, TripScoreState>
     public async Task LastTripDeleted_WhenTeamMatches_ClearsTripScore()
     {
         State = new(2, 1, 0);
-        MockState(new JamClockState(true, 0, 0, 0));
+        MockState(new JamClockState(true, 0, 0, 0, true));
 
         await Subject.Handle(new LastTripDeleted(0, new(TeamSide.Home)));
 
@@ -94,7 +94,7 @@ public class TripScoreUnitTests : ReducerUnitTest<HomeTripScore, TripScoreState>
     public async Task LastTripDeleted_WhenTeamDoesNotMatch_DoesNotChangeState()
     {
         State = new(2, 1, 0);
-        MockState(new JamClockState(true, 0, 0, 0));
+        MockState(new JamClockState(true, 0, 0, 0, true));
 
         var originalState = State;
 
@@ -107,7 +107,7 @@ public class TripScoreUnitTests : ReducerUnitTest<HomeTripScore, TripScoreState>
     public async Task Tick_WhenJamRunning_ClearsTripScoreAfterSetTime()
     {
         State = new(3, 1, 0);
-        MockState(new JamClockState(true, 0, 0, 0));
+        MockState(new JamClockState(true, 0, 0, 0, true));
 
         await Tick(TripScore.TripScoreResetTimeInTicks - 1);
 
@@ -126,7 +126,7 @@ public class TripScoreUnitTests : ReducerUnitTest<HomeTripScore, TripScoreState>
         var checkTick = TripScore.TripScoreResetTimeInTicks + Domain.Tick.FromSeconds(2);
 
         State = new(3, 1, 0);
-        MockState(new JamClockState(false, 0, checkTick, checkTick.Seconds));
+        MockState(new JamClockState(false, 0, checkTick, checkTick.Seconds, true));
 
         await Tick(checkTick);
 
@@ -138,7 +138,7 @@ public class TripScoreUnitTests : ReducerUnitTest<HomeTripScore, TripScoreState>
     public async Task Tick_WhenJamRunning_AndTripScoreClear_DoesNotChangeState()
     {
         State = new(null, 0, 0);
-        MockState(new JamClockState(true, 0, 0, 0));
+        MockState(new JamClockState(true, 0, 0, 0, true));
 
         await Tick(TripScore.TripScoreResetTimeInTicks + 1);
 

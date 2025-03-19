@@ -31,7 +31,7 @@ public class GameStageUnitTests : ReducerUnitTest<GameStage, GameStageState>
     public async Task JamStarted_SetsExpectedStage(Stage currentStage, Stage expectedStage)
     {
         State = new(currentStage, 1, 1, 1, false);
-        MockState<JamClockState>(new(currentStage == Stage.Jam, 0, 0, 0));
+        MockState<JamClockState>(new(currentStage == Stage.Jam, 0, 0, 0, true));
         MockState<RulesState>(new(Rules.DefaultRules));
 
         await Subject.Handle(new JamStarted(0));
@@ -43,7 +43,7 @@ public class GameStageUnitTests : ReducerUnitTest<GameStage, GameStageState>
     public async Task JamStarted_WhenPeriodFinalized_SetsPeriodToNotBeFinalized()
     {
         State = new(Stage.Lineup, 2, 1, 1, true);
-        MockState<JamClockState>(new(false, 0, 0, 0));
+        MockState<JamClockState>(new(false, 0, 0, 0, true));
         MockState<RulesState>(new(Rules.DefaultRules));
 
         await Subject.Handle(new JamStarted(0));
@@ -158,7 +158,7 @@ public class GameStageUnitTests : ReducerUnitTest<GameStage, GameStageState>
     public async Task JamStarted_SetsExpectedJamNumber(Stage currentStage, int jamNumber, int expectedJamNumber)
     {
         State = new(currentStage, 1, jamNumber, jamNumber, false);
-        MockState<JamClockState>(new(currentStage == Stage.Jam, 0, 0, 0));
+        MockState<JamClockState>(new(currentStage == Stage.Jam, 0, 0, 0, true));
         MockState<RulesState>(new(Rules.DefaultRules));
 
         await Subject.Handle(new JamStarted(0));
@@ -171,7 +171,7 @@ public class GameStageUnitTests : ReducerUnitTest<GameStage, GameStageState>
     public async Task JamStarted_WhenInIntermission_AndPeriodFinalized_SendsIntermissionEnded(Stage stage)
     {
         State = new(stage, 1, 1, 1, true);
-        MockState<JamClockState>(new(false, 0, 0, 0));
+        MockState<JamClockState>(new(false, 0, 0, 0, true));
         MockState<RulesState>(new(Rules.DefaultRules));
 
         var implicitEvents = await Subject.Handle(new JamStarted(1000));
