@@ -1,3 +1,4 @@
+import { useTimeoutClockState } from "@/hooks";
 import { Clock, ClockProps } from "./Clock";
 
 type TimeoutClockState = {
@@ -9,6 +10,16 @@ type TimeoutClockState = {
 
 type TimeoutClockProps = Omit<ClockProps<TimeoutClockState>, "secondsMapper" | "stateName" | "direction" | "startValue">;
 
-export const TimeoutClock = (props: TimeoutClockProps) => (
-    <Clock<TimeoutClockState> secondsMapper={s => s.secondsPassed} stateName="TimeoutClockState" direction="up" {...props} />
-);
+export const TimeoutClock = (props: TimeoutClockProps) => {
+
+    const clockState = useTimeoutClockState();
+
+    return (
+        <Clock
+            secondsMapper={s => s.secondsPassed} 
+            state={clockState}
+            direction="up" 
+            {...props} 
+        />
+    );
+}

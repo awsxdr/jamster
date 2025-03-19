@@ -1,3 +1,4 @@
+import { usePeriodClockState } from "@/hooks";
 import { Clock, ClockProps } from "./Clock";
 
 type PeriodClockState = {
@@ -10,6 +11,17 @@ type PeriodClockState = {
 
 type PeriodClockProps = Omit<ClockProps<PeriodClockState>, "secondsMapper" | "stateName" | "direction" | "startValue">;
 
-export const PeriodClock = (props: PeriodClockProps) => (
-    <Clock<PeriodClockState> secondsMapper={s => s.secondsPassed} stateName="PeriodClockState" direction="down" startValue={30 * 60} {...props} />
-);
+export const PeriodClock = (props: PeriodClockProps) => {
+
+    const clockState = usePeriodClockState();
+
+    return (
+        <Clock
+            secondsMapper={s => s.secondsPassed} 
+            state={clockState}
+            direction="down" 
+            startValue={30 * 60} 
+            {...props} 
+        />
+    );
+}

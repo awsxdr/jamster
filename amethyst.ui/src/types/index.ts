@@ -1,3 +1,4 @@
+export * from './BoxTripsState';
 export * from './Color';
 export * from './ControlPanelViewConfiguration';
 export * from './DisplayConfiguration';

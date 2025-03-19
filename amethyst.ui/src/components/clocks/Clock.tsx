@@ -1,11 +1,10 @@
-import { useGameState } from "@/hooks";
 import { useMemo } from "react";
 import { ScaledText } from "@components/ScaledText";
 import { cn } from "@/lib/utils";
 
 export type ClockProps<TClockState> = {
     secondsMapper: (state: TClockState) => number;
-    stateName: string;
+    state?: TClockState;
     direction: "down" | "up";
     textOnZero?: string;
     startValue?: number;
@@ -13,17 +12,15 @@ export type ClockProps<TClockState> = {
     autoScale?: boolean;
 };
 
-export const Clock = <TClockState,>({ secondsMapper, stateName, direction, textOnZero, startValue, textClassName, autoScale }: ClockProps<TClockState>) => {
-    const clockState = useGameState<TClockState>(stateName);
-    
-    const clock = useMemo(() => clockState && secondsMapper(clockState), [secondsMapper, clockState]);
+export const Clock = <TClockState,>({ secondsMapper, state, direction, textOnZero, startValue, textClassName, autoScale }: ClockProps<TClockState>) => {
+    const clock = useMemo(() => state && secondsMapper(state), [secondsMapper, state]);
 
     const time = useMemo(() => {
         if(clock === undefined) {
             return textOnZero ?? '0';
         }
 
-        const totalSeconds = direction === 'up' ? clock : ((startValue ?? 0) - clock);
+        const totalSeconds = direction === 'up' ? clock : Math.max(0, (startValue ?? 0) - clock);
 
         if (totalSeconds === 0 && textOnZero) {
             return textOnZero;

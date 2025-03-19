@@ -1,3 +1,4 @@
+import { useLineupClockState } from "@/hooks";
 import { Clock, ClockProps } from "./Clock";
 
 type LineupClockState = {
@@ -9,6 +10,16 @@ type LineupClockState = {
 
 type LineupClockProps = Omit<ClockProps<LineupClockState>, "secondsMapper" | "stateName" | "direction" | "startValue">;
 
-export const LineupClock = (props: LineupClockProps) => (
-    <Clock<LineupClockState> secondsMapper={s => s.secondsPassed} stateName="LineupClockState" direction="up" {...props} />
-);
+export const LineupClock = (props: LineupClockProps) => {
+
+    const clockState = useLineupClockState();
+
+    return (
+        <Clock
+            secondsMapper={s => s.secondsPassed} 
+            state={clockState}
+            direction="up" 
+            {...props} 
+        />
+    );
+}
