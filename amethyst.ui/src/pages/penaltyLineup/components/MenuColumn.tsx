@@ -5,14 +5,15 @@ import { Button } from "@/components/ui";
 import { EllipsisVertical } from "lucide-react";
 
 type MenuColumnProps = {
+    skaterNumbers: string[];
     skaterPositions: StringMap<LineupPosition>;
     onInjuryAdded?: (skaterNumber: string) => void;
 }
 
-export const MenuColumn = ({ skaterPositions, onInjuryAdded }: MenuColumnProps) => {
+export const MenuColumn = ({ skaterNumbers, skaterPositions, onInjuryAdded }: MenuColumnProps) => {
     return (
         <>
-            { Object.keys(skaterPositions).map((skaterNumber, row) => (
+            { skaterNumbers.map((skaterNumber, row) => (
                 <div className="col-start-1 row-start-[--row]" style={{ '--row': row + 2 } as CSSProperties} key={skaterNumber}>
                     <RowMenu 
                         disableNotes={skaterPositions[skaterNumber] === LineupPosition.Bench} 

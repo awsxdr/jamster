@@ -6,14 +6,15 @@ import { CSSProperties } from "react";
 
 type PenaltyBoxColumnProps = {
     teamSide: TeamSide;
+    skaterNumbers: string[];
     skaterPenalties: StringMap<Penalty[]>;
     compact?: boolean;
     disabled?: boolean;
     className?: string;
-    onClick?: (skaterNumber: string) => void;
+    onClick?: (skaterNumber: string, currentlyInBox: boolean) => void;
 }
 
-export const PenaltyBoxColumn = ({ teamSide, skaterPenalties, compact, disabled, className, onClick}: PenaltyBoxColumnProps) => {
+export const PenaltyBoxColumn = ({ teamSide, skaterNumbers, skaterPenalties, compact, disabled, className, onClick}: PenaltyBoxColumnProps) => {
 
     const { translate } = useI18n({ prefix: "PenaltyLineup.PenaltyBoxColumn." });
     const penaltyBox = usePenaltyBoxState(teamSide) ?? { skaters: [] };
@@ -21,7 +22,7 @@ export const PenaltyBoxColumn = ({ teamSide, skaterPenalties, compact, disabled,
     return (
         <>
         { 
-            Object.keys(skaterPenalties).map((skaterNumber, row) => {
+            skaterNumbers.map((skaterNumber, row) => {
                 const penalties = skaterPenalties[skaterNumber] ?? [];
                 const inBox = penaltyBox.skaters.includes(skaterNumber);
 
@@ -41,7 +42,7 @@ export const PenaltyBoxColumn = ({ teamSide, skaterPenalties, compact, disabled,
                             )}
                             variant={inBox ? "default" : "outline"}
                             disabled={disabled}
-                            onClick={() => onClick?.(skaterNumber)}
+                            onClick={() => onClick?.(skaterNumber, inBox)}
                         >
                             <span className="sm:hidden">{translate("Box.Short")}</span>
                             <span className={cn("hidden sm:inline", !compact && "lg:hidden")}>{translate("Box.Medium")}</span>

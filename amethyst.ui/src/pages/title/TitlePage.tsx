@@ -12,7 +12,7 @@ export const TitlePage = () => {
                 <MobileSidebarTrigger className="mx-5" />
             </div>
             <div className="px-5">
-                Welcome to Amethyst Scoreboard!
+                Welcome to DerbyStats!
             </div>
         </>
     )
