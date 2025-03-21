@@ -107,23 +107,5 @@ public abstract class ReducerUnitTest<TReducer, TState> : UnitTest<TReducer, IRe
         return tickReceiver.TickAsync(tick);
     }
 
-    protected async Task Wait(Task task, TimeSpan? delay = null) =>
-        await await Task.WhenAny(
-            task,
-            Task.Run(async () =>
-            {
-                await Task.Delay(delay ?? TimeSpan.FromSeconds(4));
-                throw new TimeoutException();
-            }));
-
-    protected async Task<TResult> Wait<TResult>(Task<TResult> task, TimeSpan? delay = null) =>
-        await await Task.WhenAny(
-            task,
-            Task.Run<TResult>(async () =>
-            {
-                await Task.Delay(delay ?? TimeSpan.FromSeconds(4));
-                throw new TimeoutException();
-            }));
-
     public class SubjectNotTickReceiverException : Exception;
 }

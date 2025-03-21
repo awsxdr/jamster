@@ -1,13 +1,21 @@
-﻿namespace amethyst.Services;
+﻿using System.Collections.Concurrent;
+using amethyst.Domain;
+using amethyst.Hubs;
+using Microsoft.AspNetCore.SignalR;
+
+namespace amethyst.Services;
 
 public interface IConnectedClientsService
 {
-    event EventHandler<ConnectedClientsChangedArgs>? ConnectedClientsChanged;
-    string RegisterClient(string clientId);
-    void UnregisterClient(string clientId);
-    void SetClientActivity(string clientId, ClientActivity activity, string path);
-    void SetClientName(string clientId, string name);
+    event AsyncEventHandler<ConnectedClientsChangedArgs>? ConnectedClientsChanged;
+
+    Task<string> RegisterClient(string clientId);
+    Task UnregisterClient(string clientId);
+    Task<Result> SetClientActivity(string clientId, ClientActivity activity, string path, string? gameId);
+    Task<Result> RequestClientActivityChange(string clientId, ClientActivity activity, string? gameId);
+    Task<Result> SetClientName(string clientId, string name);
     IEnumerable<ConnectedClient> GetConnectedClients();
+    Result<ConnectedClient> GetClient(string connectionId);
 
     public sealed class ConnectedClientsChangedArgs : EventArgs
     {
@@ -16,11 +24,11 @@ public interface IConnectedClientsService
 }
 
 [Singleton]
-public class ConnectedClientsService : IConnectedClientsService
+public class ConnectedClientsService(IHubContext<ConnectedClientsHub> clientsHub, ILogger<ConnectedClientsService> logger) : IConnectedClientsService
 {
-    public event EventHandler<IConnectedClientsService.ConnectedClientsChangedArgs>? ConnectedClientsChanged;
+    public event AsyncEventHandler<IConnectedClientsService.ConnectedClientsChangedArgs>? ConnectedClientsChanged;
 
-    private readonly Dictionary<string, ConnectedClient> _connectedClients = new();
+    private readonly ConcurrentDictionary<string, ConnectedClient> _connectedClients = new();
 
     private readonly Queue<string> _availableClientNames = new(
         NameGenerator.NameNouns.SelectMany(noun =>
@@ -30,20 +38,20 @@ public class ConnectedClientsService : IConnectedClientsService
             .ToList()
             .Shuffle());
 
-    public string RegisterClient(string clientId)
+    public async Task<string> RegisterClient(string clientId)
     {
         var client =
             _connectedClients.TryGetValue(clientId, out var existingClient)
                 ? existingClient with { LastUpdateTime = DateTimeOffset.UtcNow }
                 : CreateNewClient(clientId);
-        _connectedClients[clientId] = client;
+        _connectedClients.AddOrUpdate(clientId, client, (_, _) => client);
 
-        ConnectedClientsChanged?.Invoke(this, new() { Clients = _connectedClients.Values.ToArray() });
+        await ConnectedClientsChanged.InvokeHandlersAsync(this, new() { Clients = _connectedClients.Values.ToArray() });
 
         return client.Name.Name;
     }
 
-    public void UnregisterClient(string clientId)
+    public async Task UnregisterClient(string clientId)
     {
         if (!_connectedClients.Remove(clientId, out var client))
             return;
@@ -51,28 +59,43 @@ public class ConnectedClientsService : IConnectedClientsService
         if (!client.Name.IsCustom)
             _availableClientNames.Enqueue(client.Name.Name);
 
-        ConnectedClientsChanged?.Invoke(this, new() { Clients = _connectedClients.Values.ToArray() });
+        await ConnectedClientsChanged.InvokeHandlersAsync(this, new() { Clients = _connectedClients.Values.ToArray() });
     }
 
-    public void SetClientActivity(string clientId, ClientActivity activity, string path)
+    public async Task<Result> SetClientActivity(string clientId, ClientActivity activity, string path, string? gameId)
     {
         if (!_connectedClients.TryGetValue(clientId, out var client))
-            return;
+            return Result.Fail<ClientNotFoundError>();
 
         _connectedClients[clientId] = client with
         {
             CurrentActivity = activity,
             Path = path,
+            GameId = gameId,
             LastUpdateTime = DateTimeOffset.UtcNow
         };
 
-        ConnectedClientsChanged?.Invoke(this, new() { Clients = _connectedClients.Values.ToArray() });
+        await ConnectedClientsChanged.InvokeHandlersAsync(this, new() { Clients = _connectedClients.Values.ToArray() });
+
+        return Result.Succeed();
     }
 
-    public void SetClientName(string clientId, string name)
+    public async Task<Result> RequestClientActivityChange(string clientId, ClientActivity activity, string? gameId)
     {
         if (!_connectedClients.TryGetValue(clientId, out var client))
-            return;
+            return Result.Fail<ClientNotFoundError>();
+
+        logger.LogDebug("Requesting client {clientId} changes activity to {activity} in game {gameId}", clientId, activity, gameId);
+
+        await clientsHub.Clients.Client(clientId).SendAsync("ChangeActivity", activity, gameId);
+
+        return Result.Succeed();
+    }
+
+    public async Task<Result> SetClientName(string clientId, string name)
+    {
+        if (!_connectedClients.TryGetValue(clientId, out var client))
+            return Result.Fail<ClientNotFoundError>();
 
         if(!client.Name.IsCustom)
             _availableClientNames.Enqueue(client.Name.Name);
@@ -82,13 +105,20 @@ public class ConnectedClientsService : IConnectedClientsService
             Name = new(name, true),
         };
 
-        ConnectedClientsChanged?.Invoke(this, new() { Clients = _connectedClients.Values.ToArray() });
+        await ConnectedClientsChanged.InvokeHandlersAsync(this, new() { Clients = _connectedClients.Values.ToArray() });
+
+        return Result.Succeed();
     }
 
     public IEnumerable<ConnectedClient> GetConnectedClients() => _connectedClients.Values;
 
+    public Result<ConnectedClient> GetClient(string connectionId) => 
+        _connectedClients.TryGetValue(connectionId, out var client) 
+            ? Result.Succeed(client)
+            : Result<ConnectedClient>.Fail<ClientNotFoundError>();
+
     private ConnectedClient CreateNewClient(string clientId) =>
-        new(clientId, GenerateUniqueName(), ClientActivity.Unknown, string.Empty, DateTimeOffset.UtcNow);
+        new(clientId, GenerateUniqueName(), ClientActivity.Unknown, string.Empty, null, DateTimeOffset.UtcNow);
 
     private string GenerateUniqueName()
     {
@@ -100,8 +130,9 @@ public class ConnectedClientsService : IConnectedClientsService
 }
 
 public sealed class NameListExhaustedException : Exception;
+public sealed class ClientNotFoundError : NotFoundError;
 
-public record ConnectedClient(string Id, ClientName Name, ClientActivity CurrentActivity, string Path, DateTimeOffset LastUpdateTime);
+public record ConnectedClient(string Id, ClientName Name, ClientActivity CurrentActivity, string Path, string? GameId, DateTimeOffset LastUpdateTime);
 
 public record ClientName(string Name, bool IsCustom)
 {

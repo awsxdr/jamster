@@ -190,5 +190,12 @@ public abstract class ControllerIntegrationTest
                 await Task.Delay(delay ?? TimeSpan.FromSeconds(4));
                 throw new TimeoutException();
             }));
+
+    protected Task WaitAll(params Task[] tasks) =>
+        Wait(Task.WhenAll(tasks));
+
+    protected Task<TResult[]> WaitAll<TResult>(params Task<TResult>[] tasks) =>
+        Wait(Task.WhenAll(tasks));
+
     protected abstract void CleanDatabase();
 }
