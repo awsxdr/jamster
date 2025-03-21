@@ -1,4 +1,5 @@
 export * from './BoxTripsState';
+export * from './ClientActivity';
 export * from './Color';
 export * from './ControlPanelViewConfiguration';
 export * from './DisplayConfiguration';
