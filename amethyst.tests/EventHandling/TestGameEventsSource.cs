@@ -1,4 +1,4 @@
-﻿using amethyst.Domain;
+using amethyst.Domain;
 using amethyst.Events;
 using amethyst.Reducers;
 
@@ -600,8 +600,10 @@ public static class TestGameEventsSource
         .Wait(1)
         .Validate(new GameStageState(Stage.Lineup, 1, 9, 9, false))
         .Event<TimeoutStarted>(90) // Timeout not ended
+        // Jam 10
         .Event<JamStarted>(76)
         .Event<JamEnded>(30)
+        // Jam 11
         .Event<JamStarted>(112)
         .Event<JamEnded>(30)
         .Event<TimeoutStarted>(1)
@@ -615,14 +617,19 @@ public static class TestGameEventsSource
             ("Home", new TeamTimeoutsState(2, ReviewStatus.Unused, TimeoutInUse.Timeout)),
             ("Away", new TeamTimeoutsState(0, ReviewStatus.Unused, TimeoutInUse.None))
         )
+        // Jam 12
         .Event<JamStarted>(121)
         .Event<JamEnded>(29) // Late jam ended
+        // Jam 13
         .Event<JamStarted>(68)
         .Event<JamEnded>(30)
+        // Jam 14
         .Event<JamStarted>(60)
         .Event<JamEnded>(30)
+        // Jam 15
         .Event<JamStarted>(93)
         .Event<JamEnded>(30)
+        // Jam 16
         .Event<JamStarted>(112)
         .Event<JamEnded>(1)
         .Validate(new GameStageState(Stage.Intermission, 1, 16, 16, false))
@@ -631,6 +638,7 @@ public static class TestGameEventsSource
         .Validate(tick => [new IntermissionClockState(true, false, Tick.FromSeconds(Rules.DefaultRules.IntermissionRules.DurationInSeconds), tick + (5 * 60 - 1) * 1000, 5 * 60 - 1)])
         .Wait(5 * 60)
         .Validate(tick => [new IntermissionClockState(true, true, Tick.FromSeconds(Rules.DefaultRules.IntermissionRules.DurationInSeconds), tick - 1000, 0)])
+        .Event<IntermissionEnded>(25)
         .Event<JamStarted>(94)
         .Validate(new GameStageState(Stage.Jam, 2, 1, 17, false))
         .Event<JamEnded>(30)

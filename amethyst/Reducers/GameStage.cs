@@ -25,7 +25,7 @@ public class GameStage(ReducerGameContext context, ILogger<GameStage> logger)
         var state = GetState();
         var newState = state.Stage switch
         {
-            Stage.Intermission => state with { Stage = Stage.Lineup, PeriodNumber = state.PeriodNumber + 1 },
+            Stage.Intermission => state with { Stage = Stage.Lineup },
             Stage.BeforeGame => state with { Stage = Stage.Lineup },
             _ => state
         };
