@@ -61,7 +61,7 @@ const makeDevTranslation = (key: string) => {
     };
 
     return Object.keys(characterReplacements).reduce(
-        (value, replace) => value.replace(new RegExp(replace, 'g'), characterReplacements[replace]),
+        (value, replace) => value?.replace(new RegExp(replace, 'g'), characterReplacements[replace]) ?? key,
         key
     );
 }
@@ -76,15 +76,16 @@ export const I18nContextProvider = ({ usageKey, defaultLanguage, languages, chil
     const languageNames = Object.keys(languages).map(key => ({ code: key, displayName: languages[key].name }));
 
     const translate = useCallback((key: string) => {
-        if(language === 'dev') {
-            return makeDevTranslation(languages[defaultLanguage][key]);
-        }
-
-        if(translations[key] === undefined) {
+        const translation = 
+            language === 'dev'
+            ? makeDevTranslation(languages[defaultLanguage][key])
+            : translations[key];
+            
+        if (translation === undefined) {
             console.warn("Translation missing for key", key);
         }
         
-        return translations[key] ?? key;
+        return translation ?? key;
     }, 
     [translations, language]);
 
