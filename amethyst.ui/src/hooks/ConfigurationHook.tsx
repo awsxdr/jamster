@@ -86,6 +86,7 @@ export const ConfigurationContextProvider = ({ children }: PropsWithChildren) =>
         setNotifiers(n => {
             if(!n[configurationName]?.[handle]) {
                 console.warn("Attempt to unwatch configuration with invalid handle", handle);
+                return n;
             }
 
             const { [handle]: _, ...newNotifier } = n[configurationName];
