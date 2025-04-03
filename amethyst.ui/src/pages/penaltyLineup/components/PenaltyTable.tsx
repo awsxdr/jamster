@@ -1,5 +1,5 @@
 import { CSSProperties, useMemo, useState } from "react";
-import { useEvents, useI18n, usePenaltySheetState, useRulesState } from "@/hooks";
+import { useEvents, useI18n, usePenaltySheetState, useRulesState, useTeamDetailsState } from "@/hooks";
 import { cn } from "@/lib/utils";
 import { Penalty, StringMap, TeamSide } from "@/types";
 import { ExpulsionDialog, PenaltyDialog, PenaltyRow } from ".";
@@ -18,20 +18,24 @@ export const PenaltyTable = ({ gameId, teamSide, offsetForLineupTable, compact }
     const { translate } = useI18n({ prefix: "PenaltyLineup.PenaltyTable." });
     const penaltySheet = usePenaltySheetState(teamSide) ?? { lines: [] };
     const { sendEvent } = useEvents();
+    const { team } = useTeamDetailsState(teamSide) ?? {};
 
     const [penaltyDialogOpen, setPenaltyDialogOpen] = useState(false);
     const [expulsionDialogOpen, setExpulsionDialogOpen] = useState(false);
     const [editingSkaterNumber, setEditingSkaterNumber] = useState("");
     const [editingIndex, setEditingIndex] = useState(0);
     const [editingPenalty, setEditingPenalty] = useState<Penalty>();
-    
+
+    const skaterNumbers = team?.roster.filter(s => s.isSkating).map(s => s.number).sort() ?? [];
+    const penaltyLines = useMemo(() => penaltySheet.lines.filter(l => skaterNumbers.includes(l.skaterNumber)), [skaterNumbers]);
+
     const skaterPenalties = useMemo(() => 
-        penaltySheet.lines.reduce((map, line) => ({ ...map, [line.skaterNumber]: line.penalties }), {} as StringMap<Penalty[]>), 
-    [penaltySheet]);
+        penaltyLines.reduce((map, line) => ({ ...map, [line.skaterNumber]: line.penalties }), {} as StringMap<Penalty[]>), 
+    [penaltyLines]);
 
     const skaterExpulsions = useMemo(() =>
-        penaltySheet.lines.reduce((map, line) => ({ ...map, [line.skaterNumber]: line.expulsionPenalty }), {} as StringMap<Penalty | null>),
-    [penaltySheet]);
+        penaltyLines.reduce((map, line) => ({ ...map, [line.skaterNumber]: line.expulsionPenalty }), {} as StringMap<Penalty | null>),
+    [penaltyLines]);
 
     if (!rules) {
         return (<></>);
@@ -111,7 +115,7 @@ export const PenaltyTable = ({ gameId, teamSide, offsetForLineupTable, compact }
                 <span className={cn("hidden sm:inline", !compact && "2xl:hidden", "text-xs lg:text-base")}>{translate("TotalPenalties.Short")}</span>
                 <span className={cn("hidden", !compact && "2xl:inline")}>{translate("TotalPenalties.Long")}</span>
             </div>
-            { penaltySheet.lines.map((l, row) => (
+            { penaltyLines.map((l, row) => (
                 <PenaltyRow 
                     key={l.skaterNumber} 
                     {...l} 
