@@ -6,7 +6,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { MenuColumn, SkaterNumberColumn } from ".";
 import { useEffect, useMemo, useState } from "react";
 import { SkaterPositionColumn } from "./SkaterPositionColumn";
-import { SkaterAddedToJam, SkaterInjuryAdded, SkaterPosition, SkaterReleasedFromBox, SkaterRemovedFromJam, SkaterSatInBox } from "@/types/events";
+import { SkaterAddedToJam, SkaterInjuryAdded, SkaterInjuryRemoved, SkaterPosition, SkaterReleasedFromBox, SkaterRemovedFromJam, SkaterSatInBox } from "@/types/events";
 import { PenaltyBoxColumn } from "./PenaltyBoxColumn";
 
 type LineupTableProps = {
@@ -51,8 +51,8 @@ export const LineupTable = ({
         return jams[totalJamNumber];
     }, [totalJamNumber, jams]);
 
-    const skaterNumbers = team?.roster.map(s => s.number) ?? [];
-    
+    const skaterNumbers = team?.roster.filter(s => s.isSkating).map(s => s.number).sort() ?? [];
+
     const skaterPositions = useMemo(() =>
         team?.roster.reduce((map, { number }) => ({
             ...map,
@@ -79,8 +79,6 @@ export const LineupTable = ({
             || skaterExpulsions[n] !== null
         ),
     [skaterPenalties, skaterExpulsions, injuries, rules]);
-
-    console.log(skaterExpulsions);
 
     const injuredSkaters = useMemo(() =>
         injuries.filter(i => !i.expired).map(i => i.skaterNumber), [injuries]);
@@ -126,6 +124,16 @@ export const LineupTable = ({
         sendEvent(gameId, new SkaterInjuryAdded(teamSide, skaterNumber));
     }
 
+    const handleInjuryRemoved = (skaterNumber: string) => {
+        const injuryJamNumber = injuries.filter(i => i.skaterNumber === skaterNumber).at(-1)?.totalJamNumberStart;
+
+        if(injuryJamNumber === undefined) {
+            return;
+        }
+
+        sendEvent(gameId, new SkaterInjuryRemoved(teamSide, skaterNumber, injuryJamNumber));
+    }
+
     return (
         <>
             <div className={cn("col-start-2 row-start-1 flex items-end", headerClassName)}>
@@ -162,7 +170,13 @@ export const LineupTable = ({
                     <ChevronRight />
                 </Button>
             </div>
-            <MenuColumn skaterNumbers={skaterNumbers} skaterPositions={skaterPositions} onInjuryAdded={handleInjuryAdded} />
+            <MenuColumn 
+                skaterNumbers={skaterNumbers} 
+                skaterPositions={skaterPositions}
+                injuredSkaters={injuredSkaters}
+                onInjuryAdded={handleInjuryAdded}
+                onInjuryRemoved={handleInjuryRemoved} 
+            />
             <SkaterNumberColumn 
                 skaterNumbers={skaterNumbers}
                 skaterPositions={skaterPositions} 
