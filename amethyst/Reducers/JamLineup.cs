@@ -168,6 +168,11 @@ public abstract class JamLineup(TeamSide teamSide, ReducerGameContext context, I
 
 public sealed record JamLineupState(string? JammerNumber, string? PivotNumber, string?[] BlockerNumbers)
 {
+    public bool Contains(string number) =>
+        JammerNumber == number
+        || PivotNumber == number
+        || BlockerNumbers.Contains(number);
+
     public bool Equals(JamLineupState? other) =>
         other is not null
         && (other.JammerNumber?.Equals(JammerNumber) ?? JammerNumber is null)

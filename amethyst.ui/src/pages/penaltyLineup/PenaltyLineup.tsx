@@ -3,11 +3,8 @@ import { useSearchParams } from "react-router-dom";
 
 import { Separator } from "@/components/ui";
 import { GameStateContextProvider, useCurrentGame, useI18n } from "@/hooks";
-
-import { GameToolbar, PltDisplayType } from "./components";
-import { PenaltyLineupTable } from "./components/PenaltyLineupTable";
+import { BoxDisplayType, BoxTripList, GameToolbar, PenaltyLineupTable, PltDisplayType } from "./components";
 import { DisplaySide, TeamSide } from "@/types";
-import { BoxTripList } from "./components/BoxTripList";
 import { ConnectionLostAlert } from "@/components/ConnectionLostAlert";
 
 export const PenaltyLineup = () => {
@@ -18,7 +15,8 @@ export const PenaltyLineup = () => {
 
     const [selectedGameId, setSelectedGameId] = useState<string | undefined>(searchParams.get('gameId') ?? '');
     const [team, setTeam] = useState(DisplaySide.Home);
-    const [display, setDisplay] = useState<PltDisplayType>("Both");
+    const [pltDisplay, setPltDisplay] = useState<PltDisplayType>("Both");
+    const [boxDisplay, setBoxDisplay] = useState<BoxDisplayType>("None");
     
     const updateSelectedGameId = useCallback((gameId?: string) => {
         searchParams.set('gameId', gameId ?? '');
@@ -33,10 +31,10 @@ export const PenaltyLineup = () => {
     }, [currentGame, selectedGameId]);
 
     useEffect(() => {
-        const searchParamsTeam = searchParams.get('team') as keyof typeof DisplaySide;
+        const searchParamsTeam = DisplaySide[searchParams.get('team') as keyof typeof DisplaySide];
 
         if(searchParamsTeam) {
-            setTeam(DisplaySide[searchParamsTeam]);
+            setTeam(searchParamsTeam);
         } else {
             searchParams.set('team', team);
             setSearchParams(searchParams);
@@ -45,18 +43,24 @@ export const PenaltyLineup = () => {
 
     useEffect(() => {
         const searchParamsPltType = searchParams.get('plt') as PltDisplayType;
-        if(!["Both", "Penalties", "Lineup", "None", "", undefined].includes(searchParamsPltType)) {
+        if(!["Both", "Penalties", "Lineup", "None"].includes(searchParamsPltType)) {
             searchParams.set('plt', "Both");
             setSearchParams(searchParams);
             return;
         }
 
-        if(searchParamsPltType) {
-            setDisplay(searchParamsPltType);
-        } else {
-            searchParams.set('plt', display);
+        setPltDisplay(searchParamsPltType);
+    }, [searchParams]);
+
+    useEffect(() => {
+        const searchParamsBoxType = searchParams.get('box') as BoxDisplayType;
+        if(!["Both", "None", "Jammers", "Blockers"].includes(searchParamsBoxType)) {
+            searchParams.set("box", "None");
             setSearchParams(searchParams);
+            return;
         }
+
+        setBoxDisplay(searchParamsBoxType);
     }, [searchParams]);
 
     const handleTeamChanged = (displaySide: DisplaySide) => {
@@ -69,6 +73,11 @@ export const PenaltyLineup = () => {
         setSearchParams(searchParams);
     }
 
+    const handleBoxTypeChanged = (boxType: BoxDisplayType) => {
+        searchParams.set('box', boxType);
+        setSearchParams(searchParams);
+    }
+
     return (
         <>
             <title>{translate("Title")} | {translate("Main.Title", { ignorePrefix: true })}</title>
@@ -76,31 +85,35 @@ export const PenaltyLineup = () => {
                     currentGame={currentGame} 
                     selectedGameId={selectedGameId} 
                     displaySide={team}
-                    pltDisplayType={display}
+                    pltDisplayType={pltDisplay}
+                    boxDisplayType={boxDisplay}
                     onDisplaySideChanged={handleTeamChanged}
                     onPltDisplayTypeChanged={handlePltTypeChanged}
+                    onBoxDisplayTypeChanged={handleBoxTypeChanged}
                     onSelectedGameIdChanged={updateSelectedGameId}
                 />
             { selectedGameId && (
                 <GameStateContextProvider gameId={selectedGameId}>
                     <Separator />
                     <ConnectionLostAlert />
-                    { selectedGameId && display !== "None" && (
+                    { pltDisplay !== "None" && (
                         <div className="flex flex-col 2xl:flex-row">
                             { team !== DisplaySide.Away && (
                                 <div className="flex flex-col p-1 md:p-2 xl:p-5 gap-1 md:gap-2 xl:gap-5 w-full">
-                                    <PenaltyLineupTable teamSide={TeamSide.Home} gameId={selectedGameId} compact={team === DisplaySide.Both && display === "Both"} display={display} />
+                                    <PenaltyLineupTable teamSide={TeamSide.Home} gameId={selectedGameId} compact={team === DisplaySide.Both && pltDisplay === "Both"} display={pltDisplay} />
                                 </div>
                             )}
                             { team !== DisplaySide.Home && (
                                 <div className="flex flex-col p-1 md:p-2 xl:p-5 gap-1 md:gap-2 xl:gap-5 w-full">
-                                    <PenaltyLineupTable teamSide={TeamSide.Away} gameId={selectedGameId} compact={team === DisplaySide.Both && display === "Both"} display={display} />
+                                    <PenaltyLineupTable teamSide={TeamSide.Away} gameId={selectedGameId} compact={team === DisplaySide.Both && pltDisplay === "Both"} display={pltDisplay} />
                                 </div>
                             )}
                         </div>
                     )}
                     <Separator />
-                    <BoxTripList teamSide={TeamSide.Home} />
+                    { boxDisplay !== "None" && (
+                        <BoxTripList teamSide={TeamSide.Home} boxDisplayType={boxDisplay} />
+                    )}
                 </GameStateContextProvider>
             )}
         </>

@@ -1,3 +1,5 @@
+export * from './BoxTripItem';
+export * from './BoxTripList';
 export * from './ExpulsionDialog';
 export * from './GameSelectMenu';
 export * from './GameToolbar';

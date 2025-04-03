@@ -14,6 +14,7 @@ public abstract class BoxTrips(TeamSide teamSide, ReducerGameContext context, IL
     , IHandlesEvent<JamEnded>
     , ITickReceiver
     , IDependsOnState<GameStageState>
+    , IDependsOnState<JamLineupState>
 {
     protected override BoxTripsState DefaultState => new([]);
     public override Option<string> GetStateKey() => Option.Some(teamSide.ToString());
@@ -28,6 +29,19 @@ public abstract class BoxTrips(TeamSide teamSide, ReducerGameContext context, IL
         if (alreadyRunning)
             return [];
 
+        var jamLineup = GetKeyedState<JamLineupState>(@event.Body.TeamSide.ToString());
+
+        if (!jamLineup.Contains(@event.Body.SkaterNumber))
+        {
+            logger.LogWarning("Attempt to add skater {skaterNumber} on {team} team to box when skater not on track", @event.Body.SkaterNumber, @event.Body.TeamSide);
+            return [];
+        }
+
+        var skaterPosition =
+            jamLineup.JammerNumber == @event.Body.SkaterNumber ? SkaterPosition.Jammer
+            : jamLineup.PivotNumber == @event.Body.SkaterNumber ? SkaterPosition.Pivot
+            : SkaterPosition.Blocker;
+
         logger.LogDebug("Skater {skaterNumber} from {team} team sitting in box", @event.Body.SkaterNumber, teamSide);
 
         SetState(state with 
@@ -37,6 +51,7 @@ public abstract class BoxTrips(TeamSide teamSide, ReducerGameContext context, IL
                     gameStage.Stage == Stage.Jam ? gameStage.JamNumber : gameStage.JamNumber + 1,
                     gameStage.Stage == Stage.Jam ? gameStage.TotalJamNumber : gameStage.TotalJamNumber + 1,
                     @event.Body.SkaterNumber,
+                    skaterPosition,
                     null,
                     [],
                     @event.Tick,
@@ -171,6 +186,7 @@ public sealed record BoxTrip(
     int Jam,
     int TotalJamStart,
     string SkaterNumber,
+    SkaterPosition SkaterPosition,
     int? DurationInJams,
     Substitution[] Substitutions,
     long LastStartTick,
