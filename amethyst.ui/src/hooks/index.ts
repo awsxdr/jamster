@@ -1,4 +1,5 @@
 export * from './BlankStatsBookApi';
+export * from './ClientHook';
 export * from './ConfigurationApiHook';
 export * from './ConfigurationHook';
 export * from './CreateGame';

@@ -54,7 +54,10 @@ public class ConnectedClientsService(IHubContext<ConnectedClientsHub> clientsHub
     public async Task UnregisterClient(string clientId)
     {
         if (!_connectedClients.Remove(clientId, out var client))
+        {
+            logger.LogWarning("Attempt to unregister a client which doesn't exist: {clientId}", clientId);
             return;
+        }
 
         if (!client.Name.IsCustom)
             _availableClientNames.Enqueue(client.Name.Name);
@@ -65,7 +68,10 @@ public class ConnectedClientsService(IHubContext<ConnectedClientsHub> clientsHub
     public async Task<Result> SetClientActivity(string clientId, ClientActivity activity, string path, string? gameId)
     {
         if (!_connectedClients.TryGetValue(clientId, out var client))
+        {
+            logger.LogWarning("Attempt to set activity for a client which doesn't exist: {clientId}", clientId);
             return Result.Fail<ClientNotFoundError>();
+        }
 
         _connectedClients[clientId] = client with
         {
@@ -82,8 +88,11 @@ public class ConnectedClientsService(IHubContext<ConnectedClientsHub> clientsHub
 
     public async Task<Result> RequestClientActivityChange(string clientId, ClientActivity activity, string? gameId)
     {
-        if (!_connectedClients.TryGetValue(clientId, out var client))
+        if (!_connectedClients.ContainsKey(clientId))
+        {
+            logger.LogWarning("Attempt to change activity for a client which doesn't exist: {clientId}", clientId);
             return Result.Fail<ClientNotFoundError>();
+        }
 
         logger.LogDebug("Requesting client {clientId} changes activity to {activity} in game {gameId}", clientId, activity, gameId);
 
@@ -95,9 +104,12 @@ public class ConnectedClientsService(IHubContext<ConnectedClientsHub> clientsHub
     public async Task<Result> SetClientName(string clientId, string name)
     {
         if (!_connectedClients.TryGetValue(clientId, out var client))
+        {
+            logger.LogWarning("Attempt to set name for a client which doesn't exist: {clientId}", clientId);
             return Result.Fail<ClientNotFoundError>();
+        }
 
-        if(!client.Name.IsCustom)
+        if (!client.Name.IsCustom)
             _availableClientNames.Enqueue(client.Name.Name);
 
         _connectedClients[clientId] = client with

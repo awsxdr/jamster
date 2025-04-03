@@ -182,6 +182,8 @@ public class ConnectedClientsServiceUnitTests : UnitTest<ConnectedClientsService
             .Setup(mock => mock.SendCoreAsync("ChangeActivity", new object?[] { It.IsAny<ClientActivity>(), It.IsAny<string?>() }, It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
+        await Subject.RegisterClient("testClient");
+
         var gameId = Guid.NewGuid().ToString();
         await Subject.RequestClientActivityChange("testClient", ClientActivity.LineupControl, gameId);
 

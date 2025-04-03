@@ -59,6 +59,9 @@ public class ConnectedClientsHub(IConnectedClientsService connectedClientsServic
     public ConnectedClient? GetConnectionDetails() =>
         connectedClientsService.GetClient(Context.ConnectionId) is Success<ConnectedClient> c ? c.Value : null;
 
+    public void SetActivity(ClientActivity activity, string path, string? gameId) =>
+        connectedClientsService.SetClientActivity(Context.ConnectionId, activity, path, gameId);
+
     public async Task WatchClientsList()
     {
         await Groups.AddToGroupAsync(Context.ConnectionId, "ClientsList");
