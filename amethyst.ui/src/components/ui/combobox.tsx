@@ -25,7 +25,7 @@ export const ComboBox = ({ value, onValueChanged, items, placeholder, className,
     const [isOpen, setIsOpen] = useState(false);
 
     return (
-        <Popover open={isOpen} onOpenChange={setIsOpen}>
+        <Popover open={isOpen} onOpenChange={setIsOpen} modal>
             <PopoverTrigger asChild disabled={disabled}>
                 <Button
                     variant="outline"
