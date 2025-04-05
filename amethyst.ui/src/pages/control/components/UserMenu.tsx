@@ -35,7 +35,7 @@ export const UserMenu = ({ disabled }: UserMenuProps) => {
                             <DropdownMenuLabel>Hi, {userName}!</DropdownMenuLabel>
                             <DropdownMenuSeparator />
                         </DropdownMenuGroup>
-                        <ShortcutConfigurationDialogTrigger>
+                        <ShortcutConfigurationDialogTrigger className="w-full">
                             <DropdownMenuItem disabled={disabled}>
                                 <Keyboard />
                                 {translate("ScoreboardControl.SettingsMenu.Inputs")}

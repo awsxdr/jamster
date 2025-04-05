@@ -3,18 +3,19 @@ import { useI18n } from "@/hooks";
 import { useShortcutsContext } from "@/hooks/InputControls";
 import { cn } from "@/lib/utils";
 import { Control, InputControls, InputControlsItem, InputType } from "@/types";
+import { DialogProps, DialogTriggerProps } from "@radix-ui/react-dialog";
 import { ChevronRight, Trash } from "lucide-react";
 import { PropsWithChildren, useEffect, useMemo, useRef, useState } from "react";
 import { useRecordHotkeys } from "react-hotkeys-hook";
 
-export const ShortcutConfigurationDialogContainer = ({ children }: PropsWithChildren) => (
-    <Dialog>
+export const ShortcutConfigurationDialogContainer = ({ children, ...props }: PropsWithChildren<DialogProps>) => (
+    <Dialog {...props} modal>
         {children}
     </Dialog>   
 );
 
-export const ShortcutConfigurationDialogTrigger = ({ children }: PropsWithChildren) => (
-    <DialogTrigger asChild>
+export const ShortcutConfigurationDialogTrigger = ({ children, ...props }: PropsWithChildren<DialogTriggerProps>) => (
+    <DialogTrigger {...props}>
         {children}
     </DialogTrigger>
 );
@@ -66,9 +67,9 @@ const ShortcutRecorder = ({ input, className, onRecordingStarted, onRecordingEnd
     return (
         <div 
             ref={inputRef}
-            className={cn("min-w-[40%] bg-accent border border-transparent focus:border-destructive", className)}
+            className={cn("min-w-[40%] bg-accent border border-transparent focus:border-destructive cursor-pointer", className)}
             tabIndex={0} 
-            onFocus={handleFocus} 
+            onFocus={handleFocus}
             onBlur={handleBlur}
             onKeyDown={handleKeyDown}
             onKeyUp={handleKeyUp}
