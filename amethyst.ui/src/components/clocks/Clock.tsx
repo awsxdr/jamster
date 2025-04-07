@@ -9,7 +9,7 @@ export type ClockProps<TClockState> = {
     textOnZero?: string;
     startValue?: number;
     textClassName?: string;
-    autoScale?: boolean;
+    autoScale?: number;
 };
 
 export const Clock = <TClockState,>({ secondsMapper, state, direction, textOnZero, startValue, textClassName, autoScale }: ClockProps<TClockState>) => {
@@ -36,7 +36,7 @@ export const Clock = <TClockState,>({ secondsMapper, state, direction, textOnZer
         <>
         {
             autoScale
-            ? <ScaledText text={time} className={cn("w-full", textClassName)} />
+            ? <ScaledText text={time} className={cn("w-full", textClassName)} scale={autoScale} />
             : <span className={textClassName}>{time}</span>
         }
         </>

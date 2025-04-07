@@ -6,6 +6,7 @@ type ScaledTextProps = {
     text: string;
     className?: string;
     style?: CSSProperties;
+    scale?: number;
 };
 
 type Measure = {
@@ -13,7 +14,7 @@ type Measure = {
     height: number;
 }
 
-export const ScaledText = ({ text, className, style }: ScaledTextProps) => {
+export const ScaledText = ({ text, className, style, scale }: ScaledTextProps) => {
 
     const [fontSize, setFontSize] = useState(0);
     const canvas = useMemo(() => document.createElement("canvas"), []);
@@ -141,17 +142,19 @@ export const ScaledText = ({ text, className, style }: ScaledTextProps) => {
 
         let size = 200;
         let change = size / 2;
+        const controlScale = scale ?? 1;
+        const scaledControl = { width: controlSize.width * controlScale, height: controlSize.height * controlScale };
 
         while(change >= 1) {
             const textSize = measureTextChunks(`${font.weight} ${size}px ${font.family}`);
 
-            if(textSize.width > controlSize.width || textSize.height > controlSize.height ) {
+            if(textSize.width > scaledControl.width || textSize.height > scaledControl.height ) {
                 size -= change;
                 change /= 2;
                 continue;
             }
 
-            if (Math.abs(textSize.width - controlSize.width) <= 1 || Math.abs(textSize.height - controlSize.height) <= 1) {
+            if (Math.abs(textSize.width - scaledControl.width) <= 1 || Math.abs(textSize.height - scaledControl.height) <= 1) {
                 break;
             }
 
