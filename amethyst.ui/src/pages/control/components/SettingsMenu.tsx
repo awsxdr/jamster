@@ -32,7 +32,7 @@ export const SettingsMenu = ({ gameId, disabled }: SettingsMenuProps) => {
                                 {translate("ScoreboardControl.SettingsMenu.Settings")}
                             </Link>
                         </DropdownMenuItem>
-                        <RulesDialogTrigger asChild>
+                        <RulesDialogTrigger className="w-full">
                             <DropdownMenuItem disabled={disabled}>
                                 <NotebookText />
                                 {translate("ScoreboardControl.SettingsMenu.Rules")}

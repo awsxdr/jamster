@@ -8,7 +8,7 @@ import { ChevronRight } from "lucide-react";
 import { KeyboardEvent, PropsWithChildren, useEffect, useRef, useState } from "react";
 
 export const RulesDialogContainer = ({ children, ...props }: PropsWithChildren<DialogProps>) => (
-    <Dialog {...props}>
+    <Dialog {...props} modal>
         {children}
     </Dialog>
 )
@@ -233,13 +233,22 @@ export const RulesDialog = ({ gameId }: RulesDialogProps) => {
                     </RuleGroup>
                     <RuleGroup title={translate("Group.Timeout")}>
                         <RuleItem title={translate("TimeoutTeamDuration")}>
-                            <Input value={formatTime(rules.timeoutRules.teamTimeoutDurationInSeconds)} />
+                            <RuleInput
+                                initialValue={formatTime(rules.timeoutRules.teamTimeoutDurationInSeconds)} 
+                                onChange={v => handleTimeoutChange({ teamTimeoutDurationInSeconds: parseTime(v) ?? rules.timeoutRules.teamTimeoutDurationInSeconds })}
+                            />
                         </RuleItem>
                         <RuleItem title={translate("TimeoutAllowance")}>
-                            <Input value={rules.timeoutRules.teamTimeoutAllowance} />
+                            <RuleInput
+                                initialValue={rules.timeoutRules.teamTimeoutAllowance.toString()} 
+                                onChange={v => handleTimeoutChange({ teamTimeoutAllowance: parsePositiveNumber(v) })}
+                            />
                         </RuleItem>
                         <RuleItem title={translate("TimeoutReset")}>
-                            <Select value={TimeoutResetBehavior.Never}>
+                            <Select 
+                                value={rules.timeoutRules.resetBehavior}
+                                onValueChange={v => handleTimeoutChange({ resetBehavior: TimeoutResetBehavior[v as TimeoutResetBehavior] })}
+                            >
                                 <SelectTrigger>
                                     <SelectValue />
                                 </SelectTrigger>
