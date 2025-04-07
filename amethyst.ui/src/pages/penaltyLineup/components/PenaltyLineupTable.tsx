@@ -31,22 +31,26 @@ export const PenaltyLineupTable = ({ teamSide, gameId, compact, display }: Penal
         return (<></>);
     }
 
-    const columnCount =
-        display === "Both" ? 17
-        : display === "Lineup" ? 6
-        : display === "Penalties" ? 12
-        : 0;
+    const lineupColumns = display === "Both" || display === "Lineup" ? 5 : 0;
 
-    const columns = `auto repeat(${columnCount}, 1fr)`
+    const penaltyColumns = display === "Both" || display === "Penalties" ? 11 : 0;
+
+    const equalColumns = `auto 1fr repeat(${lineupColumns + penaltyColumns}, 1fr)`;
+    const equalColumnsNoMenu = `0px 1fr repeat(${lineupColumns + penaltyColumns}, 1fr)`;
+    const weightedColumns = `0px 2fr ${"3fr ".repeat(lineupColumns)} ${"2fr ".repeat(penaltyColumns)}`;
 
     return (
         <>
             <div className="w-full text-center font-bold">{teamName}</div>
             <div 
                 className={cn(
-                    "w-full grid grid-flow-cols grid-cols-[--plt-columns]",
+                    "w-full grid grid-flow-cols grid-cols-[--plt-equal-columns-no-menu] sm:grid-cols-[--plt-weighted-columns] 2xl:grid-cols-[--plt-equal-columns]",
                 )}
-                style={{ "--plt-columns": columns } as CSSProperties}
+                style={{ 
+                    "--plt-equal-columns-no-menu": equalColumnsNoMenu,
+                    "--plt-equal-columns": equalColumns,
+                    "--plt-weighted-columns": weightedColumns,
+                } as CSSProperties}
             >
                 { display !== "Penalties" && (
                     <LineupTable gameId={gameId} teamSide={teamSide} compact={compact} />

@@ -1,10 +1,11 @@
 import { cn } from "@/lib/utils";
-import { LineupPosition } from "@/types";
+import { LineupPosition, TeamSide } from "@/types";
 import { Button } from "@/components/ui";
-import { useI18n } from "@/hooks";
+import { useI18n, usePenaltyBoxState } from "@/hooks";
 import { CSSProperties } from "react";
 
 type SkaterPositionColumnProps = {
+    teamSide: TeamSide;
     position: LineupPosition;
     skaterNumbers: string[];
     selectedSkaters: string[];
@@ -15,21 +16,29 @@ type SkaterPositionColumnProps = {
     onSkaterClicked?: (skaterNumber: string) => void;
 }
 
-export const SkaterPositionColumn = ({ position, skaterNumbers, selectedSkaters, offTrackSkaters, injuredSkaters, compact, className, onSkaterClicked}: SkaterPositionColumnProps) => {
+export const SkaterPositionColumn = ({ teamSide, position, skaterNumbers, selectedSkaters, offTrackSkaters, injuredSkaters, compact, className, onSkaterClicked}: SkaterPositionColumnProps) => {
 
     const { translate } = useI18n({ prefix: "PenaltyLineup.SkaterPositionColumn." });
+    const penaltyBox = usePenaltyBoxState(teamSide) ?? { skaters: [] };
 
     return (
         <>
         { 
             skaterNumbers.map((skaterNumber, row) => {
                 const selected = selectedSkaters.some(s => s === skaterNumber);
+                const inBox = penaltyBox.skaters.includes(skaterNumber);
+
                 const variant =
                     selected && position !== LineupPosition.Bench && (offTrackSkaters.includes(skaterNumber) || injuredSkaters.includes(skaterNumber)) ? "destructive"
+                    : selected && position === LineupPosition.Bench && inBox ? "destructive"
                     : selected ? "default" 
                     : "outline";
 
-                const rowClass = row % 2 === 0 ? "bg-white dark:bg-gray-900" : "bg-blue-100 dark:bg-sky-950";
+                const even = row % 2 === 0;
+                const isBench = position === LineupPosition.Bench;
+                const rowClass = even 
+                    ? (isBench ? "bg-gray-200 dark:bg-gray-700" : "bg-white dark:bg-gray-900") 
+                    : (isBench ? "bg-gray-300 dark:bg-gray-600" : "bg-blue-100 dark:bg-sky-950");
 
                 return (
                     <div 

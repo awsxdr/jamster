@@ -58,7 +58,8 @@ export const PenaltyRow = ({ skaterNumber, expulsionPenalty, penalties, row }: P
                 {skaterNumber}
             </div>
             { Array.from(Array(rules.penaltyRules.foulOutPenaltyCount + 2)).map((_, i) => (
-                <div 
+                <div
+                    key={i}
                     className={cn(
                         "flex flex-col",
                         "border-r border-b border-black",

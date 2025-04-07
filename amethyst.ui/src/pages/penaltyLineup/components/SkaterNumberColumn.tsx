@@ -4,7 +4,7 @@ import { Bandage, OctagonX } from "lucide-react";
 import { RowMenu } from ".";
 import { Button } from "@/components/ui";
 import { cn } from "@/lib/utils";
-import { CSSProperties } from "react";
+import { CSSProperties, Fragment } from "react";
 
 type SkaterNumberColumnProps = {
     skaterNumbers: string[];
@@ -14,9 +14,10 @@ type SkaterNumberColumnProps = {
     injuredSkaters: string[];
     compact?: boolean;
     onInjuryAdded?: (skaterNumber: string) => void;
+    onInjuryRemoved?: (skaterNumber: string) => void;
 }
 
-export const SkaterNumberColumn = ({ skaterNumbers, skaterPositions, skaterPenalties, offTrackSkaters, injuredSkaters, compact, onInjuryAdded }: SkaterNumberColumnProps) => {
+export const SkaterNumberColumn = ({ skaterNumbers, skaterPositions, skaterPenalties, offTrackSkaters, injuredSkaters, compact, onInjuryAdded, onInjuryRemoved }: SkaterNumberColumnProps) => {
 
     const { rules } = useRulesState() ?? { };
 
@@ -32,7 +33,7 @@ export const SkaterNumberColumn = ({ skaterNumbers, skaterPositions, skaterPenal
                 const injured = injuredSkaters.includes(skaterNumber);
 
                 if (!penalties) {
-                    return (<></>);
+                    return (<Fragment key={skaterNumber}></Fragment>);
                 }
 
                 const content = (
@@ -55,7 +56,12 @@ export const SkaterNumberColumn = ({ skaterNumbers, skaterPositions, skaterPenal
                             '--row': row + 2
                         } as CSSProperties}
                     >
-                        <RowMenu disableNotes={position === LineupPosition.Bench} onInjuryAdded={() => onInjuryAdded?.(skaterNumber)}>
+                        <RowMenu 
+                            disableNotes={position === LineupPosition.Bench} 
+                            injuryActive={injuredSkaters.includes(skaterNumber)}
+                            onInjuryAdded={() => onInjuryAdded?.(skaterNumber)}
+                            onInjuryRemoved={() => onInjuryRemoved?.(skaterNumber)}
+                        >
                             <Button variant="ghost" className={cn("w-full h-full text-sm sm:text-base md:text-lg p-0 font-normal flex-col justify-center items-center gap-0", !compact && "lg:hidden")}>
                                 {content}
                             </Button>

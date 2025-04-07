@@ -184,8 +184,11 @@ export const LineupTable = ({
                 offTrackSkaters={offTrackSkaters} 
                 injuredSkaters={injuredSkaters} 
                 compact={compact}
+                onInjuryAdded={handleInjuryAdded}
+                onInjuryRemoved={handleInjuryRemoved} 
             />
             <SkaterPositionColumn
+                teamSide={teamSide}
                 position={LineupPosition.Bench}
                 skaterNumbers={skaterNumbers}
                 selectedSkaters={skaterNumbers.filter(s => currentJam?.jammerNumber !== s && currentJam?.pivotNumber !== s && !currentJam?.blockerNumbers.includes(s))}
@@ -196,6 +199,7 @@ export const LineupTable = ({
                 onSkaterClicked={s => handlePositionClicked(s, LineupPosition.Bench)}
             />
             <SkaterPositionColumn
+                teamSide={teamSide}
                 position={LineupPosition.Jammer}
                 skaterNumbers={skaterNumbers}
                 selectedSkaters={currentJam?.jammerNumber ? [currentJam?.jammerNumber] : []}
@@ -206,6 +210,7 @@ export const LineupTable = ({
                 onSkaterClicked={s => handlePositionClicked(s, LineupPosition.Jammer)}
             />
             <SkaterPositionColumn
+                teamSide={teamSide}
                 position={LineupPosition.Pivot}
                 skaterNumbers={skaterNumbers}
                 selectedSkaters={currentJam?.pivotNumber ? [currentJam?.pivotNumber] : []}
@@ -216,6 +221,7 @@ export const LineupTable = ({
                 onSkaterClicked={s => handlePositionClicked(s, LineupPosition.Pivot)}
             />
             <SkaterPositionColumn
+                teamSide={teamSide}
                 position={LineupPosition.Blocker}
                 skaterNumbers={skaterNumbers}
                 selectedSkaters={currentJam?.blockerNumbers.filter(b => b) as string[] ?? []}

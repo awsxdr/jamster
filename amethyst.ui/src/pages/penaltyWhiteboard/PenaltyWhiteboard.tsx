@@ -34,7 +34,7 @@ const PenaltyWhiteboardInner = () => {
         if(currentGame && searchParams.get("gameId") === "current") {
             setSelectedGameId(currentGame.id);
         }
-    })
+    }, [currentGame, searchParams]);
 
     useEffect(() => {
         const searchParamsTeam = DisplaySide[searchParams.get('team') as keyof typeof DisplaySide];

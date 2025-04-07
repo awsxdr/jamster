@@ -26,7 +26,11 @@ export const PenaltyBoxColumn = ({ teamSide, skaterNumbers, skaterPenalties, com
                 const penalties = skaterPenalties[skaterNumber] ?? [];
                 const inBox = penaltyBox.skaters.includes(skaterNumber);
 
-                const rowClass = row % 2 !== 0 ? "border-black bg-blue-100 dark:bg-sky-950" : "border-black bg-blue-200 dark:bg-sky-800";
+                const even = row % 2 === 0;
+                const expectedInBox = penalties.some(p => !p.served);
+                const rowClass = even 
+                    ? cn("border-black", expectedInBox ? "bg-yellow-200 dark:bg-yellow-800 font-bold" : "bg-blue-200 dark:bg-sky-800")
+                    : cn("border-black", expectedInBox ? "bg-yellow-100 dark:bg-yellow-900 font-bold" : "bg-blue-100 dark:bg-sky-950");
 
                 return (
                     <div 
@@ -37,7 +41,6 @@ export const PenaltyBoxColumn = ({ teamSide, skaterNumbers, skaterPenalties, com
                         <Button 
                             className={cn(
                                 "rounded-none w-full px-1 md:px-4 border-0 h-full", 
-                                penalties.some(p => !p.served) && "underline", 
                                 !inBox && rowClass,
                             )}
                             variant={inBox ? "default" : "outline"}

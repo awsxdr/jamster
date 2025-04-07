@@ -20,6 +20,12 @@ export const PenaltyRow = ({ skaterNumber, penalties, expulsionPenalty, offsetFo
     const { rules } = useRulesState() ?? { };
     const { periodNumber, jamNumber } = useGameStageState() ?? { periodNumber: 0, jamNumber: 0 };
 
+    if(!rules) {
+        return (
+            <></>
+        );
+    }
+
     const cellClass = "border-b border-r border-black";
 
     const even = row % 2 === 0;
@@ -27,6 +33,16 @@ export const PenaltyRow = ({ skaterNumber, penalties, expulsionPenalty, offsetFo
     const penaltyRowClass = even
         ? "bg-white dark:bg-rose-950"
         : "bg-red-100 dark:bg-rose-900";
+
+    const isExpelledOrFouledOut = expulsionPenalty || penalties.length >= rules.penaltyRules.foulOutPenaltyCount;
+    const isOneAwayFromFoulOut = penalties.length === rules.penaltyRules.foulOutPenaltyCount - 1;
+    const isTwoAwayFromFoulOut = penalties.length === rules.penaltyRules.foulOutPenaltyCount - 2;
+
+    const rowClassOverride =
+        isExpelledOrFouledOut ? "bg-red-700 text-white"
+        : isOneAwayFromFoulOut ? "bg-orange-600 text-white dark:bg-orange-700"
+        : isTwoAwayFromFoulOut ? "bg-yellow-400 text-black dark:bg-yellow-600"
+        : undefined;
 
     const penaltyRowClassAccent = even
         ? "bg-red-100 dark:bg-rose-900"
@@ -41,7 +57,7 @@ export const PenaltyRow = ({ skaterNumber, penalties, expulsionPenalty, offsetFo
     const getPenaltyCellClass = (penalty: Penalty | undefined) => 
         penalty && penalty.period < periodNumber
         ? cn(cellClass, penaltyCellPreviousPeriod, "font-light")
-        : cn(cellClass, penaltyRowClass, penalty && penalty.period === periodNumber && penalty.jam === Math.max(1, jamNumber) && "underline");
+        : cn(cellClass, rowClassOverride ?? penaltyRowClass, penalty && penalty.period === periodNumber && penalty.jam === Math.max(1, jamNumber) && "underline");
     
     if (!rules) {
         return (<></>);
