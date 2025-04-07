@@ -1,1 +1,1 @@
-export { Scoreboard, CurrentGameScoreboard } from './Scoreboard';
+export * from './Scoreboard';

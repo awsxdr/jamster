@@ -21,9 +21,9 @@ export const ScoreboardComponent = ({ header, style, className, headerClassName,
             { header && (
                 <ScaledText 
                     className={cn(
-                        "bg-gray-300 text-center font-bold",
+                        "bg-gray-300 text-center font-extrabold leading-[130%]",
                         "rounded-t-md sm:rounded-t-lg md:rounded-t-xl xl:rounded-t-3xl",
-                        "w-full h-[35%] p-1",
+                        "w-full h-[40%] p-0",
                         headerClassName,
                     )}
                     text={header}

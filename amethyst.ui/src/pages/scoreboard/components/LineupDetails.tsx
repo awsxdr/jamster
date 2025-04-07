@@ -29,14 +29,14 @@ export const LineupDetails = ({ gameStage, visible }: LineupDetailsProps) => {
             <div className={cn("flex w-full h-full", SCOREBOARD_GAP_CLASS_NAME)}>
                 <ScoreboardComponent className="w-1/2 h-full" header={`${translate("Scoreboard.LineupDetails.Period")} ${gameStage.periodNumber}`}>
                     <PeriodClock 
-                        textClassName="flex justify-center items-center grow overflow-hidden" 
-                        autoScale 
+                        textClassName="flex justify-center items-center grow overflow-hidden leading-none" 
+                        autoScale={1.4}
                     />
                 </ScoreboardComponent>
                 <ScoreboardComponent className="w-1/2 h-full" headerClassName={!jamWillStart ? "bg-red-300" : ""} header={`${translate("Scoreboard.LineupDetails.Lineup")} (${translate("Scoreboard.LineupDetails.Jam")} ${gameStage.jamNumber + 1})`}>
                     <LineupClock 
-                        textClassName="flex justify-center items-center grow overflow-hidden" 
-                        autoScale 
+                        textClassName="flex justify-center items-center grow overflow-hidden leading-none" 
+                        autoScale={1.4}
                     />
                 </ScoreboardComponent>
             </div>

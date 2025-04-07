@@ -15,8 +15,8 @@ const BeforeGameBar = ({ visible }: IntermissionDetailsProps) => {
             <ScoreboardComponent className="w-full h-full" header={translate("Scoreboard.IntermissionDetails.TimeToDerby")}>
                 <IntermissionClock 
                     showTextOnZero={true}
-                    textClassName="flex justify-center items-center grow overflow-hidden" 
-                    autoScale
+                    textClassName="flex justify-center items-center grow overflow-hidden leading-none" 
+                    autoScale={1.4}
                 />
             </ScoreboardComponent>
         }/>
@@ -31,8 +31,8 @@ const IntermissionBar = ({ visible }: IntermissionDetailsProps) => {
             <ScoreboardComponent className="w-full h-full" header={translate("Scoreboard.IntermissionDetails.Intermission")}>
                 <IntermissionClock 
                     showTextOnZero={true}
-                    textClassName="flex justify-center items-center grow overflow-hidden" 
-                    autoScale
+                    textClassName="flex justify-center items-center grow overflow-hidden leading-none" 
+                    autoScale={1.4}
                 />
             </ScoreboardComponent>
         } />
@@ -47,7 +47,8 @@ const AfterGameBar = ({ gameStage, visible }: IntermissionDetailsProps) => {
             <ScoreboardComponent className="w-full h-full">
                 <ScaledText 
                     text={gameStage.periodIsFinalized ? translate("Scoreboard.IntermissionDetails.FinalScore") : translate("Scoreboard.IntermissionDetails.UnofficialScore")} 
-                    className="flex justify-center items-center grow overflow-hidden"
+                    className="flex justify-center items-center grow overflow-hidden leading-none"
+                    scale={1.4}
                 />
             </ScoreboardComponent>
         } />

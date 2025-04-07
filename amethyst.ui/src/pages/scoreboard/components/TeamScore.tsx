@@ -14,16 +14,31 @@ export const TeamScore = ({ side, textClassName }: TeamScoreProps) => {
 
     const score = useTeamScoreState(side);
     const { lead, lost } = useJamStatsState(side) ?? { lead: false };
-    
+    const { lead: opponentLead } = useJamStatsState(side === TeamSide.Home ? TeamSide.Away : TeamSide.Home) ?? { lead: false };
 
     return (
         <ScoreboardComponent className={cn("grow-[8] relative p-1")}>
-            { lead &&
-                <div className="absolute left-0 right-0 top-1 md:top-2 lg:top-3 xl:top-[2vh] flex justify-center">
-                    { lost ? <StarOff className="w-full h-[5vh]" strokeWidth="4px" /> : <Star className="w-full h-[5vh]" strokeWidth="4px" /> }
-                </div>
-            }
-            <ScaledText text={(score?.score ?? 0).toString()} className={cn("font-bold flex justify-center items-center h-full overflow-hidden", textClassName)} />
+            <div className="absolute left-0 right-0 top-0 md:top-2 lg:top-3 xl:top-2 flex justify-center">
+                { lead && (
+                    <>
+                        { lost 
+                            ? <StarOff className="w-full h-[7vh]" strokeWidth="3px" /> 
+                            : <Star className="w-full h-[7vh]" strokeWidth="3px" /> 
+                        }
+                    </>
+                )}
+                { !lead && !opponentLead && !lost && (
+                    <Star className="w-full h-[7vh] text-gray-200" strokeWidth="3px" />
+                )}
+            </div>
+            <ScaledText 
+                text={(score?.score ?? 0).toString()} 
+                scale={1.4}
+                className={cn(
+                    "font-bold flex justify-center items-center h-full overflow-hidden",
+                    "pt-10 leading-none",
+                    textClassName)} 
+            />
         </ScoreboardComponent>
     );
 }

@@ -51,7 +51,7 @@ export const JamDetails = ({ gameStage, visible }: JamDetailsProps) => {
     return (
         <ClocksBar 
             visible={visible} 
-            className="flex-col overflow-visible" 
+            className={cn("flex-col overflow-visible", SCOREBOARD_GAP_CLASS_NAME)}
             topPanel={
                 <>
                     <div className={cn("w-1/2 h-full flex")}>
@@ -66,14 +66,14 @@ export const JamDetails = ({ gameStage, visible }: JamDetailsProps) => {
                 <div className={cn("flex w-full h-full", SCOREBOARD_GAP_CLASS_NAME)}>
                     <ScoreboardComponent className="w-1/2 h-full" header={`${translate("Scoreboard.JamDetails.Period")} ${gameStage.periodNumber}`}>
                         <PeriodClock 
-                            textClassName="flex justify-center items-center grow overflow-hidden" 
-                            autoScale 
+                            textClassName="flex justify-center items-center grow overflow-hidden leading-none" 
+                            autoScale={1.4}
                         />
                     </ScoreboardComponent>
                     <ScoreboardComponent className="w-1/2 h-full" header={`${translate("Scoreboard.JamDetails.Jam")} ${gameStage.jamNumber}`}>
                         <JamClock 
-                            textClassName="flex justify-center items-center grow overflow-hidden" 
-                            autoScale 
+                            textClassName="flex justify-center items-center grow overflow-hidden leading-none" 
+                            autoScale={1.4}
                         />
                     </ScoreboardComponent>
                 </div>
