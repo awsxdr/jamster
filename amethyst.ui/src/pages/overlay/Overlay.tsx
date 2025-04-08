@@ -1,4 +1,4 @@
-import { CSSProperties, PropsWithChildren, useEffect, useMemo } from "react";
+import { CSSProperties, PropsWithChildren, useEffect, useMemo, useState } from "react";
 import { ScoreRow } from "./components/ScoreRow";
 import { DEFAULT_OVERLAY_CONFIGURATION, OverlayConfiguration, TeamSide } from "@/types";
 import { GameStateContextProvider, I18nContextProvider, useConfiguration, useCurrentGame, useI18n } from "@/hooks";
@@ -14,7 +14,7 @@ type OverlayContextProps = {
 const OverlayContext = ({ children, gameId }: PropsWithChildren<OverlayContextProps>) => (
     <I18nContextProvider usageKey="overlay" defaultLanguage='en' languages={languages}>
         <GameStateContextProvider gameId={gameId}>
-                {children}
+            {children}
         </GameStateContextProvider>
     </I18nContextProvider>
 )
@@ -88,10 +88,25 @@ const OverlayContent = () => {
 
 export const Overlay = () => {
 
-    const [ searchParams ] = useSearchParams();
+    const [ searchParams, setSearchParams ] = useSearchParams();
     const { currentGame } = useCurrentGame();
+    const [selectedGameId, setSelectedGameId] = useState<string | undefined>(searchParams.get('gameId') ?? '');
 
-    const gameId = useMemo(() => searchParams.get('gameId') || currentGame?.id, [searchParams, currentGame]);
+    const gameId = useMemo(() => selectedGameId === "current" ? currentGame?.id : selectedGameId, [selectedGameId, currentGame]);
+
+    useEffect(() => {
+        if (!selectedGameId && currentGame) {
+            searchParams.set('gameId', "current");
+            setSearchParams(searchParams);
+            setSelectedGameId(currentGame.id);
+        }
+    }, [currentGame, selectedGameId]);
+
+    useEffect(() => {
+        if(currentGame && searchParams.get("gameId") === "current") {
+            setSelectedGameId(currentGame.id);
+        }
+    }, [currentGame, searchParams]);
 
     if(!gameId) {
         return (<></>);

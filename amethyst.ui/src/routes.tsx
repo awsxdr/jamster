@@ -1,20 +1,8 @@
 import { RouterProvider } from "react-router-dom";
-import { CurrentGameScoreboard } from "./pages/scoreboard";
-import { MainMenu } from "./pages/menu";
-import { TitlePage } from "./pages/title";
-import { ScoreboardControl } from "./pages/control";
-import { TeamsManagement, TeamEdit } from "./pages/teams";
+import { Clients, GameEdit, GamesManagement, MainMenu, Overlay, PenaltyLineup, PenaltyWhiteboard, Scoreboard, ScoreboardControl, Settings, TeamEdit, TeamsManagement, Timeline, TitlePage, UsersManagement } from "@/pages";
+import { createClientActivityRouter } from "@/hooks";
+import { ClientActivity } from "@/types";
 import { WorkInProgress } from "./pages/WorkInProgress/WorkInProgress";
-import { GamesManagement } from "./pages/games/GamesManagement";
-import { GameEdit } from "./pages/games/GameEdit";
-import { Overlay } from "./pages/overlay/Overlay";
-import { Settings } from "./pages/settings";
-import { Timeline } from "./pages/timeline/Timeline";
-import { UsersManagement } from "./pages/users/UsersManagement";
-import { PenaltyLineup } from "./pages/penaltyLineup";
-import { createClientActivityRouter } from "./hooks";
-import { ClientActivity } from "./types";
-import { PenaltyWhiteboard } from "./pages/penaltyWhiteboard";
 
 export const Routes = () => {
     const router = createClientActivityRouter([
@@ -25,7 +13,7 @@ export const Routes = () => {
         },
         {
             path: '/scoreboard',
-            element: <CurrentGameScoreboard />,
+            element: <Scoreboard />,
             activity: ClientActivity.Scoreboard,
         },
         {
@@ -101,6 +89,11 @@ export const Routes = () => {
         {
             path: '/users',
             element: <MainMenu content={<UsersManagement />} />,
+            activity: ClientActivity.Other,
+        },
+        {
+            path: '/clients',
+            element: <MainMenu content={<Clients />} />,
             activity: ClientActivity.Other,
         },
     ]);

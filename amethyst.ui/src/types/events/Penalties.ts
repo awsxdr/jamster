@@ -57,3 +57,9 @@ export class ExpulsionCleared extends EventWithBody {
         super("ExpulsionCleared", { teamSide, skaterNumber });
     }
 }
+
+export class PenaltyServedSet extends EventWithBody {
+    constructor(teamSide: TeamSide, skaterNumber: string, penaltyCode: string, period: number, jam: number, served: boolean) {
+        super("PenaltyServedSet", { teamSide, skaterNumber, penaltyCode, period, jam, served });
+    }
+}

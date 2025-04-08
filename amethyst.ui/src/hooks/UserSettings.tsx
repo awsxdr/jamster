@@ -107,6 +107,7 @@ export const UserSettingsContextProvider = ({ children }: PropsWithChildren) => 
                 console.warn("Attempt to unwatch user configuration with invalid handle", handle);
             }
 
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const { [handle]: _, ...newNotifier } = n[userName][configurationName];
 
             return {

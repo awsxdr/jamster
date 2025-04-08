@@ -10,6 +10,15 @@ export type Translations = {
 const languages: Languages = {
     "en": {
         name: "English",
+        "Clients.ActivitySelect.Overlay": "Streaming overlay",
+        "Clients.ActivitySelect.Scoreboard": "Scoreboard",
+        "Clients.ActivitySelect.Whiteboard": "Penalty whiteboard",
+        "Clients.GameSelect.FollowCurrent": "Follow current game",
+        "Clients.GameSelect.Current": "Current",
+        "Clients.GameSelect.Finished": "Finished",
+        "Clients.GameSelect.Running": "In progress",
+        "Clients.GameSelect.Upcoming": "Upcoming",
+        "Clients.Title": "Displays management",
         "ClocksContainer.Intermission": "Intermission",
         "ClocksContainer.Jam": "Jam",
         "ClocksContainer.Lineup": "Lineup",
@@ -106,6 +115,7 @@ const languages: Languages = {
         "MenuSidebar.ControlGroup": "Control",
         "MenuSidebar.DataGroup": "Data",
         "MenuSidebar.DisplayGroup": "Displays",
+        "MenuSidebar.DisplayManagement": "Displays management",
         "MenuSidebar.Games": "Games",
         "MenuSidebar.Help": "Help",
         "MenuSidebar.Overlay": "Streaming overlay",

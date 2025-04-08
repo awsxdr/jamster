@@ -6,35 +6,31 @@ import { TimeoutDetails } from './components/TimeoutDetails';
 import { LineupDetails } from './components/LineupDetails';
 import { TeamColorGradients } from './components/TeamColorGradients';
 import { IntermissionDetails } from './components/IntermissionDetails';
-import { useEffect, useState } from 'react';
+import { PropsWithChildren, useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui';
 import { Maximize2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useWakeLock } from '@/hooks/WakeLock';
 import languages from '@/i18n';
 import { ScaledText } from '@/components/ScaledText';
+import { useSearchParams } from 'react-router-dom';
 
 export const SCOREBOARD_GAP_CLASS_NAME = "gap-1 md:gap-2 lg:gap-3 xl:gap-5";
 export const SCOREBOARD_TEXT_PADDING_CLASS_NAME = "p-1 md:p-2 lg:p-3 xl:p-5";
 
-export const CurrentGameScoreboard = () => {
-    const { currentGame } = useCurrentGame();
+type ScoreboardContextProps = {
+    gameId: string;
+}
 
-    if(!currentGame) {
-        return <></>
-    }
-  
-    return (
-        <I18nContextProvider usageKey="scoreboard" defaultLanguage='en' languages={languages}>
-            <GameStateContextProvider gameId={currentGame.id}>
-                <Scoreboard />
-            </GameStateContextProvider>
-        </I18nContextProvider>
-    );
-};
+const ScoreboardContext = ({ gameId, children }: PropsWithChildren<ScoreboardContextProps>) => (
+    <I18nContextProvider usageKey="scoreboard" defaultLanguage='en' languages={languages}>
+        <GameStateContextProvider gameId={gameId}>
+            { children }
+        </GameStateContextProvider>
+    </I18nContextProvider>
+);
 
-export const Scoreboard = () => {
-
+const ScoreboardContent = () => {
     const { translate, setLanguage } = useI18n();
 
     const hasConnection = useHasServerConnection();
@@ -130,5 +126,40 @@ export const Scoreboard = () => {
                 </div>
             )}
         </>
+    );
+}
+
+export const Scoreboard = () => {
+    const [ searchParams, setSearchParams ] = useSearchParams();
+    const { currentGame } = useCurrentGame();
+    const [selectedGameId, setSelectedGameId] = useState<string | undefined>(searchParams.get('gameId') ?? '');
+
+    const gameId = useMemo(() => selectedGameId === "current" ? currentGame?.id : selectedGameId, [selectedGameId, currentGame]);
+
+    useEffect(() => {
+        if (!selectedGameId && currentGame) {
+            searchParams.set('gameId', "current");
+            setSearchParams(searchParams);
+            setSelectedGameId(currentGame.id);
+        }
+    }, [currentGame, selectedGameId]);
+
+    useEffect(() => {
+        const searchParamsGameId = searchParams.get("gameId");
+        if(currentGame && searchParamsGameId === "current") {
+            setSelectedGameId(currentGame.id);
+        } else if(searchParamsGameId !== "current" && searchParamsGameId !== null) {
+            setSelectedGameId(searchParamsGameId);
+        }
+    }, [currentGame, searchParams]);
+
+    if(!gameId) {
+        return (<></>);
+    }
+
+    return (
+        <ScoreboardContext gameId={gameId}>
+            <ScoreboardContent />
+        </ScoreboardContext>
     );
 }

@@ -1,5 +1,5 @@
 import { Button, Collapsible, CollapsibleContent, CollapsibleTrigger, Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from "@components/ui"
-import { Captions, ChartNoAxesCombined, ChevronDown, ChevronLeft, ChevronRight, CircleHelp, ClipboardPenLine, Grid3X3, Keyboard, List, Settings, Shirt, TvMinimal, Users } from "lucide-react"
+import { Captions, ChartNoAxesCombined, ChevronDown, ChevronLeft, ChevronRight, CircleHelp, ClipboardPenLine, Grid3X3, Keyboard, List, MonitorCog, Settings, Shirt, TvMinimal, Users } from "lucide-react"
 import { ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { LanguageMenu } from "./LanguageMenu";
@@ -53,7 +53,12 @@ const sidebarItems: SidebarGroupList = {
                 title: "Penalties",
                 href: "/penalties",
                 icon: <Grid3X3 />
-            }
+            },
+            {
+                title: "DisplayManagement",
+                href: "/clients",
+                icon: <MonitorCog />
+            },
         ]
     },
     "DataGroup": {
@@ -136,10 +141,10 @@ export const MenuSidebar = () => {
                             </SidebarGroupContent>
                         );
 
-                        if(!!group.collapsible) {
+                        if(group.collapsible) {
                             return (
-                                <Collapsible defaultOpen={group.defaultOpen} className="group/collapsible">
-                                    <SidebarGroup key={groupName}>
+                                <Collapsible key={groupName} defaultOpen={group.defaultOpen} className="group/collapsible">
+                                    <SidebarGroup>
                                         <SidebarGroupLabel asChild>
                                             <CollapsibleTrigger>
                                                 {translate(groupName)}
