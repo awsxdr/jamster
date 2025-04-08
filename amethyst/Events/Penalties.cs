@@ -26,3 +26,6 @@ public sealed record SkaterExpelledBody(TeamSide TeamSide, string SkaterNumber, 
 
 public sealed class ExpulsionCleared(Guid7 id, ExpulsionClearedBody body) : Event<ExpulsionClearedBody>(id, body);
 public sealed record ExpulsionClearedBody(TeamSide TeamSide, string SkaterNumber) : TeamEventBody(TeamSide);
+
+public sealed class PenaltyServedSet(Guid7 id, PenaltyServedSetBody body) : Event<PenaltyServedSetBody>(id, body);
+public sealed record PenaltyServedSetBody(TeamSide TeamSide, string SkaterNumber, string PenaltyCode, int Period, int Jam, bool Served) : TeamEventBody(TeamSide);

@@ -44,7 +44,8 @@ export const PenaltyLineupTable = ({ teamSide, gameId, compact, display }: Penal
             <div className="w-full text-center font-bold">{teamName}</div>
             <div 
                 className={cn(
-                    "w-full grid grid-flow-cols grid-cols-[--plt-equal-columns-no-menu] sm:grid-cols-[--plt-weighted-columns] 2xl:grid-cols-[--plt-equal-columns]",
+                    "w-full select-none",
+                    "grid grid-flow-cols grid-cols-[--plt-equal-columns-no-menu] sm:grid-cols-[--plt-weighted-columns] 2xl:grid-cols-[--plt-equal-columns]",
                 )}
                 style={{ 
                     "--plt-equal-columns-no-menu": equalColumnsNoMenu,

@@ -175,7 +175,7 @@ public class PenaltySheetUnitTests : ReducerUnitTest<HomePenaltySheet, PenaltySh
         var originalState = State;
 
         await Subject.Handle(new PenaltyRescinded(0, new(TeamSide.Home, "5", "P", 1, 5)));
-        
+
         State.Should().Be(originalState);
     }
 
@@ -509,4 +509,49 @@ public class PenaltySheetUnitTests : ReducerUnitTest<HomePenaltySheet, PenaltySh
             new("123", new("X", 1, 5, true), [new("X", 1, 5, true)]),
         ]));
     }
+
+    [Test]
+    public async Task PenaltyServedSet_WhenPenaltyFound_SetsPenaltyAsExpected([Values] bool served)
+    {
+        State = new([
+            new("321", null, [new("X", 1, 5, !served)]),
+            new("123", null, [new("X", 1, 5, !served), new("X", 1, 5, !served), new("I", 1, 5, !served), new("B", 1, 8, !served)])
+        ]);
+
+        await Subject.Handle(new PenaltyServedSet(0, new(TeamSide.Home, "123", "X", 1, 5, served)));
+
+        State.Should().Be(new PenaltySheetState([
+            new("321", null, [new("X", 1, 5, !served)]),
+            new("123", null, [new("X", 1, 5, !served), new("I", 1, 5, !served), new("X", 1, 5, served), new("B", 1, 8, !served)])
+        ]));
+    }
+
+    [Test]
+    public async Task PenaltyServedSet_WhenPenaltyNotFound_DoesNotChangeState()
+    {
+        State = new([
+            new("123", null, [new("X", 1, 5, false)])
+        ]);
+
+        var originalState = State;
+
+        await Subject.Handle(new PenaltyServedSet(0, new(TeamSide.Home, "123", "F", 1, 5, true)));
+
+        State.Should().Be(originalState);
+    }
+
+    [Test]
+    public async Task PenaltyServedSet_WhenTeamDoesNotMatch_DoesNotChangeState()
+    {
+        State = new([
+            new("123", null, [new("X", 1, 5, false)])
+        ]);
+
+        var originalState = State;
+
+        await Subject.Handle(new PenaltyServedSet(0, new(TeamSide.Away, "123", "X", 1, 5, true)));
+
+        State.Should().Be(originalState);
+    }
 }
+

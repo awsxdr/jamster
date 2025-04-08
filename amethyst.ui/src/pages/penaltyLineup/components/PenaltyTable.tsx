@@ -3,7 +3,7 @@ import { useEvents, useI18n, usePenaltySheetState, useRulesState, useTeamDetails
 import { cn } from "@/lib/utils";
 import { Penalty, StringMap, TeamSide } from "@/types";
 import { ExpulsionDialog, PenaltyDialog, PenaltyRow } from ".";
-import { ExpulsionCleared, PenaltyAssessed, PenaltyRescinded, PenaltyUpdated, SkaterExpelled } from "@/types/events";
+import { ExpulsionCleared, PenaltyAssessed, PenaltyRescinded, PenaltyServedSet, PenaltyUpdated, SkaterExpelled } from "@/types/events";
 
 type PenaltyTableProps = {
     gameId: string;
@@ -56,17 +56,22 @@ export const PenaltyTable = ({ gameId, teamSide, offsetForLineupTable, compact }
     const handlePenaltyAccept = (penalty: Penalty) => {
         const selectedSkaterPenalties = [...skaterPenalties[editingSkaterNumber]!];
         if(editingIndex < selectedSkaterPenalties.length) {
-            const originalPenalty = selectedSkaterPenalties[editingIndex];
-            sendEvent(gameId, new PenaltyUpdated(
-                teamSide, 
-                editingSkaterNumber, 
-                originalPenalty.code, 
-                originalPenalty.period, 
-                originalPenalty.jam,
-                penalty.code,
-                penalty.period,
-                penalty.jam
-            ));
+            (async () => {
+                const originalPenalty = selectedSkaterPenalties[editingIndex];
+                sendEvent(gameId, new PenaltyUpdated(
+                    teamSide, 
+                    editingSkaterNumber, 
+                    originalPenalty.code, 
+                    originalPenalty.period, 
+                    originalPenalty.jam,
+                    penalty.code,
+                    penalty.period,
+                    penalty.jam
+                ));
+                if(originalPenalty.served !== penalty.served) {
+                    sendEvent(gameId, new PenaltyServedSet(teamSide, editingSkaterNumber, penalty.code, penalty.period, penalty.jam, penalty.served));
+                }
+            })();
         } else {
             sendEvent(gameId, new PenaltyAssessed(teamSide, editingSkaterNumber, penalty.code));
         }
