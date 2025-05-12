@@ -1,10 +1,14 @@
 ﻿using System.IO.Compression;
 using System.Reflection;
-using amethyst.Domain;
+using amethyst.Serialization;
 using amethyst.Services.Stats;
 using FluentAssertions;
 using Func;
 using Moq;
+using IgrfSerializer = amethyst.Services.Stats.IgrfSerializer;
+using IIgrfSerializer = amethyst.Services.Stats.IIgrfSerializer;
+using IScoreSheetSerializer = amethyst.Services.Stats.IScoreSheetSerializer;
+using ScoreSheetSerializer = amethyst.Services.Stats.ScoreSheetSerializer;
 
 namespace amethyst.tests.Services;
 

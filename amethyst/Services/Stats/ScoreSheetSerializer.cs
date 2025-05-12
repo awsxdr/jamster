@@ -1,5 +1,5 @@
 ﻿using System.IO.Compression;
-using amethyst.Domain;
+using amethyst.Serialization;
 
 namespace amethyst.Services.Stats;
 
@@ -12,17 +12,17 @@ public interface IScoreSheetSerializer
 [Singleton]
 public class ScoreSheetSerializer(ILogger<ScoreSheetSerializer> logger) : StatsSheetSerializerBase(logger), IScoreSheetSerializer
 {
-    private const string ScoreSheetPath = "xl/worksheets/sheet3.xml";
+    private const string ScoreSheetName = "Score";
 
     public Task<Result<ZipArchive>> SerializeScoreSheets(ScoreSheetCollection scoreSheets, ZipArchive archive) =>
-        GetWorksheetByEntryName(ScoreSheetPath, archive)
+        GetWorksheet(ScoreSheetName, archive)
             .Then(WriteScoreSheets, scoreSheets)
             .Then(UpdateSharedStrings, archive)
             .Then(WriteWorksheet)
             .Then(() => Result.Succeed(archive));
 
     public Task<Result<ScoreSheetCollection>> DeserializeScoreSheets(ZipArchive archive) =>
-        GetWorksheetByEntryName(ScoreSheetPath, archive)
+        GetWorksheet(ScoreSheetName, archive)
             .ThenMap(worksheet =>
                 new ScoreSheetCollection(
                     ReadScoreSheet(0, 1, worksheet),

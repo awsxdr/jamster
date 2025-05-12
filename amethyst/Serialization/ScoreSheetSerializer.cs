@@ -1,78 +1,18 @@
-﻿using amethyst.DataStores;
-using amethyst.Domain;
+﻿using amethyst.Domain;
 using amethyst.Reducers;
+using amethyst.Services;
 
-using GameSummary = amethyst.Domain.GameSummary;
+namespace amethyst.Serialization;
 
-namespace amethyst.Services;
-
-public interface IGameExporter
+public interface IScoreSheetSerializer
 {
-    StatsBook Export(GameInfo game);
+    ScoreSheetCollection Serialize(IGameStateStore stateStore);
 }
 
 [Singleton]
-public class GameExporter(IGameContextFactory contextFactory) : IGameExporter
+public class ScoreSheetSerializer : IScoreSheetSerializer
 {
-    public StatsBook Export(GameInfo game)
-    {
-        var context = contextFactory.GetGame(game);
-
-        return new StatsBook(
-            GetIgrf(context.StateStore),
-            GetScoreSheets(context.StateStore)
-        );
-    }
-
-    private Igrf GetIgrf(IGameStateStore stateStore)
-    {
-        var homeTeam = stateStore.GetKeyedState<TeamDetailsState>(nameof(TeamSide.Home));
-        var awayTeam = stateStore.GetKeyedState<TeamDetailsState>(nameof(TeamSide.Away));
-
-        return new(
-            GetGameLocation(),
-            GetGameDetails(),
-            new(GetTeam(homeTeam), GetTeam(awayTeam)),
-            GetGameSummary(stateStore)
-        );
-    }
-
-    private GameLocation GetGameLocation() =>
-        new("", "", "");
-
-    private GameDetails GetGameDetails() =>
-        new("", "", "", DateTime.UtcNow);
-
-    private StatsBookTeam GetTeam(TeamDetailsState team) =>
-        new(
-            team.Team.Names.GetValueOrDefault("league", ""),
-            team.Team.Names.GetValueOrDefault("team", ""),
-            team.Team.Names.GetValueOrDefault("color", ""),
-            team.Team.Roster.Select(skater => new StatsBookSkater(skater.Number, skater.Name, skater.IsSkating)).ToArray()
-        );
-
-    private GameSummary GetGameSummary(IGameStateStore stateStore)
-    {
-        var gameSummaryState = stateStore.GetState<GameSummaryState>();
-        var rules = stateStore.GetState<RulesState>().Rules;
-
-        return new(
-            new(
-                gameSummaryState.HomePenalties.PeriodTotals[0],
-                gameSummaryState.HomeScore.PeriodTotals[0],
-                gameSummaryState.AwayPenalties.PeriodTotals[0],
-                gameSummaryState.AwayScore.PeriodTotals[0]),
-            rules.PeriodRules.PeriodCount >= 2
-            ? new(
-                gameSummaryState.HomePenalties.PeriodTotals[1],
-                gameSummaryState.HomeScore.PeriodTotals[1],
-                gameSummaryState.AwayPenalties.PeriodTotals[1],
-                gameSummaryState.AwayScore.PeriodTotals[1])
-            : new(0, 0, 0, 0)
-        );
-    }
-
-    private ScoreSheetCollection GetScoreSheets(IGameStateStore stateStore)
+    public ScoreSheetCollection Serialize(IGameStateStore stateStore)
     {
         var homeScoreSheet = stateStore.GetKeyedState<ScoreSheetState>(nameof(TeamSide.Home));
         var awayScoreSheet = stateStore.GetKeyedState<ScoreSheetState>(nameof(TeamSide.Away));
@@ -150,8 +90,6 @@ public class GameExporter(IGameContextFactory contextFactory) : IGameExporter
                 .Select(s => new ScoreSheetTrip(s))
                 .ToArray()
         );
-
     private record JamWithOpponentJam(int PeriodNumber, ScoreSheetJam Jam, ScoreSheetJam OpponentJam);
-}
 
-public sealed class TeamSheetsDoNotMatchException : Exception;
+}

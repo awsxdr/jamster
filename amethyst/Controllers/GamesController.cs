@@ -1,5 +1,6 @@
 ﻿using amethyst.DataStores;
 using amethyst.Domain;
+using amethyst.Serialization;
 using amethyst.Services;
 using amethyst.Services.Stats;
 using Microsoft.AspNetCore.Mvc;
@@ -11,7 +12,7 @@ public class GamesController(
     IGameDiscoveryService gameDiscoveryService,
     IGameContextFactory contextFactory,
     ISystemStateStore systemStateStore,
-    IGameExporter gameExporter,
+    IGameSerializer gameExporter,
     IStatsBookSerializer statsBookSerializer,
     ILogger<GamesController> logger
     ) : Controller
@@ -40,7 +41,7 @@ public class GamesController(
     [HttpPost]
     public async Task<ActionResult<GameModel>> UploadGame(
         IFormFile statsBookFile, 
-        [FromServices] IGameImporter gameImporter)
+        [FromServices] IGameDeserializer gameImporter)
     {
         if (statsBookFile.ContentType != "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
             return new UnsupportedMediaTypeResult();
@@ -52,7 +53,7 @@ public class GamesController(
         if (statsBookDeserializeResult is not Success<StatsBook> statsBook)
             return BadRequest();
 
-        var game = await gameImporter.Import(statsBook.Value);
+        var game = await gameImporter.Deserialize(statsBook.Value);
 
         return Created($"api/games/{game.Id}", (GameModel) game);
     }
@@ -65,7 +66,7 @@ public class GamesController(
             case "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
             {
                     return await gameDiscoveryService.GetExistingGame(gameId)
-                            .ThenMap(gameExporter.Export)
+                            .ThenMap(gameExporter.Serialize)
                             .Then(statsBookSerializer.Serialize) switch
                     {
                         Success<byte[]> s => File(s.Value, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"),

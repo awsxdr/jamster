@@ -1,16 +1,17 @@
 ﻿using amethyst.DataStores;
 using amethyst.Domain;
 using amethyst.Events;
+using amethyst.Services;
 
-namespace amethyst.Services;
+namespace amethyst.Serialization;
 
-public interface IGameImporter
+public interface IGameDeserializer
 {
-    Task<GameInfo> Import(StatsBook statsBook);
+    Task<GameInfo> Deserialize(StatsBook statsBook);
 }
 
 [Singleton]
-public class GameImporter(IGameDiscoveryService gameDiscoveryService, IEventBus eventBus) : IGameImporter
+public class GameDeserializer(IGameDiscoveryService gameDiscoveryService, IEventBus eventBus) : IGameDeserializer
 {
     private static readonly Dictionary<string, TeamColor> KnownColors = new (string[] Keys, (Color ShirtColor, Color ComplementaryColor) Colors)[]
     {
@@ -32,7 +33,7 @@ public class GameImporter(IGameDiscoveryService gameDiscoveryService, IEventBus 
     .SelectMany(x => x.Keys.Select(key => (Key: key, x.Colors.ShirtColor, x.Colors.ComplementaryColor)))
     .ToDictionary(x => x.Key, x => new TeamColor(x.ShirtColor, x.ComplementaryColor));
 
-    public async Task<GameInfo> Import(StatsBook statsBook)
+    public async Task<GameInfo> Deserialize(StatsBook statsBook)
     {
         var gameName = $"{statsBook.Igrf.GameDetails.GameStart.Date:yyyy-MM-dd} - {GetTeamName(statsBook.Igrf.Teams.HomeTeam)} vs {GetTeamName(statsBook.Igrf.Teams.AwayTeam)}";
         if (!string.IsNullOrWhiteSpace(statsBook.Igrf.GameDetails.GameNumber))

@@ -141,12 +141,74 @@ public abstract class StatsSheetSerializerBase(ILogger logger)
                 : string.Empty;
     }
 
+    protected async Task<Result<Worksheet>> GetWorksheet(string name, ZipArchive archive) =>
+        await 
+            (await GetEntry(archive, "xl/workbook.xml").Then(LoadDocumentFromEntry))
+            .And(await GetEntry(archive, "xl/_rels/workbook.xml.rels").Then(LoadDocumentFromEntry))
+            .Then(GetWorksheetEntryNameFromName, name)
+            .Then(entryName => GetWorksheetByEntryName(entryName, archive));
+
     protected Task<Result<Worksheet>> GetWorksheetByEntryName(string entryName, ZipArchive archive) =>
         GetEntry(archive, entryName)
             .Then(entry =>
                 LoadDocumentFromEntry(entry)
                     .Then(document =>
                         GetSharedStrings(archive).ThenMap(sharedStrings => new Worksheet(entry, document, sharedStrings))));
+
+    private Result<string> GetWorksheetEntryNameFromName(string name, (XDocument Workbook, XDocument WorkbookRelations) workbookInfo)
+    {
+        var (workbook, relations) = workbookInfo;
+
+        var workbookNamespace = workbook.Root?.Name.Namespace;
+
+        if (workbookNamespace is null)
+        {
+            logger.LogError("Unable to read stats book. Cannot get root node for workbook XML");
+            return Result<string>.Fail<InvalidStatsBookFileFormatError>();
+        }
+
+        var workbookRelationsNamespace = workbook.Root!.GetNamespaceOfPrefix("r");
+
+        if (workbookRelationsNamespace is null)
+        {
+            logger.LogError("Unable to read stats book. Cannot get relations namespace from workbook XML");
+            return Result<string>.Fail<InvalidStatsBookFileFormatError>();
+        }
+
+        var relationsNamespace = relations.Root?.Name.Namespace;
+
+        if (relationsNamespace is null)
+        {
+            logger.LogError("Unable to read stats book. Cannot get root node for workbook relations XML");
+            return Result<string>.Fail<InvalidStatsBookFileFormatError>();
+        }
+
+        var sheetId =
+            workbook.Root?.Element(workbookNamespace + "sheets")
+                ?.Elements(workbookNamespace + "sheet")
+                .SingleOrDefault(e => e.Attribute("name")?.Value == name)
+                ?.Attribute(workbookRelationsNamespace + "id")
+                ?.Value;
+
+        if (sheetId is null)
+        {
+            logger.LogError("Unable to read stats book. Cannot find worksheet '{sheet}'", name);
+            return Result<string>.Fail<InvalidStatsBookFileFormatError>();
+        }
+
+        var entryPath = relations.Root?.Elements()
+            .SingleOrDefault(e => e.Attribute("Id")?.Value == sheetId)
+            ?.Attribute("Target")
+            ?.Value;
+
+        if (entryPath is null)
+        {
+            logger.LogError("Unable to read stats book. Cannot find relationship with ID {id}", sheetId);
+            return Result<string>.Fail<InvalidStatsBookFileFormatError>();
+        }
+
+        return Result.Succeed($"xl/{entryPath}");
+    }
 
     private Task<Result<SharedStrings>> GetSharedStrings(ZipArchive archive) =>
         GetEntry(archive, "xl/sharedStrings.xml")

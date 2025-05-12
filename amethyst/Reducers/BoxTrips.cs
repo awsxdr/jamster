@@ -1,6 +1,7 @@
 ﻿using amethyst.Domain;
 using amethyst.Events;
 using amethyst.Services;
+// ReSharper disable WithExpressionModifiesAllMembers
 
 namespace amethyst.Reducers;
 
@@ -12,11 +13,12 @@ public abstract class BoxTrips(TeamSide teamSide, ReducerGameContext context, IL
     , IHandlesEvent<SkaterSubstitutedInBox>
     , IHandlesEvent<JamStarted>
     , IHandlesEvent<JamEnded>
+    , IHandlesEvent<StarPassMarked>
     , ITickReceiver
     , IDependsOnState<GameStageState>
     , IDependsOnState<JamLineupState>
 {
-    protected override BoxTripsState DefaultState => new([]);
+    protected override BoxTripsState DefaultState => new([], false);
     public override Option<string> GetStateKey() => Option.Some(teamSide.ToString());
 
     public IEnumerable<Event> Handle(SkaterSatInBox @event) => @event.HandleIfTeam(teamSide, () =>
@@ -50,12 +52,14 @@ public abstract class BoxTrips(TeamSide teamSide, ReducerGameContext context, IL
                     gameStage.PeriodNumber,
                     gameStage.Stage == Stage.Jam ? gameStage.JamNumber : gameStage.JamNumber + 1,
                     gameStage.Stage == Stage.Jam ? gameStage.TotalJamNumber : gameStage.TotalJamNumber + 1,
+                    state.HasStarPassInJam,
+                    gameStage.Stage != Stage.Jam,
                     @event.Body.SkaterNumber,
                     skaterPosition,
                     null,
+                    false,
                     [],
                     @event.Tick,
-                    0,
                     0,
                     0
                 )).ToArray()
@@ -79,7 +83,6 @@ public abstract class BoxTrips(TeamSide teamSide, ReducerGameContext context, IL
                         {
                             DurationInJams = gameStage.TotalJamNumber - t.TotalJamStart,
                             TicksPassed = t.TicksPassedAtLastStart + @event.Tick - t.LastStartTick,
-                            SecondsPassed = ((Tick)(t.TicksPassedAtLastStart + @event.Tick - t.LastStartTick)).Seconds,
                         }
                         : t)
                     .ToArray(),
@@ -95,13 +98,14 @@ public abstract class BoxTrips(TeamSide teamSide, ReducerGameContext context, IL
 
         var totalJamNumber = gameStage.Stage == Stage.Jam ? gameStage.TotalJamNumber : gameStage.TotalJamNumber + 1;
         
-        SetState(new(
-            state.BoxTrips.Select(t => 
+        SetState(state with
+        {
+            BoxTrips = state.BoxTrips.Select(t => 
                 t.DurationInJams is null && (t.Substitutions.LastOrDefault()?.NewNumber ?? t.SkaterNumber) == @event.Body.OriginalSkaterNumber
                     ? t with { Substitutions = t.Substitutions.Append(new(@event.Body.NewSkaterNumber, totalJamNumber)).ToArray() }
                     : t
-                ).ToArray()
-        ));
+                ).ToArray(),
+        });
 
         return [];
     });
@@ -110,16 +114,18 @@ public abstract class BoxTrips(TeamSide teamSide, ReducerGameContext context, IL
     {
         var state = GetState();
 
-        SetState(new(
-            state.BoxTrips.Select(t => t.DurationInJams is null
+        SetState(state with
+        {
+            BoxTrips = state.BoxTrips.Select(t => t.DurationInJams is null
                 ? t with
                 {
                     LastStartTick = @event.Tick,
                     TicksPassedAtLastStart = t.TicksPassed,
                 }
                 : t)
-            .ToArray()
-        ));
+            .ToArray(),
+            HasStarPassInJam = false,
+        });
 
         return [];
     }
@@ -128,19 +134,26 @@ public abstract class BoxTrips(TeamSide teamSide, ReducerGameContext context, IL
     {
         var state = GetState();
 
-        SetState(new(
-            state.BoxTrips.Select(t => t.DurationInJams is null
+        SetState(state with
+        {
+            BoxTrips = state.BoxTrips.Select(t => t.DurationInJams is null
                     ? t with
                     {
                         TicksPassed = t.TicksPassedAtLastStart + @event.Tick - t.LastStartTick,
-                        SecondsPassed = ((Tick)(t.TicksPassedAtLastStart + @event.Tick - t.LastStartTick)).Seconds,
                     }
                     : t)
                 .ToArray()
-        ));
+        });
 
         return [];
     }
+
+    public IEnumerable<Event> Handle(StarPassMarked @event) => @event.HandleIfTeam(teamSide, () =>
+    {
+        SetState(GetState() with { HasStarPassInJam = @event.Body.StarPass });
+
+        return [];
+    });
 
     public IEnumerable<Event> Tick(Tick tick)
     {
@@ -151,16 +164,16 @@ public abstract class BoxTrips(TeamSide teamSide, ReducerGameContext context, IL
 
         var state = GetState();
 
-        SetState(new(
-            state.BoxTrips.Select(t => t.DurationInJams is null
+        SetState(state with
+        {
+            BoxTrips = state.BoxTrips.Select(t => t.DurationInJams is null
                     ? t with
                     {
                         TicksPassed = t.TicksPassedAtLastStart + tick - t.LastStartTick,
-                        SecondsPassed = (t.TicksPassedAtLastStart + tick - t.LastStartTick).Seconds,
                     }
                     : t)
                 .ToArray()
-        ));
+        });
 
         return [];
     }
@@ -172,7 +185,7 @@ public sealed class HomeBoxTrips(ReducerGameContext context, ILogger<HomeBoxTrip
 public sealed class AwayBoxTrips(ReducerGameContext context, ILogger<AwayBoxTrips> logger)
     : BoxTrips(TeamSide.Away, context, logger);
 
-public sealed record BoxTripsState(BoxTrip[] BoxTrips)
+public sealed record BoxTripsState(BoxTrip[] BoxTrips, bool HasStarPassInJam)
 {
     public bool Equals(BoxTripsState? other) =>
         other is not null 
@@ -185,15 +198,19 @@ public sealed record BoxTrip(
     int Period,
     int Jam,
     int TotalJamStart,
+    bool StartAfterStarPass,
+    bool StartBetweenJams,
     string SkaterNumber,
     SkaterPosition SkaterPosition,
     int? DurationInJams,
+    bool EndAfterStarPass,
     Substitution[] Substitutions,
-    long LastStartTick,
-    long TicksPassedAtLastStart,
-    [property: IgnoreChange] long TicksPassed,
-    int SecondsPassed)
+    Tick LastStartTick,
+    Tick TicksPassedAtLastStart,
+    [property: IgnoreChange] Tick TicksPassed)
 {
+    public int SecondsPassed => TicksPassed.Seconds;
+
     public bool Equals(BoxTrip? other) =>
         other is not null
         && other.Period.Equals(Period)
@@ -204,8 +221,7 @@ public sealed record BoxTrip(
         && other.Substitutions.SequenceEqual(Substitutions)
         && other.LastStartTick.Equals(LastStartTick)
         && other.TicksPassedAtLastStart.Equals(TicksPassedAtLastStart)
-        && other.TicksPassed.Equals(TicksPassed)
-        && other.SecondsPassed.Equals(SecondsPassed);
+        && other.TicksPassed.Equals(TicksPassed);
 
     public override int GetHashCode()
     {
@@ -219,7 +235,6 @@ public sealed record BoxTrip(
         hashCode.Add(LastStartTick);
         hashCode.Add(TicksPassedAtLastStart);
         hashCode.Add(TicksPassed);
-        hashCode.Add(SecondsPassed);
         return hashCode.ToHashCode();
     }
 }

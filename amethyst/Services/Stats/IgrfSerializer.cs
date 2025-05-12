@@ -1,4 +1,4 @@
-﻿using amethyst.Domain;
+﻿using amethyst.Serialization;
 using System.IO.Compression;
 
 namespace amethyst.Services.Stats;

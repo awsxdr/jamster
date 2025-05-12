@@ -10,9 +10,10 @@ public abstract class LineupSheet(TeamSide teamSide, ReducerGameContext context)
     , IHandlesEvent<SkaterAddedToJam>
     , IHandlesEvent<SkaterRemovedFromJam>
     , IHandlesEvent<PeriodFinalized>
+    , IHandlesEvent<StarPassMarked>
     , IDependsOnState<GameStageState>
 {
-    protected override LineupSheetState DefaultState => new([new(1, 1, null, null, [null, null, null])]);
+    protected override LineupSheetState DefaultState => new([new(1, 1, false, null, null, [null, null, null])]);
 
     public override Option<string> GetStateKey() =>
         Option.Some(teamSide.ToString());
@@ -22,7 +23,7 @@ public abstract class LineupSheet(TeamSide teamSide, ReducerGameContext context)
         var state = GetState();
         var gameStage = GetState<GameStageState>();
 
-        SetState(new(Enumerable.Append(state.Jams, new(gameStage.PeriodNumber, gameStage.JamNumber + 1, null, null, [null, null, null])).ToArray()));
+        SetState(new(state.Jams.Append(new(gameStage.PeriodNumber, gameStage.JamNumber + 1, false, null, null, [null, null, null])).ToArray()));
 
         return [];
     }
@@ -78,6 +79,23 @@ public abstract class LineupSheet(TeamSide teamSide, ReducerGameContext context)
         return [];
     }
 
+    public IEnumerable<Event> Handle(StarPassMarked @event) => @event.HandleIfTeam(teamSide, () =>
+    {
+        ModifyCurrentJam(jam => jam with
+        {
+            HasStarPass = @event.Body.StarPass,
+        });
+
+        return [];
+    });
+
+    private void ModifyCurrentJam(Func<LineupSheetJam, LineupSheetJam> mapper)
+    {
+        var state = GetState();
+
+        ModifyJam(state.Jams.Length - 1, mapper);
+    }
+
     private void ModifyJam(int period, int jam, Func<LineupSheetJam, LineupSheetJam> mapper)
     {
         var state = GetState();
@@ -117,20 +135,24 @@ public sealed record LineupSheetState(LineupSheetJam[] Jams)
     public override int GetHashCode() => Jams.GetHashCode();
 }
 
-public sealed record LineupSheetJam(
+public record LineupSheetJam(
     int Period,
     int Jam,
+    bool HasStarPass,
     string? JammerNumber,
     string? PivotNumber,
     string?[] BlockerNumbers)
 {
-    public bool Equals(LineupSheetJam? other) =>
+    public virtual bool Equals(LineupSheetJam? other) =>
         other != null
         && other.Period.Equals(Period)
         && other.Jam.Equals(Jam)
+        && other.HasStarPass.Equals(HasStarPass)
         && (other.JammerNumber?.Equals(JammerNumber) ?? JammerNumber == null)
         && (other.PivotNumber?.Equals(PivotNumber) ?? PivotNumber == null)
         && other.BlockerNumbers.SequenceEqual(BlockerNumbers);
 
     public override int GetHashCode() => HashCode.Combine(Period, Jam, JammerNumber, PivotNumber, BlockerNumbers);
+
+    public string[] SkaterNumbers => ((string?[])[JammerNumber, PivotNumber, ..BlockerNumbers]).Where(b => b != null).Cast<string>().ToArray();
 }

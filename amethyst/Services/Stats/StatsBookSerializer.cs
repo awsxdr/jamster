@@ -1,5 +1,5 @@
 ﻿using System.IO.Compression;
-using amethyst.Domain;
+using amethyst.Serialization;
 
 namespace amethyst.Services.Stats;
 
@@ -16,6 +16,8 @@ public class StatsBookSerializer(
     IIgrfSerializer igrfSerializer,
     IBlankStatsBookStore blankStatsBookStore,
     IScoreSheetSerializer scoreSheetSerializer,
+    IPenaltySheetSerializer penaltySheetSerializer,
+    ILineupSheetSerializer lineupSheetSerializer,
     ILogger<StatsBookSerializer> logger
 ) : IStatsBookSerializer
 {
@@ -33,6 +35,8 @@ public class StatsBookSerializer(
         if (!blankStatsBookStore.BlankStatsBookPresent)
             return Result<byte[]>.Fail<BlankStatsBookNotConfiguredError>();
 
+        var test = System.Text.Json.JsonSerializer.Serialize(statsBook);
+
         using var stream = new MemoryStream();
         await stream.WriteAsync(await File.ReadAllBytesAsync(BlankStatsBookStore.BlankStatsBookPath));
         stream.Position = 0;
@@ -49,13 +53,17 @@ public class StatsBookSerializer(
 
     private Task<Result<ZipArchive>> Serialize(StatsBook statsBook, ZipArchive archive) =>
         igrfSerializer.SerializeIgrf(statsBook.Igrf, archive)
-            .Then(scoreSheetSerializer.SerializeScoreSheets, statsBook.ScoreSheets);
+            .Then(scoreSheetSerializer.SerializeScoreSheets, statsBook.ScoreSheets)
+            .Then(penaltySheetSerializer.SerializePenaltySheets, statsBook.PenaltySheets)
+            .Then(lineupSheetSerializer.SerializeLineupSheets, statsBook.LineupSheets);
 
     private async Task<Result<StatsBook>> Deserialize(ZipArchive archive) =>
         await validator.ValidateStatsBook(archive)
             .Then(async () =>
                 (await igrfSerializer.DeserializeIgrf(archive))
                 .And(await scoreSheetSerializer.DeserializeScoreSheets(archive))
+                .And(Result.Succeed(new PenaltySheetCollection(new("", [], []), new("", [], []))))
+                .And(Result.Succeed(new LineupSheetCollection(new("", []), new("", []), new("", []), new("", []))))
                 .ThenMap(CreateStatsBook));
 
     private Result<ZipArchive> ReadArchiveStream(Stream stream)
@@ -71,7 +79,7 @@ public class StatsBookSerializer(
         }
     }
 
-    private static StatsBook CreateStatsBook((Igrf Igrf, ScoreSheetCollection ScoreSheets) sheets) =>
-        new(sheets.Igrf, sheets.ScoreSheets);
+    private static StatsBook CreateStatsBook((Igrf Igrf, ScoreSheetCollection ScoreSheets, PenaltySheetCollection PenaltySheets, LineupSheetCollection LineupSheets) sheets) =>
+        new(sheets.Igrf, sheets.ScoreSheets, sheets.PenaltySheets, sheets.LineupSheets);
 }
 
