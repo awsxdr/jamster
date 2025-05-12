@@ -129,24 +129,38 @@ public class TeamJamStatsUnitTests : ReducerUnitTest<HomeTeamJamStats, TeamJamSt
     }
 
     [Test]
-    public async Task JamEnded_WhenLead_MarksJammerAsCall()
+    public async Task JamEnded_WhenLead_AndJamClockNotExpired_MarksJammerAsCall()
     {
         State = new(true, false, false, false, false);
-        MockState<TimeoutClockState>(new(false, 0, 0, TimeoutClockStopReason.None, 0, 0));
+        MockState<TimeoutClockState>(new(false, 0, 0, TimeoutClockStopReason.None, 0));
+        MockState<JamClockState>(new(false, 0, amethyst.Domain.Tick.FromSeconds(Rules.DefaultRules.JamRules.DurationInSeconds / 2), true, false));
 
         var implicitEvents = await Subject.Handle(new JamEnded(0));
 
         implicitEvents
             .OfType<CallMarked>()
-            .Should().HaveCount(1)
-            .And.Subject.Single().Body.Should().Be(new CallMarkedBody(TeamSide.Home, true));
+            .Should().ContainSingle()
+            .Which.Body.Should().Be(new CallMarkedBody(TeamSide.Home, true));
+    }
+
+    [Test]
+    public async Task JamEnded_WhenLead_AndJamClockExpired_DoesNotMarkJammerAsCall()
+    {
+        State = new(true, false, false, false, false);
+        MockState<TimeoutClockState>(new(false, 0, 0, TimeoutClockStopReason.None, 0));
+        MockState<JamClockState>(new(false, 0, amethyst.Domain.Tick.FromSeconds(Rules.DefaultRules.JamRules.DurationInSeconds), true, true));
+
+        var implicitEvents = await Subject.Handle(new JamEnded(0));
+
+        implicitEvents
+            .OfType<CallMarked>().Should().BeEmpty();
     }
 
     [Test]
     public async Task JamEnded_WhenNotLead_DoesNotMarkJammerAsCall()
     {
         State = new(false, false, false, false, false);
-        MockState<TimeoutClockState>(new(false, 0, 0, TimeoutClockStopReason.None, 0, 0));
+        MockState<TimeoutClockState>(new(false, 0, 0, TimeoutClockStopReason.None, 0));
 
         var implicitEvents = await Subject.Handle(new JamEnded(0));
 
@@ -159,7 +173,7 @@ public class TeamJamStatsUnitTests : ReducerUnitTest<HomeTeamJamStats, TeamJamSt
     public async Task JamEnded_WhenCausedByTimeout_DoesNotMarkJammerAsCall()
     {
         State = new(true, false, false, false, true);
-        MockState<TimeoutClockState>(new(true, 0, 0, TimeoutClockStopReason.None, 10, 0));
+        MockState<TimeoutClockState>(new(true, 0, 0, TimeoutClockStopReason.None, 10));
 
         var implicitEvents = await Subject.Handle(new JamEnded(10));
 

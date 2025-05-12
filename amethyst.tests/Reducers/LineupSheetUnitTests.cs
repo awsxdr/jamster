@@ -16,7 +16,7 @@ public class LineupSheetUnitTests : ReducerUnitTest<HomeLineupSheet, LineupSheet
         await Subject.Handle(new JamEnded(0));
 
         State.Jams.Should().ContainSingle()
-            .Which.Should().Be(new LineupSheetJam(2, 7, null, null, [null, null, null]));
+            .Which.Should().Be(new LineupSheetJam(2, 7, false, null, null, [null, null, null]));
     }
 
     private static readonly IEnumerable<TestCaseData> SkaterAddedToJamTestCases =
@@ -42,13 +42,13 @@ public class LineupSheetUnitTests : ReducerUnitTest<HomeLineupSheet, LineupSheet
     public async Task SkaterAddedToJam_WhenJamExists_SetsSkaterCorrectly(SkaterPosition position, string skaterNumber, string expectedJammerNumber, string expectedPivotNumber, string[] expectedBlockers)
     {
         State = new([
-            new(1, 1, "11", "12", ["13", "14", "15"]),
-            new(1, 2, "1", "2", ["3", "4", "5"]),
-            new(1, 3, null, null, [null, null, null])
+            new(1, 1, false, "11", "12", ["13", "14", "15"]),
+            new(1, 2, false, "1", "2", ["3", "4", "5"]),
+            new(1, 3, false, null, null, [null, null, null])
         ]);
 
         var expectedJams = (LineupSheetJam[])State.Jams.Clone();
-        expectedJams[1] = new(1, 2, expectedJammerNumber, expectedPivotNumber, expectedBlockers);
+        expectedJams[1] = new(1, 2, false, expectedJammerNumber, expectedPivotNumber, expectedBlockers);
         var expectedResult = new LineupSheetState(expectedJams);
 
         await Subject.Handle(new SkaterAddedToJam(0, new(TeamSide.Home, 1, 2, skaterNumber, position)));
@@ -60,9 +60,9 @@ public class LineupSheetUnitTests : ReducerUnitTest<HomeLineupSheet, LineupSheet
     public async Task SkaterAddedToJam_WithPivot_When4BlockersListed_RemovesFirstBlocker()
     {
         State = new([
-            new(1, 1, "11", "12", ["13", "14", "15"]),
-            new(1, 2, "1", null, ["2", "3", "4", "5"]),
-            new(1, 3, null, null, [null, null, null])
+            new(1, 1, false, "11", "12", ["13", "14", "15"]),
+            new(1, 2, false, "1", null, ["2", "3", "4", "5"]),
+            new(1, 3, false, null, null, [null, null, null])
         ]);
 
         var expectedJams = (LineupSheetJam[])State.Jams.Clone();
@@ -82,9 +82,9 @@ public class LineupSheetUnitTests : ReducerUnitTest<HomeLineupSheet, LineupSheet
     public async Task SkaterAddedToJam_WithBlocker_When3BlockersListed_AndNoPivot_Adds4thBlocker()
     {
         State = new([
-            new(1, 1, "11", "12", ["13", "14", "15"]),
-            new(1, 2, "1", null, ["2", "3", "4"]),
-            new(1, 3, null, null, [null, null, null])
+            new(1, 1, false, "11", "12", ["13", "14", "15"]),
+            new(1, 2, false, "1", null, ["2", "3", "4"]),
+            new(1, 3, false, null, null, [null, null, null])
         ]);
 
         var expectedJams = (LineupSheetJam[])State.Jams.Clone();
@@ -103,9 +103,9 @@ public class LineupSheetUnitTests : ReducerUnitTest<HomeLineupSheet, LineupSheet
     public async Task SkaterAddedToJam_WithBlocker_WhenReplacesPivot_And3BlockersListed_Adds4thBlocker()
     {
         State = new([
-            new(1, 1, "11", "12", ["13", "14", "15"]),
-            new(1, 2, "1", "5", ["2", "3", "4"]),
-            new(1, 3, null, null, [null, null, null])
+            new(1, 1, false, "11", "12", ["13", "14", "15"]),
+            new(1, 2, false, "1", "5", ["2", "3", "4"]),
+            new(1, 3, false, null, null, [null, null, null])
         ]);
 
         var expectedJams = (LineupSheetJam[])State.Jams.Clone();
@@ -135,13 +135,13 @@ public class LineupSheetUnitTests : ReducerUnitTest<HomeLineupSheet, LineupSheet
     public async Task SkaterRemovedFromJam_WhenJamExists_RemovesSkater(string skaterNumber, string? expectedJammerNumber, string? expectedPivotNumber, string?[] expectedBlockers)
     {
         State = new([
-            new(1, 1, "11", "12", ["13", "14", "15"]),
-            new(1, 2, "1", "2", ["3", "4", "5"]),
-            new(1, 3, null, null, [null, null, null])
+            new(1, 1, false, "11", "12", ["13", "14", "15"]),
+            new(1, 2, false, "1", "2", ["3", "4", "5"]),
+            new(1, 3, false, null, null, [null, null, null])
         ]);
 
         var expectedJams = (LineupSheetJam[])State.Jams.Clone();
-        expectedJams[1] = new(1, 2, expectedJammerNumber, expectedPivotNumber, expectedBlockers);
+        expectedJams[1] = new(1, 2, false, expectedJammerNumber, expectedPivotNumber, expectedBlockers);
         var expectedResult = new LineupSheetState(expectedJams);
 
         await Subject.Handle(new SkaterRemovedFromJam(0, new(TeamSide.Home, 1, 2, skaterNumber)));
@@ -153,15 +153,39 @@ public class LineupSheetUnitTests : ReducerUnitTest<HomeLineupSheet, LineupSheet
     public async Task PeriodFinalized_MovesLastJamOnSheetToStartOfNextPeriod()
     {
         State = new([
-            new(1, 1, "11", "12", ["13", "14", "15"]),
-            new(1, 2, "1", "2", ["3", "4", "5"]),
+            new(1, 1, false, "11", "12", ["13", "14", "15"]),
+            new(1, 2, false, "1", "2", ["3", "4", "5"]),
         ]);
 
         await Subject.Handle(new PeriodFinalized(0));
 
         State.Should().Be(new LineupSheetState([
-            new(1, 1, "11", "12", ["13", "14", "15"]),
-            new(2, 1, "1", "2", ["3", "4", "5"]),
+            new(1, 1, false, "11", "12", ["13", "14", "15"]),
+            new(2, 1, false, "1", "2", ["3", "4", "5"]),
         ]));
+    }
+
+    [Test]
+    public async Task StarPassMarked_WhenTeamMatches_SetsStarPassAccordingly([Values] bool starPass)
+    {
+        State = new([
+            new(1, 1, !starPass, "123", "321", ["1", "2", "3"])
+        ]);
+
+        await Subject.Handle(new StarPassMarked(0, new(TeamSide.Home, starPass)));
+
+        State.Jams[0].HasStarPass.Should().Be(starPass);
+    }
+
+    [Test]
+    public async Task StarPassMarked_WhenTeamDoesNotMatch_DoesNotChangeState()
+    {
+        State = new([
+            new(1, 1, false, "123", "321", ["1", "2", "3"])
+        ]);
+
+        await Subject.Handle(new StarPassMarked(0, new(TeamSide.Away, true)));
+
+        State.Jams[0].HasStarPass.Should().BeFalse();
     }
 }

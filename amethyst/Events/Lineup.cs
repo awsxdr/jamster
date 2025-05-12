@@ -20,3 +20,6 @@ public sealed record SkaterInjuryAddedBody(TeamSide TeamSide, string SkaterNumbe
 
 public sealed class SkaterInjuryRemoved(Guid7 id, SkaterInjuryRemovedBody body) : Event<SkaterInjuryRemovedBody>(id, body);
 public sealed record SkaterInjuryRemovedBody(TeamSide TeamSide, string SkaterNumber, int TotalJamNumberStart) : TeamEventBody(TeamSide);
+
+public sealed class PreviousJamSkaterOnTrack(Guid7 id, PreviousJamSkaterOnTrackBody body) : Event<PreviousJamSkaterOnTrackBody>(id, body);
+public sealed record PreviousJamSkaterOnTrackBody(TeamSide TeamSide, string SkaterNumber) : TeamEventBody(TeamSide);

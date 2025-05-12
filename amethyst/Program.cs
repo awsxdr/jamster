@@ -331,6 +331,7 @@ public partial class Program
         var serializerOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web);
         serializerOptions.Converters.Add(new JsonNumberEnumConverter<TimeoutPeriodClockStopBehavior>());
         serializerOptions.Converters.Add(new JsonStringEnumConverter());
+        serializerOptions.Converters.Add(new TickJsonConverter());
         return serializerOptions;
     }
 }

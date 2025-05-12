@@ -36,18 +36,18 @@ public class EventBus(
     {
         using var @lock = await AcquireLock(game.Id);
 
-        logger.LogDebug("Adding event {event} for game {gameId}", @event, game.Id);
+        logger.LogTrace("Adding event {event} for game {gameId}", @event, game.Id);
 
         var gameContext = contextFactory.GetGame(game);
 
         if (@event is IPeriodClockAligned)
         {
-            logger.LogDebug("Aligning event to period clock");
+            logger.LogTrace("Aligning event to period clock");
 
             var periodClock = gameContext.StateStore.GetState<PeriodClockState>();
             if (periodClock.IsRunning)
             {
-                Tick alignedTick = (long)(Math.Round((@event.Tick - periodClock.LastStartTick) / 1000.0) * 1000) + periodClock.LastStartTick;
+                Tick alignedTick = (long)(Math.Round((@event.Tick - periodClock.LastStartTick) / (float) Tick.TicksPerSecond) * Tick.TicksPerSecond) + periodClock.LastStartTick;
                 @event.Id = Guid7.FromTick(alignedTick);
             }
         }
@@ -57,14 +57,17 @@ public class EventBus(
 
         @event.Id = persistResult.Value;
 
-        logger.LogDebug("Applying event {eventId} ({eventType}) to game {gameId}", @event.Id, @event.GetType().Name, game.Id);
+        logger.LogTrace("Applying event {eventId} ({eventType}) to game {gameId} at tick {tick}", @event.Id, @event.GetType().Name, game.Id, @event.Tick);
+
+        using var _ = logger.BeginScope("Event {event} at {tick}", @event.GetType().Name, @event.Tick);
+
         var additionalEventsToPersist = await gameContext.StateStore.ApplyEvents(gameContext.Reducers, @event);
 
         foreach (var additionalEvent in additionalEventsToPersist)
         {
             var result = await PersistEventToDatabase(game, additionalEvent);
 
-            if(result is Failure failure)
+            if (result is Failure failure)
                 logger.LogError("Error persisting additional event to database: {error}", failure.GetError());
         }
 

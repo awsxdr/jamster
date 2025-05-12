@@ -50,7 +50,11 @@ public abstract class EventBusIntegrationTest
 
             builder.RegisterGeneric((_, types) =>
                     createLoggerMethod.MakeGenericMethod(types.Single()).Invoke(null, [
-                        LoggerFactory.Create(options => options.AddConsole().SetMinimumLevel(LogLevel.Debug))
+                        LoggerFactory.Create(options => options.AddSimpleConsole(c =>
+                        {
+                            c.IncludeScopes = true;
+                        })
+                            .SetMinimumLevel(LogLevel.Debug))
                     ])!)
                 .As(typeof(ILogger<>));
 
@@ -72,6 +76,8 @@ public abstract class EventBusIntegrationTest
         EventBus = Mocker.Create<IEventBus>();
 
         Mocker.Create<GameContextFactory>().GetGame(Game);
+
+        amethyst.Domain.Tick.EqualityVariance = 1;
     }
 
     [TearDown]
@@ -88,14 +94,16 @@ public abstract class EventBusIntegrationTest
     {
         foreach (var @event in events)
         {
+            await EventBus.AddEvent(Game, @event);
+
             if (@event is ValidateStateFakeEvent validate)
             {
-                await Tick(@event.Tick);
+                //await Tick(@event.Tick);
                 validate.ValidateStates(StateStore);
             }
-            else
+            else if (@event is DebugFakeEvent debug)
             {
-                await EventBus.AddEvent(Game, @event);
+                Console.WriteLine($"Debug event with label '{debug.Label}'");
             }
         }
     }
@@ -121,6 +129,10 @@ public abstract class EventBusIntegrationTest
         foreach (var receiver in tickReceivers)
         {
             var implicitEvents = await receiver.TickAsync(tick);
+            //var queuedEvents = new Queue<EventDetails>(implicitEvents.OrderBy(e => e.Id).Select(e => new EventDetails(e, null)));
+
+            //while (queuedEvents.TryDequeue(out var @event))
+
             foreach (var @event in implicitEvents)
                 await EventBus.AddEventWithoutPersisting(Game, @event);
         }

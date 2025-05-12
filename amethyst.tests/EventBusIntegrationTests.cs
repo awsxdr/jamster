@@ -196,6 +196,6 @@ public class EventBusIntegrationTests
 
     private sealed class MockPeriodClock(ReducerGameContext context) : Reducer<PeriodClockState>(context)
     {
-        protected override PeriodClockState DefaultState => new (false, false, 0, 0, 0, 0);
+        protected override PeriodClockState DefaultState => new (false, false, 0, 0, 0);
     }
 }

@@ -2,6 +2,7 @@
 using amethyst.Events;
 using amethyst.Reducers;
 using amethyst.Services;
+using amethyst.tests.GameGeneration;
 using FluentAssertions;
 using Func;
 
@@ -10,7 +11,7 @@ namespace amethyst.tests.EventHandling;
 public class EventIntegrationTests : EventBusIntegrationTest
 {
     [TestCase(typeof(TestGameEventsSource), nameof(TestGameEventsSource.FullGame))]
-    [TestCase(typeof(TestGameEventsSource), nameof(TestGameEventsSource.TwoJamsWithScores))]
+    [TestCase(typeof(TestGameEventsSource), nameof(TestGameEventsSource.JamsWithScoresAndStats))]
     [TestCase(typeof(TestGameEventsSource), nameof(TestGameEventsSource.SingleJamStartedWithoutEndingIntermission))]
     [TestCase(typeof(TestGameEventsSource), nameof(TestGameEventsSource.OfficialReviewDuringIntermission))]
     [TestCase(typeof(TestGameEventsSource), nameof(TestGameEventsSource.CustomRules))]
@@ -38,6 +39,16 @@ public class EventIntegrationTests : EventBusIntegrationTest
         Console.WriteLine(GetState<TeamTimeoutsState>("Away"));
     }
 
+    [Test, Repeat(20)]
+    public async Task RandomGame_UpdatesStatesAsExpected()
+    {
+        var game = GameGenerator.GenerateRandom();
+        var simulator = new GameSimulator(game);
+        var simulatorEvents = simulator.SimulateGame();
+
+        await AddEvents(simulatorEvents);
+    }
+
     [Test]
     public async Task LoadingGameGivesSameStateAsRunningGame()
     {
@@ -47,7 +58,7 @@ public class EventIntegrationTests : EventBusIntegrationTest
         var stateTypes = reducers.Select(r => r.GetStateKey() is Some<string> k ? (Key: k.Value, r.StateType) : (null, r.StateType)).ToArray();
         var stateGetters = stateTypes.Select(x => GetStateGetter(x.Key, x.StateType)).ToArray();
 
-        var tick = Domain.Tick.FromSeconds(0);
+        var tick = amethyst.Domain.Tick.FromSeconds(0);
         const int tickStep = 50;
 
         var stateCaptures = new Dictionary<Guid, object[]>();

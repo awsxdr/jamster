@@ -106,6 +106,8 @@ public class GameStateStore(ILogger<GameStateStore> logger) : IGameStateStore
 
             while (queuedEvents.TryDequeue(out var @event))
             {
+                using var _ = logger.BeginScope(new Dictionary<string, object> { ["eventType"] = @event.GetType().Name, ["tick"] = @event.Event.Tick });
+
                 var tickImplicitEvents = (await Tick(reducers, @event.Event.Tick - 1)).ToArray();
 
                 eventsToPersist.AddRange(tickImplicitEvents.Where(e => e is IAlwaysPersisted));

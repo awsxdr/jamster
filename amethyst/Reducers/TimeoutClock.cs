@@ -18,7 +18,7 @@ public class TimeoutClock(ReducerGameContext context, ILogger<TimeoutClock> logg
     , IDependsOnState<TimeoutTypeState>
     , IDependsOnState<PeriodClockState>
 {
-    protected override TimeoutClockState DefaultState => new(false, 0, 0, TimeoutClockStopReason.None, 0, 0);
+    protected override TimeoutClockState DefaultState => new(false, 0, 0, TimeoutClockStopReason.None, 0);
 
     public IEnumerable<Event> Handle(JamStarted @event)
     {
@@ -80,7 +80,6 @@ public class TimeoutClock(ReducerGameContext context, ILogger<TimeoutClock> logg
         {
             StartTick = @event.Tick - ticksPassed,
             TicksPassed = ticksPassed,
-            SecondsPassed = @event.Body.SecondsPassed,
         });
 
         return [];
@@ -104,7 +103,6 @@ public class TimeoutClock(ReducerGameContext context, ILogger<TimeoutClock> logg
                 EndTick = @event.Tick,
                 StopReason = TimeoutClockStopReason.PeriodExpired,
                 TicksPassed = @event.Tick - state.StartTick,
-                SecondsPassed = ((Tick)(@event.Tick - state.StartTick)).Seconds,
             });
         }
 
@@ -128,7 +126,6 @@ public class TimeoutClock(ReducerGameContext context, ILogger<TimeoutClock> logg
                 IsRunning = false,
                 StopReason = TimeoutClockStopReason.PeriodFinalized,
                 TicksPassed = @event.Tick - state.StartTick,
-                SecondsPassed = ((Tick)(@event.Tick - state.StartTick)).Seconds,
             });
         }
         else
@@ -139,7 +136,6 @@ public class TimeoutClock(ReducerGameContext context, ILogger<TimeoutClock> logg
                 EndTick = @event.Tick,
                 StopReason = TimeoutClockStopReason.PeriodFinalized,
                 TicksPassed = @event.Tick - state.StartTick,
-                SecondsPassed = ((Tick)(@event.Tick - state.StartTick)).Seconds,
             });
         }
 
@@ -183,7 +179,6 @@ public class TimeoutClock(ReducerGameContext context, ILogger<TimeoutClock> logg
                 EndTick = periodClock.HasExpired ? @event.Tick : state.EndTick,
                 StopReason = periodClock.HasExpired ? TimeoutClockStopReason.PeriodExpired : TimeoutClockStopReason.None,
                 TicksPassed = @event.Tick - state.StartTick,
-                SecondsPassed = ((Tick)(@event.Tick - state.StartTick)).Seconds,
             });
         }
         else if(!currentTimeoutTypeStoppedClock && newTimeoutTypeStopsClock)
@@ -194,7 +189,6 @@ public class TimeoutClock(ReducerGameContext context, ILogger<TimeoutClock> logg
                 EndTick = 0,
                 StopReason = TimeoutClockStopReason.None,
                 TicksPassed = @event.Tick - state.StartTick,
-                SecondsPassed = ((Tick)(@event.Tick - state.StartTick)).Seconds,
             });
         }
 
@@ -210,7 +204,6 @@ public class TimeoutClock(ReducerGameContext context, ILogger<TimeoutClock> logg
         var newState = state with
         {
             TicksPassed = tick - state.StartTick,
-            SecondsPassed = (int)((tick - state.StartTick) / 1000L),
         };
         SetState(newState);
 
@@ -218,7 +211,15 @@ public class TimeoutClock(ReducerGameContext context, ILogger<TimeoutClock> logg
     }
 }
 
-public record TimeoutClockState(bool IsRunning, long StartTick, long EndTick, TimeoutClockStopReason StopReason, [property: IgnoreChange] long TicksPassed, int SecondsPassed);
+public record TimeoutClockState(
+    bool IsRunning,
+    long StartTick,
+    long EndTick,
+    TimeoutClockStopReason StopReason,
+    [property: IgnoreChange] Tick TicksPassed)
+{
+    public int SecondsPassed => TicksPassed.Seconds;
+}
 
 public enum TimeoutClockStopReason
 {

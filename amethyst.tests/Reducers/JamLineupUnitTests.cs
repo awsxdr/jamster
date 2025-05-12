@@ -297,7 +297,7 @@ public class JamLineupUnitTests : ReducerUnitTest<HomeTeamJamLineup, JamLineupSt
     public async Task JamEnded_ClearsLineup()
     {
         State = new("123", "321", [null, null, null]);
-        MockKeyedState<PenaltyBoxState>(nameof(TeamSide.Home), new([]));
+        MockKeyedState<PenaltyBoxState>(nameof(TeamSide.Home), new([], []));
 
         _ = await Subject.Handle(new JamEnded(0));
 
@@ -305,11 +305,11 @@ public class JamLineupUnitTests : ReducerUnitTest<HomeTeamJamLineup, JamLineupSt
     }
 
     [Test]
-    public async Task JamEnded_RaisesSkaterOnTrackEvent_ForEachSkaterInBox()
+    public async Task JamEnded_RaisesSkaterOnTrackEvent_ForEachSkaterInBoxOrQueuedForBox()
     {
         State = new("1", "2", ["3", "4", "5"]);
-        MockKeyedState<PenaltyBoxState>(nameof(TeamSide.Home), new(["1", "2", "3"]));
-        MockKeyedState<PenaltyBoxState>(nameof(TeamSide.Away), new(["3", "4"]));
+        MockKeyedState<PenaltyBoxState>(nameof(TeamSide.Home), new(["1", "2"], ["3"]));
+        MockKeyedState<PenaltyBoxState>(nameof(TeamSide.Away), new(["3", "4"], []));
 
         var implicitEvents = await Subject.Handle(new JamEnded(1234));
 
@@ -327,8 +327,8 @@ public class JamLineupUnitTests : ReducerUnitTest<HomeTeamJamLineup, JamLineupSt
     public async Task SkaterSubstitutedInBox_RaisesEventsToReplaceSkaterInLineup()
     {
         State = new("1", "2", ["3", "4", "5"]);
-        MockKeyedState<PenaltyBoxState>(nameof(TeamSide.Home), new(["2"]));
-        MockKeyedState<PenaltyBoxState>(nameof(TeamSide.Away), new([]));
+        MockKeyedState<PenaltyBoxState>(nameof(TeamSide.Home), new(["2"], []));
+        MockKeyedState<PenaltyBoxState>(nameof(TeamSide.Away), new([], []));
 
         var implicitEvents = await Subject.Handle(new SkaterSubstitutedInBox(0, new(TeamSide.Home, "2", "6")));
         implicitEvents = implicitEvents.ToArray();
@@ -399,5 +399,14 @@ public class JamLineupUnitTests : ReducerUnitTest<HomeTeamJamLineup, JamLineupSt
         var implicitEvents = await Subject.Handle(new PenaltyAssessed(0, new(TeamSide.Away, "123", "X")));
 
         implicitEvents.OfType<LostMarked>().Should().BeEmpty();
+    }
+
+    [Test]
+    public async Task PenaltyAssessed_WhenSkaterNotInLineup_AndSkaterInPreviousLineup_AddsSkaterToLineup()
+    {
+        var implicitEvents = await Subject.Handle(new PenaltyAssessed(0, new(TeamSide.Home, "123", "X")));
+
+        implicitEvents.OfType<PreviousJamSkaterOnTrack>().Should().ContainSingle()
+            .Which.Body.SkaterNumber.Should().Be("123");
     }
 }

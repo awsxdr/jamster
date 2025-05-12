@@ -1,3 +1,4 @@
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using amethyst.Domain;
 using amethyst.Events;
@@ -29,9 +30,9 @@ public class EventsBuilder(Tick tick, Event[] events)
 
     public virtual Event[] Build() => [..events];
 
-    private Tick GetNextTick(double durationInSeconds)
+    private Tick GetNextTick(int durationInSeconds)
     {
-        var durationInTicks = (int)(durationInSeconds * 1000);
+        var durationInTicks = Tick.FromSeconds(durationInSeconds);
         return Math.Max(0, Tick + durationInTicks);
     }
 }
@@ -91,10 +92,11 @@ public static class EventsBuilderExtensions
 
 public interface IFakeEvent;
 
-public class ValidateStateFakeEvent(Tick tick, params object[] states) : Event(tick), IFakeEvent
+public class ValidateStateFakeEvent(Tick tick, params object[] states) : Event(tick + 1), IFakeEvent
 {
     public void ValidateStates(IGameStateStore stateStore)
     {
+        Console.WriteLine($"Validating state at tick {tick}");
         foreach (var state in states)
         {
             if (state is ITuple tuple)
@@ -107,6 +109,7 @@ public class ValidateStateFakeEvent(Tick tick, params object[] states) : Event(t
                 var storedState = stateStore.GetStateByName($"{tupleState.GetType().Name}_{key}");
 
                 storedState.Should().BeAssignableTo<Success>();
+                //ValidateState(storedState.ValueOr(() => null).Result!, tupleState);
                 storedState.ValueOr(() => null).Result.Should().Be(tupleState);
             }
             else
@@ -114,6 +117,7 @@ public class ValidateStateFakeEvent(Tick tick, params object[] states) : Event(t
                 var storedState = stateStore.GetStateByName(state.GetType().Name);
 
                 storedState.Should().BeAssignableTo<Success>();
+                //ValidateState(storedState.ValueOr(() => null).Result!, state);
                 storedState.ValueOr(() => null).Result.Should().Be(state);
             }
         }
@@ -121,3 +125,8 @@ public class ValidateStateFakeEvent(Tick tick, params object[] states) : Event(t
 }
 
 public class WaitFakeEvent(Guid7 id) : Event(id), IFakeEvent;
+
+public class DebugFakeEvent(Guid7 id, string label) : Event(id), IFakeEvent
+{
+    public string Label => label;
+}

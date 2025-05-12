@@ -20,7 +20,7 @@ public class IntermissionClock(ReducerGameContext context, ILogger<IntermissionC
 
     public IEnumerable<Event> Handle(IntermissionStarted @event)
     {
-        logger.LogInformation("Intermission started");
+        logger.LogInformation("Intermission started at tick {tick}", @event.Tick);
 
         var state = GetState();
 
@@ -58,6 +58,8 @@ public class IntermissionClock(ReducerGameContext context, ILogger<IntermissionC
         var state = GetState();
 
         if (!state.IsRunning) return [];
+
+        logger.LogDebug("Intermission ended, stopping intermission clock");
 
         var rules = GetState<RulesState>();
 
@@ -121,7 +123,7 @@ public class IntermissionClock(ReducerGameContext context, ILogger<IntermissionC
 
         if (!state.IsRunning) return [];
 
-        var ticksRemaining = (Tick) Math.Max(0, (long)state.TargetTick - (long)tick);
+        var ticksRemaining = (Tick) Math.Max(0, state.TargetTick - tick);
 
         SetState(state with
         {

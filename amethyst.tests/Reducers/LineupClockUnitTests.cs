@@ -2,6 +2,7 @@
 using amethyst.Reducers;
 using amethyst.Services;
 using FluentAssertions;
+using DomainTick = amethyst.Domain.Tick;
 
 using static amethyst.tests.DataGenerator;
 
@@ -14,7 +15,7 @@ public class LineupClockUnitTests : ReducerUnitTest<LineupClock, LineupClockStat
     {
         var randomTick = Random.Shared.Next(0, 100000);
 
-        State = new(true, randomTick, randomTick, 0);
+        State = new(true, randomTick, randomTick);
 
         var secondRandomTick = randomTick + Random.Shared.Next(1, 100000);
 
@@ -29,7 +30,7 @@ public class LineupClockUnitTests : ReducerUnitTest<LineupClock, LineupClockStat
     {
         var randomTick = Random.Shared.Next(0, 100000);
 
-        State = new(false, randomTick, randomTick, 0);
+        State = new(false, randomTick, randomTick);
 
         var secondRandomTick = randomTick + Random.Shared.Next(1, 10000);
         await Subject.Handle(new JamStarted(secondRandomTick));
@@ -41,10 +42,10 @@ public class LineupClockUnitTests : ReducerUnitTest<LineupClock, LineupClockStat
     public async Task JamEnded_WhenClockStopped_AndPeriodClockNotExpired_StartsLineup()
     {
         var randomTick = Random.Shared.Next(1, 100000);
-        State = new(false, randomTick, randomTick, 0);
+        State = new(false, randomTick, randomTick);
 
-        MockState(new TimeoutClockState(false, 0, 0, TimeoutClockStopReason.None, 0, 0));
-        MockState(new PeriodClockState(true, false, 0, 0, Domain.Tick.FromSeconds(Rules.DefaultRules.PeriodRules.DurationInSeconds - 10), Rules.DefaultRules.PeriodRules.DurationInSeconds - 10));
+        MockState(new TimeoutClockState(false, 0, 0, TimeoutClockStopReason.None, 0));
+        MockState(new PeriodClockState(true, false, 0, 0, DomainTick.FromSeconds(Rules.DefaultRules.PeriodRules.DurationInSeconds - 10)));
 
         var secondRandomTick = randomTick + Random.Shared.Next(1, 100000);
         await Subject.Handle(new JamEnded(secondRandomTick));
@@ -58,7 +59,7 @@ public class LineupClockUnitTests : ReducerUnitTest<LineupClock, LineupClockStat
     public async Task JamEnded_WhenLineupAlreadyRunning_DoesNotChangeState()
     {
         var randomTick = GetRandomTick();
-        State = new(true, randomTick, 0, 0);
+        State = new(true, randomTick, 0);
 
         var secondTick = randomTick + 100000;
         var ticksPassed = secondTick - randomTick;
@@ -75,7 +76,7 @@ public class LineupClockUnitTests : ReducerUnitTest<LineupClock, LineupClockStat
     [Test]
     public async Task LineupClockSet_SetsLineupClock()
     {
-        State = new LineupClockState(true, 0, 10000, 10);
+        State = new LineupClockState(true, 0, 10000);
 
         await Subject.Handle(new LineupClockSet(20000, new(30)));
 
@@ -87,7 +88,7 @@ public class LineupClockUnitTests : ReducerUnitTest<LineupClock, LineupClockStat
     [Test]
     public async Task Tick_WhenClockRunning_UpdatesTicksPassed()
     {
-        State = new(true, 0, 0, 0);
+        State = new(true, 0, 0);
         await Tick(10000);
 
         State.TicksPassed.Should().Be(10000);
@@ -96,7 +97,7 @@ public class LineupClockUnitTests : ReducerUnitTest<LineupClock, LineupClockStat
     [Test]
     public async Task Tick_ClockStopped_DoesNotChangeState()
     {
-        State = new(false, 0, 0, 0);
+        State = new(false, 0, 0);
         await Tick(130 * 1000);
 
         State.IsRunning.Should().BeFalse();
@@ -109,7 +110,7 @@ public class LineupClockUnitTests : ReducerUnitTest<LineupClock, LineupClockStat
     {
         var randomTick = Random.Shared.Next(0, 100000);
 
-        State = new(true, randomTick, randomTick, 0);
+        State = new(true, randomTick, randomTick);
 
         var secondRandomTick = randomTick + Random.Shared.Next(1, 100000);
 
@@ -124,16 +125,41 @@ public class LineupClockUnitTests : ReducerUnitTest<LineupClock, LineupClockStat
     {
         var randomTick = Random.Shared.Next(0, 100000);
 
-        State = new(false, randomTick, randomTick, 0);
+        State = new(false, randomTick, randomTick);
 
         var secondRandomTick = randomTick + Random.Shared.Next(1, 100000);
 
         GetMock<IGameStateStore>()
             .Setup(mock => mock.GetState<TimeoutClockState>())
-            .Returns(() => new(true, 0, 0, TimeoutClockStopReason.None, 0, 0));
+            .Returns(() => new(true, 0, 0, TimeoutClockStopReason.None, 0));
 
         await Subject.Handle(new JamEnded(secondRandomTick));
 
         State.IsRunning.Should().BeFalse();
+    }
+
+    [Test]
+    public async Task IntermissionEnded_StartsLineupClock()
+    {
+        MockState<JamClockState>(new(false, 0, 0, false, false));
+
+        await Subject.Handle(new IntermissionEnded(10000));
+
+        State.Should().Be(new LineupClockState(true, 10000, 0));
+    }
+
+    [Test]
+    public void State_ShouldSerializeCorrectly()
+    {
+        var state = new LineupClockState(true, 1234, 4321);
+
+        var serialized = System.Text.Json.JsonSerializer.Serialize(state, Program.JsonSerializerOptions);
+
+        var deserialized = System.Text.Json.Nodes.JsonNode.Parse(serialized)!;
+
+        deserialized["isRunning"]!.AsValue().GetValue<bool>().Should().BeTrue();
+        deserialized["startTick"]!.AsValue().GetValue<int>().Should().Be(1234);
+        deserialized["ticksPassed"]!.AsValue().GetValue<int>().Should().Be(4321);
+        deserialized["secondsPassed"]!.AsValue().GetValue<int>().Should().Be(4);
     }
 }

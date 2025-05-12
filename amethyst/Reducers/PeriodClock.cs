@@ -19,7 +19,7 @@ public class PeriodClock(ReducerGameContext context, ILogger<PeriodClock> logger
     , IDependsOnState<RulesState>
     , ITickReceiver
 {
-    protected override PeriodClockState DefaultState => new(false, true, 0, 0, 0, 0);
+    protected override PeriodClockState DefaultState => new(false, true, 0, 0, 0);
 
     public IEnumerable<Event> Handle(JamStarted @event)
     {
@@ -33,7 +33,7 @@ public class PeriodClock(ReducerGameContext context, ILogger<PeriodClock> logger
         var ticksPassed = state.TicksPassed;
         var limitedTicksPassed = rules.PeriodRules.PeriodEndBehavior switch
         {
-            PeriodEndBehavior.Manual => (Tick)ticksPassed,
+            PeriodEndBehavior.Manual => ticksPassed,
             _ => (Tick)Math.Min(Domain.Tick.FromSeconds(rules.PeriodRules.DurationInSeconds), ticksPassed)
         };
         var roundedTicksPassed = Domain.Tick.FromSeconds(limitedTicksPassed.Seconds);
@@ -44,7 +44,6 @@ public class PeriodClock(ReducerGameContext context, ILogger<PeriodClock> logger
             HasExpired = false,
             TicksPassedAtLastStart = roundedTicksPassed,
             TicksPassed = roundedTicksPassed,
-            SecondsPassed = roundedTicksPassed.Seconds,
             LastStartTick = @event.Tick,
         });
 
@@ -74,7 +73,6 @@ public class PeriodClock(ReducerGameContext context, ILogger<PeriodClock> logger
         {
             IsRunning = false,
             HasExpired = true,
-            SecondsPassed = limitedTicksPassed.Seconds,
             TicksPassed = limitedTicksPassed
         });
 
@@ -99,7 +97,6 @@ public class PeriodClock(ReducerGameContext context, ILogger<PeriodClock> logger
         SetState(state with
         {
             IsRunning = false,
-            SecondsPassed = (int)(ticksPassed / 1000),
             TicksPassed = ticksPassed,
         });
 
@@ -142,23 +139,23 @@ public class PeriodClock(ReducerGameContext context, ILogger<PeriodClock> logger
 
         if (state.IsRunning && newTimeoutTypeStopsClock)
         {
+            logger.LogDebug("Stopping period clock due to new timeout type");
             var newTicksPassed = state.TicksPassedAtLastStart + currentTimeoutStart - state.LastStartTick;
             SetState(state with
             {
                 IsRunning = false,
                 TicksPassed = newTicksPassed,
-                SecondsPassed = newTicksPassed.Seconds,
                 HasExpired = newTicksPassed > Domain.Tick.FromSeconds(rules.PeriodRules.DurationInSeconds)
             });
         } 
         else if (!state.IsRunning && currentTimeoutTypeStoppedClock && !newTimeoutTypeStopsClock)
         {
+            logger.LogDebug("Resuming period clock due to new timeout type");
             var newTicksPassed = state.TicksPassedAtLastStart + @event.Tick - state.LastStartTick;
             SetState(state with
             {
                 IsRunning = true,
                 TicksPassed = newTicksPassed,
-                SecondsPassed = newTicksPassed.Seconds,
                 HasExpired = newTicksPassed > Domain.Tick.FromSeconds(rules.PeriodRules.DurationInSeconds)
             });
         }
@@ -169,10 +166,13 @@ public class PeriodClock(ReducerGameContext context, ILogger<PeriodClock> logger
             {
                 IsRunning = false,
                 TicksPassed = newTicksPassed,
-                SecondsPassed = newTicksPassed.Seconds,
                 HasExpired = newTicksPassed > Domain.Tick.FromSeconds(rules.PeriodRules.DurationInSeconds)
             });
         }
+
+        state = GetState();
+        if (state.HasExpired)
+            return [new PeriodEnded(state.LastStartTick + Domain.Tick.FromSeconds(rules.PeriodRules.DurationInSeconds) - state.TicksPassedAtLastStart)];
 
         return [];
     }
@@ -200,7 +200,6 @@ public class PeriodClock(ReducerGameContext context, ILogger<PeriodClock> logger
             IsRunning = false,
             HasExpired = true,
             TicksPassed = limitedTicksPassed,
-            SecondsPassed = limitedTicksPassed.Seconds,
         });
 
         return [];
@@ -231,7 +230,6 @@ public class PeriodClock(ReducerGameContext context, ILogger<PeriodClock> logger
             LastStartTick = @event.Tick,
             TicksPassedAtLastStart = ticksPassed,
             TicksPassed = ticksPassed,
-            SecondsPassed = ticksPassed.Seconds,
             HasExpired = ticksRemaining <= 0,
         });
 
@@ -275,7 +273,6 @@ public class PeriodClock(ReducerGameContext context, ILogger<PeriodClock> logger
         SetState(state with
         {
             TicksPassed = limitedTicksPassed,
-            SecondsPassed = (int)(limitedTicksPassed / 1000L)
         });
 
         if (!state.IsRunning)
@@ -287,4 +284,12 @@ public class PeriodClock(ReducerGameContext context, ILogger<PeriodClock> logger
     }
 }
 
-public record PeriodClockState(bool IsRunning, bool HasExpired, long LastStartTick, Tick TicksPassedAtLastStart, [property: IgnoreChange] long TicksPassed, int SecondsPassed);
+public record PeriodClockState(
+    bool IsRunning,
+    bool HasExpired,
+    Tick LastStartTick,
+    Tick TicksPassedAtLastStart,
+    [property: IgnoreChange] Tick TicksPassed)
+{
+    public int SecondsPassed => TicksPassed.Seconds;
+}

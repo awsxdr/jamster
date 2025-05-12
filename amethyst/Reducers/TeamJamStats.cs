@@ -15,6 +15,7 @@ public abstract class TeamJamStats(TeamSide teamSide, ReducerGameContext gameCon
     , IHandlesEvent<JamEnded>
     , IHandlesEvent<ScoreModifiedRelative>
     , IDependsOnState<TimeoutClockState>
+    , IDependsOnState<JamClockState>
 {
     protected override TeamJamStatsState DefaultState => new(false, false, false, false, false);
 
@@ -35,9 +36,9 @@ public abstract class TeamJamStats(TeamSide teamSide, ReducerGameContext gameCon
 
         SetState(state with { Lead = lead });
 
-        logger.LogDebug("Initial trip completed set to {value} for {teamSide} due to lead marked", lead, teamSide);
-
         if (state.HasCompletedInitial || !lead) return [];
+
+        logger.LogDebug("Initial trip completed set to {value} for {teamSide} due to lead marked", lead, teamSide);
 
         return [new InitialTripCompleted(@event.Tick, new(teamSide, true))];
     }
@@ -95,8 +96,9 @@ public abstract class TeamJamStats(TeamSide teamSide, ReducerGameContext gameCon
     {
         var state = GetState();
         var timeoutClock = GetState<TimeoutClockState>();
+        var jamClock = GetState<JamClockState>();
 
-        if (state is { Lead: true, Lost: false, Called: false } && timeoutClock is { IsRunning: false })
+        if (state is { Lead: true, Lost: false, Called: false } && timeoutClock is { IsRunning: false } && jamClock is { Expired: false })
             return [new CallMarked(@event.Tick, new(teamSide, true))];
 
         return [];

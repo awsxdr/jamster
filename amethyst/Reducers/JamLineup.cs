@@ -13,8 +13,10 @@ public abstract class JamLineup(TeamSide teamSide, ReducerGameContext context, I
     , IHandlesEvent<JamEnded>
     , IHandlesEvent<SkaterSubstitutedInBox>
     , IHandlesEvent<PenaltyAssessed>
+    , IHandlesEvent<SkaterSatInBox>
     , IDependsOnState<GameStageState>
     , IDependsOnState<PenaltyBoxState>
+    , IDependsOnState<PenaltySheetState>
     , IDependsOnState<TeamJamStatsState>
 {
     protected override JamLineupState DefaultState => new(null, null, [null, null, null]);
@@ -120,12 +122,13 @@ public abstract class JamLineup(TeamSide teamSide, ReducerGameContext context, I
 
         SetState(DefaultState);
 
-        return penaltyBox.Skaters.Select(s => new SkaterOnTrack(@event.Tick, new(
+        return penaltyBox.QueuedSkaters.Concat(penaltyBox.Skaters).Select(s => new SkaterOnTrack(@event.Tick, new(
             teamSide, 
             s,
             state.JammerNumber == s ? SkaterPosition.Jammer
                 : state.PivotNumber == s ? SkaterPosition.Pivot
-                : SkaterPosition.Blocker)));
+                : SkaterPosition.Blocker)))
+            .ToArray();
     }
 
     public IEnumerable<Event> Handle(SkaterSubstitutedInBox @event) => @event.HandleIfTeam(teamSide, () =>
@@ -154,6 +157,12 @@ public abstract class JamLineup(TeamSide teamSide, ReducerGameContext context, I
     {
         var state = GetState();
 
+        if (!state.SkaterNumbers.Contains(@event.Body.SkaterNumber))
+        {
+            logger.LogDebug("Penalty assessed when skater {number} on {team} team not in current lineup. Adding to lineup.", @event.Body.SkaterNumber, teamSide);
+            return [new PreviousJamSkaterOnTrack(@event.Tick, new(teamSide, @event.Body.SkaterNumber))];
+        }
+
         if (@event.Body.SkaterNumber != state.JammerNumber)
             return [];
 
@@ -162,7 +171,30 @@ public abstract class JamLineup(TeamSide teamSide, ReducerGameContext context, I
         if (opponentStats.Lead)
             return [];
 
-        return [new LostMarked(@event.Id, new(teamSide, true))];
+        logger.LogDebug("Marking lost for jammer on {team} team due to penalty", teamSide);
+        return [new LostMarked(@event.Tick, new(teamSide, true))];
+    });
+
+    public IEnumerable<Event> Handle(SkaterSatInBox @event) => @event.HandleIfTeam(teamSide, () =>
+    {
+        var state = GetState();
+
+        if (!state.SkaterNumbers.Contains(@event.Body.SkaterNumber))
+        {
+            logger.LogDebug("Box entry when skater {number} on {team} team not in current lineup. Adding to lineup.", @event.Body.SkaterNumber, teamSide);
+            return [new PreviousJamSkaterOnTrack(@event.Tick, new(teamSide, @event.Body.SkaterNumber))];
+        }
+
+        if (@event.Body.SkaterNumber != state.JammerNumber)
+            return [];
+
+        var opponentStats = GetKeyedState<TeamJamStatsState>(teamSide == TeamSide.Home ? nameof(TeamSide.Away) : nameof(TeamSide.Home));
+
+        if (opponentStats.Lead)
+            return [];
+
+        logger.LogDebug("Marking lost for jammer on {team} team due to sat in box", teamSide);
+        return [new LostMarked(@event.Tick, new(teamSide, true))];
     });
 }
 
@@ -173,11 +205,13 @@ public sealed record JamLineupState(string? JammerNumber, string? PivotNumber, s
         || PivotNumber == number
         || BlockerNumbers.Contains(number);
 
+    public string?[] SkaterNumbers => [JammerNumber, PivotNumber, ..BlockerNumbers];
+
     public bool Equals(JamLineupState? other) =>
         other is not null
         && (other.JammerNumber?.Equals(JammerNumber) ?? JammerNumber is null)
         && (other.PivotNumber?.Equals(PivotNumber) ?? PivotNumber is null)
-        && other.BlockerNumbers.SequenceEqual(BlockerNumbers);
+        && other.BlockerNumbers.OrderBy(n => n).SequenceEqual(BlockerNumbers.OrderBy(n => n));
 
     public override int GetHashCode() => 
         HashCode.Combine(JammerNumber, PivotNumber, BlockerNumbers);

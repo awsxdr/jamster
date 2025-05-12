@@ -4,14 +4,29 @@ using amethyst.Services;
 
 namespace amethyst.Reducers;
 
-public abstract class PenaltyBox(TeamSide teamSide, ReducerGameContext context)
+public abstract class PenaltyBox(TeamSide teamSide, ReducerGameContext context, ILogger logger)
     : Reducer<PenaltyBoxState>(context)
+    , IHandlesEvent<PenaltyAssessed>
     , IHandlesEvent<SkaterSatInBox>
     , IHandlesEvent<SkaterReleasedFromBox>
     , IHandlesEvent<SkaterSubstitutedInBox>
 {
-    protected override PenaltyBoxState DefaultState => new([]);
+    protected override PenaltyBoxState DefaultState => new([], []);
     public override Option<string> GetStateKey() => Option.Some(teamSide.ToString());
+
+    public IEnumerable<Event> Handle(PenaltyAssessed @event) => @event.HandleIfTeam(teamSide, () =>
+    {
+        logger.LogDebug("Penalty assessed to {number} on {team} team", @event.Body.SkaterNumber, teamSide);
+
+        var state = GetState();
+
+        SetState(state with
+        {
+            QueuedSkaters = state.QueuedSkaters.Append(@event.Body.SkaterNumber).Except(state.Skaters).ToArray(),
+        });
+
+        return [];
+    });
 
     public IEnumerable<Event> Handle(SkaterSatInBox @event) => @event.HandleIfTeam(teamSide, () =>
     {
@@ -20,7 +35,11 @@ public abstract class PenaltyBox(TeamSide teamSide, ReducerGameContext context)
         if (state.Skaters.Any(s => s == @event.Body.SkaterNumber))
             return [];
 
-        SetState(new(state.Skaters.Append(@event.Body.SkaterNumber).ToArray()));
+        SetState(state with
+        {
+            Skaters = state.Skaters.Append(@event.Body.SkaterNumber).ToArray(),
+            QueuedSkaters = state.QueuedSkaters.Except([@event.Body.SkaterNumber]).ToArray(),
+        });
 
         return [];
     });
@@ -32,31 +51,38 @@ public abstract class PenaltyBox(TeamSide teamSide, ReducerGameContext context)
         if (state.Skaters.All(s => s != @event.Body.SkaterNumber))
             return [];
 
-        SetState(new(state.Skaters.Except([@event.Body.SkaterNumber]).ToArray()));
+        SetState(state with
+        {
+            Skaters = state.Skaters.Except([@event.Body.SkaterNumber]).ToArray(),
+        });
 
         return [];
     });
 
     public IEnumerable<Event> Handle(SkaterSubstitutedInBox @event) => @event.HandleIfTeam(teamSide, () =>
     {
+        logger.LogDebug("Skater {number} substituted by {substituteNumber} for {team} team", @event.Body.OriginalSkaterNumber, @event.Body.NewSkaterNumber, teamSide);
+
         var state = GetState();
 
-        SetState(new(
-            state.Skaters.Select(s => s == @event.Body.OriginalSkaterNumber ? @event.Body.NewSkaterNumber : s).ToArray()
-        ));
+        SetState(state with
+        {
+            Skaters = state.Skaters.Select(s => s == @event.Body.OriginalSkaterNumber ? @event.Body.NewSkaterNumber : s).ToArray()
+        });
 
         return [];
     });
 }
 
-public sealed class HomePenaltyBox(ReducerGameContext context) : PenaltyBox(TeamSide.Home, context);
-public sealed class AwayPenaltyBox(ReducerGameContext context) : PenaltyBox(TeamSide.Away, context);
+public sealed class HomePenaltyBox(ReducerGameContext context, ILogger<HomePenaltyBox> logger) : PenaltyBox(TeamSide.Home, context, logger);
+public sealed class AwayPenaltyBox(ReducerGameContext context, ILogger<AwayPenaltyBox> logger) : PenaltyBox(TeamSide.Away, context, logger);
 
-public sealed record PenaltyBoxState(string[] Skaters)
+public sealed record PenaltyBoxState(string[] Skaters, string[] QueuedSkaters)
 {
     public bool Equals(PenaltyBoxState? other) =>
         other is not null
-        && other.Skaters.SequenceEqual(Skaters);
+        && other.Skaters.OrderBy(s => s).SequenceEqual(Skaters.OrderBy(s => s))
+        && other.QueuedSkaters.OrderBy(s => s).SequenceEqual(QueuedSkaters.OrderBy(s => s));
 
-    public override int GetHashCode() => Skaters.GetHashCode();
+    public override int GetHashCode() => HashCode.Combine(Skaters, QueuedSkaters);
 }

@@ -10,10 +10,12 @@ public sealed class LineupClock(ReducerGameContext gameContext, ILogger<LineupCl
     , IHandlesEvent<TimeoutStarted>
     , IHandlesEvent<PeriodEnded>
     , IHandlesEvent<LineupClockSet>
+    , IHandlesEvent<IntermissionEnded>
+    , IDependsOnState<JamClockState>
     , IDependsOnState<TimeoutClockState>
     , ITickReceiver
 {
-    protected override LineupClockState DefaultState => new(false, 0, 0, 0);
+    protected override LineupClockState DefaultState => new(false, 0, 0);
 
     public IEnumerable<Event> Handle(JamStarted @event)
     {
@@ -30,7 +32,7 @@ public sealed class LineupClock(ReducerGameContext gameContext, ILogger<LineupCl
         if (GetState().IsRunning || GetState<TimeoutClockState>().IsRunning) return [];
 
         logger.LogDebug("Starting lineup clock due to jam end");
-        SetState(new(true, @event.Tick, 0, 0));
+        SetState(new(true, @event.Tick, 0));
 
         return [];
     }
@@ -65,8 +67,15 @@ public sealed class LineupClock(ReducerGameContext gameContext, ILogger<LineupCl
         {
             StartTick = @event.Tick - ticksPassed,
             TicksPassed = ticksPassed,
-            SecondsPassed = @event.Body.SecondsPassed,
         });
+
+        return [];
+    }
+
+    public IEnumerable<Event> Handle(IntermissionEnded @event)
+    {
+        if(!GetState<JamClockState>().IsRunning)
+            SetState(new LineupClockState(true, @event.Tick, 0));
 
         return [];
     }
@@ -80,7 +89,6 @@ public sealed class LineupClock(ReducerGameContext gameContext, ILogger<LineupCl
         var newState = state with
         {
             TicksPassed = tick - state.StartTick,
-            SecondsPassed = (int)((tick - state.StartTick) / 1000L),
         };
         SetState(newState);
 
@@ -88,4 +96,8 @@ public sealed class LineupClock(ReducerGameContext gameContext, ILogger<LineupCl
     }
 }
 
-public record LineupClockState(bool IsRunning, long StartTick, [property: IgnoreChange] long TicksPassed, int SecondsPassed);
+public record LineupClockState(bool IsRunning, Tick StartTick, [property: IgnoreChange] Tick TicksPassed)
+{
+    public int SecondsPassed => TicksPassed.Seconds;
+
+}
