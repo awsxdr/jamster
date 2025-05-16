@@ -126,6 +126,7 @@ app.UseSpaStaticFiles();
 app.UseSpa(config =>
 {
     config.Options.SourcePath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!, "wwwroot");
+    config.Options.DefaultPage = "/index.html";
 });
 
 foreach (var notifier in app.Services.GetService<IEnumerable<INotifier>>() ?? [])

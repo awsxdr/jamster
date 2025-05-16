@@ -1,6 +1,7 @@
 ﻿using amethyst.Hubs;
 using amethyst.Services;
 using FluentAssertions;
+using Func;
 using Microsoft.AspNetCore.SignalR;
 using Moq;
 
@@ -11,15 +12,15 @@ public class ConnectedClientsServiceUnitTests : UnitTest<ConnectedClientsService
     [Test]
     public async Task GetConnectedClients_ReturnsAllClientsAddedWithRegisterClient()
     {
-        var client1Name = await Subject.RegisterClient("client1");
-        var client2Name = await Subject.RegisterClient("client2");
+        var client1 = await Subject.RegisterClient("client1", "192.168.12.34") switch { Success<(ConnectedClient Client, Guid)> c => c.Value.Client, _ => throw new AssertionException("Register client failed") };
+        var client2 = await Subject.RegisterClient("client2", "192.168.12.35") switch { Success<(ConnectedClient Client, Guid)> c => c.Value.Client, _ => throw new AssertionException("Register client failed") };
 
         var clients = Subject.GetConnectedClients().ToArray();
 
         clients.Should().BeEquivalentTo(new ConnectedClient[]
         {
-            new("client1", client1Name, ClientActivity.Unknown, string.Empty, null, clients.Single(c => c.Id == "client1").LastUpdateTime),
-            new("client2", client2Name, ClientActivity.Unknown, string.Empty, null, clients.Single(c => c.Id == "client2").LastUpdateTime),
+            new("client1", client1.Name, "192.168.12.34", new UnknownActivity(), clients.Single(c => c.ConnectionId == "client1").LastUpdateTime),
+            new("client2", client2.Name, "192.168.12.35", new UnknownActivity(), clients.Single(c => c.ConnectionId == "client2").LastUpdateTime),
         });
     }
 
@@ -35,10 +36,10 @@ public class ConnectedClientsServiceUnitTests : UnitTest<ConnectedClientsService
             return Task.CompletedTask;
         };
 
-        await Subject.RegisterClient("testClient");
+        await Subject.RegisterClient("testClient", "192.168.12.34");
 
         var result = await Wait(completionSource.Task);
-        result.Should().ContainSingle().Which.Id.Should().Be("testClient");
+        result.Should().ContainSingle().Which.ConnectionId.Should().Be("testClient");
     }
 
     [Test]
@@ -46,42 +47,47 @@ public class ConnectedClientsServiceUnitTests : UnitTest<ConnectedClientsService
     {
         const int clientCount = 10_000;
 
-        var clientNames = await Task.WhenAll(Enumerable.Range(0, clientCount).Select(i => Subject.RegisterClient($"testClient{i}")));
+        var clientNames = await Task.WhenAll(Enumerable.Range(0, clientCount).Select(i => Subject.RegisterClient($"testClient{i}", $"192.168.12.{i}")));
         
         clientNames.Distinct().Count().Should().Be(clientCount);
     }
 
     [Test]
-    public async Task RegisterClient_WhenClientAlreadyRegistered_UpdatesExistingClient()
+    public async Task RegisterClient_WhenClientAlreadyRegistered_FailsWithConnectionIdAlreadyRegisteredError()
     {
-        var originalClientName = await Subject.RegisterClient("testClient");
-        var originalUpdateTime = Subject.GetConnectedClients().Single().LastUpdateTime;
+        var result1 = await Subject.RegisterClient("testClient", "192.168.12.34");
+        var result2 = await Subject.RegisterClient("testClient", "192.168.12.34");
 
-        await Task.Delay(1); // Ensure at least 1 millisecond passes so update time is different
-
-        var newClientName = await Subject.RegisterClient("testClient");
-        var newUpdateTime = Subject.GetConnectedClients().Single().LastUpdateTime;
-
-        originalClientName.Should().Be(newClientName);
-        newUpdateTime.Should().BeAfter(originalUpdateTime);
+        result1.Should().BeSuccess();
+        result2.Should().BeFailure<ConnectionIdAlreadyRegisteredError>();
     }
 
     [Test]
     public async Task UnregisterClient_RemovesClientFromList()
     {
-        var clientNames = await Task.WhenAll(Enumerable.Range(0, 5).Select(i => Subject.RegisterClient($"testClient{i}")));
+        var clients = (await Task.WhenAll(Enumerable.Range(0, 5).Select(i => Subject.RegisterClient($"testClient{i}", $"192.168.12.{i}"))))
+            .OfType<Success<(ConnectedClient Client, Guid Id)>>()
+            .Select(s => s.Value)
+            .ToArray();
 
-        await Subject.UnregisterClient("testClient2");
+        clients.Should().HaveCount(5);
 
-        var clients = Subject.GetConnectedClients().ToArray();
+        await Subject.UnregisterClient(clients[2].Id);
 
-        clients.Select(c => c.Name.Name).Should().BeEquivalentTo(clientNames[0], clientNames[1], clientNames[3], clientNames[4]);
+        var connectedClients = Subject.GetConnectedClients().ToArray();
+
+        connectedClients.Select(c => c.Name.Name).Should().BeEquivalentTo(((int[]) [0, 1, 3, 4]).Select(i => clients[i].Client.Name.Name));
     }
 
     [Test]
     public async Task UnregisterClient_WhenClientExists_RaisesConnectedClientsChangedEvent()
     {
-        var clientNames = await Task.WhenAll(Enumerable.Range(0, 5).Select(i => Subject.RegisterClient($"testClient{i}")));
+        var clients = (await Task.WhenAll(Enumerable.Range(0, 5).Select(i => Subject.RegisterClient($"testClient{i}", $"192.168.12.{i}"))))
+            .OfType<Success<(ConnectedClient Client, Guid Id)>>()
+            .Select(s => s.Value)
+            .ToArray();
+
+        clients.Should().HaveCount(5);
 
         var completionSource = new TaskCompletionSource<ConnectedClient[]>();
 
@@ -92,23 +98,23 @@ public class ConnectedClientsServiceUnitTests : UnitTest<ConnectedClientsService
             return Task.CompletedTask;
         };
 
-        await Subject.UnregisterClient("testClient2");
+        await Subject.UnregisterClient(clients[2].Id);
 
         var result = await Wait(completionSource.Task);
 
         var eventClientNames = result.Select(c => c.Name.Name).ToArray();
 
-        eventClientNames.Should().BeEquivalentTo(clientNames[0], clientNames[1], clientNames[3], clientNames[4]);
+        eventClientNames.Should().BeEquivalentTo(((int[])[0, 1, 3, 4]).Select(i => clients[i].Client.Name.Name));
     }
 
     [Test]
     public async Task UnregisterClient_WhenClientDoesNotExist_DoesNotRaiseConnectedClientsChangedEvent()
     {
-        await Task.WhenAll(Enumerable.Range(0, 5).Select(i => Subject.RegisterClient($"testClient{i}")));
+        await Task.WhenAll(Enumerable.Range(0, 5).Select(i => Subject.RegisterClient($"testClient{i}", $"192.168.12.{i}")));
 
         using var monitoredSubject = Subject.Monitor();
 
-        await Subject.UnregisterClient(Guid.NewGuid().ToString());
+        await Subject.UnregisterClient(Guid.NewGuid());
 
         monitoredSubject.Should().NotRaise(nameof(Subject.ConnectedClientsChanged));
     }
@@ -116,28 +122,28 @@ public class ConnectedClientsServiceUnitTests : UnitTest<ConnectedClientsService
     [Test]
     public async Task SetClientActivity_UpdatesActivity()
     {
-        var client1Name = await Subject.RegisterClient("client1");
-        var client2Name = await Subject.RegisterClient("client2");
+        var (client1, client1Id) = await Subject.RegisterClient("client1", "192.168.12.34") switch { Success<(ConnectedClient Client, Guid)> c => c.Value, _ => throw new AssertionException("Register client failed") };
+        var (client2, client2Id) = await Subject.RegisterClient("client2", "192.168.12.35") switch { Success<(ConnectedClient Client, Guid)> c => c.Value, _ => throw new AssertionException("Register client failed") };
 
         var game1Id = Guid.NewGuid().ToString();
 
-        await Subject.SetClientActivity("client1", ClientActivity.ScoreboardOperator, "TestPath/1", game1Id);
-        await Subject.SetClientActivity("client2", ClientActivity.PenaltyLineupControl, "TestPath/2", null);
+        await Subject.SetClientActivity(client1Id, new ScoreboardActivity(game1Id, "xx"));
+        await Subject.SetClientActivity(client2Id, new PenaltyLineupControlActivity(null, "xx"));
 
         var clients = Subject.GetConnectedClients().ToArray();
 
         clients.Should().BeEquivalentTo(new ConnectedClient[]
         {
-            new("client1", client1Name, ClientActivity.ScoreboardOperator, "TestPath/1", game1Id, clients.Single(c => c.Id == "client1").LastUpdateTime),
-            new("client2", client2Name, ClientActivity.PenaltyLineupControl, "TestPath/2", null, clients.Single(c => c.Id == "client2").LastUpdateTime),
+            new("client1", client1.Name, "192.168.12.34", new ScoreboardActivity(game1Id, "xx"), clients.Single(c => c.ConnectionId == "client1").LastUpdateTime),
+            new("client2", client2.Name, "192.168.12.35", new PenaltyLineupControlActivity(null, "xx"), clients.Single(c => c.ConnectionId == "client2").LastUpdateTime),
         });
     }
 
     [Test]
     public async Task SetClientActivity_WhenClientExists_RaisesConnectedClientsChangedEvent()
     {
-        var client1Name = await Subject.RegisterClient("client1");
-        var client2Name = await Subject.RegisterClient("client2");
+        var (client1, client1Id) = await Subject.RegisterClient("client1", "192.168.12.34") switch { Success<(ConnectedClient Client, Guid)> c => c.Value, _ => throw new AssertionException("Register client failed") };
+        var (client2, _) = await Subject.RegisterClient("client2", "192.168.12.35") switch { Success<(ConnectedClient Client, Guid)> c => c.Value, _ => throw new AssertionException("Register client failed") };
 
         var completionSource = new TaskCompletionSource<ConnectedClient[]>();
 
@@ -148,25 +154,25 @@ public class ConnectedClientsServiceUnitTests : UnitTest<ConnectedClientsService
             return Task.CompletedTask;
         };
 
-        await Subject.SetClientActivity("client1", ClientActivity.ScoreboardOperator, "TestPath/1", Guid.NewGuid().ToString());
+        await Subject.SetClientActivity(client1Id, new ScoreboardActivity(Guid.NewGuid().ToString(), "xx"));
 
         var result = await Wait(completionSource.Task);
 
-        result.Select(c => new { c.Id, c.Name, c.CurrentActivity, c.Path })
+        result.Select(c => new { c.ConnectionId, c.Name, c.ActivityInfo.Activity })
             .Should().BeEquivalentTo([
-                new { Id = "client1", Name = new ClientName(client1Name, false), CurrentActivity = ClientActivity.ScoreboardOperator, Path = "TestPath/1" },
-                new { Id = "client2", Name = new ClientName(client2Name, false), CurrentActivity = ClientActivity.Unknown, Path = string.Empty },
+                new { ConnectionId = "client1", client1.Name, Activity = ClientActivity.Scoreboard },
+                new { ConnectionId = "client2", client2.Name, Activity = ClientActivity.Unknown },
             ]);
     }
 
     [Test]
     public async Task SetClientActivity_WhenClientDoesNotExist_DoesNotRaiseConnectedClientsChangedEvent()
     {
-        await Task.WhenAll(Enumerable.Range(0, 5).Select(i => Subject.RegisterClient($"testClient{i}")));
+        await Task.WhenAll(Enumerable.Range(0, 5).Select(i => Subject.RegisterClient($"testClient{i}", $"192.168.12.{i}")));
 
         using var monitoredSubject = Subject.Monitor();
 
-        await Subject.SetClientActivity(Guid.NewGuid().ToString(), ClientActivity.BoxTiming, string.Empty, null);
+        await Subject.SetClientActivity(Guid.NewGuid(), new BoxTimingActivity(null, "xx"));
 
         monitoredSubject.Should().NotRaise(nameof(Subject.ConnectedClientsChanged));
     }
@@ -179,24 +185,24 @@ public class ConnectedClientsServiceUnitTests : UnitTest<ConnectedClientsService
             .Returns(() => GetMock<ISingleClientProxy>().Object);
 
         GetMock<ISingleClientProxy>()
-            .Setup(mock => mock.SendCoreAsync("ChangeActivity", new object?[] { It.IsAny<ClientActivity>(), It.IsAny<string?>() }, It.IsAny<CancellationToken>()))
+            .Setup(mock => mock.SendCoreAsync("ChangeActivity", new object?[] { It.IsAny<ClientActivity>(), It.IsAny<string?>(), It.IsAny<string>() }, It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        await Subject.RegisterClient("testClient");
+        var (client, _) = await Subject.RegisterClient("testClient", "192.168.12.34") switch { Success<(ConnectedClient Client, Guid)> c => c.Value, _ => throw new AssertionException("Register client failed") };
 
         var gameId = Guid.NewGuid().ToString();
-        await Subject.RequestClientActivityChange("testClient", ClientActivity.LineupControl, gameId);
+        await Subject.RequestClientActivityChange(client.Name.Name, new LineupControlActivity(gameId, "xx"));
 
         GetMock<ISingleClientProxy>()
-            .Verify(mock => mock.SendCoreAsync("ChangeActivity", new object?[] { ClientActivity.LineupControl, gameId }, It.IsAny<CancellationToken>()), Times.Once);
+            .Verify(mock => mock.SendCoreAsync("ChangeActivity", new object?[] { new LineupControlActivity(gameId, "xx") }, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Test]
     public async Task SetClientName_UpdatesName()
     {
-        await Subject.RegisterClient("testClient");
+        var (client, _) = await Subject.RegisterClient("testClient", "192.168.12.34") switch { Success<(ConnectedClient Client, Guid)> c => c.Value, _ => throw new AssertionException("Register client failed") };
 
-        await Subject.SetClientName("testClient", "Custom Name");
+        await Subject.SetClientName(client.Name.Name, "Custom Name");
 
         Subject.GetConnectedClients().Should().ContainSingle()
             .Which.Name.Should().Be(new ClientName("Custom Name", true));
@@ -205,8 +211,8 @@ public class ConnectedClientsServiceUnitTests : UnitTest<ConnectedClientsService
     [Test]
     public async Task SetClientName_WhenClientExists_RaisesConnectedClientsChangedEvent()
     {
-        await Subject.RegisterClient("client1");
-        var client2Name = await Subject.RegisterClient("client2");
+        var (client1, _) = await Subject.RegisterClient("client1", "192.168.12.34") switch { Success<(ConnectedClient Client, Guid)> c => c.Value, _ => throw new AssertionException("Register client failed") }; ;
+        var (client2, _) = await Subject.RegisterClient("client2", "192.168.12.35") switch { Success<(ConnectedClient Client, Guid)> c => c.Value, _ => throw new AssertionException("Register client failed") };
 
         var completionSource = new TaskCompletionSource<ConnectedClient[]>();
 
@@ -217,21 +223,21 @@ public class ConnectedClientsServiceUnitTests : UnitTest<ConnectedClientsService
             return Task.CompletedTask;
         };
 
-        await Subject.SetClientName("client1", "Client 1");
+        await Subject.SetClientName(client1.Name.Name, "Client 1");
 
         var result = await Wait(completionSource.Task);
 
-        result.Select(c => new { c.Id, c.Name, c.CurrentActivity, c.Path })
+        result.Select(c => new { c.ConnectionId, c.Name, c.ActivityInfo.Activity })
             .Should().BeEquivalentTo([
-                new { Id = "client1", Name = new ClientName("Client 1", true), CurrentActivity = ClientActivity.Unknown, Path = string.Empty },
-                new { Id = "client2", Name = new ClientName(client2Name, false), CurrentActivity = ClientActivity.Unknown, Path = string.Empty },
+                new { ConnectionId = "client1", Name = new ClientName("Client 1", true), Activity = ClientActivity.Unknown },
+                new { ConnectionId = "client2", client2.Name, Activity = ClientActivity.Unknown },
             ]);
     }
 
     [Test]
     public async Task SetClientName_WhenClientDoesNotExist_DoesNotRaiseConnectedClientsChangedEvent()
     {
-        await Task.WhenAll(Enumerable.Range(0, 5).Select(i => Subject.RegisterClient($"testClient{i}")));
+        await Task.WhenAll(Enumerable.Range(0, 5).Select(i => Subject.RegisterClient($"testClient{i}", $"192.168.12.{i}")));
 
         using var monitoredSubject = Subject.Monitor();
 
@@ -241,16 +247,15 @@ public class ConnectedClientsServiceUnitTests : UnitTest<ConnectedClientsService
     }
 
     [Test]
-    public async Task GetClient_ReturnsClientDetails()
+    public async Task GetClientById_ReturnsClientDetails()
     {
-        var clientName = await Subject.RegisterClient("testClient");
+        var (client, clientId) = await Subject.RegisterClient("testClient", "192.168.12.34") switch { Success<(ConnectedClient Client, Guid)> c => c.Value, _ => throw new AssertionException("Register client failed") };
 
-        var clientDetails = Subject.GetClient("testClient");
-        clientDetails.Should().BeSuccess<ConnectedClient>(out var client);
+        var clientDetails = Subject.GetClientById(clientId);
+        clientDetails.Should().BeSuccess<ConnectedClient>(out var result);
             
-        client.Name.Should().Be(new ClientName(clientName, false));
-        client.Id.Should().Be("testClient");
-        client.CurrentActivity.Should().Be(ClientActivity.Unknown);
-        client.Path.Should().BeEmpty();
+        result.Name.Should().Be(client.Name);
+        result.ConnectionId.Should().Be("testClient");
+        result.ActivityInfo.Should().BeOfType<UnknownActivity>();
     }
 }

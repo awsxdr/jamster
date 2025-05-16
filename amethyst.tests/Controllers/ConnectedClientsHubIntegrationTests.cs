@@ -1,4 +1,5 @@
-﻿using amethyst.Hubs;
+﻿using amethyst.Controllers;
+using amethyst.Hubs;
 using amethyst.Services;
 using FluentAssertions;
 using Microsoft.AspNetCore.SignalR.Client;
@@ -43,16 +44,16 @@ public class ConnectedClientsHubIntegrationTests : ControllerIntegrationTest
 
         try
         {
-            var completionSources = hubConnections.Select(_ => new TaskCompletionSource<ConnectedClient[]>()).ToArray();
+            var completionSources = hubConnections.Select(_ => new TaskCompletionSource<ClientsController.ClientModel[]>()).ToArray();
 
             foreach (var (connection, completionSource) in hubConnections.Zip(completionSources))
             {
-                connection.On("ConnectedClientsChanged", [typeof(ConnectedClient[])], parameters =>
+                connection.On("ConnectedClientsChanged", [typeof(ClientsController.ClientModel[])], parameters =>
                 {
                     if (completionSource.Task.IsCompleted)
                         return Task.CompletedTask;
 
-                    var result = (ConnectedClient[])parameters[0]!;
+                    var result = (ClientsController.ClientModel[])parameters[0]!;
                     completionSource.SetResult(result);
                     return Task.CompletedTask;
                 });
@@ -63,11 +64,12 @@ public class ConnectedClientsHubIntegrationTests : ControllerIntegrationTest
             await using var newConnection = await GetHubConnection(HubAddress);
 
             var expectedClientDetails = await Task.WhenAll(hubConnections.Append(newConnection).Select(h =>
-                h.InvokeAsync<ConnectedClient>(nameof(ConnectedClientsHub.GetConnectionDetails))));
+                h.InvokeAsync<ClientsController.ClientModel>(nameof(ConnectedClientsHub.GetConnectionDetails))));
 
             var results = await WaitAll(completionSources.Select(c => c.Task).ToArray());
-
-            results.Should().AllBeEquivalentTo(expectedClientDetails);
+            
+            results.Select(r => r.Select(m => new { m.Name, m.IpAddress, ActivityInfo = m.ActivityInfo.ToJsonString(), m.LastUpdateTime }))
+                .Should().AllBeEquivalentTo(expectedClientDetails.Select(m => new { m.Name, m.IpAddress, ActivityInfo = m.ActivityInfo.ToJsonString(), m.LastUpdateTime }));
         }
         finally
         {

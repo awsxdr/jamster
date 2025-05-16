@@ -1,4 +1,7 @@
-﻿using amethyst.Services;
+﻿using System.Text.Json;
+using System.Text.Json.Nodes;
+using amethyst.Controllers;
+using amethyst.Services;
 using Microsoft.AspNetCore.SignalR;
 
 namespace amethyst.Hubs;
@@ -20,50 +23,127 @@ public class ConnectedClientsNotifier : Notifier<ConnectedClientsHub>
 
     private async Task OnConnectedClientsChanged(object? sender, IConnectedClientsService.ConnectedClientsChangedArgs e)
     {
-        await HubContext.Clients.Groups("ClientsList").SendAsync("ConnectedClientsChanged", e.Clients);
+        await HubContext.Clients.Groups("ClientsList").SendAsync("ConnectedClientsChanged", e.Clients.Select(c => (ClientsController.ClientModel)c).ToArray());
     }
 }
 
 public class ConnectedClientsHub(IConnectedClientsService connectedClientsService) : Hub
 {
+    private const string ClientIdKey = "client-id";
+
     public override async Task OnConnectedAsync()
     {
-        await base.OnConnectedAsync();
+        var result = await connectedClientsService.RegisterClient(Context.ConnectionId, Context.GetHttpContext()?.Connection.RemoteIpAddress?.ToString() ?? "?.?.?.?");
 
-        try
+        if (result is Failure<ConnectionIdAlreadyRegisteredError>)
         {
-            Context.Items["friendlyName"] = await connectedClientsService.RegisterClient(Context.ConnectionId);
+            var clientId = GetClientId();
+
+            if (clientId == null)
+                throw new UnableToRegisterClientException();
+
+            result =
+                await connectedClientsService.ReconnectClient(clientId.Value, Context.ConnectionId, Context.GetHttpContext()?.Connection.RemoteIpAddress?.ToString() ?? "?.?.?.?")
+                    .ThenMap(c => (c, clientId.Value));
         }
-        catch (Exception ex)
+
+        var id = result switch
         {
-            Console.WriteLine(ex);
-        }
+            Success<(ConnectedClient, Guid Id)> s => s.Value.Id,
+            Failure f => throw new FailedToRegisterClientException { Error = f.GetError() },
+            _ => throw new UnableToRegisterClientException()
+        };
+
+        Context.Items[ClientIdKey] = id;
     }
 
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
-        await connectedClientsService.UnregisterClient(Context.ConnectionId);
+        var clientId = GetClientId();
+
+        if (clientId == null)
+            return;
+
+        await connectedClientsService.UnregisterClient(clientId.Value);
 
         await base.OnDisconnectedAsync(exception);
     }
 
-    public string GetConnectionName() => Context.Items["friendlyName"] as string ?? string.Empty;
-
-    public void SetConnectionName(string connectionName)
+    public string GetConnectionName()
     {
-        connectedClientsService.SetClientName(Context.ConnectionId, connectionName);
+        var clientId = GetClientId();
 
-        Context.Items["friendlyName"] = connectionName;
+        if (clientId == null)
+            return string.Empty;
+
+        return connectedClientsService.GetClientById(clientId.Value) is Success<ConnectedClient> s
+            ? s.Value.Name.Name
+            : string.Empty;
     }
 
-    public ConnectedClient? GetConnectionDetails() =>
-        connectedClientsService.GetClient(Context.ConnectionId) is Success<ConnectedClient> c ? c.Value : null;
-
-    public void SetActivity(ClientActivity activity, string path, string? gameId) =>
-        connectedClientsService.SetClientActivity(Context.ConnectionId, activity, path, gameId);
-
-    public async Task WatchClientsList()
+    public async Task SetConnectionName(string connectionName)
     {
-        await Groups.AddToGroupAsync(Context.ConnectionId, "ClientsList");
+        var clientId = GetClientId();
+
+        if (clientId == null) 
+            return;
+
+        var client = connectedClientsService.GetClientById(clientId.Value) switch
+        {
+            Success<ConnectedClient> s => s.Value,
+            Failure failure => throw new FailedToSetNameException { Error = failure.GetError() },
+            _ => throw new UnableToSetNameException()
+        };
+
+        var result = await connectedClientsService.SetClientName(client.Name.Name, connectionName);
+
+        if (result is Failure f)
+            throw new FailedToSetNameException { Error = f.GetError() };
     }
+
+    public ClientsController.ClientModel? GetConnectionDetails()
+    {
+        var clientId = GetClientId();
+
+        if (clientId == null)
+            return null;
+
+        return connectedClientsService.GetClientById(clientId.Value) is Success<ConnectedClient> c
+            ? (ClientsController.ClientModel)c.Value
+            : null;
+    }
+
+    public async Task SetActivity(JsonObject activity)
+    {
+        var clientId = GetClientId();
+
+        if (clientId == null)
+            return;
+
+        var activityDetails = activity[nameof(ActivityData.Activity)]?.AsValue().GetValue<ClientActivity>() switch
+        {
+            _ => activity.Deserialize<UnknownActivity>(Program.JsonSerializerOptions)!
+        };
+
+        await connectedClientsService.SetClientActivity(clientId.Value, activityDetails);
+    }
+
+    public Task WatchClientsList() =>
+        Groups.AddToGroupAsync(Context.ConnectionId, "ClientsList");
+
+    private Guid? GetClientId() => Context.Items[ClientIdKey] as Guid?;
+}
+
+public sealed class UnableToRegisterClientException : Exception;
+
+public sealed class FailedToRegisterClientException : Exception
+{
+    public required ResultError Error { get; init; }
+}
+
+public sealed class UnableToSetNameException : Exception;
+
+public sealed class FailedToSetNameException : Exception
+{
+    public required ResultError Error { get; init; }
 }

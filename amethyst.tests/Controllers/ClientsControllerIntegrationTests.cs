@@ -1,8 +1,10 @@
 ﻿using System.Net;
+using System.Text.Json;
 using amethyst.Controllers;
 using amethyst.Hubs;
 using amethyst.Services;
 using FluentAssertions;
+using Func;
 using Microsoft.AspNetCore.SignalR.Client;
 
 namespace amethyst.tests.Controllers;
@@ -19,11 +21,11 @@ public class ClientsControllerIntegrationTests : ControllerIntegrationTest
 
         await hubConnection1.InvokeAsync(nameof(ConnectedClientsHub.SetConnectionName), "Test Client");
 
-        var clientsList = await Get<ClientsController.ClientModel[]>("/api/clients", HttpStatusCode.OK);
+        var clientsList = (await Get<ClientsController.ClientModel[]>("/api/clients", HttpStatusCode.OK))?.Select(v => JsonSerializer.Serialize(v, Program.JsonSerializerOptions)) ?? [];
 
         clientsList.Should().BeEquivalentTo([
-            (ClientsController.ClientModel)await hubConnection1.InvokeAsync<ConnectedClient>(nameof(ConnectedClientsHub.GetConnectionDetails)),
-            (ClientsController.ClientModel)await hubConnection2.InvokeAsync<ConnectedClient>(nameof(ConnectedClientsHub.GetConnectionDetails))
+            (await hubConnection1.InvokeAsync<ClientsController.ClientModel>(nameof(ConnectedClientsHub.GetConnectionDetails))).Map(v => JsonSerializer.Serialize(v, Program.JsonSerializerOptions)),
+            (await hubConnection2.InvokeAsync<ClientsController.ClientModel>(nameof(ConnectedClientsHub.GetConnectionDetails))).Map(v => JsonSerializer.Serialize(v, Program.JsonSerializerOptions))
         ]);
     }
 
@@ -35,9 +37,9 @@ public class ClientsControllerIntegrationTests : ControllerIntegrationTest
         await hubConnection.InvokeAsync(nameof(ConnectedClientsHub.SetConnectionName), "Test Client");
 
         var connectionDetails =
-            (ClientsController.ClientModel)await hubConnection.InvokeAsync<ConnectedClient>(nameof(ConnectedClientsHub.GetConnectionDetails));
+            await hubConnection.InvokeAsync<ClientsController.ClientModel>(nameof(ConnectedClientsHub.GetConnectionDetails));
 
-        var client = await Get<ClientsController.ClientModel>($"/api/clients/{connectionDetails.Id}", HttpStatusCode.OK);
+        var client = await Get<ClientsController.ClientModel>("/api/clients/Test%20Client", HttpStatusCode.OK);
 
         client.Should().Be(connectionDetails);
     }
@@ -53,9 +55,11 @@ public class ClientsControllerIntegrationTests : ControllerIntegrationTest
     {
         await using var hubConnection = await GetHubConnection(HubAddress);
 
-        await Put($"/api/clients/{hubConnection.ConnectionId}/name", new ClientsController.SetNameModel("Test Name"), HttpStatusCode.NoContent);
+        var clientName = await hubConnection.InvokeAsync<string>(nameof(ConnectedClientsHub.GetConnectionName));
 
-        var client = await Get<ClientsController.ClientModel>($"/api/clients/{hubConnection.ConnectionId}", HttpStatusCode.OK);
+        await Put($"/api/clients/{clientName}/name", new ClientsController.SetNameModel("Test Name"), HttpStatusCode.NoContent);
+
+        var client = await Get<ClientsController.ClientModel>($"/api/clients/Test Name", HttpStatusCode.OK);
 
         client!.Name.Should().Be("Test Name");
     }
@@ -71,59 +75,34 @@ public class ClientsControllerIntegrationTests : ControllerIntegrationTest
     {
         await using var hubConnection = await GetHubConnection(HubAddress);
 
-        var completionSource = new TaskCompletionSource<ConnectedClient>();
+        var completionSource = new TaskCompletionSource<ClientsController.ClientModel>();
 
-        using var handler = hubConnection.On("ConnectedClientsChanged", [typeof(ConnectedClient[])], parameters =>
+        using var handler = hubConnection.On("ConnectedClientsChanged", [typeof(ClientsController.ClientModel[])], parameters =>
         {
-            completionSource.SetResult(((ConnectedClient[])parameters[0]!).Single());
+            completionSource.SetResult(((ClientsController.ClientModel[])parameters[0]!).Single());
 
             return Task.CompletedTask;
         });
 
+        var clientName = await hubConnection.InvokeAsync<string>(nameof(ConnectedClientsHub.GetConnectionName));
+
         await hubConnection.InvokeAsync(nameof(ConnectedClientsHub.WatchClientsList));
 
-        await Put($"/api/clients/{hubConnection.ConnectionId}/name",
+        await Put($"/api/clients/{clientName}/name",
             new ClientsController.SetNameModel("Test Name"), HttpStatusCode.NoContent);
 
         var client = await Wait(completionSource.Task);
 
-        client.Name.Name.Should().Be("Test Name");
+        client.Name.Should().Be("Test Name");
     }
 
     [Test]
     public async Task SetConnectionActivity_WhenClientDoesNotExist_ReturnsNotFoundResponse()
     {
-        await Put("/api/clients/invalidClientId/activity", new ClientsController.SetActivityModel(ClientActivity.PenaltyWhiteboard, Guid.NewGuid().ToString()), HttpStatusCode.NotFound);
-    }
-
-    [Test]
-    public async Task SetConnectionActivity_WhenClientExists_NotifiesClientOfChange()
-    {
-        await using var hubConnection = await GetHubConnection(HubAddress);
-
-        var completionSource = new TaskCompletionSource<(ClientActivity Activity, string? GameId)>();
-
-        using var handler = hubConnection.On("ChangeActivity", [typeof(ClientActivity), typeof(string)], parameters =>
-        {
-            completionSource.SetResult((
-                (ClientActivity)parameters[0]!,
-                (string?)parameters[1]
-            ));
-
-            return Task.CompletedTask;
-        });
-
-        await hubConnection.InvokeAsync(nameof(ConnectedClientsHub.WatchClientsList));
-
-        var gameId = Guid.NewGuid().ToString();
-
-        await Put($"/api/clients/{hubConnection.ConnectionId}/activity",
-            new ClientsController.SetActivityModel(ClientActivity.PenaltyWhiteboard, gameId), HttpStatusCode.NoContent);
-
-        var result = await Wait(completionSource.Task);
-
-        result.Activity.Should().Be(ClientActivity.PenaltyWhiteboard);
-        result.GameId.Should().Be(gameId);
+        await Put(
+            "/api/clients/invalidClientId/activity", 
+            new ClientsController.SetActivityModel(JsonSerializer.SerializeToNode(new ScoreboardActivity(Guid.NewGuid().ToString(), "xx"))!.AsObject()), 
+            HttpStatusCode.NotFound);
     }
 
     protected override void CleanDatabase()

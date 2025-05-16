@@ -1,8 +1,8 @@
-﻿using amethyst.Domain;
-using amethyst.Hubs;
+﻿using System.Text.Json;
+using System.Text.Json.Nodes;
+using amethyst.Domain;
 using amethyst.Services;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.SignalR;
 
 namespace amethyst.Controllers;
 
@@ -20,12 +20,12 @@ public class ClientsController(IConnectedClientsService connectedClientsService,
                 .ToArray());
     }
 
-    [HttpGet("{connectionId}")]
-    public ActionResult<ClientModel> GetClient(string connectionId)
+    [HttpGet("{clientName}")]
+    public ActionResult<ClientModel> GetClient(string clientName)
     {
-        logger.LogDebug("Getting details for client {clientId}", connectionId);
+        logger.LogDebug("Getting details for client {clientName}", clientName);
 
-        return connectedClientsService.GetClient(connectionId) switch
+        return connectedClientsService.GetClientByName(clientName) switch
         {
             Success<ConnectedClient> s => Ok((ClientModel) s.Value),
             Failure<ClientNotFoundError> => NotFound(),
@@ -33,12 +33,12 @@ public class ClientsController(IConnectedClientsService connectedClientsService,
         };
     }
 
-    [HttpPut("{connectionId}/name")]
-    public async Task<IActionResult> SetConnectionName(string connectionId, [FromBody] SetNameModel model)
+    [HttpPut("{clientName}/name")]
+    public async Task<IActionResult> SetConnectionName(string clientName, [FromBody] SetNameModel model)
     {
-        logger.LogDebug("Setting connection name for {connectionId} to {name}", connectionId, model.Name);
+        logger.LogDebug("Setting connection name from {connectionId} to {name}", clientName, model.Name);
 
-        return await connectedClientsService.SetClientName(connectionId, model.Name) switch
+        return await connectedClientsService.SetClientName(clientName, model.Name) switch
         {
             Success => NoContent(),
             Failure<ClientNotFoundError> => NotFound(),
@@ -46,12 +46,22 @@ public class ClientsController(IConnectedClientsService connectedClientsService,
         };
     }
 
-    [HttpPut("{connectionId}/activity")]
-    public async Task<IActionResult> SetConnectionActivity(string connectionId, [FromBody] SetActivityModel model)
+    [HttpPut("{clientName}/activity")]
+    public async Task<IActionResult> SetConnectionActivity(string clientName, [FromBody] SetActivityModel model)
     {
-        logger.LogDebug("Setting connection activity for {connectionId} to {activity} for game ID {gameId}", connectionId, model.Activity, model.GameId);
+        logger.LogDebug("Setting connection activity for {clientName} to {activity}", clientName, model.ActivityDetails[nameof(ActivityData.Activity)]);
 
-        return await connectedClientsService.RequestClientActivityChange(connectionId, model.Activity, model.GameId) switch
+        var baseActivityData = model.ActivityDetails.Deserialize<ActivityData>(Program.JsonSerializerOptions);
+
+        if (baseActivityData == null)
+            return BadRequest();
+
+        var activityDetails = baseActivityData.Activity switch
+        {
+            _ => baseActivityData
+        };
+
+        return await connectedClientsService.RequestClientActivityChange(clientName, activityDetails) switch
         {
             Success => NoContent(),
             Failure<ClientNotFoundError> => NotFound(),
@@ -59,12 +69,22 @@ public class ClientsController(IConnectedClientsService connectedClientsService,
         };
     }
 
-    public record ClientModel(string Id, string Name, ClientActivity CurrentActivity, string Path, string? GameId, DateTimeOffset LastUpdateTime)
+    public sealed record ClientModel(string Name, string IpAddress, JsonObject ActivityInfo, DateTimeOffset LastUpdateTime)
     {
         public static explicit operator ClientModel(ConnectedClient client) => 
-            new(client.Id, client.Name.Name, client.CurrentActivity, client.Path, client.GameId, client.LastUpdateTime);
+            new(client.Name.Name, client.IpAddress, JsonSerializer.SerializeToNode(client.ActivityInfo)!.AsObject(), client.LastUpdateTime);
+
+        public bool Equals(ClientModel? other) =>
+            other is not null
+            && other.Name.Equals(Name, StringComparison.OrdinalIgnoreCase)
+            && other.IpAddress.Equals(IpAddress)
+            && other.LastUpdateTime.Equals(LastUpdateTime)
+            && other.ActivityInfo.ToJsonString().Equals(ActivityInfo.ToJsonString());
+
+        public override int GetHashCode() => 
+            HashCode.Combine(Name, IpAddress, ActivityInfo, LastUpdateTime);
     }
 
     public record SetNameModel(string Name);
-    public record SetActivityModel(ClientActivity Activity, string? GameId);
+    public record SetActivityModel(JsonObject ActivityDetails);
 }
