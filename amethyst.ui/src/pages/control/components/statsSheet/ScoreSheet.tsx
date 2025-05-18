@@ -1,4 +1,4 @@
-import { useEvents, useScoreSheetState, useTeamDetailsState, useTimeoutListState } from "@/hooks";
+import { useEvents, useI18n, useScoreSheetState, useTeamDetailsState, useTimeoutListState } from "@/hooks";
 import { ScoreSheetJam, TeamSide, TimeoutListItem } from "@/types";
 import { ScoreSheetJamRow } from "./ScoreSheetJamRow";
 import { cn } from "@/lib/utils";
@@ -24,9 +24,10 @@ type ScoreSheetItem = {
 }
 
 export const ScoreSheet = ({ gameId, teamSide, descending, showTimeouts, className }: ScoreSheetProps) => {
-
     const scoreSheet = useScoreSheetState(teamSide);
     const opponentScoreSheet = useScoreSheetState(teamSide === TeamSide.Home ? TeamSide.Away : TeamSide.Home);
+
+    const { translate } = useI18n({ prefix: "ScoreboardControl.StatsSheet.ScoreSheet." })
 
     const team = useTeamDetailsState(teamSide);
     const { sendEvent } = useEvents();
@@ -80,7 +81,7 @@ export const ScoreSheet = ({ gameId, teamSide, descending, showTimeouts, classNa
             : a.period === b.period && a.jam === b.jam ? (
                 typeOrder.indexOf(a.type) - typeOrder.indexOf(b.type)
             ) : 1);
-    
+
     const periodLines = useMemo(() => {
         return (
             descending ? [...items].reverse() : items
@@ -132,7 +133,7 @@ export const ScoreSheet = ({ gameId, teamSide, descending, showTimeouts, classNa
             <div className="text-lg text-center block xl:hidden">{teamName}</div>
             { periods.map((lines, lineNumber) => (
                 <Fragment key={`line-${lineNumber}`}>
-                    <div key={`period-header-${lineNumber}`}>Period {lines[0]?.period}</div>
+                    <div key={`period-header-${lineNumber}`}>{ translate("Period") } {lines[0]?.period}</div>
                     <div 
                         key={`period-${lineNumber}`}
                         className={cn(

@@ -1,4 +1,4 @@
-import { useEvents, useGameStageState, useIntermissionClockState } from "@/hooks"
+import { GameStateContextProvider, useEvents, useGameStageState, useIntermissionClockState } from "@/hooks"
 import { useI18n } from "@/hooks/I18nHook";
 import { Button } from "@/components/ui";
 import { Pencil } from "lucide-react";
@@ -45,47 +45,49 @@ export const ClocksContainer = ({ gameId }: ClocksContainerProps) => {
     }
 
     return (
-        <div className="w-full flex gap-2 items-center">
-            <div className="w-full grid grid-flow-rows auto-cols-fr gap-2">
-                <PeriodClock
-                    className="col-start-1"
-                    editing={isEditing} 
-                    name={`${translate('ClocksContainer.Period')} ${gameStage?.periodNumber ?? 0}`} 
-                    onClockSet={handlePeriodClockSet}
-                />
-                <JamClock
-                    className="col-start-2"
-                    editing={isEditing} 
-                    name={`${translate('ClocksContainer.Jam')} ${gameStage?.jamNumber ?? 0}`} 
-                    onClockSet={handleJamClockSet}
-                />
-                <LineupClock
-                    className="col-start-3"
-                    editing={isEditing}
-                    name={translate('ClocksContainer.Lineup')}
-                    onClockSet={handleLineupClockSet}
-                />
-                <TimeoutClock 
-                    className="col-start-1 lg:col-start-4"
-                    editing={isEditing} 
-                    name={translate('ClocksContainer.Timeout')} 
-                    onClockSet={handleTimeoutClockSet}
-                />
-                <IntermissionClock
-                    className="col-start-2 lg:col-start-5"
-                    editing={isEditing} 
-                    name={translate('ClocksContainer.Intermission')} 
-                    onClockSet={handleIntermissionClockSet}
-                />
+        <GameStateContextProvider gameId={gameId}>
+            <div className="w-full flex gap-2 items-center">
+                <div className="w-full grid grid-flow-rows auto-cols-fr gap-2">
+                    <PeriodClock
+                        className="col-start-1"
+                        editing={isEditing} 
+                        name={`${translate('ClocksContainer.Period')} ${gameStage?.periodNumber ?? 0}`} 
+                        onClockSet={handlePeriodClockSet}
+                    />
+                    <JamClock
+                        className="col-start-2"
+                        editing={isEditing} 
+                        name={`${translate('ClocksContainer.Jam')} ${gameStage?.jamNumber ?? 0}`} 
+                        onClockSet={handleJamClockSet}
+                    />
+                    <LineupClock
+                        className="col-start-3"
+                        editing={isEditing}
+                        name={translate('ClocksContainer.Lineup')}
+                        onClockSet={handleLineupClockSet}
+                    />
+                    <TimeoutClock 
+                        className="col-start-1 lg:col-start-4"
+                        editing={isEditing} 
+                        name={translate('ClocksContainer.Timeout')} 
+                        onClockSet={handleTimeoutClockSet}
+                    />
+                    <IntermissionClock
+                        className="col-start-2 lg:col-start-5"
+                        editing={isEditing} 
+                        name={translate('ClocksContainer.Intermission')} 
+                        onClockSet={handleIntermissionClockSet}
+                    />
+                </div>
+                <Button 
+                    size="icon" 
+                    variant="ghost" 
+                    className={cn("border-2 border-transparent", isEditing && "border-primary")} 
+                    onClick={handleEditClicked}
+                >
+                    <Pencil />
+                </Button>
             </div>
-            <Button 
-                size="icon" 
-                variant="ghost" 
-                className={cn("border-2 border-transparent", isEditing && "border-primary")} 
-                onClick={handleEditClicked}
-            >
-                <Pencil />
-            </Button>
-        </div>
+        </GameStateContextProvider>
     )
 }
