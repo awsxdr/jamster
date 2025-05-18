@@ -1,6 +1,7 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Nodes;
 using amethyst.Controllers;
+using amethyst.Domain;
 using amethyst.Services;
 using Microsoft.AspNetCore.SignalR;
 
@@ -120,10 +121,15 @@ public class ConnectedClientsHub(IConnectedClientsService connectedClientsServic
         if (clientId == null)
             return;
 
-        var activityDetails = activity[nameof(ActivityData.Activity)]?.AsValue().GetValue<ClientActivity>() switch
+        ActivityData? activityDetails = activity[nameof(ActivityData.Activity)]?.AsValue().Deserialize<ClientActivity>(Program.JsonSerializerOptions) switch
         {
+            ClientActivity.Scoreboard => activity.Deserialize<ScoreboardActivity>(Program.JsonSerializerOptions),
+            ClientActivity.StreamOverlay => activity.Deserialize<StreamOverlayActivity>(Program.JsonSerializerOptions),
             _ => activity.Deserialize<UnknownActivity>(Program.JsonSerializerOptions)!
         };
+
+        if (activityDetails == null)
+            throw new ActivityDetailsFormatException();
 
         await connectedClientsService.SetClientActivity(clientId.Value, activityDetails);
     }
@@ -147,3 +153,5 @@ public sealed class FailedToSetNameException : Exception
 {
     public required ResultError Error { get; init; }
 }
+
+public sealed class ActivityDetailsFormatException : Exception;

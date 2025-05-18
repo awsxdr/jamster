@@ -13,7 +13,7 @@ export const ActivitySelect = ({ activity, onActivityChanged }: ActivitySelectPr
 
     return (
         <div className="flex flex-col gap-1">
-            <Label>Screen</Label>
+            <Label>{translate("Label")}</Label>
             <Select value={activity} onValueChange={onActivityChanged}>
                 <SelectTrigger>
                     <SelectValue />

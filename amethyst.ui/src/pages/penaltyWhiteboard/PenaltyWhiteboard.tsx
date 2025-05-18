@@ -1,7 +1,7 @@
 import { useSearchParams } from "react-router-dom";
-import { GameStateContextProvider, I18nContextProvider, useCurrentGame, useI18n } from "@/hooks"
-import { useEffect, useMemo, useState } from "react";
-import { DisplaySide, TeamSide } from "@/types";
+import { GameStateContextProvider, I18nContextProvider, useGameIdFromQueryString, useI18n, useQueryStringConfiguration } from "@/hooks"
+import { useEffect, useState } from "react";
+import { ActivityData, ClientActivity, DisplaySide, TeamSide } from "@/types";
 import { ConnectionLostAlert } from "@/components/ConnectionLostAlert";
 import { PenaltyTable } from "./components";
 import languages from "@/i18n";
@@ -13,28 +13,26 @@ export const PenaltyWhiteboard = () => (
 )
 
 const PenaltyWhiteboardInner = () => {
-    const { translate } = useI18n({ prefix: "PenaltyWhiteboard." });
+    const { translate, setLanguage } = useI18n({ prefix: "PenaltyWhiteboard." });
     const [ searchParams, setSearchParams ] = useSearchParams();
-    const { currentGame } = useCurrentGame();
 
-    const [selectedGameId, setSelectedGameId] = useState<string | undefined>(searchParams.get('gameId') ?? '');
     const [team, setTeam] = useState(DisplaySide.Both);
 
-    const gameId = useMemo(() => selectedGameId === "current" ? currentGame?.id : selectedGameId, [selectedGameId, currentGame]);
+    const { languageCode } = useQueryStringConfiguration<ActivityData>({
+            activity: () => ClientActivity.PenaltyWhiteboard,
+            gameId: v => v,
+            languageCode: v => v,
+        }, {
+            activity: ClientActivity.PenaltyWhiteboard,
+            gameId: "",
+            languageCode: "en",
+        },
+        ["activity"]
+    );
 
     useEffect(() => {
-        if (!selectedGameId && currentGame) {
-            searchParams.set('gameId', "current");
-            setSearchParams(searchParams);
-            setSelectedGameId(currentGame.id);
-        }
-    }, [currentGame, selectedGameId]);
-
-    useEffect(() => {
-        if(currentGame && searchParams.get("gameId") === "current") {
-            setSelectedGameId(currentGame.id);
-        }
-    }, [currentGame, searchParams]);
+        setLanguage(languageCode);
+    }, [languageCode]);
 
     useEffect(() => {
         const searchParamsTeam = DisplaySide[searchParams.get('team') as keyof typeof DisplaySide];
@@ -43,9 +41,11 @@ const PenaltyWhiteboardInner = () => {
             setTeam(searchParamsTeam);
         } else {
             searchParams.set('team', team);
-            setSearchParams(searchParams);
+            setSearchParams(searchParams, { replace: true });
         }
     }, [searchParams]);
+
+    const gameId = useGameIdFromQueryString();
 
     return (
         <>

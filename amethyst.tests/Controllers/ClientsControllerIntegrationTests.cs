@@ -1,6 +1,7 @@
 ﻿using System.Net;
 using System.Text.Json;
 using amethyst.Controllers;
+using amethyst.Domain;
 using amethyst.Hubs;
 using amethyst.Services;
 using FluentAssertions;
@@ -101,7 +102,7 @@ public class ClientsControllerIntegrationTests : ControllerIntegrationTest
     {
         await Put(
             "/api/clients/invalidClientId/activity", 
-            new ClientsController.SetActivityModel(JsonSerializer.SerializeToNode(new ScoreboardActivity(Guid.NewGuid().ToString(), "xx"))!.AsObject()), 
+            new ClientsController.SetActivityModel(JsonSerializer.SerializeToNode(new ScoreboardActivity(Guid.NewGuid().ToString(), "xx", true, true))!.AsObject()), 
             HttpStatusCode.NotFound);
     }
 

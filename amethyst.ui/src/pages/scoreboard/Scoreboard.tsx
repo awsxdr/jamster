@@ -1,19 +1,18 @@
-import { GameStateContextProvider, I18nContextProvider, useConfiguration, useCurrentGame, useGameStageState, useHasServerConnection, useI18n } from '@/hooks';
-import { DEFAULT_DISPLAY_CONFIGURATION, DisplayConfiguration, Stage, TeamSide } from '@/types';
+import { GameStateContextProvider, I18nContextProvider, useGameIdFromQueryString, useGameStageState, useHasServerConnection, useI18n, useQueryStringConfiguration } from '@/hooks';
+import { ActivityData, ClientActivity, DEFAULT_DISPLAY_CONFIGURATION, ScoreboardActivity, Stage, TeamSide } from '@/types';
 import { TeamDetails } from './components/TeamDetails';
 import { JamDetails } from './components/JamDetails';
 import { TimeoutDetails } from './components/TimeoutDetails';
 import { LineupDetails } from './components/LineupDetails';
 import { TeamColorGradients } from './components/TeamColorGradients';
 import { IntermissionDetails } from './components/IntermissionDetails';
-import { PropsWithChildren, useEffect, useMemo, useState } from 'react';
+import { PropsWithChildren, useEffect, useState } from 'react';
 import { Button } from '@/components/ui';
 import { Maximize2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useWakeLock } from '@/hooks/WakeLock';
 import languages from '@/i18n';
 import { ScaledText } from '@/components/ScaledText';
-import { useSearchParams } from 'react-router-dom';
 
 export const SCOREBOARD_GAP_CLASS_NAME = "gap-1 md:gap-2 lg:gap-3 xl:gap-5";
 export const SCOREBOARD_TEXT_PADDING_CLASS_NAME = "p-1 md:p-2 lg:p-3 xl:p-5";
@@ -39,17 +38,27 @@ const ScoreboardContent = () => {
     const [fullScreenButtonVisible, setFullScreenButtonVisible] = useState(false);
     const [userInteracting, setUserInteracting] = useState(0);
 
-    const { configuration, isConfigurationLoaded } = useConfiguration<DisplayConfiguration>("DisplayConfiguration");
-
-    const { language } = configuration ?? DEFAULT_DISPLAY_CONFIGURATION;
+    const { languageCode, useSidebars, useNameBackgrounds } = useQueryStringConfiguration<ActivityData & ScoreboardActivity>({
+            activity: () => ClientActivity.Scoreboard,
+            gameId: v => v,
+            languageCode: v => v,
+            useSidebars: v => { 
+                return v === "true";
+            },
+            useNameBackgrounds: v => v === "true",
+        }, {
+            activity: ClientActivity.Scoreboard,
+            gameId: "",
+            languageCode: DEFAULT_DISPLAY_CONFIGURATION.language,
+            useSidebars: "true",
+            useNameBackgrounds: "true",
+        },
+        ["activity"]
+    );
 
     useEffect(() => {
-        if(!isConfigurationLoaded) {
-            return;
-        }
-
-        setLanguage(language);
-    }, [language]);
+        setLanguage(languageCode);
+    }, [languageCode]);
 
     useEffect(() => {
         setFullScreenButtonVisible(true);
@@ -82,7 +91,7 @@ const ScoreboardContent = () => {
     return (
         <>
             <title>{translate("Scoreboard.Title")} | {translate("Main.Title")}</title>
-            <TeamColorGradients />
+            <TeamColorGradients hidden={!useSidebars} />
             <div 
                 className={cn(
                     "absolute left-0 top-0 h-full w-full select-none overflow-hidden", 
@@ -103,8 +112,8 @@ const ScoreboardContent = () => {
                     <div className="inline-flex flex-col max-w-[140vh] w-full">
                         <div className={cn("h-screen flex flex-col justify-center", SCOREBOARD_GAP_CLASS_NAME)}>
                             <div className={cn("flex justify-around items-stretch h-[45vh]", SCOREBOARD_GAP_CLASS_NAME)}>
-                                <TeamDetails side={TeamSide.Home} />
-                                <TeamDetails side={TeamSide.Away} />
+                                <TeamDetails side={TeamSide.Home} showBackgrounds={useNameBackgrounds} />
+                                <TeamDetails side={TeamSide.Away} showBackgrounds={useNameBackgrounds} />
                             </div>
                             <div className="flex flex-col h-[35vh] w-full relative">
                                 <JamDetails gameStage={gameStage} visible={gameStage.stage === Stage.Jam} />
@@ -130,28 +139,8 @@ const ScoreboardContent = () => {
 }
 
 export const Scoreboard = () => {
-    const [ searchParams, setSearchParams ] = useSearchParams();
-    const { currentGame } = useCurrentGame();
-    const [selectedGameId, setSelectedGameId] = useState<string | undefined>(searchParams.get('gameId') ?? '');
 
-    const gameId = useMemo(() => selectedGameId === "current" ? currentGame?.id : selectedGameId, [selectedGameId, currentGame]);
-
-    useEffect(() => {
-        if (!selectedGameId && currentGame) {
-            searchParams.set('gameId', "current");
-            setSearchParams(searchParams);
-            setSelectedGameId(currentGame.id);
-        }
-    }, [currentGame, selectedGameId]);
-
-    useEffect(() => {
-        const searchParamsGameId = searchParams.get("gameId");
-        if(currentGame && searchParamsGameId === "current") {
-            setSelectedGameId(currentGame.id);
-        } else if(searchParamsGameId !== "current" && searchParamsGameId !== null) {
-            setSelectedGameId(searchParamsGameId);
-        }
-    }, [currentGame, searchParams]);
+    const gameId = useGameIdFromQueryString();
 
     if(!gameId) {
         return (<></>);

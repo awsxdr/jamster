@@ -32,7 +32,7 @@ export const ScoreboardControl = () => {
 
     const updateSelectedGameId = useCallback((gameId?: string) => {
         searchParams.set('gameId', gameId ?? '');
-        setSearchParams(searchParams);
+        setSearchParams(searchParams, { replace: true });
         setSelectedGameId(gameId);
     }, [setSelectedGameId]);
 

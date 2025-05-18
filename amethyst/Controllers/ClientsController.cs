@@ -58,8 +58,13 @@ public class ClientsController(IConnectedClientsService connectedClientsService,
 
         var activityDetails = baseActivityData.Activity switch
         {
+            ClientActivity.Scoreboard => model.ActivityDetails.Deserialize<ScoreboardActivity>(Program.JsonSerializerOptions),
+            ClientActivity.StreamOverlay => model.ActivityDetails.Deserialize<StreamOverlayActivity>(Program.JsonSerializerOptions),
             _ => baseActivityData
         };
+
+        if (activityDetails == null)
+            return BadRequest();
 
         return await connectedClientsService.RequestClientActivityChange(clientName, activityDetails) switch
         {
@@ -72,7 +77,14 @@ public class ClientsController(IConnectedClientsService connectedClientsService,
     public sealed record ClientModel(string Name, string IpAddress, JsonObject ActivityInfo, DateTimeOffset LastUpdateTime)
     {
         public static explicit operator ClientModel(ConnectedClient client) => 
-            new(client.Name.Name, client.IpAddress, JsonSerializer.SerializeToNode(client.ActivityInfo)!.AsObject(), client.LastUpdateTime);
+            new(
+                client.Name.Name,
+                client.IpAddress,
+                JsonSerializer.SerializeToNode(
+                    client.ActivityInfo as object /* cast to object to force serialization of derived properties */,
+                    Program.JsonSerializerOptions
+                )!.AsObject(),
+                client.LastUpdateTime);
 
         public bool Equals(ClientModel? other) =>
             other is not null

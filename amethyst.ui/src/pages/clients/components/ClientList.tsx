@@ -3,22 +3,24 @@ import { ClientDetails } from "./ClientDetails";
 import { ClientActivity } from "@/types";
 import { useMemo } from "react";
 
-const CONTROLLABLE_ACTIVITIES = [ClientActivity.Scoreboard, ClientActivity.StreamOverlay, ClientActivity.PenaltyWhiteboard];
+type ClientListProps = {
+    filter?: ClientActivity[];
+    blacklist?: boolean;
+    changable?: boolean;
+}
 
-export const ClientList = () => {
+export const ClientList = ({ filter, blacklist, changable }: ClientListProps) => {
 
     const clients = useClients();
 
-    console.log(clients);
-
     const controllableClients = useMemo(() =>
-        clients.filter(c => CONTROLLABLE_ACTIVITIES.includes(c.currentActivity)),
-        [clients]
+        clients.filter(c => !filter || (blacklist ? !filter.includes(c.activityInfo.activity) : filter.includes(c.activityInfo.activity))),
+        [clients, filter, blacklist]
     );
 
     return (
-        <div className="flex flex-col gap-4 lg:grid grid-flow-col auto-cols-fr">
-            {controllableClients.map(c => (<ClientDetails key={c.id} client={c} />))}
+        <div className="flex flex-col gap-4 lg:grid lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+            {controllableClients.map(c => (<ClientDetails key={c.name} client={c} changable={changable} />))}
         </div>
     );
 }

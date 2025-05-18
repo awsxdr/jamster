@@ -1,11 +1,11 @@
 import { API_URL } from "@/constants";
-import { Client, ClientActivity } from "@/types"
+import { ActivityData, Client } from "@/types"
 
 type ClientsApi = {
     getConnectedClients: () => Promise<Client[]>;
-    getClient: (connectionId: string) => Promise<Client>;
-    setConnectionName: (connectionId: string, name: string) => Promise<void>;
-    setConnectionActivity: (connectionId: string, activity: ClientActivity, gameId: string | null) => Promise<void>;
+    getClient: (clientName: string) => Promise<Client>;
+    setConnectionName: (clientName: string, newName: string) => Promise<void>;
+    setConnectionActivity: (clientName: string, activity: ActivityData) => Promise<void>;
 }
 
 export const useClientsApi: () => ClientsApi = () => {
@@ -15,25 +15,25 @@ export const useClientsApi: () => ClientsApi = () => {
         return (await response.json()) as Client[];
     }
 
-    const getClient = async (connectionId: string) => {
-        const response = await fetch(`${API_URL}/api/clients/${connectionId}`);
+    const getClient = async (clientName: string) => {
+        const response = await fetch(`${API_URL}/api/clients/${clientName}`);
         return (await response.json()) as Client;
     }
 
-    const setConnectionName = async (connectionId: string, name: string) => {
-        await fetch(`${API_URL}/api/clients/${connectionId}/name`, {
+    const setConnectionName = async (clientName: string, newName: string) => {
+        await fetch(`${API_URL}/api/clients/${clientName}/name`, {
             method: 'PUT',
-            body: JSON.stringify({ name }),
+            body: JSON.stringify({ name: newName }),
             headers: {
                 "Content-Type": "application/json"
             },
         });
     }
 
-    const setConnectionActivity = async (connectionId: string, activity: ClientActivity, gameId: string | null) => {
-        await fetch(`${API_URL}/api/clients/${connectionId}/activity`, {
+    const setConnectionActivity = async (clientName: string, activity: ActivityData) => {
+        await fetch(`${API_URL}/api/clients/${clientName}/activity`, {
             method: 'PUT',
-            body: JSON.stringify({ activity, gameId }),
+            body: JSON.stringify({ activityDetails: activity }),
             headers: {
                 "Content-Type": "application/json"
             },

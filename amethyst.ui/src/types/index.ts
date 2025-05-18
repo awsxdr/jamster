@@ -1,3 +1,4 @@
+export * from './ActivityData';
 export * from './BoxTripsState';
 export * from './Client';
 export * from './ClientActivity';

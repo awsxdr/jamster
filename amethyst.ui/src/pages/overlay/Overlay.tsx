@@ -1,8 +1,7 @@
-import { CSSProperties, PropsWithChildren, useEffect, useMemo, useState } from "react";
+import { CSSProperties, PropsWithChildren, useEffect } from "react";
 import { ScoreRow } from "./components/ScoreRow";
-import { DEFAULT_OVERLAY_CONFIGURATION, OverlayConfiguration, TeamSide } from "@/types";
-import { GameStateContextProvider, I18nContextProvider, useConfiguration, useCurrentGame, useI18n } from "@/hooks";
-import { useSearchParams } from "react-router-dom";
+import { ActivityData, ClientActivity, StreamOverlayActivity, TeamSide } from "@/types";
+import { GameStateContextProvider, I18nContextProvider, useGameIdFromQueryString, useI18n, useQueryStringConfiguration } from "@/hooks";
 import { Clock } from "./components/Clock";
 import { LineupRow } from "./components/LineupRow";
 import languages from '@/i18n';
@@ -23,17 +22,27 @@ const OverlayContent = () => {
 
     const { translate, setLanguage } = useI18n();
 
-    const { configuration, isConfigurationLoaded } = useConfiguration<OverlayConfiguration>("OverlayConfiguration");
-
-    const { language, scale } = configuration ?? DEFAULT_OVERLAY_CONFIGURATION;
+    const { languageCode, scale, useBackground, backgroundColor } = useQueryStringConfiguration<ActivityData & StreamOverlayActivity>({
+            activity: () => ClientActivity.StreamOverlay,
+            gameId: v => v,
+            languageCode: v => v,
+            scale: v => parseFloat(v),
+            useBackground: v => v === "true",
+            backgroundColor: v => v,
+        }, {
+            activity: ClientActivity.StreamOverlay,
+            gameId: "",
+            languageCode: "en",
+            scale: "1",
+            useBackground: "false",
+            backgroundColor: "#00ff00",
+        },
+        ["activity"]
+    );
 
     useEffect(() => {
-        if(!isConfigurationLoaded) {
-            return;
-        }
-
-        setLanguage(language);
-    }, [language]);
+        setLanguage(languageCode);
+    }, [languageCode]);
 
     const style = {
         '--score-row-width': `${25 * scale}vw`,
@@ -65,13 +74,13 @@ const OverlayContent = () => {
         '--lineup-jammer-name-width': `${20 * scale}vw`,
         '--lineup-skater-width': `${4 * scale}vw`,
         '--star-height': `${2 * scale}vh`,
-        '--background-fill-color': configuration?.backgroundColor ?? '#00ff00',
+        '--background-fill-color': backgroundColor,
     } as CSSProperties;
 
     return (
         <div style={style}>
             <title>{translate("Overlay.Title")} | {translate("Main.Title")}</title>
-            { configuration?.useBackground && (
+            { useBackground && (
                 <div className="absolute left-0 top-0 right-0 bottom-0 bg-[--background-fill-color]">
                 </div>
             )}
@@ -88,25 +97,7 @@ const OverlayContent = () => {
 
 export const Overlay = () => {
 
-    const [ searchParams, setSearchParams ] = useSearchParams();
-    const { currentGame } = useCurrentGame();
-    const [selectedGameId, setSelectedGameId] = useState<string | undefined>(searchParams.get('gameId') ?? '');
-
-    const gameId = useMemo(() => selectedGameId === "current" ? currentGame?.id : selectedGameId, [selectedGameId, currentGame]);
-
-    useEffect(() => {
-        if (!selectedGameId && currentGame) {
-            searchParams.set('gameId', "current");
-            setSearchParams(searchParams);
-            setSelectedGameId(currentGame.id);
-        }
-    }, [currentGame, selectedGameId]);
-
-    useEffect(() => {
-        if(currentGame && searchParams.get("gameId") === "current") {
-            setSelectedGameId(currentGame.id);
-        }
-    }, [currentGame, searchParams]);
+    const gameId = useGameIdFromQueryString();
 
     if(!gameId) {
         return (<></>);

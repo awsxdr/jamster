@@ -84,7 +84,7 @@ export const GameSelect = ({ selectedGameId, disabled, onSelectedGameIdChanged }
 
     return (
         <div className="flex flex-col gap-1">
-            <Label>Game</Label>
+            <Label>{translate("Label")}</Label>
             <Select
                 value={selectedGameId}
                 disabled={disabled}

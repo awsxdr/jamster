@@ -1,10 +1,9 @@
-import { ClientActivity } from ".";
+import { ActivityData } from "./ActivityData";
 
 export type Client = {
-    id: string;
-    name: { name: string, isCustom: boolean };
-    currentActivity: ClientActivity;
-    path: string;
-    gameId: string | null;
+    connectionId: string;
+    name: string;
+    ipAddress: string;
+    activityInfo: ActivityData;
     lastUpdateTime: string;
 }

@@ -20,7 +20,7 @@ export const PenaltyLineup = () => {
     
     const updateSelectedGameId = useCallback((gameId?: string) => {
         searchParams.set('gameId', gameId ?? '');
-        setSearchParams(searchParams);
+        setSearchParams(searchParams, { replace: true });
         setSelectedGameId(gameId);
     }, [setSelectedGameId]);
 
@@ -37,7 +37,7 @@ export const PenaltyLineup = () => {
             setTeam(searchParamsTeam);
         } else {
             searchParams.set('team', team);
-            setSearchParams(searchParams);
+            setSearchParams(searchParams, { replace: true });
         }
     }, [searchParams]);
 
@@ -45,7 +45,7 @@ export const PenaltyLineup = () => {
         const searchParamsPltType = searchParams.get('plt') as PltDisplayType;
         if(!["Both", "Penalties", "Lineup", "None"].includes(searchParamsPltType)) {
             searchParams.set('plt', "Both");
-            setSearchParams(searchParams);
+            setSearchParams(searchParams, { replace: true });
             return;
         }
 
@@ -56,7 +56,7 @@ export const PenaltyLineup = () => {
         const searchParamsBoxType = searchParams.get('box') as BoxDisplayType;
         if(!["Both", "None", "Jammers", "Blockers"].includes(searchParamsBoxType)) {
             searchParams.set("box", "None");
-            setSearchParams(searchParams);
+            setSearchParams(searchParams, { replace: true });
             return;
         }
 
@@ -65,17 +65,17 @@ export const PenaltyLineup = () => {
 
     const handleTeamChanged = (displaySide: DisplaySide) => {
         searchParams.set('team', displaySide);
-        setSearchParams(searchParams);
+        setSearchParams(searchParams, { replace: true });
     }
 
     const handlePltTypeChanged = (pltType: PltDisplayType) => {
         searchParams.set('plt', pltType);
-        setSearchParams(searchParams);
+        setSearchParams(searchParams, { replace: true });
     }
 
     const handleBoxTypeChanged = (boxType: BoxDisplayType) => {
         searchParams.set('box', boxType);
-        setSearchParams(searchParams);
+        setSearchParams(searchParams, { replace: true });
     }
 
     return (

@@ -1,7 +1,7 @@
-import { createContext, PropsWithChildren, useCallback, useContext, useEffect, useState } from "react";
+import { createContext, PropsWithChildren, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useHubConnection } from "./SignalRHubConnection";
-import { Client, ClientActivity } from "@/types";
-import { createBrowserRouter, RouteObject, useLocation, useNavigate } from "react-router-dom";
+import { ActivityData, Client, ClientActivity } from "@/types";
+import { createBrowserRouter, RouteObject, useNavigate, useSearchParams } from "react-router-dom";
 import { v4 as uuidv4 } from 'uuid';
 import { useClientsApi } from "./ClientsApi";
 
@@ -10,36 +10,27 @@ type CallbackHandle = string;
 type ClientConnectionContextProps = {
     clients: Client[];
     hasConnection: boolean;
-    activity: ClientActivity;
-    path: string;
-    gameId: string | null;
-    setActivity: (activity: ClientActivity, path: string, gameId: string | null) => void;
+    activity: ActivityData;
+    setActivity: (activity: ActivityData) => void;
     watchActivityChange: (handler: ChangeActivityHandler) => CallbackHandle;
     unwatchActivityChange: (handle: CallbackHandle) => void;
+    getName: () => Promise<string>;
+    setName: (clientName: string) => Promise<void>;
 }
+
+type ChangeActivityHandler = (activity: ActivityData) => void;
+type ChangeActivityNotifier = { [handle: CallbackHandle]: ChangeActivityHandler };
 
 const ClientConnectionContext = createContext<ClientConnectionContextProps>({
     clients: [],
     hasConnection: false,
-    activity: ClientActivity.Unknown,
-    path: "",
-    gameId: null,
+    activity: { activity: ClientActivity.Unknown, gameId: null, languageCode: "en" },
     setActivity: () => { throw new Error('setActivity called before context created'); },
     watchActivityChange: () => { throw new Error('watchActivityChange called before context created'); },
     unwatchActivityChange: () => { throw new Error('unwatchActivityChange called before context created'); },
+    getName: () => { throw new Error('getName called before context created'); },
+    setName: () => { throw new Error('setName called before context created'); },
 });
-
-const useActivity = (activity: ClientActivity, path: string, gameId: string | null) => {
-    const context = useContext(ClientConnectionContext);
-
-    if (context === undefined) {
-        throw new Error('useChangeActivity must be used inside a ClientConnectionContextProvider');
-    }
-
-    useEffect(() => {
-        context.setActivity(activity, path, gameId);
-    }, [context.hasConnection, activity, path, gameId]);
-}
 
 const useChangeActivity = (onActivityChangeRequested: ChangeActivityHandler) => {
     const context = useContext(ClientConnectionContext);
@@ -55,22 +46,33 @@ const useChangeActivity = (onActivityChangeRequested: ChangeActivityHandler) => 
     }, []);
 }
 
+export const useClientName = () => {
+    const context = useContext(ClientConnectionContext);
+    const [name, setName] = useState("");
+
+    const clients = useClients();
+
+    useEffect(() => {
+        context.getName().then(setName);
+    }, [clients]);
+
+    const setClientName = (name: string) => context.setName(name);
+
+    return { name, setName: setClientName };
+}
+
 export const useClients = () => {
     const { clients } = useContext(ClientConnectionContext);
 
     return clients;
 }
 
-type ChangeActivityHandler = (activity: ClientActivity, gameId: string | null) => void;
-type ChangeActivityNotifier = { [handle: CallbackHandle]: ChangeActivityHandler };
-
 export const ClientConnectionContextProvider = ({ children }: PropsWithChildren) => {
     const { connection } = useHubConnection("clients");
     const [changeActivityNotifiers, setChangeActivityNotifiers] = useState<ChangeActivityNotifier>({});
     const [clients, setClients] = useState<Client[]>([]);
-    const [clientActivity, setClientActivity] = useState(ClientActivity.Unknown);
-    const [path, setPath] = useState("");
-    const [gameId, setGameId] = useState<string | null>(null);
+    const [clientActivity, setClientActivity] = useState<ActivityData>({ activity: ClientActivity.Unknown, gameId: null, languageCode: "en" });
+    const [clientName, setClientName] = useState("");
 
     const clientsApi = useClientsApi();
 
@@ -97,27 +99,45 @@ export const ClientConnectionContextProvider = ({ children }: PropsWithChildren)
     }, [connection]);
 
     useEffect(() => {
-        (async () => {
-            connection?.onreconnected(() => {
-                connection.send("SetActivity", clientActivity, path, gameId);
-            });
-        })();
+        connection?.onreconnected(() => {
+            connection.send("SetActivity", clientActivity);
+        });
     }, [connection, changeActivityNotifiers]);
 
+    useEffect(() => {
+        if(!connection) {
+            return;
+        }
 
-    const handleChangeActivity = (activity: ClientActivity, gameId: string | null) => {
+        setActivity(clientActivity);
+
+        const sessionName = sessionStorage.getItem("clientName");
+
+        if(!sessionName) {
+            (async () => {
+                const name = await getName();
+
+                setClientName(name);
+                sessionStorage.setItem("clientName", name);
+            })();
+
+            return;
+        }
+
+        setName(sessionName);
+        
+    }, [connection]);
+
+    const handleChangeActivity = (activity: ActivityData) => {
         Object.values(changeActivityNotifiers).forEach(notifier => {
-            notifier(activity, gameId);
-        })
+            notifier(activity);
+        });
     }
 
-    const setActivity = (activity: ClientActivity, path: string, gameId: string | null) => {
-
+    const setActivity = (activity: ActivityData) => {
         setClientActivity(activity);
-        setPath(path);
-        setGameId(gameId);
 
-        connection?.send("SetActivity", activity, path, gameId);
+        connection?.send("SetActivity", activity);
     }
 
     const watchActivityChange = (handler: ChangeActivityHandler) => {
@@ -145,6 +165,20 @@ export const ClientConnectionContextProvider = ({ children }: PropsWithChildren)
         });
     }
 
+    const getName = async () => {
+        const name = await connection?.invoke<string>("GetConnectionName");
+        if(name && clientName !== name) {
+            setClientName(name);
+        }
+
+        return name ?? "";
+    }
+
+    const setName = async (name: string) => {
+        await connection?.invoke("SetConnectionName", name);
+        setClientName(name);
+    }
+
     connection?.on("ChangeActivity", handleChangeActivity);
 
     return (
@@ -153,11 +187,11 @@ export const ClientConnectionContextProvider = ({ children }: PropsWithChildren)
                 clients, 
                 hasConnection: !!connection, 
                 activity: clientActivity,
-                path,
-                gameId,
                 setActivity, 
                 watchActivityChange, 
-                unwatchActivityChange 
+                unwatchActivityChange,
+                getName,
+                setName,
             }}
         >
             { children }
@@ -175,19 +209,53 @@ type ClientActivityRouteProps = {
     getActivityPath: (activity: ClientActivity) => string;
 }
 
-const ClientActivityRoute = ({ activity, path, getActivityPath, children }: PropsWithChildren<ClientActivityRouteProps>) => {
+const getActivityData = (activity: ClientActivity, searchParams: URLSearchParams): ActivityData => {
+    const gameId = searchParams.get("gameId");
+    const languageCode = searchParams.get("languageCode") ?? "en";
+
+    const otherProperties =
+        activity === ClientActivity.Scoreboard ? {
+            useSidebars: searchParams.get("useSidebars") === "true",
+            useNameBackgrounds: searchParams.get("useNameBackgrounds") === "true",
+        } :
+        activity === ClientActivity.StreamOverlay ? { 
+            scale: parseFloat(searchParams.get("scale") ?? "1.0"), 
+            useBackground: searchParams.get("useBackground") === "true",
+            backgroundColor: searchParams.get("backgroundColor") ?? "#00ff00",
+        } :
+        { };
+    
+    return { ...otherProperties, activity, gameId, languageCode } as ActivityData;
+}
+
+const ClientActivityRoute = ({ activity, getActivityPath, children }: PropsWithChildren<ClientActivityRouteProps>) => {
 
     const navigate = useNavigate();
-    const location = useLocation();
+    const [searchParams] = useSearchParams();
 
-    const gameId = location.search.match(/[?&]gameId=([^&]+)/)?.[1] ?? null;
+    const activityData = useMemo(() => getActivityData(activity, searchParams), [activity, searchParams]);
 
-    useActivity(activity, path, gameId); 
+    const context = useContext(ClientConnectionContext);
 
-    useChangeActivity((newActivity, gameId) => {
-        const path = `${getActivityPath(newActivity)}${gameId !== null ? `?gameId=${gameId}` : ""}`;
+    useEffect(() => {
+        context.setActivity(activityData);
+    }, [activityData]);
 
-        navigate(path);
+    useChangeActivity(newActivity => {
+        const extraParams = 
+            Object.keys(newActivity)
+                .filter(k => !["gameId", "activity"].includes(k))
+                .filter(k => newActivity[k as keyof typeof newActivity] !== undefined)
+                .map(k => `${k}=${encodeURIComponent(newActivity[k as keyof typeof newActivity]!)}`);
+
+        const params = [
+            newActivity.gameId && `gameId=${newActivity.gameId}`,
+            ...extraParams
+        ].join("&");
+        context.setActivity(newActivity);
+
+        const path = `${getActivityPath(newActivity.activity)}?${params}`;
+        navigate(path, { replace: true });
     });
 
     return children;

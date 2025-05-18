@@ -9,6 +9,7 @@ export * from './GameApiHook';
 export * from './GamesListHook';
 export * from './I18nHook';
 export * from './InputControls';
+export * from './QueryStringConfiguration';
 export * from './SignalRHubConnection';
 export * from './StateHook';
 export * from './SystemStateHook';

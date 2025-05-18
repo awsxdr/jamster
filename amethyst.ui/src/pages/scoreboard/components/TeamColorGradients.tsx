@@ -1,21 +1,23 @@
-import { useConfiguration, useTeamDetailsState } from "@/hooks";
-import { DisplayConfiguration, TeamSide } from "@/types";
+import { useTeamDetailsState } from "@/hooks";
+import { TeamSide } from "@/types";
 import { useMemo } from "react";
 
-export const TeamColorGradients = () => {
+type TeamColorGradientsProps = {
+    hidden?: boolean;
+}
+
+export const TeamColorGradients = ({ hidden }: TeamColorGradientsProps) => {
 
     const homeTeam = useTeamDetailsState(TeamSide.Home);
     const awayTeam = useTeamDetailsState(TeamSide.Away);
 
-    const { configuration } = useConfiguration<DisplayConfiguration>("DisplayConfiguration");
-
     const homeTeamColor = useMemo(
-        () => configuration?.showSidebars ? (homeTeam?.team.color.shirtColor ?? '#000000') : "rgba(0,0,0,0)",
-        [homeTeam, configuration?.showSidebars]);
+        () => hidden ? "rgba(0,0,0,0)" : (homeTeam?.team.color.shirtColor ?? "rgba(0,0,0,0)"),
+        [homeTeam, hidden]);
 
     const awayTeamColor = useMemo(
-        () => configuration?.showSidebars ? (awayTeam?.team.color.shirtColor ?? '#000000') : "rgba(0,0,0,0)",
-        [awayTeam, configuration?.showSidebars]);
+        () => hidden ? "rgba(0,0,0,0)" : (awayTeam?.team.color.shirtColor ?? "rgba(0,0,0,0)"),
+        [awayTeam, hidden]);
     
     return (
         <div className="absolute left-0 top-0 w-full h-full bg-black">

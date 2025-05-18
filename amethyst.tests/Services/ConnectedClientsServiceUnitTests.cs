@@ -1,4 +1,5 @@
-﻿using amethyst.Hubs;
+﻿using amethyst.Domain;
+using amethyst.Hubs;
 using amethyst.Services;
 using FluentAssertions;
 using Func;
@@ -127,14 +128,14 @@ public class ConnectedClientsServiceUnitTests : UnitTest<ConnectedClientsService
 
         var game1Id = Guid.NewGuid().ToString();
 
-        await Subject.SetClientActivity(client1Id, new ScoreboardActivity(game1Id, "xx"));
+        await Subject.SetClientActivity(client1Id, new ScoreboardActivity(game1Id, "xx", true, true));
         await Subject.SetClientActivity(client2Id, new PenaltyLineupControlActivity(null, "xx"));
 
         var clients = Subject.GetConnectedClients().ToArray();
 
         clients.Should().BeEquivalentTo(new ConnectedClient[]
         {
-            new("client1", client1.Name, "192.168.12.34", new ScoreboardActivity(game1Id, "xx"), clients.Single(c => c.ConnectionId == "client1").LastUpdateTime),
+            new("client1", client1.Name, "192.168.12.34", new ScoreboardActivity(game1Id, "xx", true, true), clients.Single(c => c.ConnectionId == "client1").LastUpdateTime),
             new("client2", client2.Name, "192.168.12.35", new PenaltyLineupControlActivity(null, "xx"), clients.Single(c => c.ConnectionId == "client2").LastUpdateTime),
         });
     }
@@ -154,7 +155,7 @@ public class ConnectedClientsServiceUnitTests : UnitTest<ConnectedClientsService
             return Task.CompletedTask;
         };
 
-        await Subject.SetClientActivity(client1Id, new ScoreboardActivity(Guid.NewGuid().ToString(), "xx"));
+        await Subject.SetClientActivity(client1Id, new ScoreboardActivity(Guid.NewGuid().ToString(), "xx", true, true));
 
         var result = await Wait(completionSource.Task);
 

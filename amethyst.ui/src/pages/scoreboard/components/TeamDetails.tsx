@@ -10,10 +10,11 @@ import { useI18n, useJamStatsState } from "@/hooks";
 import { SCOREBOARD_GAP_CLASS_NAME } from "../Scoreboard";
 
 type TeamDetailsProps = {
-    side: TeamSide
+    side: TeamSide;
+    showBackgrounds: boolean;
 }
 
-export const TeamDetails = ({ side }: TeamDetailsProps) => {
+export const TeamDetails = ({ side, showBackgrounds }: TeamDetailsProps) => {
 
     const { starPass } = useJamStatsState(side) ?? { starPass: false };
     const { translate } = useI18n({ prefix: "Scoreboard.TeamDetails." })
@@ -21,7 +22,7 @@ export const TeamDetails = ({ side }: TeamDetailsProps) => {
     return (
         <div className={cn("flex flex-col grow w-1/2", SCOREBOARD_GAP_CLASS_NAME)}>
             <div className="h-[40%]">
-                <TeamName side={side} />
+                <TeamName side={side} showBackgrounds={showBackgrounds} />
             </div>
             <div className={cn("flex h-[calc(60%-1.4rem)]", SCOREBOARD_GAP_CLASS_NAME, side === TeamSide.Home ? "flex-row" : "flex-row-reverse")}>
                 <TeamTimeouts side={side} />
