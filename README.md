@@ -6,6 +6,12 @@ Amethyst (temporary name) is a scoreboard and live stats system for running roll
 
 Right now it's in early alpha testing. The core functionality is nearing completion but it is still a work-in-progress. It is not recommended for open-door or sanctioned games at this stage.
 
+### A note on translations
+
+In order to test the language selection system, a rough Spanish translation has been added. This translation was done by a non-native speaker with the help of automated tools; as such, and despite best efforts, the translation is unlikely to be fully accurate.
+
+If you have any suggestions for translations or would like to help translate the app, head over to the [translations discussion](https://github.com/awsxdr/amethyst/discussions/categories/translations).
+
 ## Getting started
 
 Amethyst currently works on Windows and Linux with x64 and ARM64 processors. It has been tested on Windows 11 and Debian-based Linux on ARM64. Additional OSs may work and any feedback would be much appreciated regarding this.
@@ -27,6 +33,10 @@ CRG has the concept of finalizing a game which marks the score as final once the
 The Amethyst UI takes the approach of all toggles having positive labeled. This is a common approach to avoid double-negatives when a control is toggled off to turn something on.
 
 The primary area where this makes a difference is when marking the completion of an initial trip. In CRG the standard is to uncheck the "No initial" button; however, in Amethyst the equivalent is checking the "Initial trip complete" button.
+
+### No need to end timeouts
+
+Timeouts will automatically end if another jam is started. Timeouts _can_ be ended to record the duration, but it is not a requirement. The timeout clock will continue to run and be displayed even after a timeout has ended, as per WFTDA procedures.
 
 ### Scoreboard first
 
