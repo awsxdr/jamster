@@ -1,25 +1,24 @@
-import { Button, ButtonProps } from "@/components/ui";
+import { ShortcutButton, ShortcutButtonProps } from "@/components";
 import { useI18n, useJamStatsState } from "@/hooks";
-import { useShortcut } from "@/hooks/InputControls";
 import { cn } from "@/lib/utils";
 import { InputControls, TeamSide } from "@/types";
 import { PropsWithChildren } from "react";
 
-type StatsButtonProps = {
+type StatsButtonProps<TGroupKey extends keyof InputControls, TControlKey extends keyof InputControls[TGroupKey]> = {
     active?: boolean;
     prominent?: boolean;
     className?: string;
-} & ButtonProps;
+} & ShortcutButtonProps<TGroupKey, TControlKey>;
 
-const StatsButton = ({ active, prominent, className, children, ...props }: PropsWithChildren<StatsButtonProps>) => {
+const StatsButton = <TGroupKey extends keyof InputControls, TControlKey extends keyof InputControls[TGroupKey]>({ active, prominent, className, children, ...props }: PropsWithChildren<StatsButtonProps<TGroupKey, TControlKey>>) => {
     return (
-        <Button
+        <ShortcutButton
             variant={prominent ? 'secondary' : 'outline'}
             className={cn(className, "border-2", active && "border-primary")}
             {...props}
         >
             {children}
-        </Button>
+        </ShortcutButton>
     )
 }
 
@@ -36,7 +35,7 @@ type JamStatsProps = {
 export const JamStats = ({ side, disabled, onLeadChanged, onLostChanged, onCallChanged, onStarPassChanged, onInitialPassChanged }: JamStatsProps) => {
 
     const jamStats = useJamStatsState(side);
-    const { translate } = useI18n();
+    const { translate } = useI18n({ prefix: "ScoreboardControl.JamStats." });
 
     const handleLead = () => onLeadChanged?.(side, !jamStats?.lead);
     const handleLost = () => onLostChanged?.(side, !jamStats?.lost);
@@ -45,20 +44,60 @@ export const JamStats = ({ side, disabled, onLeadChanged, onLostChanged, onCallC
     const handleInitialTrip = () => onInitialPassChanged?.(side, !jamStats?.hasCompletedInitial);
 
     const shortcutGroup: keyof InputControls = side === TeamSide.Home ? "homeStats" : "awayStats";
-    useShortcut(shortcutGroup, "lead", handleLead);
-    useShortcut(shortcutGroup, "lost", handleLost);
-    useShortcut(shortcutGroup, "called", handleCall);
-    useShortcut(shortcutGroup, "starPass", handleStarPass);
-    useShortcut(shortcutGroup, "initialTrip", handleInitialTrip);
 
     return (
         <>
             <div className="flex flex-wrap w-full justify-center items-center gap-2 py-2">
-                <StatsButton active={jamStats?.lead} disabled={disabled} onClick={handleLead}>{translate("TripStats.Lead")}</StatsButton>
-                <StatsButton active={jamStats?.lost} disabled={disabled} onClick={handleLost}>{translate("TripStats.Lost")}</StatsButton>
-                <StatsButton active={jamStats?.called} disabled={disabled} onClick={handleCall}>{translate("TripStats.Call")}</StatsButton>
-                <StatsButton active={jamStats?.starPass} disabled={disabled} onClick={handleStarPass}>{translate("TripStats.StarPass")}</StatsButton>
-                <StatsButton active={jamStats?.hasCompletedInitial} disabled={disabled} onClick={handleInitialTrip}>{translate("TripStats.InitialComplete")}</StatsButton>
+                <StatsButton 
+                    description={translate("Lead.Tooltip")} 
+                    active={jamStats?.lead} 
+                    disabled={disabled}
+                    shortcutGroup={shortcutGroup}
+                    shortcutKey="lead"
+                    onClick={handleLead}
+                >
+                    {translate("Lead")}
+                </StatsButton>
+                <StatsButton 
+                    description={translate("Lost.Tooltip")} 
+                    active={jamStats?.lost} 
+                    disabled={disabled}
+                    shortcutGroup={shortcutGroup}
+                    shortcutKey="lost"
+                    onClick={handleLost}
+                >
+                    {translate("Lost")}
+                </StatsButton>
+                <StatsButton 
+                    description={translate("Call.Tooltip")} 
+                    active={jamStats?.called} 
+                    disabled={disabled} 
+                    shortcutGroup={shortcutGroup}
+                    shortcutKey="called"
+                    onClick={handleCall}
+                >
+                    {translate("Call")}
+                </StatsButton>
+                <StatsButton 
+                    description={translate("StarPass.Tooltip")} 
+                    active={jamStats?.starPass} 
+                    disabled={disabled} 
+                    shortcutGroup={shortcutGroup}
+                    shortcutKey="starPass"
+                    onClick={handleStarPass}
+                >
+                    {translate("StarPass")}
+                </StatsButton>
+                <StatsButton 
+                    description={translate("InitialComplete.Tooltip")} 
+                    active={jamStats?.hasCompletedInitial} 
+                    disabled={disabled} 
+                    shortcutGroup={shortcutGroup}
+                    shortcutKey="initialTrip"
+                    onClick={handleInitialTrip}
+                >
+                    {translate("InitialComplete")}
+                </StatsButton>
             </div>
         </>
     );

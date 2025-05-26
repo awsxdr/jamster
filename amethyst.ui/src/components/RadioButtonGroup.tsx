@@ -2,6 +2,8 @@ import { cn } from "@/lib/utils";
 import { Button, TooltipProvider } from "./ui";
 import { ReactNode } from "react";
 import { TooltipButton } from "./TooltipButton";
+import { ShortcutButton } from "./ShortcutButton";
+import { InputControls } from "@/types";
 
 export type RadioItem<TValue> = { 
     value: TValue;
@@ -12,8 +14,13 @@ export type TooltipRadioItem<TValue> = RadioItem<TValue> & {
     description: ReactNode;
 };
 
+export type ShortcutTooltipRadioItem<TValue> = TooltipRadioItem<TValue> & {
+    shortcutGroup: keyof InputControls;
+    shortcutKey: string;
+}
+
 type RadioButtonGroupProps<TValue> = {
-    items: (RadioItem<TValue> | TooltipRadioItem<TValue>)[];
+    items: (RadioItem<TValue> | TooltipRadioItem<TValue> | ShortcutTooltipRadioItem<TValue>)[];
     value?: TValue;
     variant?: "default" | "secondary" | "ghost";
     size?: 'lg' | 'sm' | 'default';
@@ -39,7 +46,22 @@ export const RadioButtonGroup = <TValue,>({ items, value, variant, size, rowClas
         <div className={cn("flex flex-wrap gap-2", rowClassName)}>
             <TooltipProvider>
             {
-                items.map((item, i) => (item as TooltipRadioItem<TValue>)?.description ? (
+                items.map((item, i) => 
+                (item as ShortcutTooltipRadioItem<TValue>)?.shortcutKey ? (
+                    <ShortcutButton
+                        shortcutGroup={(item as ShortcutTooltipRadioItem<TValue>).shortcutGroup}
+                        shortcutKey={(item as ShortcutTooltipRadioItem<TValue>).shortcutKey}
+                        description={(item as ShortcutTooltipRadioItem<TValue>).description}
+                        size={size}
+                        variant={variant ?? "secondary"}
+                        className={cn("border-2", value === item.value ? "border-primary" : "", buttonClassName)}
+                        disabled={disabled}
+                        key={i}
+                        onClick={() => handleButtonClick(item.value)}
+                    >
+                        {item.name}
+                    </ShortcutButton>
+                ) : (item as TooltipRadioItem<TValue>)?.description ? (
                     <TooltipButton 
                         description={(item as TooltipRadioItem<TValue>).description}
                         size={size}

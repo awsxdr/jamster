@@ -12,11 +12,16 @@ export const TooltipButton = forwardRef<HTMLButtonElement, TooltipButtonProps>((
         description,
         notify,
         className,
+        disabled,
         ...props 
     }: PropsWithChildren<TooltipButtonProps>,
     ref
 ) => {
-    return (
+    return disabled ? (
+        <Button disabled {...props} className={className} ref={ref}>
+            { children }
+        </Button>
+    ) : (
         <Tooltip>
             <TooltipTrigger asChild>
                 <div className="relative inline">

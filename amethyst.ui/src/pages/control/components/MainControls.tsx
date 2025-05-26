@@ -17,7 +17,7 @@ type MainControlsProps = {
 export const MainControls = ({ gameId, disabled }: MainControlsProps) => {
 
     const gameStage = useGameStageState();
-    const {translate, language} = useI18n();
+    const {translate, language} = useI18n({ prefix: "ScoreboardControl.MainControls." });
     const { sendEvent, deleteEvent } = useEvents();
     const undoList = useUndoListState() ?? { };
 
@@ -25,22 +25,22 @@ export const MainControls = ({ gameId, disabled }: MainControlsProps) => {
         if (!gameStage || (gameStage.stage === Stage.AfterGame && gameStage.periodIsFinalized) || gameStage.stage === Stage.Jam) {
             return ["---", "", false];
         } else {
-            return [translate("MainControls.StartJam"), translate("MainControls.StartJam.Description"), true];
+            return [translate("StartJam"), translate("StartJam.Description"), true];
         }
     }, [gameStage, language]);
 
     const [endText, endDescription, endButtonEnabled] = useMemo(() => {
         switch (gameStage?.stage) {
             case Stage.Jam: 
-                return [translate("MainControls.EndJam"), translate("MainControls.EndJam.Description"), true];
+                return [translate("EndJam"), translate("EndJam.Description"), true];
             case Stage.Timeout: 
-                return [translate("MainControls.EndTimeout"), translate("MainControls.EndTimeout.Description"), true];
+                return [translate("EndTimeout"), translate("EndTimeout.Description"), true];
             case Stage.BeforeGame:
-                return [translate("MainControls.StartLineup"), translate("MainControls.StartLineup.Description"), true];
+                return [translate("StartLineup"), translate("StartLineup.Description"), true];
             case Stage.Intermission: 
-                return gameStage.periodIsFinalized ? [translate("MainControls.StartLineup"), translate("MainControls.StartLineup.Description"), true] : [translate("MainControls.FinalizePeriod"), translate("MainControls.FinalizePeriod.Description"), true];
+                return gameStage.periodIsFinalized ? [translate("StartLineup"), translate("StartLineup.Description"), true] : [translate("FinalizePeriod"), translate("FinalizePeriod.Description"), true];
             case Stage.AfterGame: 
-                return gameStage.periodIsFinalized ? ["---", "", false] : [translate("MainControls.FinalizeGame"), translate("MainControls.FinalizeGame.Description"), true];
+                return gameStage.periodIsFinalized ? ["---", "", false] : [translate("FinalizeGame"), translate("FinalizeGame.Description"), true];
             default: 
                 return ["---", "", false];
         }
@@ -48,7 +48,7 @@ export const MainControls = ({ gameId, disabled }: MainControlsProps) => {
 
     const [timeoutText, timeoutDescription, timeoutButtonEnabled] = useMemo(() => {
         if(gameStage && !gameStage.periodIsFinalized && gameStage.stage !== Stage.BeforeGame) {
-            return [translate("MainControls.NewTimeout"), translate("MainControls.NewTimeout.Description"), true];
+            return [translate("NewTimeout"), translate("NewTimeout.Description"), true];
         } else {
             return ["---", "", false];
         }
@@ -57,11 +57,11 @@ export const MainControls = ({ gameId, disabled }: MainControlsProps) => {
     const [undoText, undoDescription, undoButtonEnabled] = useMemo(() => {
         return undoList.latestUndoEventId
             ? [
-                `${translate("MainControls.Undo")} ${translate(`MainControls.Undo.${undoList.latestUndoEventName}`)}`, 
-                translate(`MainControls.Undo.${undoList.latestUndoEventName}.Description`),
+                `${translate("Undo")} ${translate(`Undo.${undoList.latestUndoEventName}`)}`, 
+                translate(`Undo.${undoList.latestUndoEventName}.Description`),
                 true
             ]
-            : [translate("MainControls.Undo"), "", false];
+            : [translate("Undo"), "", false];
     }, [language, undoList]);
 
     const sendEventIfIdSet = (event: Event) => {

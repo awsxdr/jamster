@@ -1,7 +1,8 @@
 import { Check, Clock, Eye, Maximize2, NotebookPen, Package, Play, Table, Tally5, Timer, UsersRound } from "lucide-react"
-import { Button, DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger } from "@/components/ui"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger } from "@/components/ui"
 import { useCurrentUserConfiguration, useI18n, useIsMobile, useWakeLock } from "@/hooks";
 import { ControlPanelViewConfiguration, DEFAULT_CONTROL_PANEL_VIEW_CONFIGURATION, DisplaySide } from "@/types";
+import { TooltipButton } from "@/components";
 
 type ViewMenuProps = {
     disabled?: boolean;
@@ -14,7 +15,7 @@ export const ViewMenu = ({ disabled }: ViewMenuProps) => {
     const IconSpacer = () => (<span className="w-[16px]"></span>);
     const isMobile = useIsMobile();
     const { acquireWakeLock, releaseWakeLock } = useWakeLock();
-    const { translate } = useI18n();
+    const { translate } = useI18n({ prefix: "ScoreboardControl.ViewMenu." });
     
     const handleFullScreenClick = () => {
         if (!document.fullscreenElement) {
@@ -110,93 +111,95 @@ export const ViewMenu = ({ disabled }: ViewMenuProps) => {
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button size="icon" variant="ghost" disabled={disabled}>
+                <TooltipButton description={translate("Tooltip")} size="icon" variant="ghost" disabled={disabled}>
                     <Eye />
-                </Button>
+                </TooltipButton>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-56">
                 { isMobile ? (
                     <DropdownMenuGroup>
-                        <DropdownMenuLabel>{translate("ViewMenu.Presets")}</DropdownMenuLabel>
+                        <DropdownMenuLabel>{translate("Presets")}</DropdownMenuLabel>
                         <DropdownMenuItem disabled={disabled} onClick={handleScoreboardOperatorPresetClick}>
                             <IconSpacer />
-                            {translate("ViewMenu.ScoreboardPreset")}
+                            {translate("ScoreboardPreset")}
                         </DropdownMenuItem>
                         <DropdownMenuItem disabled={disabled} onClick={handleScorekeeperPresetClick}>
                             <IconSpacer />
-                            {translate("ViewMenu.ScorekeeperPreset")}
+                            {translate("ScorekeeperPreset")}
                         </DropdownMenuItem>
                         <DropdownMenuItem disabled={disabled} onClick={handleJamTimerPresetClick}>
                             <IconSpacer />
-                            {translate("ViewMenu.JamTimerPreset")}
+                            {translate("JamTimerPreset")}
                         </DropdownMenuItem>
                     </DropdownMenuGroup>
                 ) : (
                     <DropdownMenuSub>
-                        <DropdownMenuSubTrigger><IconSpacer /><Package />{translate("ViewMenu.Presets")}</DropdownMenuSubTrigger>
+                        <DropdownMenuSubTrigger><IconSpacer /><Package />{translate("Presets")}</DropdownMenuSubTrigger>
                         <DropdownMenuSubContent className="w-56">
                             <DropdownMenuItem disabled={disabled} onClick={handleScoreboardOperatorPresetClick}>
-                                {translate("ViewMenu.ScoreboardPreset")}
+                                {translate("ScoreboardPreset")}
                             </DropdownMenuItem>
                             <DropdownMenuItem disabled={disabled} onClick={handleScorekeeperPresetClick}>
-                                {translate("ViewMenu.ScorekeeperPreset")}
+                                {translate("ScorekeeperPreset")}
                             </DropdownMenuItem>
                             <DropdownMenuItem disabled={disabled} onClick={handleJamTimerPresetClick}>
-                                {translate("ViewMenu.JamTimerPreset")}
+                                {translate("JamTimerPreset")}
                             </DropdownMenuItem>
                         </DropdownMenuSubContent>
                     </DropdownMenuSub>
                 )}
                 <DropdownMenuSeparator />
                 <DropdownMenuGroup>
+                    <DropdownMenuLabel>{translate("Controls")}</DropdownMenuLabel>
                     <DropdownMenuItem disabled={disabled} onClick={toggleShowClockControls}>
                         { viewConfiguration.showClockControls ? (<Check />) : (<IconSpacer />) }
                         <Play />
-                        {translate("ViewMenu.ClockControls")}
+                        {translate("ClockControls")}
                     </DropdownMenuItem>
                     <DropdownMenuItem disabled={disabled} onClick={toggleShowScoreControls}>
                         { viewConfiguration.showScoreControls ? (<Check />) : (<IconSpacer />) }
                         <Tally5 />
-                        {translate("ViewMenu.ScoreControls")}
+                        {translate("ScoreControls")}
                     </DropdownMenuItem>
                     <DropdownMenuItem disabled={disabled} onClick={toggleShowStatsControls}>
                         { viewConfiguration.showStatsControls ? (<Check />) : (<IconSpacer />) }
                         <NotebookPen />
-                        {translate("ViewMenu.StatsControls")}
+                        {translate("StatsControls")}
                     </DropdownMenuItem>
                     <DropdownMenuItem disabled={disabled} onClick={toggleShowLineupControls}>
                         { viewConfiguration.showLineupControls ? (<Check />) : (<IconSpacer />) }
                         <UsersRound />
-                        {translate("ViewMenu.LineupControls")}
+                        {translate("LineupControls")}
                     </DropdownMenuItem>
                     <DropdownMenuItem disabled={disabled} onClick={toggleShowClocks}>
                         { viewConfiguration.showClocks ? (<Check />) : (<IconSpacer />) }
                         <Clock />
-                        {translate("ViewMenu.Clocks")}
+                        {translate("Clocks")}
                     </DropdownMenuItem>
                     <DropdownMenuItem disabled={disabled} onClick={toggleShowTimeouts}>
                         { viewConfiguration.showTimeoutList ? (<Check />) : (<IconSpacer />) }
                         <Timer />
-                        {translate("ViewMenu.Timeouts")}
+                        {translate("Timeouts")}
                     </DropdownMenuItem>
                     <DropdownMenuItem disabled={disabled} onClick={toggleShowScoreSheet}>
                         { viewConfiguration.showScoreSheet ? (<Check />) : (<IconSpacer />) }
                         <Table />
-                        {translate("ViewMenu.ScoreSheet")}
+                        {translate("ScoreSheet")}
                     </DropdownMenuItem>
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />
                 <DropdownMenuRadioGroup value={viewConfiguration.displaySide} onValueChange={v => setDisplaySide(DisplaySide[v as keyof typeof DisplaySide])}>
-                    <DropdownMenuRadioItem disabled={disabled} value={DisplaySide.Both}>{translate("ViewMenu.BothTeams")}</DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem disabled={disabled} value={DisplaySide.Home}>{translate("ViewMenu.HomeTeam")}</DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem disabled={disabled} value={DisplaySide.Away}>{translate("ViewMenu.AwayTeam")}</DropdownMenuRadioItem>
+                    <DropdownMenuLabel>{translate("Teams")}</DropdownMenuLabel>
+                    <DropdownMenuRadioItem disabled={disabled} value={DisplaySide.Both}>{translate("BothTeams")}</DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem disabled={disabled} value={DisplaySide.Home}>{translate("HomeTeam")}</DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem disabled={disabled} value={DisplaySide.Away}>{translate("AwayTeam")}</DropdownMenuRadioItem>
                 </DropdownMenuRadioGroup>
                 <DropdownMenuSeparator />
                 <DropdownMenuGroup>
                     <DropdownMenuItem disabled={disabled} onClick={handleFullScreenClick}>
                         <IconSpacer />
                         <Maximize2 />
-                        {translate("ViewMenu.FullScreen")}
+                        {translate("FullScreen")}
                     </DropdownMenuItem>
                 </DropdownMenuGroup>
             </DropdownMenuContent>

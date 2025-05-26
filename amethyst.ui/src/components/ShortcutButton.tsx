@@ -3,9 +3,9 @@ import { InputControls } from "@/types";
 import { useI18n, useShortcut } from "@/hooks";
 import { TooltipButton, TooltipButtonProps } from "./TooltipButton";
 
-type ShortcutButtonProps<TGroupKey extends keyof InputControls, TControlKey extends keyof InputControls[TGroupKey]> = {
+export type ShortcutButtonProps<TGroupKey extends keyof InputControls, TControlKey extends keyof InputControls[TGroupKey]> = {
     shortcutGroup: TGroupKey;
-    shortcutKey: TControlKey;
+    shortcutKey: TControlKey | string;
 } & Omit<TooltipButtonProps, 'ref'>;
 
 export const ShortcutButton = <TGroupKey extends keyof InputControls, TControlKey extends keyof InputControls[TGroupKey]>({ 
@@ -49,6 +49,7 @@ export const ShortcutButton = <TGroupKey extends keyof InputControls, TControlKe
                     </div>
                 </>
             }
+            disabled={disabled}
         >
             {children}
         </TooltipButton>

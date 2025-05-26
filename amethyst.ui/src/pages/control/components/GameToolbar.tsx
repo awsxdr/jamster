@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ChevronDown, ChevronUp, Repeat, SquarePlus } from "lucide-react"
-import { MobileSidebarTrigger, NewGameDialogTrigger } from "@/components";
+import { MobileSidebarTrigger, NewGameDialogTrigger, TooltipButton } from "@/components";
 import { Button } from "@/components/ui"
 import { useI18n, useIsMobile } from "@/hooks";
 import { cn } from "@/lib/utils";
@@ -18,7 +18,7 @@ type GameToolbarProps = {
 
 export const GameToolbar = ({ games, currentGame, onCurrentGameIdChanged, selectedGameId, onSelectedGameIdChanged, disabled }: GameToolbarProps) => {
 
-    const { translate } = useI18n();
+    const { translate } = useI18n({ prefix: "ScoreboardControl.GameToolbar." });
     const isMobile = useIsMobile();
     const [showGameSelect, setShowGameSelect] = useState(true);
 
@@ -51,16 +51,16 @@ export const GameToolbar = ({ games, currentGame, onCurrentGameIdChanged, select
                         </div>
                         <div className="flex gap-2">
                             <ConfirmMakeCurrentDialog onAccept={() => selectedGameId && onCurrentGameIdChanged(selectedGameId)}>
-                                <Button variant="secondary" disabled={disabled || selectedGameId === currentGame?.id}>
+                                <TooltipButton description={translate("MakeCurrent.Tooltip")} variant="secondary" disabled={disabled || selectedGameId === currentGame?.id}>
                                     <Repeat />
-                                    <span className="hidden sm:inline">{translate("GameToolbar.MakeCurrent")}</span>
-                                </Button>
+                                    <span className="hidden sm:inline">{translate("MakeCurrent")}</span>
+                                </TooltipButton>
                             </ConfirmMakeCurrentDialog>
                             <NewGameDialogTrigger>
-                                <Button variant="creative" disabled={disabled}>
+                                <TooltipButton description={translate("NewGame.Tooltip")} variant="creative" disabled={disabled}>
                                     <SquarePlus />
-                                    <span className="hidden sm:inline">{translate("GameToolbar.NewGame")}</span>
-                                </Button>
+                                    <span className="hidden sm:inline">{translate("NewGame")}</span>
+                                </TooltipButton>
                             </NewGameDialogTrigger>
                         </div>
                     </div>

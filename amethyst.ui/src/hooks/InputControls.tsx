@@ -19,7 +19,7 @@ const DEFAULT_SHORTCUTS_PROVIDER_STATE: ShortcutsProviderState = {
 
 const ShortcutsContext = createContext(DEFAULT_SHORTCUTS_PROVIDER_STATE);
 
-export const useShortcut = <TGroupKey extends keyof InputControls, TControlKey extends keyof InputControls[TGroupKey]>(
+export const useShortcut = <TGroupKey extends keyof InputControls, TControlKey extends keyof InputControls[TGroupKey] | string>(
     groupKey: TGroupKey,
     controlKey: TControlKey,
     onShortcutTriggered: () => void,
@@ -30,7 +30,7 @@ export const useShortcut = <TGroupKey extends keyof InputControls, TControlKey e
         throw new Error('useShortcut must be used inside a ShortcutsContextProvider');
     }
 
-    const shortcut = context.shortcuts[groupKey]![controlKey] as Control | undefined;
+    const shortcut = context.shortcuts[groupKey]![controlKey as keyof InputControls[TGroupKey]] as Control | undefined;
 
     const handleShortcutTriggered = useCallback(() => {
         if(context.shortcutsEnabled) {

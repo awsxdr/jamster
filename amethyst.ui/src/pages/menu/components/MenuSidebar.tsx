@@ -1,5 +1,5 @@
 import { Button, Collapsible, CollapsibleContent, CollapsibleTrigger, Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from "@components/ui"
-import { Captions, ChartNoAxesCombined, ChevronDown, ChevronLeft, ChevronRight, CircleHelp, ClipboardPenLine, Grid3X3, Keyboard, List, MonitorCog, Settings, Shirt, TvMinimal, Users } from "lucide-react"
+import { Captions, ChevronDown, ChevronLeft, ChevronRight, CircleHelp, ClipboardPenLine, Grid3X3, Keyboard, List, MonitorCog, Shirt, TvMinimal, Users } from "lucide-react"
 import { ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { LanguageMenu } from "./LanguageMenu";
@@ -82,26 +82,26 @@ const sidebarItems: SidebarGroupList = {
             },
         ],
     },
-    "ScreensGroup": {
-        collapsible: false,
-        items: [
-            {
-                title: "Stats",
-                href: "/stats",
-                icon: <ChartNoAxesCombined />
-            },
-        ],
-    },
-    "SettingsGroup": {
-        collapsible: false,
-        items: [
-            {
-                title: "Settings",
-                href: "/settings",
-                icon: <Settings />
-            },
-        ],
-    },
+    // "ScreensGroup": {
+    //     collapsible: false,
+    //     items: [
+    //         {
+    //             title: "Stats",
+    //             href: "/stats",
+    //             icon: <ChartNoAxesCombined />
+    //         },
+    //     ],
+    // },
+    // "SettingsGroup": {
+    //     collapsible: false,
+    //     items: [
+    //         {
+    //             title: "Settings",
+    //             href: "/settings",
+    //             icon: <Settings />
+    //         },
+    //     ],
+    // },
 }
 
 export const MenuSidebar = () => {
