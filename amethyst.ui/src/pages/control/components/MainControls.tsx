@@ -1,7 +1,7 @@
 import { ShortcutButton } from "@/components";
 import { TooltipProvider } from "@/components/ui";
 import { Card, CardContent } from "@/components/ui/card";
-import { useGameStageState, useUndoListState } from "@/hooks";
+import { useGameStageState, useLineupClockState, useRulesState, useUndoListState } from "@/hooks";
 import { Event, useEvents } from "@/hooks/EventsApiHook";
 import { useI18n } from "@/hooks/I18nHook";
 import { Stage } from "@/types";
@@ -20,6 +20,8 @@ export const MainControls = ({ gameId, disabled }: MainControlsProps) => {
     const {translate, language} = useI18n({ prefix: "ScoreboardControl.MainControls." });
     const { sendEvent, deleteEvent } = useEvents();
     const undoList = useUndoListState() ?? { };
+    const lineupClock = useLineupClockState();
+    const { rules } = useRulesState() ?? { };
 
     const [startText, startDescription, startButtonEnabled] = useMemo(() => {
         if (!gameStage || (gameStage.stage === Stage.AfterGame && gameStage.periodIsFinalized) || gameStage.stage === Stage.Jam) {
@@ -102,6 +104,9 @@ export const MainControls = ({ gameId, disabled }: MainControlsProps) => {
 
     const buttonClass = "w-full py-6 md:w-auto md:px-4 md:py-2";
 
+    const shouldStartJam = gameStage?.stage === Stage.Lineup && (lineupClock?.secondsPassed ?? 0) > (rules?.lineupRules.durationInSeconds ?? 0);
+    const shouldFinalizePeriod = gameStage && [Stage.Intermission, Stage.AfterGame].includes(gameStage.stage) && !gameStage.periodIsFinalized;
+
     return (
         <Card className="grow py-2">
             <CardContent className="flex p-0 px-2 flex-wrap gap-2 justify-evenly">
@@ -109,6 +114,7 @@ export const MainControls = ({ gameId, disabled }: MainControlsProps) => {
                     <ShortcutButton 
                         shortcutGroup="clocks" 
                         shortcutKey="start"
+                        notify={shouldStartJam}
                         description={startDescription}
                         className={buttonClass} 
                         variant={startButtonEnabled ? 'default' : 'secondary'} 
@@ -121,6 +127,7 @@ export const MainControls = ({ gameId, disabled }: MainControlsProps) => {
                     <ShortcutButton
                         shortcutGroup="clocks"
                         shortcutKey="stop"
+                        notify={shouldFinalizePeriod}
                         description={endDescription}
                         className={buttonClass}
                         variant={endButtonEnabled ? "default" : "secondary"}
@@ -133,6 +140,7 @@ export const MainControls = ({ gameId, disabled }: MainControlsProps) => {
                     <ShortcutButton
                         shortcutGroup="clocks"
                         shortcutKey="timeout"
+                        notify={shouldStartJam}
                         description={timeoutDescription}
                         className={buttonClass}
                         variant={timeoutButtonEnabled ? "default" : "secondary"}
