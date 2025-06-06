@@ -4,7 +4,7 @@ import { ScoreSheetJamRow } from "./ScoreSheetJamRow";
 import { cn } from "@/lib/utils";
 import { Fragment, useMemo } from "react";
 import { ScoreSheetTimeoutRow } from "./ScoreSheetTimeoutRow";
-import { ScoreSheetCalledSet, ScoreSheetInjurySet, ScoreSheetJammerNumberSet, ScoreSheetLeadSet, ScoreSheetLostSet, ScoreSheetPivotNumberSet, ScoreSheetStarPassTripSet, ScoreSheetTripScoreSet } from "@/types/events";
+import { ScoreSheetCalledSet, ScoreSheetInjurySet, ScoreSheetJammerNumberSet, ScoreSheetLeadSet, ScoreSheetLineDeleted, ScoreSheetLostSet, ScoreSheetPivotNumberSet, ScoreSheetStarPassTripSet, ScoreSheetTripScoreSet } from "@/types/events";
 import { JamEditMenu } from "./JamEditMenu";
 
 type ScoreSheetProps = {
@@ -46,14 +46,15 @@ export const ScoreSheet = ({ gameId, teamSide, descending, showTimeouts, classNa
         ? timeouts.map((t, i) => ({ ...t, lineNumber: i, type: "timeout", timeoutItem: t }))
         : [];
 
-    const jamItems: ScoreSheetItem[] = [
-            ...(scoreSheet?.jams ?? [])
-        ].map((j, i) => ({ 
+    const jamItems: ScoreSheetItem[] = 
+        [...(scoreSheet?.jams ?? [])]
+        .map((j, i) => ({ 
             ...j,
             type: "jam",
             jamItem: { ...j, totalJamNumber: i },
             starPassInJam: j.starPassTrip !== null || opponentScoreSheet?.jams[i]?.starPassTrip !== null,
         }))
+        .filter(l => !l.deleted)
         .flatMap(j => 
             j.starPassInJam
             ? [{...j, type: "preStarPass"}, {...j, type: "postStarPass"}]
@@ -124,6 +125,10 @@ export const ScoreSheet = ({ gameId, teamSide, descending, showTimeouts, classNa
         sendEvent(gameId, new ScoreSheetInjurySet(lineNumber, value));
     }
 
+    const handleJamDeleted = (lineNumber: number) => {
+        sendEvent(gameId, new ScoreSheetLineDeleted(lineNumber));
+    }
+
     const handleStarPassTripChanged = (jamNumber: number, starPassTrip: number | null) => {
         sendEvent(gameId, new ScoreSheetStarPassTripSet(teamSide, jamNumber, starPassTrip));
     }
@@ -148,6 +153,7 @@ export const ScoreSheet = ({ gameId, teamSide, descending, showTimeouts, classNa
                                     <JamEditMenu 
                                         key={`jamEdit-${lineNumber}-column-${i}`} 
                                         starPassTrip={null} 
+                                        onJamDeleted={() => handleJamDeleted(line.jamItem!.totalJamNumber)}
                                         onStarPassTripChanged={passTrip => handleStarPassTripChanged(line.jamItem!.totalJamNumber, passTrip)} 
                                     />
                                     <ScoreSheetJamRow 
@@ -192,6 +198,7 @@ export const ScoreSheet = ({ gameId, teamSide, descending, showTimeouts, classNa
                                         key={`jamEdit-${lineNumber}-column-${i}`} 
                                         starPassTrip={line.jamItem!.starPassTrip} 
                                         className="row-span-2 self-stretch" 
+                                        onJamDeleted={() => handleJamDeleted(line.jamItem!.totalJamNumber)}
                                         onStarPassTripChanged={passTrip => handleStarPassTripChanged(line.jamItem!.totalJamNumber, passTrip)}
                                     />
                                     <ScoreSheetJamRow 

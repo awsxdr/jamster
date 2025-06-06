@@ -16,6 +16,7 @@ export type ScoreSheetJam = {
     starPassTrip: number | null;
     jamTotal: number;
     gameTotal: number;
+    deleted: boolean;
 }
 
 export type JamLineTrip = {

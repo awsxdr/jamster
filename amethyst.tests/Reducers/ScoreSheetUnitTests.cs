@@ -737,4 +737,128 @@ public class ScoreSheetUnitTests : ReducerUnitTest<HomeScoreSheet, ScoreSheetSta
 
         State.Jams.Select(j => j.GameTotal).Should().BeEquivalentTo([11, 17, 21, 21, 21, 40]);
     }
+
+    [Test]
+    public async Task ScoreSheetLineDeleted_WhenJamExists_MarksRowAsDeleted()
+    {
+        State = new([
+            new(1, 1, "?", "?", false, false, false, false, false, [new(4), new(4), new(3)], null, 11, 11),
+            new(1, 2, "?", "?", false, false, false, false, false, [new(4), new(2)], null, 6, 17),
+            new(1, 3, "?", "?", false, false, false, false, false, [new(2)], null, 2, 19),
+            new(1, 4, "?", "?", false, false, false, false, false, [new(0)], null, 0, 19),
+            new(1, 5, "?", "?", false, false, false, false, false, [], null, 0, 19),
+            new(1, 6, "?", "?", false, false, false, false, false, [new(4), new(4), new(4), new(4), new(3)], null, 19, 38),
+        ]);
+
+        await Subject.Handle(new ScoreSheetLineDeleted(1000, new(2)));
+
+        State.Jams[2].Should().BeOfType<DeletedScoreSheetJam>()
+            .Which.DeletedJam.Should().Be(new ScoreSheetJam(1, 3, "?", "?", false, false, false, false, false, [new(2)], null, 2, 19));
+    }
+
+    [Test]
+    public async Task ScoreSheetLineDeleted_WhenJamExists_RaisesJamNumberOffsetEvent()
+    {
+        State = new([
+            new(1, 1, "?", "?", false, false, false, false, false, [new(4), new(4), new(3)], null, 11, 11),
+            new(1, 2, "?", "?", false, false, false, false, false, [new(4), new(2)], null, 6, 17),
+            new(1, 3, "?", "?", false, false, false, false, false, [new(2)], null, 2, 19),
+            new(1, 4, "?", "?", false, false, false, false, false, [new(0)], null, 0, 19),
+            new(1, 5, "?", "?", false, false, false, false, false, [], null, 0, 19),
+            new(1, 6, "?", "?", false, false, false, false, false, [new(4), new(4), new(4), new(4), new(3)], null, 19, 38),
+        ]);
+
+        var transientEvents = await Subject.Handle(new ScoreSheetLineDeleted(1000, new(2)));
+
+        transientEvents.OfType<JamNumberOffset>().Should().ContainSingle()
+            .Which.Body.Should().Be(new JamNumberOffsetBody(1, -1));
+    }
+
+    [Test]
+    public async Task ScoreSheetLineDeleted_WhenJamDoesNotExist_DoesNotChangeState()
+    {
+        State = new([
+            new(1, 1, "?", "?", false, false, false, false, false, [new(4), new(4), new(3)], null, 11, 11),
+            new(1, 2, "?", "?", false, false, false, false, false, [new(4), new(2)], null, 6, 17),
+            new(1, 3, "?", "?", false, false, false, false, false, [new(2)], null, 2, 19),
+            new(1, 4, "?", "?", false, false, false, false, false, [new(0)], null, 0, 19),
+            new(1, 5, "?", "?", false, false, false, false, false, [], null, 0, 19),
+            new(1, 6, "?", "?", false, false, false, false, false, [new(4), new(4), new(4), new(4), new(3)], null, 19, 38),
+        ]);
+
+        var originalState = State;
+
+        await Subject.Handle(new ScoreSheetLineDeleted(1000, new(10)));
+
+        State.Should().Be(originalState);
+    }
+
+    [Test]
+    public async Task ScoreSheetLineDeleted_WhenJamExists_AndJamHasPoints_CorrectlyRecalculatesGameTotals_AndShiftsJamsInPeriod()
+    {
+        State = new([
+            new(1, 1, "?", "?", false, false, false, false, false, [new(4), new(4), new(3)], null, 11, 11),
+            new(1, 2, "?", "?", false, false, false, false, false, [new(4), new(2)], null, 6, 17),
+            new(1, 3, "?", "?", false, false, false, false, false, [new(2)], null, 2, 19),
+            new(1, 4, "?", "?", false, false, false, false, false, [new(0)], null, 0, 19),
+            new(1, 5, "?", "?", false, false, false, false, false, [], null, 0, 19),
+            new(1, 6, "?", "?", false, false, false, false, false, [new(4), new(4), new(4), new(4), new(3)], null, 19, 38),
+            new(2, 1, "?", "?", false, false, false, false, false, [new(4), new(4), new(3)], null, 11, 49),
+            new(2, 2, "?", "?", false, false, false, false, false, [new(4), new(2)], null, 6, 55),
+            new(2, 3, "?", "?", false, false, false, false, false, [new(2)], null, 2, 57),
+            new(2, 4, "?", "?", false, false, false, false, false, [new(0)], null, 0, 57),
+            new(2, 5, "?", "?", false, false, false, false, false, [], null, 0, 57),
+            new(2, 6, "?", "?", false, false, false, false, false, [new(4), new(4), new(4), new(4), new(3)], null, 19, 76),
+        ]);
+
+        await Subject.Handle(new ScoreSheetLineDeleted(1000, new(2)));
+
+        State.Jams.Where(j => j is not DeletedScoreSheetJam).Select(j => (j.Period, j.Jam, j.GameTotal)).ToArray().Should().BeEquivalentTo([
+            (1, 1, 11),
+            (1, 2, 17),
+            (1, 3, 17),
+            (1, 4, 17),
+            (1, 5, 36),
+            (2, 1, 47),
+            (2, 2, 53),
+            (2, 3, 55),
+            (2, 4, 55),
+            (2, 5, 55),
+            (2, 6, 74),
+        ]);
+    }
+
+    [Test]
+    public async Task ScoreSheetLineDeleted_WhenLineAlreadyDeleted_DeletesCorrectLine()
+    {
+        State = new([
+            new(1, 1, "?", "?", false, false, false, false, false, [new(4), new(4), new(3)], null, 11, 11),
+            new(1, 2, "?", "?", false, false, false, false, false, [new(4), new(2)], null, 6, 17),
+            new DeletedScoreSheetJam(new(1, 3, "?", "?", false, false, false, false, false, [new(2)], null, 2, 19)),
+            new(1, 3, "?", "?", false, false, false, false, false, [new(0)], null, 0, 17),
+            new(1, 4, "?", "?", false, false, false, false, false, [], null, 0, 17),
+            new(1, 5, "?", "?", false, false, false, false, false, [new(4), new(4), new(4), new(4), new(3)], null, 19, 36),
+            new(2, 1, "?", "?", false, false, false, false, false, [new(4), new(4), new(3)], null, 11, 47),
+            new(2, 2, "?", "?", false, false, false, false, false, [new(4), new(2)], null, 6, 53),
+            new(2, 3, "?", "?", false, false, false, false, false, [new(2)], null, 2, 55),
+            new(2, 4, "?", "?", false, false, false, false, false, [new(0)], null, 0, 55),
+            new(2, 5, "?", "?", false, false, false, false, false, [], null, 0, 55),
+            new(2, 6, "?", "?", false, false, false, false, false, [new(4), new(4), new(4), new(4), new(3)], null, 19, 74),
+        ]);
+
+        await Subject.Handle(new ScoreSheetLineDeleted(1000, new(8)));
+
+        State.Jams.Where(j => j is not DeletedScoreSheetJam).Select(j => (j.Period, j.Jam, j.GameTotal)).ToArray().Should().BeEquivalentTo([
+            (1, 1, 11),
+            (1, 2, 17),
+            (1, 3, 17),
+            (1, 4, 17),
+            (1, 5, 36),
+            (2, 1, 47),
+            (2, 2, 53),
+            (2, 3, 53),
+            (2, 4, 53),
+            (2, 5, 72),
+        ]);
+    }
 }

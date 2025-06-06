@@ -14,6 +14,7 @@ public class GameStage(ReducerGameContext context, ILogger<GameStage> logger)
     , IHandlesEvent<TimeoutTypeSet>
     , IHandlesEvent<PeriodEnded>
     , IHandlesEvent<PeriodFinalized>
+    , IHandlesEvent<JamNumberOffset>
     , IDependsOnState<PeriodClockState>
     , IDependsOnState<RulesState>
     , IDependsOnState<TimeoutTypeState>
@@ -210,6 +211,18 @@ public class GameStage(ReducerGameContext context, ILogger<GameStage> logger)
 
         if (SetStateIfDifferent(newState))
             logger.LogDebug("Setting game state to {state} after period finalized", newState);
+
+        return [];
+    }
+
+    public IEnumerable<Event> Handle(JamNumberOffset @event)
+    {
+        var state = GetState();
+
+        if (@event.Body.Period != state.PeriodNumber)
+            return [];
+
+        SetState(state with { JamNumber = Math.Max(1, state.JamNumber + @event.Body.Offset ) });
 
         return [];
     }

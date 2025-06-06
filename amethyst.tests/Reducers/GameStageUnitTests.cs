@@ -233,4 +233,18 @@ public class GameStageUnitTests : ReducerUnitTest<GameStage, GameStageState>
 
         State.Stage.Should().Be(expectedStage);
     }
+
+    [TestCase(1, 10, 1, -5, 5)]
+    [TestCase(1, 10, 1, 5, 15)]
+    [TestCase(2, 10, 1, 5, 10)]
+    [TestCase(1, 3, 1, -5, 1)]
+    [TestCase(1, 10, 2, 5, 10)]
+    public async Task JamNumberOffset_AdjustsJamNumberAccordingly(int currentPeriod, int currentJam, int offsetPeriod, int offset, int expectedJam)
+    {
+        State = new(Stage.Lineup, currentPeriod, currentJam, currentJam + (currentPeriod - 1) * 20, false);
+
+        await Subject.Handle(new JamNumberOffset(0, new(offsetPeriod, offset)));
+
+        State.JamNumber.Should().Be(expectedJam);
+    }
 }

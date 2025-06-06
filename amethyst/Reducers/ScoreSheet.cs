@@ -25,6 +25,7 @@ public abstract class ScoreSheet(TeamSide teamSide, ReducerGameContext context)
     , IHandlesEvent<ScoreSheetInjurySet>
     , IHandlesEvent<ScoreSheetNoInitialSet>
     , IHandlesEvent<ScoreSheetStarPassTripSet>
+    , IHandlesEvent<ScoreSheetLineDeleted>
     , IDependsOnState<JamLineupState>
     , IDependsOnState<GameStageState>
     , IDependsOnState<TeamJamStatsState>
@@ -249,6 +250,26 @@ public abstract class ScoreSheet(TeamSide teamSide, ReducerGameContext context)
         return [];
     });
 
+    public IEnumerable<Event> Handle(ScoreSheetLineDeleted @event)
+    {
+        var state = GetState();
+
+        if (@event.Body.TotalJamNumber > state.Jams.Length)
+            return [];
+
+        var jam = state.Jams[@event.Body.TotalJamNumber];
+
+        SetState(new(state.Jams.Select((line, totalJamNumber) =>
+            line is DeletedScoreSheetJam deleted ? deleted
+                : totalJamNumber == @event.Body.TotalJamNumber ? new DeletedScoreSheetJam(line)
+                : totalJamNumber > @event.Body.TotalJamNumber && line.Period == jam.Period ? line with { Jam = line.Jam - 1, GameTotal = line.GameTotal - jam.JamTotal }
+                : totalJamNumber > @event.Body.TotalJamNumber ? line with { GameTotal = line.GameTotal - jam.JamTotal }
+                : line
+            ).ToArray()));
+
+        return [new JamNumberOffset(@event.Tick, new(jam.Period, -1))];
+    }
+
     private void ModifyLatestJam(Func<ScoreSheetJam, ScoreSheetJam> mapper)
     {
         var state = GetState();
@@ -298,7 +319,7 @@ public sealed record ScoreSheetState(ScoreSheetJam[] Jams)
     public override int GetHashCode() => Jams.GetHashCode();
 }
 
-public sealed record ScoreSheetJam(
+public record ScoreSheetJam(
     int Period,
     int Jam,
     string JammerNumber,
@@ -314,7 +335,9 @@ public sealed record ScoreSheetJam(
     int GameTotal
 )
 {
-    public bool Equals(ScoreSheetJam? other) =>
+    public virtual bool Deleted => false;
+
+    public virtual bool Equals(ScoreSheetJam? other) =>
         other is not null
         && other.Period.Equals(Period)
         && other.Jam.Equals(Jam)
@@ -349,6 +372,12 @@ public sealed record ScoreSheetJam(
         return hashCode.ToHashCode();
     }
 }
+
+public sealed record DeletedScoreSheetJam(ScoreSheetJam DeletedJam) : ScoreSheetJam(DeletedJam)
+{
+    public override bool Deleted => true;
+}
+
 public record JamLineTrip(int? Score);
 
 public sealed class HomeScoreSheet(ReducerGameContext gameContext)

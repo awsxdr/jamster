@@ -45,6 +45,12 @@ export class ScoreSheetInjurySet extends EventWithBody {
 
 export class ScoreSheetStarPassTripSet extends EventWithBody {
     constructor(teamSide: TeamSide, jamNumber: number, starPassTrip: number | null) {
-        super("ScoreSheetStarPassTripSet", { teamSide, totalJamNumber: jamNumber, starPassTrip })
+        super("ScoreSheetStarPassTripSet", { teamSide, totalJamNumber: jamNumber, starPassTrip });
+    }
+}
+
+export class ScoreSheetLineDeleted extends EventWithBody {
+    constructor(jamNumber: number) {
+        super("ScoreSheetLineDeleted", { totalJamNumber: jamNumber });
     }
 }

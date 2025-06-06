@@ -13,3 +13,6 @@ public sealed class JamExpired(Guid7 id): Event(id), IReplaceOnDelete<JamAutoExp
 }
 
 public sealed class JamAutoExpiryDisabled(Guid7 id) : Event(id);
+
+public sealed class JamNumberOffset(Guid7 id, JamNumberOffsetBody body) : Event<JamNumberOffsetBody>(id, body);
+public sealed record JamNumberOffsetBody(int Period, int Offset);
