@@ -18,7 +18,7 @@ export const TeamScore = ({ side, textClassName }: TeamScoreProps) => {
 
     return (
         <ScoreboardComponent className={cn("grow-[8] relative p-1")}>
-            <div className="absolute left-0 right-0 top-0 md:top-2 lg:top-3 xl:top-2 flex justify-center">
+            <div className="absolute left-0 right-0 top-0 md:top-2 lg:top-3 2xl:top-2 flex justify-center">
                 { lead && (
                     <>
                         { lost 
@@ -36,7 +36,7 @@ export const TeamScore = ({ side, textClassName }: TeamScoreProps) => {
                 scale={1.4}
                 className={cn(
                     "font-bold flex justify-center items-center h-full overflow-hidden",
-                    "pt-10 leading-none",
+                    "pt-4 md:pt-6 lg:pt-8 leading-none",
                     textClassName)} 
             />
         </ScoreboardComponent>

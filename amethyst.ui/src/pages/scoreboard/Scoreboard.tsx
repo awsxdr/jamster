@@ -14,7 +14,7 @@ import { useWakeLock } from '@/hooks/WakeLock';
 import languages from '@/i18n';
 import { ScaledText } from '@/components/ScaledText';
 
-export const SCOREBOARD_GAP_CLASS_NAME = "gap-1 md:gap-2 lg:gap-3 xl:gap-5";
+export const SCOREBOARD_GAP_CLASS_NAME = "gap-1 md:gap-2 lg:gap-3 2xl:gap-5";
 export const SCOREBOARD_TEXT_PADDING_CLASS_NAME = "p-1 md:p-2 lg:p-3 xl:p-5";
 
 type ScoreboardContextProps = {
