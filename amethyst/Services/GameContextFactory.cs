@@ -4,7 +4,11 @@ using System.Diagnostics;
 namespace amethyst.Services;
 
 using System.Collections.Immutable;
+using amethyst.Domain;
+using amethyst.Events;
+using CommandLine;
 using DataStores;
+using Microsoft.Extensions.Logging;
 using Reducers;
 
 public interface IGameContextFactory : IDisposable
@@ -12,6 +16,7 @@ public interface IGameContextFactory : IDisposable
     GameContext GetGame(GameInfo gameInfo);
     void UnloadGame(Guid gameId);
     Task ReloadGame(GameInfo gameInfo);
+    Task ApplyKeyFrame(GameInfo gameIndo, Tick tick, KeyFrame keyFrame);
 }
 
 [Singleton]
@@ -20,6 +25,8 @@ public class GameContextFactory(
     IEnumerable<ReducerFactory> reducerFactories,
     GameClock.Factory gameClockFactory,
     IGameDataStoreFactory gameStoreFactory,
+    IKeyFrameService.Factory keyFrameServiceFactory,
+    KeyFrameSettings keyFrameSettings,
     ILogger<GameContextFactory> logger) 
     : IGameContextFactory
 {
@@ -57,6 +64,31 @@ public class GameContextFactory(
         stateStore.ForceNotify();
     }
 
+    public async Task ApplyKeyFrame(GameInfo gameInfo, Tick tick, KeyFrame keyFrame)
+    {
+        if (!_gameContexts.ContainsKey(gameInfo.Id) || !_gameContexts[gameInfo.Id].IsValueCreated)
+            return;
+
+        var context = _gameContexts[gameInfo.Id].Value;
+        var stateStore = context.StateStore;
+        stateStore.DisableNotifications();
+        context.GameClock.Stop();
+        stateStore.LoadDefaultStates(context.Reducers);
+
+        var game = await gameStoreFactory.GetDataStore(IGameDiscoveryService.GetGameFileName(gameInfo));
+        stateStore.ApplyKeyFrame(context.Reducers, keyFrame);
+        context.KeyFrameService.ClearFramesAfter(tick);
+
+        var gameDataStore = await gameStoreFactory.GetDataStore(IGameDiscoveryService.GetGameFileName(gameInfo));
+        var subsequentEvents = gameDataStore.GetEvents().Where(e => e.Id.Tick > tick).ToArray();
+
+        await stateStore.ApplyEvents(context.Reducers, subsequentEvents);
+
+        stateStore.EnableNotifications();
+        context.GameClock.Run();
+        stateStore.ForceNotify();
+    }
+
     private GameContext LoadGame(GameInfo gameInfo)
     {
         logger.LogInformation("Loading game state for {gameName} ({gameId})", gameInfo.Name, gameInfo.Id);
@@ -68,6 +100,19 @@ public class GameContextFactory(
         var events = game.GetEvents().ToArray();
 
         var stateStore = stateStoreFactory();
+        var keyFrameService = keyFrameServiceFactory(stateStore);
+
+        if (keyFrameSettings.Enabled)
+        {
+            stateStore.EventHandled += (_, e) =>
+            {
+                if (e.Index % keyFrameSettings.KeyFrameFrequency == 0)
+                {
+                    keyFrameService.CaptureKeyFrameAtTick(e.Tick);
+                }
+            };
+        }
+
         var reducerGameContext = new ReducerGameContext(gameInfo, stateStore);
         var reducers = 
             reducerFactories.Select(f => f(reducerGameContext))
@@ -83,7 +128,7 @@ public class GameContextFactory(
         loadTimer.Stop();
         logger.LogInformation("Loaded game in {loadTime}ms", loadTimer.ElapsedMilliseconds);
 
-        return new GameContext(gameInfo, reducers, stateStore, gameClock);
+        return new GameContext(gameInfo, reducers, stateStore, gameClock, keyFrameService);
     }
 
     public void Dispose()
@@ -102,7 +147,8 @@ public record GameContext(
     GameInfo GameInfo,
     IImmutableList<IReducer> Reducers,
     IGameStateStore StateStore,
-    IGameClock GameClock) : IDisposable
+    IGameClock GameClock,
+    IKeyFrameService KeyFrameService) : IDisposable
 {
     public void Dispose()
     {

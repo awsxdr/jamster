@@ -48,7 +48,7 @@ export type EventStreamEvent = {
 
 export const useEvents: () => EventsApi = () => {
 
-    const buildQuery = (values: StringMap<any>) =>
+    const buildQuery = (values: StringMap<unknown>) =>
         Object.keys(values).filter(k => values[k]).map(k => `${k}=${values[k]}`).join("&");
 
     const getEvents = async (gameId: string, options: { skip?: number, take?: number, order?: SortOrder }) => {
@@ -99,7 +99,7 @@ export const useEvents: () => EventsApi = () => {
     }
 
     const deleteEvent = async (gameId: string, eventId: string) => {
-        await fetch(`${API_URL}/api/Games/${gameId}/events/${eventId}`, {
+        await fetch(`${API_URL}/api/Games/${gameId}/events/${eventId}?deleteFollowing=true`, {
             method: 'DELETE',
         });
     }

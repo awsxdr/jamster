@@ -26,7 +26,8 @@ public class EventBusUnitTests : UnitTest<EventBus>
                 _game,
                 [],
                 GetMock<IGameStateStore>().Object,
-                GetMock<IGameClock>().Object));
+                GetMock<IGameClock>().Object, 
+                GetMock<IKeyFrameService>().Object));
 
         GetMock<IGameDataStoreFactory>()
             .Setup(mock => mock.GetDataStore($"TestGame_{_game.Id}"))

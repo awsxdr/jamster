@@ -5,6 +5,7 @@ using amethyst.Events;
 using amethyst.Reducers;
 using amethyst.Services;
 using amethyst.tests.EventHandling;
+using amethyst.tests.GameGeneration;
 using Autofac;
 using Autofac.Extras.Moq;
 using FluentAssertions;
@@ -35,6 +36,8 @@ public class EventBusIntegrationTests
             builder.RegisterType<GameContextFactory>().AsImplementedInterfaces().SingleInstance();
             builder.RegisterType<EventBus>().As<IEventBus>().SingleInstance();
             builder.RegisterType<GameClock>().As<IGameClock>().SingleInstance();
+            builder.RegisterType<KeyFrameService>().As<IKeyFrameService>();
+            builder.RegisterInstance(new KeyFrameSettings(true, 1));
         });
 
         _mocker.Mock<IGameDataStore>()
@@ -132,7 +135,6 @@ public class EventBusIntegrationTests
         await AddEvent(new TimeoutTypeSet(98000, new(TimeoutType.Official, null)));
 
         var gameStageState = _stateStore.GetState<GameStageState>();
-        var states = GetAllStates(game);
 
         var jamStartedEvent = await AddEvent(new JamStarted(110_000));
         Thread.Sleep(1000);
@@ -145,15 +147,35 @@ public class EventBusIntegrationTests
         Thread.Sleep(100);
 
         var gameStageStateAfterUndo = _stateStore.GetState<GameStageState>();
-        var statesAfterUndo = GetAllStates(game);
 
-        //states.Should().BeEquivalentTo(statesAfterUndo);
         gameStageStateAfterUndo.Should().BeEquivalentTo(gameStageState);
 
         return;
 
         Task<Event> AddEvent<TEvent>(TEvent @event) where TEvent : Event =>
             Subject.AddEvent(game, @event);
+    }
+
+    [Test]
+    public async Task RemoveEvent_()
+    {
+        _reducerFactories = typeof(Reducer<>).Assembly.GetExportedTypes()
+            .Where(type => !type.IsAbstract && type.IsAssignableTo(typeof(IReducer)))
+            .Select(type => (ReducerFactory)(_ => (IReducer)_mocker.Create(type)))
+            .ToImmutableList();
+
+        var game = new GameInfo(Guid.NewGuid(), "Test game");
+        var generatedGame = GameGenerator.GenerateRandom();
+        var simulator = new GameSimulator(generatedGame);
+        var simulatorEvents = simulator.SimulateGame().Where(e => e is not ValidateStateFakeEvent).ToArray();
+
+        foreach (var @event in simulatorEvents)
+        {
+            await Subject.AddEvent(game, @event);
+        }
+
+        var undoEvent = (Event) _events.OfType<IShownInUndo>().Last();
+        await Subject.RemoveEvent(game, undoEvent.Id);
     }
 
     private object[] GetAllStates(GameInfo game) =>

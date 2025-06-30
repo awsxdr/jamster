@@ -49,7 +49,7 @@ public class ConfigurationServiceUnitTests : UnitTest<ConfigurationService>
 
         GetMock<IGameContextFactory>()
             .Setup(mock => mock.GetGame(gameInfo))
-            .Returns(() => new GameContext(gameInfo, [], GetMock<IGameStateStore>().Object, GetMock<IGameClock>().Object));
+            .Returns(() => new GameContext(gameInfo, [], GetMock<IGameStateStore>().Object, GetMock<IGameClock>().Object, GetMock<IKeyFrameService>().Object));
 
         GetMock<IGameStateStore>()
             .Setup(mock => mock.GetState<ConfigurationState>())
@@ -88,7 +88,7 @@ public class ConfigurationServiceUnitTests : UnitTest<ConfigurationService>
 
         GetMock<IGameContextFactory>()
             .Setup(mock => mock.GetGame(gameInfo))
-            .Returns(() => new GameContext(gameInfo, [], GetMock<IGameStateStore>().Object, GetMock<IGameClock>().Object));
+            .Returns(() => new GameContext(gameInfo, [], GetMock<IGameStateStore>().Object, GetMock<IGameClock>().Object, GetMock<IKeyFrameService>().Object));
 
         GetMock<IGameStateStore>()
             .Setup(mock => mock.GetState<ConfigurationState>())
@@ -172,7 +172,7 @@ public class ConfigurationServiceUnitTests : UnitTest<ConfigurationService>
 
         GetMock<IGameContextFactory>()
             .Setup(mock => mock.GetGame(gameInfo))
-            .Returns(() => new GameContext(gameInfo, [], GetMock<IGameStateStore>().Object, GetMock<IGameClock>().Object));
+            .Returns(() => new GameContext(gameInfo, [], GetMock<IGameStateStore>().Object, GetMock<IGameClock>().Object, GetMock<IKeyFrameService>().Object));
 
         var configuration = new TestConfiguration { Test = "State" };
 

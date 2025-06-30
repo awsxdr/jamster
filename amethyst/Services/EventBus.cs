@@ -4,6 +4,7 @@ using amethyst.Domain;
 using amethyst.Events;
 using amethyst.Reducers;
 using DotNext.Threading;
+using Microsoft.Extensions.Logging;
 
 namespace amethyst.Services;
 
@@ -13,7 +14,8 @@ public interface IEventBus
     Task<Event> AddEvent(GameInfo game, Event @event);
     Task AddEventWithoutPersisting(GameInfo game, Event @event);
     Task<Result<Event>> MoveEvent(GameInfo game, Event @event, Tick newTick);
-    Task<Result> RemoveEvent(GameInfo game, Guid eventId);
+    Task<Result> RemoveEvent(GameInfo game, Guid7 eventId);
+    Task<Result> RemoveEventsStartingAt(GameInfo game, Guid7 startEventId);
 }
 
 [Singleton]
@@ -98,14 +100,40 @@ public class EventBus(
                 });
     }
 
-    public async Task<Result> RemoveEvent(GameInfo game, Guid eventId)
+    public async Task<Result> RemoveEvent(GameInfo game, Guid7 eventId)
     {
         using var @lock = await AcquireLock(game.Id);
 
         return await RemoveEventFromDatabase(game, eventId)
-            .Then(() =>
+            .Then(async () =>
             {
-                contextFactory.ReloadGame(game);
+                var gameContext = contextFactory.GetGame(game);
+                var nearestKeyFrameMaybe = gameContext.KeyFrameService.GetKeyFrameAtOrBefore(eventId.Tick);
+
+                if (nearestKeyFrameMaybe is Some<KeyFrame> nearestKeyFrame)
+                    await contextFactory.ApplyKeyFrame(game, eventId.Tick, nearestKeyFrame.Value);
+                else
+                    await contextFactory.ReloadGame(game);
+
+                return Result.Succeed();
+            });
+    }
+
+    public async Task<Result> RemoveEventsStartingAt(GameInfo game, Guid7 startEventId)
+    {
+        using var @lock = await AcquireLock(game.Id);
+
+        return await RemoveEventsFromDatabaseStartingAt(game, startEventId)
+            .Then(async () =>
+            {
+                var gameContext = contextFactory.GetGame(game);
+                var nearestKeyFrameMaybe = gameContext.KeyFrameService.GetKeyFrameAtOrBefore(startEventId.Tick);
+
+                if (nearestKeyFrameMaybe is Some<KeyFrame> nearestKeyFrame)
+                    await contextFactory.ApplyKeyFrame(game, startEventId.Tick, nearestKeyFrame.Value);
+                else
+                    await contextFactory.ReloadGame(game);
+
                 return Result.Succeed();
             });
     }
@@ -117,46 +145,78 @@ public class EventBus(
         return await eventLock.AcquireLockAsync();
     }
 
-    private async Task<Result<Guid>> PersistEventToDatabase(GameInfo game, Event @event)
-    {
-        var databaseName = IGameDiscoveryService.GetGameFileName(game);
-
-        try
-        {
-            var dataStore = await gameStoreFactory.GetDataStore(databaseName);
-            var eventId = dataStore.AddEvent(@event);
-            return Result.Succeed(eventId);
-        }
-        catch (Exception ex)
-        {
-            logger.LogCritical(ex, "Unable to write event {eventType} to game database {databaseName}. Event has been dropped.", @event.GetType().Name, databaseName);
-            return Result<Guid>.Fail<EventPersistenceFailedError>();
-        }
-    }
-
-    private async Task<Result> RemoveEventFromDatabase(GameInfo game, Guid eventId)
-    {
-        var databaseName = IGameDiscoveryService.GetGameFileName(game);
-
-        try
-        {
-            var dataStore = await gameStoreFactory.GetDataStore(databaseName);
-            return dataStore.GetEvent(eventId).Then(@event =>
+    private Task<Result<Guid>> PersistEventToDatabase(GameInfo game, Event @event) =>
+        WithDataStore(game,
+            dataStore =>
             {
-                if (@event is IReplaceOnDelete replace)
-                {
-                    var newEvent = replace.GetDeletionReplacement();
-                    dataStore.AddEvent(newEvent);
-                }
-
-                dataStore.DeleteEvent(eventId);
-                return Result.Succeed();
+                var eventId = dataStore.AddEvent(@event);
+                return Result.Succeed(eventId).ToTask();
+            },
+            ex =>
+            {
+                logger.LogCritical(ex, "Unable to write event {eventType} to game database for game {gameId}. Event has been dropped.", @event.GetType().Name, game.Id);
+                return Result<Guid>.Fail<EventPersistenceFailedError>();
             });
+
+    private Task<Result> RemoveEventFromDatabase(GameInfo game, Guid eventId) =>
+        WithDataStore(game,
+            dataStore =>
+                dataStore.GetEvent(eventId).Then(@event =>
+                {
+                    if (@event is IReplaceOnDelete replace)
+                    {
+                        var newEvent = replace.GetDeletionReplacement();
+                        dataStore.AddEvent(newEvent);
+                    }
+
+                    dataStore.DeleteEvent(eventId);
+                    return Result.Succeed();
+                }).ToTask(),
+            ex =>
+            {
+                logger.LogCritical(ex, "Unable to delete event {eventId} from game database for game {gameId}.", eventId, game.Id);
+                return Result.Fail<EventDeletionFailedError>();
+            });
+
+    private Task<Result> RemoveEventsFromDatabaseStartingAt(GameInfo game, Guid7 startEventId) =>
+        WithDataStore(game,
+            dataStore =>
+            {
+                var eventsAfter = dataStore.GetEvents().Where(e => e.Id.Tick > startEventId.Tick);
+                foreach(var @event in eventsAfter)
+                    dataStore.DeleteEvent(@event.Id);
+
+                return dataStore.GetEvent(startEventId).Then(@event =>
+                {
+                    if (@event is IReplaceOnDelete replace)
+                    {
+                        var newEvent = replace.GetDeletionReplacement();
+                        dataStore.AddEvent(newEvent);
+                    }
+
+                    dataStore.DeleteEvent(startEventId);
+                    return Result.Succeed();
+                }).ToTask();
+            },
+            ex =>
+            {
+                logger.LogCritical(ex, "Unable to delete events starting at {eventId} from game database for game {gameId}.", startEventId, game.Id);
+                return Result.Fail<EventDeletionFailedError>();
+            });
+
+    private async Task<TResult> WithDataStore<TResult>(GameInfo game, Func<IGameDataStore, Task<TResult>> action, Func<Exception, TResult> onFailure)
+    {
+        var databaseName = IGameDiscoveryService.GetGameFileName(game);
+
+        try
+        {
+            var dataStore = await gameStoreFactory.GetDataStore(databaseName);
+
+            return await action(dataStore);
         }
         catch (Exception ex)
         {
-            logger.LogCritical(ex, "Unable to delete event {eventId} from game database {databaseName}.", eventId, databaseName);
-            return Result.Fail<EventDeletionFailedError>();
+            return onFailure(ex);
         }
     }
 
