@@ -5,7 +5,6 @@ using amethyst.Events;
 using amethyst.Reducers;
 using amethyst.Services;
 using amethyst.tests.EventHandling;
-using amethyst.tests.GameGeneration;
 using Autofac;
 using Autofac.Extras.Moq;
 using FluentAssertions;
@@ -24,6 +23,7 @@ public class EventBusIntegrationTests
 
     private Lazy<IEventBus> _subject;
     private IEventBus Subject => _subject.Value;
+    private Tick _tick = 0;
 
     [SetUp]
     public void Setup()
@@ -60,6 +60,10 @@ public class EventBusIntegrationTests
         _mocker.Mock<IGameDataStoreFactory>()
             .Setup(mock => mock.GetDataStore(It.IsAny<string>()))
             .ReturnsAsync(() => _mocker.Mock<IGameDataStore>().Object);
+
+        _mocker.Mock<ISystemTime>()
+            .Setup(mock => mock.GetTick())
+            .Returns(() => _tick);
 
         _stateStore = _mocker.Create<IGameStateStore>();
         _reducerFactories = [];
@@ -136,16 +140,20 @@ public class EventBusIntegrationTests
 
         var gameStageState = _stateStore.GetState<GameStageState>();
 
+        _tick = 110_000;
         var jamStartedEvent = await AddEvent(new JamStarted(110_000));
-        Thread.Sleep(1000);
+        Thread.Sleep(100);
+
+        _tick = 111_000;
         var jamEndedEvent = await AddEvent(new JamEnded(111_000));
-        Thread.Sleep(1000);
+        Thread.Sleep(100);
 
         await Subject.RemoveEvent(game, jamEndedEvent.Id);
         Thread.Sleep(100);
         await Subject.RemoveEvent(game, jamStartedEvent.Id);
         Thread.Sleep(100);
 
+        _tick = 112_000;
         var gameStageStateAfterUndo = _stateStore.GetState<GameStageState>();
 
         gameStageStateAfterUndo.Should().BeEquivalentTo(gameStageState);
@@ -155,38 +163,6 @@ public class EventBusIntegrationTests
         Task<Event> AddEvent<TEvent>(TEvent @event) where TEvent : Event =>
             Subject.AddEvent(game, @event);
     }
-
-    [Test]
-    public async Task RemoveEvent_()
-    {
-        _reducerFactories = typeof(Reducer<>).Assembly.GetExportedTypes()
-            .Where(type => !type.IsAbstract && type.IsAssignableTo(typeof(IReducer)))
-            .Select(type => (ReducerFactory)(_ => (IReducer)_mocker.Create(type)))
-            .ToImmutableList();
-
-        var game = new GameInfo(Guid.NewGuid(), "Test game");
-        var generatedGame = GameGenerator.GenerateRandom();
-        var simulator = new GameSimulator(generatedGame);
-        var simulatorEvents = simulator.SimulateGame().Where(e => e is not ValidateStateFakeEvent).ToArray();
-
-        foreach (var @event in simulatorEvents)
-        {
-            await Subject.AddEvent(game, @event);
-        }
-
-        var undoEvent = (Event) _events.OfType<IShownInUndo>().Last();
-        await Subject.RemoveEvent(game, undoEvent.Id);
-    }
-
-    private object[] GetAllStates(GameInfo game) =>
-        _reducerFactories
-            .Select(r => r(new ReducerGameContext(game, _stateStore)))
-            .Select(r =>
-                r.GetStateKey() is Some<string> key
-                    ? _stateStore.GetKeyedState(key.Value, r.StateType)
-                    : _stateStore.GetState(r.StateType)
-            )
-            .ToArray();
 
     // ReSharper disable once ClassNeverInstantiated.Local
     private sealed class ComplexStateTestReducer(ReducerGameContext context) 

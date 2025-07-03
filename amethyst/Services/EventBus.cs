@@ -108,7 +108,7 @@ public class EventBus(
             .Then(async () =>
             {
                 var gameContext = contextFactory.GetGame(game);
-                var nearestKeyFrameMaybe = gameContext.KeyFrameService.GetKeyFrameAtOrBefore(eventId.Tick);
+                var nearestKeyFrameMaybe = gameContext.KeyFrameService.GetKeyFrameBefore(eventId.Tick);
 
                 if (nearestKeyFrameMaybe is Some<KeyFrame> nearestKeyFrame)
                     await contextFactory.ApplyKeyFrame(game, eventId.Tick, nearestKeyFrame.Value);
@@ -127,7 +127,7 @@ public class EventBus(
             .Then(async () =>
             {
                 var gameContext = contextFactory.GetGame(game);
-                var nearestKeyFrameMaybe = gameContext.KeyFrameService.GetKeyFrameAtOrBefore(startEventId.Tick);
+                var nearestKeyFrameMaybe = gameContext.KeyFrameService.GetKeyFrameBefore(startEventId.Tick);
 
                 if (nearestKeyFrameMaybe is Some<KeyFrame> nearestKeyFrame)
                     await contextFactory.ApplyKeyFrame(game, startEventId.Tick, nearestKeyFrame.Value);

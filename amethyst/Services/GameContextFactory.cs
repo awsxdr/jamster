@@ -80,7 +80,7 @@ public class GameContextFactory(
         context.KeyFrameService.ClearFramesAfter(tick);
 
         var gameDataStore = await gameStoreFactory.GetDataStore(IGameDiscoveryService.GetGameFileName(gameInfo));
-        var subsequentEvents = gameDataStore.GetEvents().Where(e => e.Id.Tick > tick).ToArray();
+        var subsequentEvents = gameDataStore.GetEvents().Where(e => e.Id.Tick >= tick).ToArray();
 
         await stateStore.ApplyEvents(context.Reducers, subsequentEvents);
 

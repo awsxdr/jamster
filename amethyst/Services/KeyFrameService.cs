@@ -10,7 +10,7 @@ public interface IKeyFrameService
 
     void CaptureKeyFrame();
     void CaptureKeyFrameAtTick(Tick tick);
-    Option<KeyFrame> GetKeyFrameAtOrBefore(Tick tick);
+    Option<KeyFrame> GetKeyFrameBefore(Tick tick);
     void ClearFramesAfter(Tick tick);
 }
 
@@ -26,6 +26,9 @@ public class KeyFrameService(IGameStateStore stateStore, ISystemTime systemTime,
 
     public void CaptureKeyFrameAtTick(Tick tick)
     {
+        if (_frames.ContainsKey(tick))
+            return;
+
         KeyFrame frame = stateStore.GetAllStates();
 
         logger.LogDebug("Capturing key frame at {tick}", tick);
@@ -33,9 +36,9 @@ public class KeyFrameService(IGameStateStore stateStore, ISystemTime systemTime,
         _frames[tick] = frame;
     }
 
-    public Option<KeyFrame> GetKeyFrameAtOrBefore(Tick tick)
+    public Option<KeyFrame> GetKeyFrameBefore(Tick tick)
     {
-        var key = _frames.Keys.Where(k => k <= tick).Order().LastOrNone();
+        var key = _frames.Keys.Where(k => k < tick).Order().LastOrNone();
 
         if (!key.HasValue)
             return Option.None<KeyFrame>();
@@ -45,7 +48,7 @@ public class KeyFrameService(IGameStateStore stateStore, ISystemTime systemTime,
 
     public void ClearFramesAfter(Tick tick)
     {
-        var keysToRemove = _frames.Keys.Where(k => k > tick).ToArray();
+        var keysToRemove = _frames.Keys.Where(k => k >= tick).ToArray();
 
         foreach (var key in keysToRemove)
             _frames.Remove(key, out _);

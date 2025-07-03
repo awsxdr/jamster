@@ -16,5 +16,8 @@ public sealed class KeyFrame(IDictionary<string, object> states) : IReadOnlyDict
     public bool TryGetValue(string key, [MaybeNullWhen(false)] out object value) => states.TryGetValue(key, out value);
     public object this[string key] => states[key];
 
-    public static implicit operator KeyFrame(ReadOnlyDictionary<string, object> states) => new(states);
+    public static implicit operator KeyFrame(ReadOnlyDictionary<string, object> states) => new(CloneStates(states));
+
+    private static IDictionary<string, object> CloneStates(IDictionary<string, object> states) =>
+        states.Select(x => x).ToDictionary(k => k.Key, v => v.Value);
 }
