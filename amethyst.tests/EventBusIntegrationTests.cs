@@ -23,6 +23,7 @@ public class EventBusIntegrationTests
 
     private Lazy<IEventBus> _subject;
     private IEventBus Subject => _subject.Value;
+    private Tick _tick = 0;
 
     [SetUp]
     public void Setup()
@@ -35,6 +36,8 @@ public class EventBusIntegrationTests
             builder.RegisterType<GameContextFactory>().AsImplementedInterfaces().SingleInstance();
             builder.RegisterType<EventBus>().As<IEventBus>().SingleInstance();
             builder.RegisterType<GameClock>().As<IGameClock>().SingleInstance();
+            builder.RegisterType<KeyFrameService>().As<IKeyFrameService>();
+            builder.RegisterInstance(new KeyFrameSettings(true, 1));
         });
 
         _mocker.Mock<IGameDataStore>()
@@ -57,6 +60,10 @@ public class EventBusIntegrationTests
         _mocker.Mock<IGameDataStoreFactory>()
             .Setup(mock => mock.GetDataStore(It.IsAny<string>()))
             .ReturnsAsync(() => _mocker.Mock<IGameDataStore>().Object);
+
+        _mocker.Mock<ISystemTime>()
+            .Setup(mock => mock.GetTick())
+            .Returns(() => _tick);
 
         _stateStore = _mocker.Create<IGameStateStore>();
         _reducerFactories = [];
@@ -132,22 +139,23 @@ public class EventBusIntegrationTests
         await AddEvent(new TimeoutTypeSet(98000, new(TimeoutType.Official, null)));
 
         var gameStageState = _stateStore.GetState<GameStageState>();
-        var states = GetAllStates(game);
 
+        _tick = 110_000;
         var jamStartedEvent = await AddEvent(new JamStarted(110_000));
-        Thread.Sleep(1000);
+        Thread.Sleep(100);
+
+        _tick = 111_000;
         var jamEndedEvent = await AddEvent(new JamEnded(111_000));
-        Thread.Sleep(1000);
+        Thread.Sleep(100);
 
         await Subject.RemoveEvent(game, jamEndedEvent.Id);
         Thread.Sleep(100);
         await Subject.RemoveEvent(game, jamStartedEvent.Id);
         Thread.Sleep(100);
 
+        _tick = 112_000;
         var gameStageStateAfterUndo = _stateStore.GetState<GameStageState>();
-        var statesAfterUndo = GetAllStates(game);
 
-        //states.Should().BeEquivalentTo(statesAfterUndo);
         gameStageStateAfterUndo.Should().BeEquivalentTo(gameStageState);
 
         return;
@@ -155,16 +163,6 @@ public class EventBusIntegrationTests
         Task<Event> AddEvent<TEvent>(TEvent @event) where TEvent : Event =>
             Subject.AddEvent(game, @event);
     }
-
-    private object[] GetAllStates(GameInfo game) =>
-        _reducerFactories
-            .Select(r => r(new ReducerGameContext(game, _stateStore)))
-            .Select(r =>
-                r.GetStateKey() is Some<string> key
-                    ? _stateStore.GetKeyedState(key.Value, r.StateType)
-                    : _stateStore.GetState(r.StateType)
-            )
-            .ToArray();
 
     // ReSharper disable once ClassNeverInstantiated.Local
     private sealed class ComplexStateTestReducer(ReducerGameContext context) 

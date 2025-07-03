@@ -155,7 +155,7 @@ export const MainControls = ({ gameId, disabled }: MainControlsProps) => {
                         shortcutKey="undo"
                         description={undoDescription}
                         className={buttonClass}
-                        variant={undoButtonEnabled ? "default" : "secondary"}
+                        variant="secondary"
                         disabled={disabled || !undoButtonEnabled}
                         onClick={handleUndo}
                     >

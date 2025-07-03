@@ -81,6 +81,8 @@ builder.Services.AddSpaStaticFiles(config =>
     config.RootPath = Path.Combine(RunningEnvironment.RootPath, "wwwroot");
 });
 
+builder.Services.AddSingleton(new KeyFrameSettings(commandLineOptions.KeyFrameFrequency > 0, commandLineOptions.KeyFrameFrequency));
+
 var databasesPath = Path.Combine(RunningEnvironment.RootPath, "db");
 Directory.CreateDirectory(databasesPath);
 Directory.CreateDirectory(Path.Combine(databasesPath, GameDataStore.GamesFolderName));
@@ -357,6 +359,9 @@ namespace amethyst
 
         [Option("file-log", Required = false, Default = MicrosoftLogLevel.Warning, HelpText = "Set the logging level for file output. Options are 'Trace', 'Debug', 'Information', 'Warning', 'Error', 'Critical', and 'None'.")]
         public MicrosoftLogLevel FileLoggingLevel { get; set; }
+
+        [Option("key-frequency", Required = false, Default = (ushort)5, HelpText = "Set how often keyframes are captured; the lower the number, the more often frames are captured. More keyframes will make undo and timeline changes quicker but will require more memory. Set to 0 to disable keyframes.")]
+        public ushort KeyFrameFrequency { get; set; }
     }
     // ReSharper restore UnusedAutoPropertyAccessor.Global
 }

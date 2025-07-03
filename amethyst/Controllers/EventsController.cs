@@ -84,12 +84,15 @@ public class EventsController(
     }
 
     [HttpDelete("{eventId:guid}")]
-    public async Task<IActionResult> DeleteEvent(Guid gameId, Guid eventId)
+    public async Task<IActionResult> DeleteEvent(Guid gameId, Guid eventId, [FromQuery] bool deleteFollowing)
     {
-        logger.LogDebug("Deleting event {eventId} from game {gameId}", eventId, gameId);
+        if(deleteFollowing)
+            logger.LogDebug("Deleting event {eventId} and all subsequent events from game {gameId}", eventId, gameId);
+        else
+            logger.LogDebug("Deleting event {eventId} from game {gameId}", eventId, gameId);
 
         return await gameDiscoveryService.GetExistingGame(gameId)
-                .Then(game => eventBus.RemoveEvent(game, eventId))
+                .Then(game => deleteFollowing ? eventBus.RemoveEventsStartingAt(game, eventId) : eventBus.RemoveEvent(game, eventId))
             switch
             {
                 Success => NoContent(),

@@ -44,6 +44,9 @@ public abstract class EventBusIntegrationTest
             builder.RegisterType<GameStateStore>().As<IGameStateStore>().SingleInstance();
             builder.Register(context => new ReducerGameContext(Game, context.Resolve<IGameStateStore>()));
 
+            builder.RegisterType<KeyFrameService>().As<IKeyFrameService>();
+            builder.RegisterInstance(new KeyFrameSettings(true, 5));
+
             var createLoggerMethod =
                 typeof(LoggerFactoryExtensions).GetMethods()
                     .Single(method => method is { IsGenericMethod: true, Name: nameof(LoggerFactoryExtensions.CreateLogger) });
