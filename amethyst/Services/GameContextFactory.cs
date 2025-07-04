@@ -1,22 +1,18 @@
 ﻿using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Collections.Immutable;
+using amethyst.DataStores;
+using amethyst.Domain;
+using amethyst.Reducers;
 
 namespace amethyst.Services;
-
-using System.Collections.Immutable;
-using amethyst.Domain;
-using amethyst.Events;
-using CommandLine;
-using DataStores;
-using Microsoft.Extensions.Logging;
-using Reducers;
 
 public interface IGameContextFactory : IDisposable
 {
     GameContext GetGame(GameInfo gameInfo);
     void UnloadGame(Guid gameId);
     Task ReloadGame(GameInfo gameInfo);
-    Task ApplyKeyFrame(GameInfo gameIndo, Tick tick, KeyFrame keyFrame);
+    Task ApplyKeyFrame(GameInfo gameIndo, KeyFrame keyFrame);
 }
 
 [Singleton]
@@ -64,7 +60,7 @@ public class GameContextFactory(
         stateStore.ForceNotify();
     }
 
-    public async Task ApplyKeyFrame(GameInfo gameInfo, Tick tick, KeyFrame keyFrame)
+    public async Task ApplyKeyFrame(GameInfo gameInfo, KeyFrame keyFrame)
     {
         if (!_gameContexts.ContainsKey(gameInfo.Id) || !_gameContexts[gameInfo.Id].IsValueCreated)
             return;
@@ -75,12 +71,11 @@ public class GameContextFactory(
         context.GameClock.Stop();
         stateStore.LoadDefaultStates(context.Reducers);
 
-        var game = await gameStoreFactory.GetDataStore(IGameDiscoveryService.GetGameFileName(gameInfo));
         stateStore.ApplyKeyFrame(context.Reducers, keyFrame);
-        context.KeyFrameService.ClearFramesAfter(tick);
+        context.KeyFrameService.ClearFramesAfter(keyFrame.Tick);
 
         var gameDataStore = await gameStoreFactory.GetDataStore(IGameDiscoveryService.GetGameFileName(gameInfo));
-        var subsequentEvents = gameDataStore.GetEvents().Where(e => e.Id.Tick >= tick).ToArray();
+        var subsequentEvents = gameDataStore.GetEvents().Where(e => e.Id.Tick >= keyFrame.Tick).ToArray();
 
         await stateStore.ApplyEvents(context.Reducers, subsequentEvents);
 

@@ -259,6 +259,43 @@ public class EventsControllerIntegrationTests : ControllerIntegrationTest
         await DeleteEvent(@event.Id, gameId: Guid.NewGuid(), expectedResult: HttpStatusCode.NotFound);
     }
 
+    [Test]
+    public async Task ReplaceEvent_UpdatesStateAsExpected()
+    {
+        Tick += Tick.FromSeconds(10);
+        _ = await AddEvent(new JamStarted(0));
+        Tick += Tick.FromSeconds(30);
+        _ = await AddEvent(new JamEnded(0));
+        Tick += Tick.FromSeconds(30);
+
+        var gameStage = await GetState<GameStageState>();
+        gameStage.Stage.Should().Be(Stage.Lineup);
+
+        var @event = await AddEvent(new JamStarted(0));
+        Tick += Tick.FromSeconds(5);
+
+        gameStage = await GetState<GameStageState>();
+        gameStage.Stage.Should().Be(Stage.Jam);
+
+        await ReplaceEvent(@event.Id, new TimeoutStarted(0));
+
+        gameStage = await GetState<GameStageState>();
+        gameStage.Stage.Should().Be(Stage.Timeout);
+    }
+
+    [Test]
+    public async Task ReplaceEvent_WhenEventNotFound_ReturnsNotFound()
+    {
+        await ReplaceEvent(Guid.NewGuid(), new TestEvent(0, new()), expectedResult: HttpStatusCode.NotFound);
+    }
+
+    [Test]
+    public async Task ReplaceEvent_WhenGameNotFound_ReturnsNotFound()
+    {
+        var @event = await AddEvent(new JamStarted(0));
+        await ReplaceEvent(@event.Id, new JamStarted(0), gameId: Guid.NewGuid(), expectedResult: HttpStatusCode.NotFound);
+    }
+
     private async Task<EventsController.EventModel[]> GetEvents(Guid? gameId = null, HttpStatusCode expectedResult = HttpStatusCode.OK) =>
         (await Get<EventsController.EventModel[]>($"/api/games/{gameId ?? _game.Id}/events", expectedResult))!;
 
@@ -275,6 +312,14 @@ public class EventsControllerIntegrationTests : ControllerIntegrationTest
 
     private Task DeleteEvent(Guid eventId, Guid? gameId = null, HttpStatusCode expectedResult = HttpStatusCode.NoContent) =>
         Delete($"/api/games/{gameId ?? _game.Id}/events/{eventId}", expectedResult);
+
+    private Task ReplaceEvent<TEvent>(Guid eventId, TEvent newEvent, Guid? gameId = null, HttpStatusCode expectedResult = HttpStatusCode.OK) where TEvent : Event =>
+        Put<EventsController.EventModel>(
+            $"/api/games/{gameId ?? _game.Id}/events/{eventId}",
+            new EventsController.CreateEventModel(
+                newEvent.GetType().Name,
+                newEvent.GetBodyObject()?.Map(body => JsonObject.Create(JsonSerializer.SerializeToElement(body)))),
+            expectedResult);
 
     private async Task<TState> GetState<TState>() =>
         (await Get<TState>($"/api/games/{_game.Id}/state/{typeof(TState).Name}", HttpStatusCode.OK))!;

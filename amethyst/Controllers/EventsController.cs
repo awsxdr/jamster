@@ -104,6 +104,26 @@ public class EventsController(
             };
     }
 
+    [HttpPut("{eventId:guid}")]
+    public async Task<IActionResult> ReplaceEvent(Guid gameId, Guid eventId, [FromBody] CreateEventModel model)
+    {
+        logger.LogDebug("Replacing event {eventId} in game {gameId} with {eventType}", eventId, gameId, model.Type);
+
+        return await
+                eventConverter.DecodeEvent(model.AsUntypedEvent())
+                    .And(await gameDiscoveryService.GetExistingGame(gameId))
+                    .Then(x => eventBus.ReplaceEvent(x.Item2, eventId, x.Item1)
+                    )
+            switch
+            {
+                Success<Event> s => Ok((EventModel)s.Value),
+                Failure<GameDataStore.EventNotFoundError> => NotFound(),
+                Failure<GameFileNotFoundForIdError> => NotFound(),
+                Failure<MultipleGameFilesFoundForIdError> => StatusCode(500),
+                var r => throw new UnexpectedResultException(r)
+            };
+    }
+
     [HttpPut("{eventId:guid}/tick")]
     public async Task<IActionResult> SetEventTick(Guid gameId, Guid eventId, [FromBody] SetEventTickModel model)
     {

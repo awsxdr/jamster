@@ -55,6 +55,7 @@ builder.Host.UseServiceProviderFactory(new AutofacServiceProviderFactory(contain
     container.RegisterDataStores();
     container.RegisterReducers();
     container.RegisterHubNotifiers();
+    AdditionalDependencies?.Invoke(container);
 }));
 
 builder.Services
@@ -319,6 +320,7 @@ public partial class Program
 {
     public static bool SkipCommandLineParse { get; set; }
     public static bool SkipFirstRunSetup { get; set; }
+    public static Action<Autofac.ContainerBuilder>? AdditionalDependencies { get; set; } = null;
     public static JsonSerializerOptions JsonSerializerOptions { get; } = GetSerializerOptions();
 
     private static void MapHub<THub>(WebApplication app, string pattern) where THub : Hub =>

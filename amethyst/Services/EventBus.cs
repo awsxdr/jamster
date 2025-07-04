@@ -4,7 +4,6 @@ using amethyst.Domain;
 using amethyst.Events;
 using amethyst.Reducers;
 using DotNext.Threading;
-using Microsoft.Extensions.Logging;
 
 namespace amethyst.Services;
 
@@ -14,6 +13,7 @@ public interface IEventBus
     Task<Event> AddEvent(GameInfo game, Event @event);
     Task AddEventWithoutPersisting(GameInfo game, Event @event);
     Task<Result<Event>> MoveEvent(GameInfo game, Event @event, Tick newTick);
+    Task<Result<Event>> ReplaceEvent(GameInfo game, Guid7 eventId, Event newEvent);
     Task<Result> RemoveEvent(GameInfo game, Guid7 eventId);
     Task<Result> RemoveEventsStartingAt(GameInfo game, Guid7 startEventId);
 }
@@ -93,11 +93,20 @@ public class EventBus(
             RemoveEventFromDatabase(game, @event.Id)
                 .OnSuccess(() => @event.Id = Guid7.FromTick(newTick))
                 .Then(() => PersistEventToDatabase(game, @event))
-                .Then(() =>
-                {
-                    contextFactory.ReloadGame(game);
-                    return Result.Succeed(@event);
-                });
+                .Then(() => IntegrateChangeAtTick(game, @event.Tick))
+                .Then(() => Result.Succeed(@event));
+    }
+
+    public async Task<Result<Event>> ReplaceEvent(GameInfo game, Guid7 eventId, Event newEvent)
+    {
+        using var @lock = await AcquireLock(game.Id);
+
+        return await
+            RemoveEventFromDatabase(game, eventId)
+                .OnSuccess(@event => newEvent.Id = Guid7.FromTick(@event.Tick))
+                .Then(() => PersistEventToDatabase(game, newEvent))
+                .Then(() => IntegrateChangeAtTick(game, newEvent.Tick))
+                .Then(() => Result.Succeed(newEvent));
     }
 
     public async Task<Result> RemoveEvent(GameInfo game, Guid7 eventId)
@@ -105,18 +114,7 @@ public class EventBus(
         using var @lock = await AcquireLock(game.Id);
 
         return await RemoveEventFromDatabase(game, eventId)
-            .Then(async () =>
-            {
-                var gameContext = contextFactory.GetGame(game);
-                var nearestKeyFrameMaybe = gameContext.KeyFrameService.GetKeyFrameBefore(eventId.Tick);
-
-                if (nearestKeyFrameMaybe is Some<KeyFrame> nearestKeyFrame)
-                    await contextFactory.ApplyKeyFrame(game, eventId.Tick, nearestKeyFrame.Value);
-                else
-                    await contextFactory.ReloadGame(game);
-
-                return Result.Succeed();
-            });
+            .Then(() => IntegrateChangeAtTick(game, eventId.Tick));
     }
 
     public async Task<Result> RemoveEventsStartingAt(GameInfo game, Guid7 startEventId)
@@ -130,7 +128,7 @@ public class EventBus(
                 var nearestKeyFrameMaybe = gameContext.KeyFrameService.GetKeyFrameBefore(startEventId.Tick);
 
                 if (nearestKeyFrameMaybe is Some<KeyFrame> nearestKeyFrame)
-                    await contextFactory.ApplyKeyFrame(game, startEventId.Tick, nearestKeyFrame.Value);
+                    await contextFactory.ApplyKeyFrame(game, nearestKeyFrame.Value);
                 else
                     await contextFactory.ReloadGame(game);
 
@@ -158,7 +156,7 @@ public class EventBus(
                 return Result<Guid>.Fail<EventPersistenceFailedError>();
             });
 
-    private Task<Result> RemoveEventFromDatabase(GameInfo game, Guid eventId) =>
+    private Task<Result<Event>> RemoveEventFromDatabase(GameInfo game, Guid eventId) =>
         WithDataStore(game,
             dataStore =>
                 dataStore.GetEvent(eventId).Then(@event =>
@@ -170,12 +168,12 @@ public class EventBus(
                     }
 
                     dataStore.DeleteEvent(eventId);
-                    return Result.Succeed();
+                    return Result.Succeed(@event);
                 }).ToTask(),
             ex =>
             {
                 logger.LogCritical(ex, "Unable to delete event {eventId} from game database for game {gameId}.", eventId, game.Id);
-                return Result.Fail<EventDeletionFailedError>();
+                return Result<Event>.Fail<EventDeletionFailedError>();
             });
 
     private Task<Result> RemoveEventsFromDatabaseStartingAt(GameInfo game, Guid7 startEventId) =>
@@ -190,6 +188,7 @@ public class EventBus(
                 {
                     if (@event is IReplaceOnDelete replace)
                     {
+                        logger.LogDebug("Replacing event being deleted");
                         var newEvent = replace.GetDeletionReplacement();
                         dataStore.AddEvent(newEvent);
                     }
@@ -218,6 +217,25 @@ public class EventBus(
         {
             return onFailure(ex);
         }
+    }
+
+    private async Task<Result> IntegrateChangeAtTick(GameInfo game, Tick tick)
+    {
+        var gameContext = contextFactory.GetGame(game);
+        var nearestKeyFrameMaybe = gameContext.KeyFrameService.GetKeyFrameBefore(tick);
+
+        if (nearestKeyFrameMaybe is Some<KeyFrame> nearestKeyFrame)
+        {
+            logger.LogDebug("Integrating change using key frame at tick {tick}", nearestKeyFrame.Value.Tick);
+            await contextFactory.ApplyKeyFrame(game, nearestKeyFrame.Value);
+        }
+        else
+        {
+            logger.LogDebug("Integrating change by reloading game");
+            await contextFactory.ReloadGame(game);
+        }
+
+        return Result.Succeed();
     }
 
     private class EventPersistenceFailedError : ResultError;

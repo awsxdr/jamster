@@ -29,7 +29,7 @@ public class KeyFrameService(IGameStateStore stateStore, ISystemTime systemTime,
         if (_frames.ContainsKey(tick))
             return;
 
-        KeyFrame frame = stateStore.GetAllStates();
+        var frame = new KeyFrame(tick, stateStore.GetAllStates());
 
         logger.LogDebug("Capturing key frame at {tick}", tick);
 
