@@ -45,18 +45,17 @@ public class GameContextFactory(
         if (!_gameContexts.ContainsKey(gameInfo.Id) || !_gameContexts[gameInfo.Id].IsValueCreated)
             return;
 
-        var context = _gameContexts[gameInfo.Id].Value;
-        var stateStore = context.StateStore;
+        var (_, reducers, stateStore, gameClock, _) = _gameContexts[gameInfo.Id].Value;
         stateStore.DisableNotifications();
-        context.GameClock.Stop();
-        stateStore.LoadDefaultStates(context.Reducers);
+        gameClock.Stop();
+        stateStore.LoadDefaultStates(reducers);
 
         var game = await gameStoreFactory.GetDataStore(IGameDiscoveryService.GetGameFileName(gameInfo));
         var events = game.GetEvents().ToArray();
-        await stateStore.ApplyEvents(context.Reducers, events);
+        await stateStore.ApplyEvents(reducers, events);
 
         stateStore.EnableNotifications();
-        context.GameClock.Run();
+        gameClock.Run();
         stateStore.ForceNotify();
     }
 
@@ -65,22 +64,21 @@ public class GameContextFactory(
         if (!_gameContexts.ContainsKey(gameInfo.Id) || !_gameContexts[gameInfo.Id].IsValueCreated)
             return;
 
-        var context = _gameContexts[gameInfo.Id].Value;
-        var stateStore = context.StateStore;
+        var (_, reducers, stateStore, gameClock, keyFrameService) = _gameContexts[gameInfo.Id].Value;
         stateStore.DisableNotifications();
-        context.GameClock.Stop();
-        stateStore.LoadDefaultStates(context.Reducers);
+        gameClock.Stop();
+        stateStore.LoadDefaultStates(reducers);
 
-        stateStore.ApplyKeyFrame(context.Reducers, keyFrame);
-        context.KeyFrameService.ClearFramesAfter(keyFrame.Tick);
+        stateStore.ApplyKeyFrame(reducers, keyFrame);
+        keyFrameService.ClearFramesAfter(keyFrame.Tick);
 
         var gameDataStore = await gameStoreFactory.GetDataStore(IGameDiscoveryService.GetGameFileName(gameInfo));
         var subsequentEvents = gameDataStore.GetEvents().Where(e => e.Id.Tick > keyFrame.Tick).ToArray();
 
-        await stateStore.ApplyEvents(context.Reducers, subsequentEvents);
+        await stateStore.ApplyEvents(reducers, subsequentEvents);
 
         stateStore.EnableNotifications();
-        context.GameClock.Run();
+        gameClock.Run();
         stateStore.ForceNotify();
     }
 
@@ -128,6 +126,7 @@ public class GameContextFactory(
 
     public void Dispose()
     {
+        GC.SuppressFinalize(this);
         foreach (var context in _gameContexts.Values)
         {
             context.Value.Dispose();
