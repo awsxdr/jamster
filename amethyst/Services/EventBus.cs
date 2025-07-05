@@ -122,18 +122,7 @@ public class EventBus(
         using var @lock = await AcquireLock(game.Id);
 
         return await RemoveEventsFromDatabaseStartingAt(game, startEventId)
-            .Then(async () =>
-            {
-                var gameContext = contextFactory.GetGame(game);
-                var nearestKeyFrameMaybe = gameContext.KeyFrameService.GetKeyFrameBefore(startEventId.Tick);
-
-                if (nearestKeyFrameMaybe is Some<KeyFrame> nearestKeyFrame)
-                    await contextFactory.ApplyKeyFrame(game, nearestKeyFrame.Value);
-                else
-                    await contextFactory.ReloadGame(game);
-
-                return Result.Succeed();
-            });
+            .Then(() => IntegrateChangeAtTick(game, startEventId.Tick));
     }
 
     private async Task<AsyncLock.Holder> AcquireLock(Guid gameId)

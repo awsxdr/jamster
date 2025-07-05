@@ -124,7 +124,6 @@ public sealed class JamClock(ReducerGameContext gameContext, ILogger<JamClock> l
 
         if (!state.AutoExpire)
         {
-            logger.LogDebug("Jam clock expired but still running");
             return [];
         }
 

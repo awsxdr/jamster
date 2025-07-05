@@ -48,7 +48,7 @@ public class KeyFrameService(IGameStateStore stateStore, ISystemTime systemTime,
 
     public void ClearFramesAfter(Tick tick)
     {
-        var keysToRemove = _frames.Keys.Where(k => k >= tick).ToArray();
+        var keysToRemove = _frames.Keys.Where(k => k > tick).ToArray();
 
         foreach (var key in keysToRemove)
             _frames.Remove(key, out _);

@@ -260,6 +260,50 @@ public class EventsControllerIntegrationTests : ControllerIntegrationTest
     }
 
     [Test]
+    public async Task DeleteEvent_WhenDeletingAutomaticJamEnd_CorrectlyResumesJam()
+    {
+        _ = await AddEvent(new JamStarted(0));
+        Tick += Tick.FromSeconds(30);
+        _ = await AddEvent(new JamEnded(0));
+        Tick += Tick.FromSeconds(30);
+        _ = await AddEvent(new JamStarted(0));
+        Tick += Tick.FromSeconds(30);
+        _ = await AddEvent(new JamEnded(0));
+        Tick += Tick.FromSeconds(30);
+        _ = await AddEvent(new JamStarted(0));
+        Tick += Tick.FromSeconds(30);
+        _ = await AddEvent(new JamEnded(0));
+        Tick += Tick.FromSeconds(30);
+        _ = await AddEvent(new JamStarted(0));
+        Tick += Tick.FromSeconds(30);
+        _ = await AddEvent(new JamEnded(0));
+        Tick += Tick.FromSeconds(30);
+        _ = await AddEvent(new JamStarted(0));
+        Thread.Sleep(100);
+
+        var scoreSheetDuringJam = await GetState<ScoreSheetState>(TeamSide.Home);
+
+        Tick += Tick.FromSeconds(Rules.DefaultRules.JamRules.DurationInSeconds + 10);
+        Thread.Sleep(100);
+
+        var gameStage = await GetState<GameStageState>();
+        gameStage.Stage.Should().Be(Stage.Lineup);
+
+        var undoEvents = await GetUndoEvents();
+
+        await DeleteEvent(undoEvents.First().Id);
+        Thread.Sleep(100);
+
+        var scoreSheetAfterUndo = await GetState<ScoreSheetState>(TeamSide.Home);
+
+        scoreSheetDuringJam.Jams.Length.Should().Be(scoreSheetAfterUndo.Jams.Length);
+
+        gameStage = await GetState<GameStageState>();
+        gameStage.Stage.Should().Be(Stage.Jam);
+        gameStage.JamNumber.Should().Be(5);
+    }
+
+    [Test]
     public async Task ReplaceEvent_UpdatesStateAsExpected()
     {
         Tick += Tick.FromSeconds(10);
