@@ -45,10 +45,10 @@ public abstract class ReducerUnitTest<TReducer, TState> : UnitTest<TReducer, IRe
             });
 
         GetMock<IEventBus>()
-            .Setup(mock => mock.AddEventWithoutPersisting(It.IsAny<GameInfo>(), It.IsAny<Event>()))
-            .Returns(async (GameInfo _, Event @event) =>
+            .Setup(mock => mock.AddEventWithoutPersisting(It.IsAny<GameInfo>(), It.IsAny<Event>(), It.IsAny<Guid7>()))
+            .Returns(async (GameInfo _, Event @event, Guid7 rootEventId) =>
             {
-                await Subject.HandleUntyped(@event);
+                await Subject.HandleUntyped(@event, rootEventId);
                 return @event;
             });
     }
@@ -86,7 +86,8 @@ public abstract class ReducerUnitTest<TReducer, TState> : UnitTest<TReducer, IRe
         GetMock<IEventBus>()
             .Verify(mock => mock.AddEventWithoutPersisting(
                 It.IsAny<GameInfo>(),
-                It.Is<TEvent>(e => e.Tick == tick)
+                It.Is<TEvent>(e => e.Tick == tick),
+                It.IsAny<Guid7>()
             ), Times.Once);
     }
 
@@ -95,7 +96,8 @@ public abstract class ReducerUnitTest<TReducer, TState> : UnitTest<TReducer, IRe
         GetMock<IEventBus>()
             .Verify(mock => mock.AddEventWithoutPersisting(
                 It.IsAny<GameInfo>(),
-                It.Is<TEvent>(e => e.Tick == @event.Tick && e.Body!.Equals(@event.Body))
+                It.Is<TEvent>(e => e.Tick == @event.Tick && e.Body!.Equals(@event.Body)),
+                It.IsAny<Guid7>()
             ), Times.Once);
     }
 

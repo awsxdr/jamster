@@ -30,7 +30,7 @@ public interface IGameStateStore
     void SetKeyedState<TState>(string key, TState state) where TState : class;
     void LoadDefaultStates(IImmutableList<IReducer> reducers);
     void ApplyKeyFrame(IImmutableList<IReducer> reducers, KeyFrame keyFrame);
-    Task<IEnumerable<Event>> ApplyEvents(IImmutableList<IReducer> reducers, params Event[] events);
+    Task<IEnumerable<Event>> ApplyEvents(IImmutableList<IReducer> reducers, Guid7? rootSourceEventId, params Event[] events);
     Result<object> GetStateByName(string stateName);
     void WatchState<TState>(string stateName, Func<TState, Task> onStateUpdate) where TState : class;
     void WatchStateByName(string stateName, Func<object, Task> onStateUpdate);
@@ -113,14 +113,14 @@ public class GameStateStore(ILogger<GameStateStore> logger) : IGameStateStore
 
     private record EventDetails(Event Event, Guid7? SourceEventId);
 
-    public async Task<IEnumerable<Event>> ApplyEvents(IImmutableList<IReducer> reducers, params Event[] events)
+    public async Task<IEnumerable<Event>> ApplyEvents(IImmutableList<IReducer> reducers, Guid7? rootSourceEventId, params Event[] events)
     {
         CacheStates();
 
         try
         {
             var eventsToPersist = new List<Event>();
-            var queuedEvents = new Queue<EventDetails>(events.OrderBy(e => e.Id).Select(e => new EventDetails(e, null)));
+            var queuedEvents = new Queue<EventDetails>(events.OrderBy(e => e.Id).Select(e => new EventDetails(e, rootSourceEventId)));
 
             while (queuedEvents.TryDequeue(out var @event))
             {
@@ -134,7 +134,7 @@ public class GameStateStore(ILogger<GameStateStore> logger) : IGameStateStore
                 {
                     queuedEvents = new Queue<EventDetails>(
                         queuedEvents
-                            .Concat(tickImplicitEvents.Select(e => new EventDetails(e, null)))
+                            .Concat(tickImplicitEvents.Select(e => new EventDetails(e, @event.Event.Id)))
                             .Append(@event)
                             .OrderBy(e => e.Event.Id));
 

@@ -11,7 +11,7 @@ public interface IEventBus
 {
     Task<Event> AddEventAtCurrentTick(GameInfo game, Event @event);
     Task<Event> AddEvent(GameInfo game, Event @event);
-    Task AddEventWithoutPersisting(GameInfo game, Event @event);
+    Task AddEventWithoutPersisting(GameInfo game, Event @event, Guid7 sourceEventId);
     Task<Result<Event>> MoveEvent(GameInfo game, Event @event, Tick newTick);
     Task<Result<Event>> ReplaceEvent(GameInfo game, Guid7 eventId, Event newEvent);
     Task<Result> RemoveEvent(GameInfo game, Guid7 eventId);
@@ -63,7 +63,7 @@ public class EventBus(
 
         using var _ = logger.BeginScope("Event {event} at {tick}", @event.GetType().Name, @event.Tick);
 
-        var additionalEventsToPersist = await gameContext.StateStore.ApplyEvents(gameContext.Reducers, @event);
+        var additionalEventsToPersist = await gameContext.StateStore.ApplyEvents(gameContext.Reducers, null, @event);
 
         foreach (var additionalEvent in additionalEventsToPersist)
         {
@@ -76,13 +76,13 @@ public class EventBus(
         return @event;
     }
 
-    public async Task AddEventWithoutPersisting(GameInfo game, Event @event)
+    public async Task AddEventWithoutPersisting(GameInfo game, Event @event, Guid7 sourceEventId)
     {
         using var @lock = await AcquireLock(game.Id);
 
         var gameContext = contextFactory.GetGame(game);
 
-        await gameContext.StateStore.ApplyEvents(gameContext.Reducers, @event);
+        await gameContext.StateStore.ApplyEvents(gameContext.Reducers, sourceEventId, @event);
     }
 
     public async Task<Result<Event>> MoveEvent(GameInfo game, Event @event, Tick newTick)

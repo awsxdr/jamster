@@ -48,7 +48,7 @@ public class EventBusUnitTests : UnitTest<EventBus>
         await Subject.AddEvent(_game, @event);
 
         GetMock<IGameStateStore>()
-            .Verify(mock => mock.ApplyEvents(It.Is<IImmutableList<IReducer>>(l => !l.Any()), It.Is<Event[]>(e => e.Single().Equals(@event))), Times.Once);
+            .Verify(mock => mock.ApplyEvents(It.Is<IImmutableList<IReducer>>(l => !l.Any()), It.IsAny<Guid7?>(), It.Is<Event[]>(e => e.Single().Equals(@event))), Times.Once);
     }
 
     [Test]

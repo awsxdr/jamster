@@ -52,7 +52,7 @@ public class GameContextFactory(
 
         var game = await gameStoreFactory.GetDataStore(IGameDiscoveryService.GetGameFileName(gameInfo));
         var events = game.GetEvents().ToArray();
-        await stateStore.ApplyEvents(reducers, events);
+        await stateStore.ApplyEvents(reducers, null, events);
 
         stateStore.EnableNotifications();
         gameClock.Run();
@@ -75,7 +75,7 @@ public class GameContextFactory(
         var gameDataStore = await gameStoreFactory.GetDataStore(IGameDiscoveryService.GetGameFileName(gameInfo));
         var subsequentEvents = gameDataStore.GetEvents().Where(e => e.Id.Tick > keyFrame.Tick).ToArray();
 
-        await stateStore.ApplyEvents(reducers, subsequentEvents);
+        await stateStore.ApplyEvents(reducers, null, subsequentEvents);
 
         stateStore.EnableNotifications();
         gameClock.Run();
@@ -113,7 +113,7 @@ public class GameContextFactory(
                 .SortReducers()
                 .ToImmutableList();
         stateStore.LoadDefaultStates(reducers);
-        stateStore.ApplyEvents(reducers, events);
+        stateStore.ApplyEvents(reducers, null, events);
 
         var gameClock = gameClockFactory(gameInfo, reducers.OfType<ITickReceiver>());
         gameClock.Run();

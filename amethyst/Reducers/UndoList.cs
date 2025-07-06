@@ -12,6 +12,9 @@ public class UndoList(ReducerGameContext context) : Reducer<UndoListState>(conte
         if (@event is not IShownInUndo)
             return [];
 
+        if (sourceEventId?.Equals((Guid7)GameClock.TickEventId) ?? false)
+            sourceEventId = null;
+
         SetState(new(sourceEventId ?? @event.Id, @event.GetType().Name));
 
         return [];

@@ -137,7 +137,7 @@ public abstract class EventBusIntegrationTest
             //while (queuedEvents.TryDequeue(out var @event))
 
             foreach (var @event in implicitEvents)
-                await EventBus.AddEventWithoutPersisting(Game, @event);
+                await EventBus.AddEventWithoutPersisting(Game, @event, GameClock.TickEventId);
         }
 
         _lastTick = tick;

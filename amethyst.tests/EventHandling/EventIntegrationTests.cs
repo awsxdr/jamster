@@ -87,7 +87,7 @@ public class EventIntegrationTests : EventBusIntegrationTest
                 Console.WriteLine(lastEvent);
 
                 StateStore.LoadDefaultStates(reducers);
-                await StateStore.ApplyEvents(reducers, eventSubset);
+                await StateStore.ApplyEvents(reducers, null, eventSubset);
                 await Tick(lastEvent.Tick);
 
                 var states = GetAllStates();
