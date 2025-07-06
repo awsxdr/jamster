@@ -109,7 +109,6 @@ public class ValidateStateFakeEvent(Tick tick, params object[] states) : Event(t
                 var storedState = stateStore.GetStateByName($"{tupleState.GetType().Name}_{key}");
 
                 storedState.Should().BeAssignableTo<Success>();
-                //ValidateState(storedState.ValueOr(() => null).Result!, tupleState);
                 storedState.ValueOr(() => null).Result.Should().Be(tupleState);
             }
             else
@@ -117,7 +116,6 @@ public class ValidateStateFakeEvent(Tick tick, params object[] states) : Event(t
                 var storedState = stateStore.GetStateByName(state.GetType().Name);
 
                 storedState.Should().BeAssignableTo<Success>();
-                //ValidateState(storedState.ValueOr(() => null).Result!, state);
                 storedState.ValueOr(() => null).Result.Should().Be(state);
             }
         }
