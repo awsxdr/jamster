@@ -5,6 +5,7 @@ import { GameStateContextProvider, useCreateGame, useCurrentGame, useGamesList, 
 import { useSearchParams } from "react-router-dom";
 import { ControlPanel } from "./components/ControlPanel";
 import { NewGameCreated, NewGameDialog, NewGameDialogContainer } from "../../components/NewGameDialog";
+import { Timeline } from "./components/timeline";
 
 export const ScoreboardControl = () => {
     const games = useGamesList();
@@ -52,27 +53,31 @@ export const ScoreboardControl = () => {
         <>
             <title>{translate("ScoreboardControl.Title")} | {translate("Main.Title")}</title>
             <NewGameDialogContainer open={newGameDialogOpen} onOpenChange={setNewGameDialogOpen}>
-                <GameToolbar 
-                    games={games} 
-                    currentGame={currentGame} 
-                    onCurrentGameIdChanged={setCurrentGame} 
-                    selectedGameId={selectedGameId} 
-                    onSelectedGameIdChanged={updateSelectedGameId}
-                />
-                { selectedGameId && (
-                    <GameStateContextProvider gameId={selectedGameId}>
-                        <Separator />
-                        <div className="px-0 sm:px-1 md:px-2 xl:px-5">
-                            <ControlPanel 
-                                gameId={selectedGameId}
-                            />
-                            <NewGameDialog 
-                                onNewGameCreated={handleNewGameCreated}
-                                onCancelled={handleNewGameCancelled}
-                            />
-                        </div>
-                    </GameStateContextProvider>
-                )}
+                <div className="w-full h-full max-h-[100vh] overflow-hidden flex flex-col">
+                    <GameToolbar 
+                        games={games} 
+                        currentGame={currentGame} 
+                        onCurrentGameIdChanged={setCurrentGame} 
+                        selectedGameId={selectedGameId} 
+                        onSelectedGameIdChanged={updateSelectedGameId}
+                    />
+                    { selectedGameId && (
+                        <GameStateContextProvider gameId={selectedGameId}>
+                            <Separator />
+                            <div className="px-0 sm:px-1 md:px-2 xl:px-5 overflow-y-auto">
+                                <ControlPanel 
+                                    gameId={selectedGameId}
+                                />
+                                <NewGameDialog 
+                                    onNewGameCreated={handleNewGameCreated}
+                                    onCancelled={handleNewGameCancelled}
+                                />
+                            </div>
+                            <Separator />
+                            <Timeline gameId={selectedGameId} />
+                        </GameStateContextProvider>
+                    )}
+                </div>
             </NewGameDialogContainer>
         </>
     );
