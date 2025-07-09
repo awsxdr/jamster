@@ -134,7 +134,7 @@ public class GameStateStore(ILogger<GameStateStore> logger) : IGameStateStore
                 {
                     queuedEvents = new Queue<EventDetails>(
                         queuedEvents
-                            .Concat(tickImplicitEvents.Select(e => new EventDetails(e, @event.Event.Id)))
+                            .Concat(tickImplicitEvents.Select(e => new EventDetails(e, null)))
                             .Append(@event)
                             .OrderBy(e => e.Event.Id));
 
@@ -146,7 +146,10 @@ public class GameStateStore(ILogger<GameStateStore> logger) : IGameStateStore
 
                 if (implicitEvents.Any())
                     // ReSharper disable once AccessToModifiedClosure
-                    queuedEvents = new Queue<EventDetails>(queuedEvents.Concat(implicitEvents.Select(e => new EventDetails(e, @event.Event.Id))).OrderBy(e => e.Event.Id));
+                    queuedEvents = new Queue<EventDetails>(queuedEvents.Concat(
+                        implicitEvents
+                            .Select(e => new EventDetails(e, GetSourceEventId(e, @event))))
+                        .OrderBy(e => e.Event.Id));
             }
 
             return eventsToPersist;
@@ -161,6 +164,13 @@ public class GameStateStore(ILogger<GameStateStore> logger) : IGameStateStore
         {
             ClearCache();
         }
+
+        Guid7? GetSourceEventId(Event @event, EventDetails sourceEventDetails) =>
+            @event is IAlwaysPersisted ? null
+                //: sourceEventDetails.SourceEventId != null && sourceEventDetails.SourceEventId == GameClock.TickEventId ? null
+                : sourceEventDetails.SourceEventId
+                ?? rootSourceEventId
+                ?? sourceEventDetails.Event.Id;
     }
 
     public void ApplyKeyFrame(IImmutableList<IReducer> reducers, KeyFrame keyFrame)

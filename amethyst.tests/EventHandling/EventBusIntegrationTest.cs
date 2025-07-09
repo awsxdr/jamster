@@ -133,7 +133,12 @@ public abstract class EventBusIntegrationTest
             var implicitEvents = await receiver.TickAsync(tick);
 
             foreach (var @event in implicitEvents)
-                await EventBus.AddEventWithoutPersisting(Game, @event, GameClock.TickEventId);
+            {
+                if (@event is IAlwaysPersisted)
+                    await EventBus.AddEvent(Game, @event);
+                else
+                    await EventBus.AddEventWithoutPersisting(Game, @event, GameClock.TickEventId);
+            }
         }
 
         _lastTick = tick;
