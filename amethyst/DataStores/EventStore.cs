@@ -4,6 +4,9 @@ namespace amethyst.DataStores;
 
 public interface IEventStore : IDisposable
 {
+    void BeginTransaction();
+    void CommitTransaction();
+    void RollbackTransaction();
 }
 
 public abstract class EventStore : IEventStore
@@ -16,6 +19,12 @@ public abstract class EventStore : IEventStore
         Connection = connectionFactory(Path.Combine(RunningEnvironment.RootPath, "db", $"{databaseName}.db"), SQLiteOpenFlags.Create | SQLiteOpenFlags.ReadWrite);
         DatabaseName = databaseName;
     }
+
+    public void BeginTransaction() => Connection.BeginTransaction();
+
+    public void CommitTransaction() => Connection.Commit();
+
+    public void RollbackTransaction() => Connection.Rollback();
 
     public void Dispose()
     {

@@ -14,7 +14,7 @@ public abstract class UnitTest<TSubject, TSubjectCast>
     where TSubject : class, TSubjectCast
 {
     private Lazy<AutoMock> _mocker = new(() => throw new Exception("Mocker cannot be used until Setup() has run"));
-    protected AutoMock Mocker => _mocker.Value;
+    protected virtual AutoMock Mocker => _mocker.Value;
 
     protected TSubjectCast Subject { get; private set; }
 

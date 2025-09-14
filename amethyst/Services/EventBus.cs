@@ -13,6 +13,7 @@ public interface IEventBus
     Task<Event> AddEvent(GameInfo game, Event @event);
     Task AddEventWithoutPersisting(GameInfo game, Event @event, Guid7 sourceEventId);
     Task<Result<Event>> MoveEvent(GameInfo game, Event @event, Tick newTick);
+    Task<Result<EventBus.OffsetEventsResult>> OffsetEventsAfter(GameInfo game, Event @event, int offset);
     Task<Result<Event>> ReplaceEvent(GameInfo game, Guid7 eventId, Event newEvent);
     Task<Result> RemoveEvent(GameInfo game, Guid7 eventId);
     Task<Result> RemoveEventsStartingAt(GameInfo game, Guid7 startEventId);
@@ -89,24 +90,42 @@ public class EventBus(
     {
         using var @lock = await AcquireLock(game.Id);
 
-        return await
-            RemoveEventFromDatabase(game, @event.Id)
-                .OnSuccess(() => @event.Id = Guid7.FromTick(newTick))
-                .Then(() => PersistEventToDatabase(game, @event))
-                .Then(() => IntegrateChangeAtTick(game, @event.Tick))
-                .Then(() => Result.Succeed(@event));
+        return await MoveEventInDatabase(game, @event.Id, newTick)
+            .Then(movedEvent =>
+                IntegrateChangeAtTick(game, newTick)
+                    .Then(() => Result.Succeed(movedEvent)));
+    }
+
+    public async Task<Result<OffsetEventsResult>> OffsetEventsAfter(GameInfo game, Event @event, int offset)
+    {
+        using var @lock = await AcquireLock(game.Id);
+
+        return await RemoveEventsFromDatabaseStartingAt(game, @event.Id)
+            .Then(removedEvents => removedEvents.Aggregate(Result.Succeed(Array.Empty<Event>()).ToTask(), (r, e) =>
+                r.Then(async events =>
+                {
+                    e.Id = e.Tick + offset;
+                    var newEventResult = await PersistEventToDatabase(game, e);
+                    return newEventResult.ThenMap(newId =>
+                    {
+                        e.Id = newId;
+                        return (Event[]) [..events, e];
+                    });
+                })))
+            .ThenMap(movedEvents => new OffsetEventsResult(movedEvents[0], movedEvents[1..]))
+            .Then(result => IntegrateChangeAtTick(game, Math.Min(@event.Tick + offset, @event.Tick))
+                .Then(() => Result.Succeed(result)));
     }
 
     public async Task<Result<Event>> ReplaceEvent(GameInfo game, Guid7 eventId, Event newEvent)
     {
         using var @lock = await AcquireLock(game.Id);
 
-        return await
-            RemoveEventFromDatabase(game, eventId)
-                .OnSuccess(@event => newEvent.Id = Guid7.FromTick(@event.Tick))
-                .Then(() => PersistEventToDatabase(game, newEvent))
-                .Then(() => IntegrateChangeAtTick(game, newEvent.Tick))
-                .Then(() => Result.Succeed(newEvent));
+        return await RemoveEventFromDatabase(game, eventId)
+            .OnSuccess(@event => newEvent.Id = Guid7.FromTick(@event.Tick))
+            .Then(() => PersistEventToDatabase(game, newEvent))
+            .Then(() => IntegrateChangeAtTick(game, newEvent.Tick))
+            .Then(() => Result.Succeed(newEvent));
     }
 
     public async Task<Result> RemoveEvent(GameInfo game, Guid7 eventId)
@@ -131,6 +150,15 @@ public class EventBus(
         var eventLock = _gameLocks.GetOrAdd(gameId, _ => new(() => new AsyncManualResetEvent(false))).Value;
         return await eventLock.AcquireLockAsync();
     }
+
+    private Task<Result<Event>> MoveEventInDatabase(GameInfo game, Guid eventId, Tick newTick) =>
+        RemoveEventFromDatabase(game, eventId)
+            .Then(@event =>
+            {
+                @event.Id = Guid7.FromTick(newTick);
+                return PersistEventToDatabase(game, @event)
+                    .Then(() => Result.Succeed(@event));
+            });
 
     private Task<Result<Guid>> PersistEventToDatabase(GameInfo game, Event @event) =>
         WithDataStore(game,
@@ -165,31 +193,54 @@ public class EventBus(
                 return Result<Event>.Fail<EventDeletionFailedError>();
             });
 
-    private Task<Result> RemoveEventsFromDatabaseStartingAt(GameInfo game, Guid7 startEventId) =>
+    private Task<Result<Event[]>> RemoveEventsFromDatabaseStartingAt(GameInfo game, Guid7 startEventId) =>
         WithDataStore(game,
             dataStore =>
             {
-                var eventsAfter = dataStore.GetEvents().Where(e => e.Id.Tick > startEventId.Tick);
-                foreach(var @event in eventsAfter)
-                    dataStore.DeleteEvent(@event.Id);
-
-                return dataStore.GetEvent(startEventId).Then(@event =>
+                try
                 {
-                    if (@event is IReplaceOnDelete replace)
-                    {
-                        logger.LogDebug("Replacing event being deleted");
-                        var newEvent = replace.GetDeletionReplacement();
-                        dataStore.AddEvent(newEvent);
-                    }
+                    logger.LogDebug("Removing events from database starting at {startTick}", startEventId.Tick);
 
-                    dataStore.DeleteEvent(startEventId);
-                    return Result.Succeed();
-                }).ToTask();
+                    dataStore.BeginTransaction();
+
+                    var eventsAfter = dataStore.GetEvents().Where(e => e.Id.Tick > startEventId.Tick).ToArray();
+                    foreach(var @event in eventsAfter)
+                        dataStore.DeleteEvent(@event.Id);
+
+                    logger.LogDebug("Removed {eventsAfterLength} events", eventsAfter.Length);
+
+                    var result = dataStore.GetEvent(startEventId).Then(@event =>
+                    {
+                        if (@event is IReplaceOnDelete replace)
+                        {
+                            logger.LogDebug("Replacing event being deleted");
+                            var newEvent = replace.GetDeletionReplacement();
+                            dataStore.AddEvent(newEvent);
+                        }
+
+                        dataStore.DeleteEvent(startEventId);
+                        return Result.Succeed((Event[])[@event, ..eventsAfter]);
+                    });
+
+                    logger.LogDebug("Deleted event {eventId}", startEventId);
+
+                    dataStore.CommitTransaction();
+
+                    return result.ToTask();
+                }
+                catch (Exception e)
+                {
+                    logger.LogError(e, "Error while moving events. Change reverted.");
+
+                    dataStore.RollbackTransaction();
+
+                    return Result<Event[]>.Fail<EventDeletionFailedError>().ToTask();
+                }
             },
             ex =>
             {
                 logger.LogCritical(ex, "Unable to delete events starting at {eventId} from game database for game {gameId}.", startEventId, game.Id);
-                return Result.Fail<EventDeletionFailedError>();
+                return Result<Event[]>.Fail<EventDeletionFailedError>();
             });
 
     private async Task<TResult> WithDataStore<TResult>(GameInfo game, Func<IGameDataStore, Task<TResult>> action, Func<Exception, TResult> onFailure)
@@ -230,4 +281,6 @@ public class EventBus(
     private class EventPersistenceFailedError : ResultError;
 
     public class EventDeletionFailedError : ResultError;
+
+    public record OffsetEventsResult(Event NewEvent, Event[] OtherModifiedEvents);
 }

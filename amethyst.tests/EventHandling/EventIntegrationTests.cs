@@ -58,7 +58,6 @@ public class EventIntegrationTests : EventBusIntegrationTest
         ];
 
         var events = GetEvents(typeof(TestGameEventsSource), nameof(TestGameEventsSource.FullGame)).Where(e => e is not IFakeEvent).ToArray();
-        events = events.Take(9).ToArray();
 
         var reducers = Mocker.Create<IEnumerable<IReducer>>().Where(r => !excludedReducerTypes.Contains(r.GetType())).ToImmutableList();
         var stateTypes = reducers.Select(r => r.GetStateKey() is Some<string> k ? (Key: k.Value, r.StateType) : (null, r.StateType)).ToArray();

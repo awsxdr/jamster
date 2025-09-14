@@ -27,7 +27,7 @@ export const Timeline = ({ gameId }: TimelineProps) => {
     }
 
     const handleAdjust = (eventId: string, tick: number) => {
-        moveEvent(gameId, eventId, tick);
+        moveEvent(gameId, eventId, tick, true);
     }
 
     return (

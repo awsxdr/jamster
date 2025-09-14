@@ -9,9 +9,9 @@ using SQLite;
 
 namespace amethyst;
 
-internal static class DependencyInjection
+public static class DependencyInjection
 {
-    internal static void RegisterServices(this ContainerBuilder builder)
+    public static void RegisterServices(this ContainerBuilder builder)
     {
         var serviceTypes =
             Assembly.GetExecutingAssembly().GetTypes()
@@ -36,7 +36,7 @@ internal static class DependencyInjection
         }
     }
 
-    internal static void RegisterReducers(this ContainerBuilder builder)
+    public static void RegisterReducers(this ContainerBuilder builder)
     {
         var reducerTypes =
             Assembly.GetExecutingAssembly().GetTypes()
@@ -55,7 +55,7 @@ internal static class DependencyInjection
         }
     }
 
-    internal static void RegisterConfigurations(this ContainerBuilder builder)
+    public static void RegisterConfigurations(this ContainerBuilder builder)
     {
         var configurationFactoryTypes = AppDomain.CurrentDomain.GetAssemblies()
             .Where(ass => !ass.IsDynamic)
@@ -66,7 +66,7 @@ internal static class DependencyInjection
         builder.RegisterTypes(configurationFactoryTypes).AsImplementedInterfaces().SingleInstance();
     }
 
-    internal static void RegisterDataStores(this ContainerBuilder builder)
+    public static void RegisterDataStores(this ContainerBuilder builder)
     {
         builder.RegisterType<DataTableFactory>().As<IDataTableFactory>().SingleInstance();
 
@@ -85,7 +85,7 @@ internal static class DependencyInjection
         builder.RegisterType<UserDataStore>().As<IUserDataStore>().SingleInstance();
     }
 
-    internal static void RegisterHubNotifiers(this ContainerBuilder builder)
+    public static void RegisterHubNotifiers(this ContainerBuilder builder)
     {
         var hubTypes =
             Assembly.GetExecutingAssembly().GetTypes()

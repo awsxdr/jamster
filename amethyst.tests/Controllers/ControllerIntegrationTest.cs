@@ -87,6 +87,7 @@ public abstract class ControllerIntegrationTest
     [SetUp]
     public virtual void Setup()
     {
+        Tick = 0;
     }
 
     [TearDown]

@@ -5,6 +5,9 @@ namespace amethyst.DataStores;
 public interface IDataStore : IDisposable
 {
     public ISQLiteConnection Connection { get; }
+    void BeginTransaction();
+    void CommitTransaction();
+    void RollbackTransaction();
 }
 
 public delegate ISQLiteConnection ConnectionFactory(string connectionString, SQLiteOpenFlags flags);
@@ -46,6 +49,15 @@ public abstract class DataStore : IDataStore
 
     protected IDataTable<TData, TKey> GetTable<TData, TKey>(KeySelector<TData, TKey> keySelector, IEnumerable<IColumn> columns) where TData : new() =>
         _dataTableFactory.Create(keySelector, Connection, columns);
+
+    public void BeginTransaction() =>
+        Connection.BeginTransaction();
+
+    public void CommitTransaction() =>
+        Connection.Commit();
+
+    public void RollbackTransaction() =>
+        Connection.Rollback();
 
     public void Dispose()
     {
