@@ -38,7 +38,7 @@ export const useShortcut = <TGroupKey extends keyof InputControls, TControlKey e
         }
     }, [context.shortcutsEnabled, onShortcutTriggered]);
 
-    useHotkeys(shortcut?.binding ?? "not-in-use", handleShortcutTriggered, { preventDefault: true });
+    useHotkeys(shortcut?.binding ?? "not-in-use", shortcut ? handleShortcutTriggered : () => {}, { preventDefault: true });
 
     return shortcut;
 }
