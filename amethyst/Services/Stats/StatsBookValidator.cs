@@ -16,12 +16,16 @@ public class StatsBookValidator(ILogger<StatsBookValidator> logger) : StatsSheet
         GetWorksheetByEntryName(IgrfSheetPath, archive)
             .Then(worksheet =>
             {
-                if (GetCellValue(worksheet, 0, 57) == "IGRF Rev. 190101 \u00a9 2019 Women's Flat Track Derby Association (WFTDA)")
-                {
-                    return Result.Succeed(new StatsBookInfo("WFTDA.190101"));
-                }
+                var versionCellValue = GetCellValue(worksheet, 0, 57);
 
-                return Result<StatsBookInfo>.Fail<InvalidStatsBookError>();
+                return versionCellValue switch
+                {
+                    "IGRF Rev. 190101 \u00a9 2019 Women's Flat Track Derby Association (WFTDA)" => 
+                        Result.Succeed(new StatsBookInfo("WFTDA.190101")),
+                    "IGRF Rev. 20250201 \u00a9 2025 Women's Flat Track Derby Association (WFTDA)" => 
+                        Result.Succeed(new StatsBookInfo("WFTDA.20250201")),
+                    _ => Result<StatsBookInfo>.Fail<InvalidStatsBookError>()
+                };
             });
            
 
