@@ -44,6 +44,9 @@ public abstract class EventBusIntegrationTest
             builder.RegisterType<GameStateStore>().As<IGameStateStore>().SingleInstance();
             builder.Register(context => new ReducerGameContext(Game, context.Resolve<IGameStateStore>()));
 
+            builder.RegisterType<KeyFrameService>().As<IKeyFrameService>();
+            builder.RegisterInstance(new KeyFrameSettings(true, 5));
+
             var createLoggerMethod =
                 typeof(LoggerFactoryExtensions).GetMethods()
                     .Single(method => method is { IsGenericMethod: true, Name: nameof(LoggerFactoryExtensions.CreateLogger) });
@@ -98,7 +101,6 @@ public abstract class EventBusIntegrationTest
 
             if (@event is ValidateStateFakeEvent validate)
             {
-                //await Tick(@event.Tick);
                 validate.ValidateStates(StateStore);
             }
             else if (@event is DebugFakeEvent debug)
@@ -129,12 +131,14 @@ public abstract class EventBusIntegrationTest
         foreach (var receiver in tickReceivers)
         {
             var implicitEvents = await receiver.TickAsync(tick);
-            //var queuedEvents = new Queue<EventDetails>(implicitEvents.OrderBy(e => e.Id).Select(e => new EventDetails(e, null)));
-
-            //while (queuedEvents.TryDequeue(out var @event))
 
             foreach (var @event in implicitEvents)
-                await EventBus.AddEventWithoutPersisting(Game, @event);
+            {
+                if (@event is IAlwaysPersisted)
+                    await EventBus.AddEvent(Game, @event);
+                else
+                    await EventBus.AddEventWithoutPersisting(Game, @event, GameClock.TickEventId);
+            }
         }
 
         _lastTick = tick;

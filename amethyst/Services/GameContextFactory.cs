@@ -1,17 +1,18 @@
 ﻿using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Collections.Immutable;
+using amethyst.DataStores;
+using amethyst.Domain;
+using amethyst.Reducers;
 
 namespace amethyst.Services;
-
-using System.Collections.Immutable;
-using DataStores;
-using Reducers;
 
 public interface IGameContextFactory : IDisposable
 {
     GameContext GetGame(GameInfo gameInfo);
     void UnloadGame(Guid gameId);
     Task ReloadGame(GameInfo gameInfo);
+    Task ApplyKeyFrame(GameInfo gameIndo, KeyFrame keyFrame);
 }
 
 [Singleton]
@@ -20,6 +21,8 @@ public class GameContextFactory(
     IEnumerable<ReducerFactory> reducerFactories,
     GameClock.Factory gameClockFactory,
     IGameDataStoreFactory gameStoreFactory,
+    IKeyFrameService.Factory keyFrameServiceFactory,
+    KeyFrameSettings keyFrameSettings,
     ILogger<GameContextFactory> logger) 
     : IGameContextFactory
 {
@@ -42,18 +45,40 @@ public class GameContextFactory(
         if (!_gameContexts.ContainsKey(gameInfo.Id) || !_gameContexts[gameInfo.Id].IsValueCreated)
             return;
 
-        var context = _gameContexts[gameInfo.Id].Value;
-        var stateStore = context.StateStore;
+        var (_, reducers, stateStore, gameClock, _) = _gameContexts[gameInfo.Id].Value;
         stateStore.DisableNotifications();
-        context.GameClock.Stop();
-        stateStore.LoadDefaultStates(context.Reducers);
+        gameClock.Stop();
+        stateStore.LoadDefaultStates(reducers);
 
         var game = await gameStoreFactory.GetDataStore(IGameDiscoveryService.GetGameFileName(gameInfo));
         var events = game.GetEvents().ToArray();
-        await stateStore.ApplyEvents(context.Reducers, events);
+        await stateStore.ApplyEvents(reducers, null, events);
 
         stateStore.EnableNotifications();
-        context.GameClock.Run();
+        gameClock.Run();
+        stateStore.ForceNotify();
+    }
+
+    public async Task ApplyKeyFrame(GameInfo gameInfo, KeyFrame keyFrame)
+    {
+        if (!_gameContexts.ContainsKey(gameInfo.Id) || !_gameContexts[gameInfo.Id].IsValueCreated)
+            return;
+
+        var (_, reducers, stateStore, gameClock, keyFrameService) = _gameContexts[gameInfo.Id].Value;
+        stateStore.DisableNotifications();
+        gameClock.Stop();
+        stateStore.LoadDefaultStates(reducers);
+
+        stateStore.ApplyKeyFrame(reducers, keyFrame);
+        keyFrameService.ClearFramesAfter(keyFrame.Tick);
+
+        var gameDataStore = await gameStoreFactory.GetDataStore(IGameDiscoveryService.GetGameFileName(gameInfo));
+        var subsequentEvents = gameDataStore.GetEvents().Where(e => e.Id.Tick > keyFrame.Tick).ToArray();
+
+        await stateStore.ApplyEvents(reducers, null, subsequentEvents);
+
+        stateStore.EnableNotifications();
+        gameClock.Run();
         stateStore.ForceNotify();
     }
 
@@ -68,6 +93,19 @@ public class GameContextFactory(
         var events = game.GetEvents().ToArray();
 
         var stateStore = stateStoreFactory();
+        var keyFrameService = keyFrameServiceFactory(stateStore);
+
+        if (keyFrameSettings.Enabled)
+        {
+            stateStore.EventHandled += (_, e) =>
+            {
+                if (e.Index % keyFrameSettings.KeyFrameFrequency == 0)
+                {
+                    keyFrameService.CaptureKeyFrameAtTick(e.Tick);
+                }
+            };
+        }
+
         var reducerGameContext = new ReducerGameContext(gameInfo, stateStore);
         var reducers = 
             reducerFactories.Select(f => f(reducerGameContext))
@@ -75,7 +113,7 @@ public class GameContextFactory(
                 .SortReducers()
                 .ToImmutableList();
         stateStore.LoadDefaultStates(reducers);
-        stateStore.ApplyEvents(reducers, events);
+        stateStore.ApplyEvents(reducers, null, events);
 
         var gameClock = gameClockFactory(gameInfo, reducers.OfType<ITickReceiver>());
         gameClock.Run();
@@ -83,11 +121,12 @@ public class GameContextFactory(
         loadTimer.Stop();
         logger.LogInformation("Loaded game in {loadTime}ms", loadTimer.ElapsedMilliseconds);
 
-        return new GameContext(gameInfo, reducers, stateStore, gameClock);
+        return new GameContext(gameInfo, reducers, stateStore, gameClock, keyFrameService);
     }
 
     public void Dispose()
     {
+        GC.SuppressFinalize(this);
         foreach (var context in _gameContexts.Values)
         {
             context.Value.Dispose();
@@ -102,7 +141,8 @@ public record GameContext(
     GameInfo GameInfo,
     IImmutableList<IReducer> Reducers,
     IGameStateStore StateStore,
-    IGameClock GameClock) : IDisposable
+    IGameClock GameClock,
+    IKeyFrameService KeyFrameService) : IDisposable
 {
     public void Dispose()
     {

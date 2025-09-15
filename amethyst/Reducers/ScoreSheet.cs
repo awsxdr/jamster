@@ -4,7 +4,7 @@ using amethyst.Services;
 
 namespace amethyst.Reducers;
 
-public abstract class ScoreSheet(TeamSide teamSide, ReducerGameContext context)
+public abstract class ScoreSheet(TeamSide teamSide, ReducerGameContext context, ILogger logger)
     : Reducer<ScoreSheetState>(context)
     , IHandlesEvent<JamStarted>
     , IHandlesEvent<SkaterAddedToJam>
@@ -40,6 +40,8 @@ public abstract class ScoreSheet(TeamSide teamSide, ReducerGameContext context)
         var state = GetState();
         var lineup = GetKeyedState<JamLineupState>(teamSide.ToString());
         var gameStage = GetState<GameStageState>();
+
+        logger.LogDebug("Adding row to {teamSide} score sheet due to jam start", teamSide);
 
         SetState(new(state.Jams.Append(new ScoreSheetJam(
             gameStage.PeriodNumber,
@@ -157,6 +159,8 @@ public abstract class ScoreSheet(TeamSide teamSide, ReducerGameContext context)
 
     public IEnumerable<Event> Handle(ScoreSheetJammerNumberSet @event) => @event.HandleIfTeam(teamSide, () =>
     {
+        logger.LogDebug("Jammer number on {teamSide} score sheet manually set to {number} in game jam number {totalJamNumber}", teamSide, @event.Body.Value, @event.Body.TotalJamNumber);
+
         ModifyJam(@event.Body.TotalJamNumber, line => line with { JammerNumber = @event.Body.Value });
 
         return [];
@@ -164,6 +168,8 @@ public abstract class ScoreSheet(TeamSide teamSide, ReducerGameContext context)
 
     public IEnumerable<Event> Handle(ScoreSheetPivotNumberSet @event) => @event.HandleIfTeam(teamSide, () =>
     {
+        logger.LogDebug("Pivot number on {teamSide} score sheet manually set to {number} in game jam number {totalJamNumber}", teamSide, @event.Body.Value, @event.Body.TotalJamNumber);
+
         ModifyJam(@event.Body.TotalJamNumber, line => line with { PivotNumber = @event.Body.Value });
 
         return [];
@@ -171,6 +177,8 @@ public abstract class ScoreSheet(TeamSide teamSide, ReducerGameContext context)
 
     public IEnumerable<Event> Handle(ScoreSheetTripScoreSet @event) => @event.HandleIfTeam(teamSide, () =>
     {
+        logger.LogDebug("Trip score on {teamSide} score sheet manually set to {value} for trip {tripNumber} in game jam number {totalJamNumber}", teamSide, @event.Body.Value, @event.Body.TripNumber, @event.Body.TotalJamNumber);
+
         ModifyJam(@event.Body.TotalJamNumber, jam =>
         {
             if (@event.Body.TripNumber > jam.Trips.Length || @event.Body.TripNumber < 0)
@@ -207,6 +215,8 @@ public abstract class ScoreSheet(TeamSide teamSide, ReducerGameContext context)
 
     public IEnumerable<Event> Handle(ScoreSheetLeadSet @event) => @event.HandleIfTeam(teamSide, () =>
     {
+        logger.LogDebug("Lead on {teamSide} score sheet manually set to {value} in game jam number {totalJamNumber}", teamSide, @event.Body.Value, @event.Body.TotalJamNumber);
+
         ModifyJam(@event.Body.TotalJamNumber, line => line with { Lead = @event.Body.Value });
 
         return [];
@@ -214,6 +224,8 @@ public abstract class ScoreSheet(TeamSide teamSide, ReducerGameContext context)
 
     public IEnumerable<Event> Handle(ScoreSheetLostSet @event) => @event.HandleIfTeam(teamSide, () =>
     {
+        logger.LogDebug("Lost on {teamSide} score sheet manually set to {value} in game jam number {totalJamNumber}", teamSide, @event.Body.Value, @event.Body.TotalJamNumber);
+
         ModifyJam(@event.Body.TotalJamNumber, line => line with { Lost = @event.Body.Value });
 
         return [];
@@ -221,6 +233,8 @@ public abstract class ScoreSheet(TeamSide teamSide, ReducerGameContext context)
 
     public IEnumerable<Event> Handle(ScoreSheetCalledSet @event) => @event.HandleIfTeam(teamSide, () =>
     {
+        logger.LogDebug("Call on {teamSide} score sheet manually set to {value} in game jam number {totalJamNumber}", teamSide, @event.Body.Value, @event.Body.TotalJamNumber);
+
         ModifyJam(@event.Body.TotalJamNumber, line => line with { Called = @event.Body.Value });
 
         return [];
@@ -228,6 +242,8 @@ public abstract class ScoreSheet(TeamSide teamSide, ReducerGameContext context)
 
     public IEnumerable<Event> Handle(ScoreSheetInjurySet @event)
     {
+        logger.LogDebug("Injury on {teamSide} score sheet manually set to {value} in game jam number {totalJamNumber}", teamSide, @event.Body.Value, @event.Body.TotalJamNumber);
+
         ModifyJam(@event.Body.TotalJamNumber, line => line with { Injury = @event.Body.Value });
 
         return [];
@@ -235,6 +251,8 @@ public abstract class ScoreSheet(TeamSide teamSide, ReducerGameContext context)
 
     public IEnumerable<Event> Handle(ScoreSheetNoInitialSet @event) => @event.HandleIfTeam(teamSide, () =>
     {
+        logger.LogDebug("No initial on {teamSide} score sheet manually set to {value} in game jam number {totalJamNumber}", teamSide, @event.Body.Value, @event.Body.TotalJamNumber);
+
         ModifyJam(@event.Body.TotalJamNumber, line => line with { NoInitial = @event.Body.Value });
 
         return [];
@@ -252,6 +270,8 @@ public abstract class ScoreSheet(TeamSide teamSide, ReducerGameContext context)
 
     public IEnumerable<Event> Handle(ScoreSheetLineDeleted @event)
     {
+        logger.LogDebug("Jam {jamNumber} deleted on {teamSide} score sheet", @event.Body.TotalJamNumber, teamSide);
+
         var state = GetState();
 
         if (@event.Body.TotalJamNumber > state.Jams.Length)
@@ -380,7 +400,7 @@ public sealed record DeletedScoreSheetJam(ScoreSheetJam DeletedJam) : ScoreSheet
 
 public record JamLineTrip(int? Score);
 
-public sealed class HomeScoreSheet(ReducerGameContext gameContext)
-    : ScoreSheet(TeamSide.Home, gameContext);
-public sealed class AwayScoreSheet(ReducerGameContext gameContext)
-    : ScoreSheet(TeamSide.Away, gameContext);
+public sealed class HomeScoreSheet(ReducerGameContext gameContext, ILogger<HomeScoreSheet> logger)
+    : ScoreSheet(TeamSide.Home, gameContext, logger);
+public sealed class AwayScoreSheet(ReducerGameContext gameContext, ILogger<AwayScoreSheet> logger)
+    : ScoreSheet(TeamSide.Away, gameContext, logger);

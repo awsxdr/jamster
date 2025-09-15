@@ -7,6 +7,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using amethyst.Domain;
 using amethyst.Hubs;
+using amethyst.Services;
 using FluentAssertions;
 using Func;
 using Microsoft.AspNetCore.SignalR.Client;
@@ -259,6 +260,145 @@ public class EventsControllerIntegrationTests : ControllerIntegrationTest
         await DeleteEvent(@event.Id, gameId: Guid.NewGuid(), expectedResult: HttpStatusCode.NotFound);
     }
 
+    [Test]
+    public async Task DeleteEvent_WhenDeletingAutomaticJamEnd_CorrectlyResumesJam()
+    {
+        _ = await AddEvent(new JamStarted(0));
+        Tick += Tick.FromSeconds(30);
+        _ = await AddEvent(new JamEnded(0));
+        Tick += Tick.FromSeconds(30);
+        _ = await AddEvent(new JamStarted(0));
+        Tick += Tick.FromSeconds(30);
+        _ = await AddEvent(new JamEnded(0));
+        Tick += Tick.FromSeconds(30);
+        _ = await AddEvent(new JamStarted(0));
+        Tick += Tick.FromSeconds(30);
+        _ = await AddEvent(new JamEnded(0));
+        Tick += Tick.FromSeconds(30);
+        _ = await AddEvent(new JamStarted(0));
+        Tick += Tick.FromSeconds(30);
+        _ = await AddEvent(new JamEnded(0));
+        Tick += Tick.FromSeconds(30);
+        _ = await AddEvent(new JamStarted(0));
+        Thread.Sleep(100);
+
+        var scoreSheetDuringJam = await GetState<ScoreSheetState>(TeamSide.Home);
+
+        Tick += Tick.FromSeconds(Rules.DefaultRules.JamRules.DurationInSeconds + 10);
+        Thread.Sleep(100);
+
+        var gameStage = await GetState<GameStageState>();
+        gameStage.Stage.Should().Be(Stage.Lineup);
+
+        var undoEvents = await GetUndoEvents();
+
+        await DeleteEvent(undoEvents.First().Id);
+        Thread.Sleep(100);
+
+        var scoreSheetAfterUndo = await GetState<ScoreSheetState>(TeamSide.Home);
+
+        scoreSheetDuringJam.Jams.Length.Should().Be(scoreSheetAfterUndo.Jams.Length);
+
+        gameStage = await GetState<GameStageState>();
+        gameStage.Stage.Should().Be(Stage.Jam);
+        gameStage.JamNumber.Should().Be(5);
+    }
+
+    [Test]
+    public async Task ReplaceEvent_UpdatesStateAsExpected()
+    {
+        Tick += Tick.FromSeconds(10);
+        _ = await AddEvent(new JamStarted(0));
+        Tick += Tick.FromSeconds(30);
+        _ = await AddEvent(new JamEnded(0));
+        Tick += Tick.FromSeconds(30);
+
+        var gameStage = await GetState<GameStageState>();
+        gameStage.Stage.Should().Be(Stage.Lineup);
+
+        var @event = await AddEvent(new JamStarted(0));
+        Tick += Tick.FromSeconds(5);
+
+        gameStage = await GetState<GameStageState>();
+        gameStage.Stage.Should().Be(Stage.Jam);
+
+        await ReplaceEvent(@event.Id, new TimeoutStarted(0));
+
+        gameStage = await GetState<GameStageState>();
+        gameStage.Stage.Should().Be(Stage.Timeout);
+    }
+
+    [Test]
+    public async Task ReplaceEvent_WhenEventNotFound_ReturnsNotFound()
+    {
+        await ReplaceEvent(Guid.NewGuid(), new TestEvent(0, new()), expectedResult: HttpStatusCode.NotFound);
+    }
+
+    [Test]
+    public async Task ReplaceEvent_WhenGameNotFound_ReturnsNotFound()
+    {
+        var @event = await AddEvent(new JamStarted(0));
+        await ReplaceEvent(@event.Id, new JamStarted(0), gameId: Guid.NewGuid(), expectedResult: HttpStatusCode.NotFound);
+    }
+
+    [Test]
+    public async Task SetEventTick_WhenChangingSingleEvent_SetsEventTick()
+    {
+        _ = await AddEvent(new JamStarted(0));
+        Tick += 30_000;
+        var endEvent = await AddEvent(new JamEnded(0));
+        Tick += 25_000;
+        var timeoutEvent = await AddEvent(new TimeoutStarted(0));
+
+        var endEventDetails = await GetEvent(endEvent.Id);
+        var timeoutEventDetails = await GetEvent(timeoutEvent.Id);
+
+        ((Guid7)endEventDetails.Id).Tick.Should().Be(30_000);
+        ((Guid7)timeoutEventDetails.Id).Tick.Should().Be(55_000);
+
+        var newEndEvent = await SetEventTick(endEvent.Id, 35_000, false);
+        ((Guid7)newEndEvent.NewEvent.Id).Tick.Should().Be(35_000);
+
+        endEventDetails = await GetEvent(newEndEvent.NewEvent.Id);
+        timeoutEventDetails = await GetEvent(timeoutEvent.Id);
+
+        ((Guid7)endEventDetails.Id).Tick.Should().Be(35_000);
+        ((Guid7)timeoutEventDetails.Id).Tick.Should().Be(55_000);
+    }
+
+    [Test]
+    public async Task SetEventTick_WhenChangingAllSubsequentEvents_SetsAllEventTicksAsExpected()
+    {
+        _ = await AddEvent(new JamStarted(0));
+        Tick += 30_000;
+        var endEvent = await AddEvent(new JamEnded(0));
+        Tick += 25_000;
+        var timeoutEvent = await AddEvent(new TimeoutStarted(0));
+
+        var endEventDetails = await GetEvent(endEvent.Id);
+        var timeoutEventDetails = await GetEvent(timeoutEvent.Id);
+
+        ((Guid7)endEventDetails.Id).Tick.Should().Be(30_000);
+        ((Guid7)timeoutEventDetails.Id).Tick.Should().Be(55_000);
+
+        var setEventResult = await SetEventTick(endEvent.Id, 35_000, true);
+        setEventResult.OtherChangedEvents.Length.Should().Be(1);
+
+        var newEndEvent = setEventResult.NewEvent;
+        var newTimeoutEvent = setEventResult.OtherChangedEvents[0];
+
+        ((Guid7)newEndEvent.Id).Tick.Should().Be(35_000);
+
+        endEventDetails = await GetEvent(newEndEvent.Id);
+        timeoutEventDetails = await GetEvent(newTimeoutEvent.Id);
+
+        ((Guid7)endEventDetails.Id).Tick.Should().Be(35_000);
+        ((Guid7)timeoutEventDetails.Id).Tick.Should().Be(60_000);
+    }
+
+    private async Task<EventsController.EventModel> GetEvent(Guid eventId, Guid? gameId = null, HttpStatusCode expectedResult = HttpStatusCode.OK) =>
+        (await Get<EventsController.EventModel>($"/api/games/{gameId ?? _game.Id}/events/{eventId}", expectedResult))!;
+
     private async Task<EventsController.EventModel[]> GetEvents(Guid? gameId = null, HttpStatusCode expectedResult = HttpStatusCode.OK) =>
         (await Get<EventsController.EventModel[]>($"/api/games/{gameId ?? _game.Id}/events", expectedResult))!;
 
@@ -275,6 +415,20 @@ public class EventsControllerIntegrationTests : ControllerIntegrationTest
 
     private Task DeleteEvent(Guid eventId, Guid? gameId = null, HttpStatusCode expectedResult = HttpStatusCode.NoContent) =>
         Delete($"/api/games/{gameId ?? _game.Id}/events/{eventId}", expectedResult);
+
+    private Task ReplaceEvent<TEvent>(Guid eventId, TEvent newEvent, Guid? gameId = null, HttpStatusCode expectedResult = HttpStatusCode.OK) where TEvent : Event =>
+        Put<EventsController.EventModel>(
+            $"/api/games/{gameId ?? _game.Id}/events/{eventId}",
+            new EventsController.CreateEventModel(
+                newEvent.GetType().Name,
+                newEvent.GetBodyObject()?.Map(body => JsonObject.Create(JsonSerializer.SerializeToElement(body)))),
+            expectedResult);
+
+    private Task<EventsController.EventTickSetModel> SetEventTick(Guid eventId, Tick newTick, bool offsetFollowing, Guid? gameId = null, HttpStatusCode expectedResult = HttpStatusCode.OK) =>
+        Put<EventsController.EventTickSetModel>(
+            $"/api/games/{gameId ?? _game.Id}/events/{eventId}/tick",
+            new EventsController.SetEventTickModel(newTick, offsetFollowing),
+            expectedResult)!;
 
     private async Task<TState> GetState<TState>() =>
         (await Get<TState>($"/api/games/{_game.Id}/state/{typeof(TState).Name}", HttpStatusCode.OK))!;

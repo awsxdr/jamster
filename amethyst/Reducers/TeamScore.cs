@@ -31,7 +31,7 @@ public abstract class TeamScore(TeamSide teamSide, ReducerGameContext gameContex
 
     public IEnumerable<Event> Handle(JamStarted _)
     {
-        logger.LogDebug("Settings jam score to 0 due to jam start");
+        logger.LogDebug("Setting jam score to 0 due to jam start");
 
         SetState(GetState() with { JamScore = 0 });
 

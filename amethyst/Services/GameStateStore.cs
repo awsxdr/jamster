@@ -1,4 +1,5 @@
 ﻿using System.Collections.Immutable;
+using System.Collections.ObjectModel;
 using System.Reflection;
 using amethyst.Domain;
 using amethyst.Events;
@@ -8,18 +9,28 @@ namespace amethyst.Services;
 
 public delegate IGameStateStore GameStateStoreFactory();
 
+public sealed class EventHandledEventArgs : EventArgs
+{
+    public required Tick Tick { get; init; }
+    public required int Index { get; init; }
+}
+
 public interface IGameStateStore
 {
+    event EventHandler<EventHandledEventArgs> EventHandled;
+
     object GetState(Type stateType);
     TState GetState<TState>() where TState : class;
     object GetKeyedState(string key, Type stateType);
     TState GetKeyedState<TState>(string key) where TState : class;
+    ReadOnlyDictionary<string, object> GetAllStates();
     TState GetCachedState<TState>() where TState : class;
     TState GetCachedKeyedState<TState>(string key) where TState : class;
     void SetState<TState>(TState state) where TState : class;
     void SetKeyedState<TState>(string key, TState state) where TState : class;
     void LoadDefaultStates(IImmutableList<IReducer> reducers);
-    Task<IEnumerable<Event>> ApplyEvents(IImmutableList<IReducer> reducers, params Event[] events);
+    void ApplyKeyFrame(IImmutableList<IReducer> reducers, KeyFrame keyFrame);
+    Task<IEnumerable<Event>> ApplyEvents(IImmutableList<IReducer> reducers, Guid7? rootSourceEventId, params Event[] events);
     Result<object> GetStateByName(string stateName);
     void WatchState<TState>(string stateName, Func<TState, Task> onStateUpdate) where TState : class;
     void WatchStateByName(string stateName, Func<object, Task> onStateUpdate);
@@ -34,6 +45,10 @@ public class GameStateStore(ILogger<GameStateStore> logger) : IGameStateStore
     private readonly Dictionary<string, object> _cachedStates = new();
     private readonly Dictionary<string, IStateUpdatedEventSource> _stateEventStream = new();
 
+    private int _eventCount;
+
+    public event EventHandler<EventHandledEventArgs>? EventHandled;
+
     public object GetState(Type stateType) =>
         _states[GetStateName(stateType)];
 
@@ -45,6 +60,9 @@ public class GameStateStore(ILogger<GameStateStore> logger) : IGameStateStore
 
     public TState GetKeyedState<TState>(string key) where TState : class =>
         (TState) _states[$"{GetStateName<TState>()}_{key}"];
+
+    public ReadOnlyDictionary<string, object> GetAllStates() =>
+        _states.AsReadOnly();
 
     public TState GetCachedState<TState>() where TState : class =>
         (TState)_cachedStates[GetStateName<TState>()];
@@ -95,14 +113,14 @@ public class GameStateStore(ILogger<GameStateStore> logger) : IGameStateStore
 
     private record EventDetails(Event Event, Guid7? SourceEventId);
 
-    public async Task<IEnumerable<Event>> ApplyEvents(IImmutableList<IReducer> reducers, params Event[] events)
+    public async Task<IEnumerable<Event>> ApplyEvents(IImmutableList<IReducer> reducers, Guid7? rootSourceEventId, params Event[] events)
     {
         CacheStates();
 
         try
         {
             var eventsToPersist = new List<Event>();
-            var queuedEvents = new Queue<EventDetails>(events.OrderBy(e => e.Id).Select(e => new EventDetails(e, null)));
+            var queuedEvents = new Queue<EventDetails>(events.OrderBy(e => e.Id).Select(e => new EventDetails(e, rootSourceEventId)));
 
             while (queuedEvents.TryDequeue(out var @event))
             {
@@ -128,7 +146,10 @@ public class GameStateStore(ILogger<GameStateStore> logger) : IGameStateStore
 
                 if (implicitEvents.Any())
                     // ReSharper disable once AccessToModifiedClosure
-                    queuedEvents = new Queue<EventDetails>(queuedEvents.Concat(implicitEvents.Select(e => new EventDetails(e, @event.Event.Id))).OrderBy(e => e.Event.Id));
+                    queuedEvents = new Queue<EventDetails>(queuedEvents.Concat(
+                        implicitEvents
+                            .Select(e => new EventDetails(e, GetSourceEventId(e, @event))))
+                        .OrderBy(e => e.Event.Id));
             }
 
             return eventsToPersist;
@@ -142,6 +163,23 @@ public class GameStateStore(ILogger<GameStateStore> logger) : IGameStateStore
         finally
         {
             ClearCache();
+        }
+
+        Guid7? GetSourceEventId(Event @event, EventDetails sourceEventDetails) =>
+            @event is IAlwaysPersisted ? null
+                //: sourceEventDetails.SourceEventId != null && sourceEventDetails.SourceEventId == GameClock.TickEventId ? null
+                : sourceEventDetails.SourceEventId
+                ?? rootSourceEventId
+                ?? sourceEventDetails.Event.Id;
+    }
+
+    public void ApplyKeyFrame(IImmutableList<IReducer> reducers, KeyFrame keyFrame)
+    {
+        LoadDefaultStates(reducers);
+
+        foreach (var key in keyFrame.Keys)
+        {
+            _states[key] = keyFrame[key];
         }
     }
 
@@ -255,6 +293,8 @@ public class GameStateStore(ILogger<GameStateStore> logger) : IGameStateStore
                 logger.LogError(ex, "Error while applying {eventType} with reducer {reducerType}. Game state may now be invalid.", @event.GetType().Name, reducer.GetType().Name);
             }
         }
+
+        EventHandled?.Invoke(this, new() { Tick = @event.Tick, Index = ++_eventCount });
 
         return implicitEvents;
 

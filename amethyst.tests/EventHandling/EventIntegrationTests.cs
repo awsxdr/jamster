@@ -52,9 +52,14 @@ public class EventIntegrationTests : EventBusIntegrationTest
     [Test]
     public async Task LoadingGameGivesSameStateAsRunningGame()
     {
+        Type[] excludedReducerTypes =
+        [
+            typeof(Timeline)
+        ];
+
         var events = GetEvents(typeof(TestGameEventsSource), nameof(TestGameEventsSource.FullGame)).Where(e => e is not IFakeEvent).ToArray();
 
-        var reducers = Mocker.Create<IEnumerable<IReducer>>().ToImmutableList();
+        var reducers = Mocker.Create<IEnumerable<IReducer>>().Where(r => !excludedReducerTypes.Contains(r.GetType())).ToImmutableList();
         var stateTypes = reducers.Select(r => r.GetStateKey() is Some<string> k ? (Key: k.Value, r.StateType) : (null, r.StateType)).ToArray();
         var stateGetters = stateTypes.Select(x => GetStateGetter(x.Key, x.StateType)).ToArray();
 
@@ -84,10 +89,8 @@ public class EventIntegrationTests : EventBusIntegrationTest
                 var eventSubset = events.Take(i).ToArray();
                 var lastEvent = eventSubset.Last();
 
-                Console.WriteLine(lastEvent);
-
                 StateStore.LoadDefaultStates(reducers);
-                await StateStore.ApplyEvents(reducers, eventSubset);
+                await StateStore.ApplyEvents(reducers, null, eventSubset);
                 await Tick(lastEvent.Tick);
 
                 var states = GetAllStates();

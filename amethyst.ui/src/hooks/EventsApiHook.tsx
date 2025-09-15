@@ -10,7 +10,7 @@ export enum SortOrder {
 type EventsApi = {
     getEvents: (gameId: string, options: { skip?: number, take?: number, order?: SortOrder }) => Promise<EventStreamEvent[]>;
     sendEvent: (gameId: string, event: Event) => Promise<void>;
-    moveEvent: (gameId: string, eventId: string, tick: number) => Promise<void>;
+    moveEvent: (gameId: string, eventId: string, tick: number, offsetFollowing: boolean) => Promise<void>;
     deleteEvent: (gameId: string, eventId: string) => Promise<void>;
 }
 
@@ -48,7 +48,7 @@ export type EventStreamEvent = {
 
 export const useEvents: () => EventsApi = () => {
 
-    const buildQuery = (values: StringMap<any>) =>
+    const buildQuery = (values: StringMap<unknown>) =>
         Object.keys(values).filter(k => values[k]).map(k => `${k}=${values[k]}`).join("&");
 
     const getEvents = async (gameId: string, options: { skip?: number, take?: number, order?: SortOrder }) => {
@@ -86,11 +86,12 @@ export const useEvents: () => EventsApi = () => {
         });
     }
 
-    const moveEvent = async (gameId: string, eventId: string, tick: number) => {
+    const moveEvent = async (gameId: string, eventId: string, tick: number, offsetFollowing: boolean) => {
         await fetch(`${API_URL}/api/Games/${gameId}/events/${eventId}/tick`, {
             method: 'PUT',
             body: JSON.stringify({
-                tick
+                tick,
+                offsetFollowing,
             }),
             headers: {
                 "Content-type": "application/json; charset=utf-8",
@@ -99,7 +100,7 @@ export const useEvents: () => EventsApi = () => {
     }
 
     const deleteEvent = async (gameId: string, eventId: string) => {
-        await fetch(`${API_URL}/api/Games/${gameId}/events/${eventId}`, {
+        await fetch(`${API_URL}/api/Games/${gameId}/events/${eventId}?deleteFollowing=true`, {
             method: 'DELETE',
         });
     }

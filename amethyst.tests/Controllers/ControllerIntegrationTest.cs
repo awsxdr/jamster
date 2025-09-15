@@ -4,16 +4,19 @@ using System.Net.Http.Json;
 using System.Text.Json;
 
 using amethyst.DataStores;
+using amethyst.Domain;
 using amethyst.Services;
+using Autofac;
 using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http.Connections;
-using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
+using NLog;
+using NLog.Targets;
+using NLog.Layouts;
 
 namespace amethyst.tests.Controllers;
 
@@ -22,16 +25,17 @@ public abstract class ControllerIntegrationTest
 {
     private readonly WebApplicationFactory<Program> _applicationFactory;
     protected HttpClient Client { get; private set; }
+    protected Tick Tick { get; set; } = 0;
     protected TestServer Server => _applicationFactory.Server;
     protected GameDataStoreFactory? GameDataStoreFactory { get; private set; }
     private readonly string _runPath;
 
-    protected JsonSerializerOptions SerializerOptions { get; } = Program.JsonSerializerOptions;
+    protected JsonSerializerOptions SerializerOptions => Program.JsonSerializerOptions;
 
     protected ControllerIntegrationTest()
     {
         var systemTimeMock = new Mock<ISystemTime>();
-        systemTimeMock.Setup(mock => mock.UtcNow()).Returns(new DateTimeOffset(2000, 5, 4, 3, 2, 1, TimeSpan.Zero));
+        systemTimeMock.Setup(mock => mock.GetTick()).Returns(() => Tick);
 
         _runPath = Path.Combine(Path.GetTempPath(), $"AmethystControllerTest_{Guid.NewGuid()}");
         Directory.CreateDirectory(_runPath);
@@ -42,10 +46,20 @@ public abstract class ControllerIntegrationTest
 
         _applicationFactory = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
         {
-            builder.ConfigureLogging(logOptions =>
+            LogManager.Setup().LoadConfiguration(config =>
             {
-                logOptions.AddConsole().SetMinimumLevel(LogLevel.Debug);
+                config.Configuration.AddTarget("console", new ConsoleTarget
+                {
+                    Layout = Layout.FromString("${level:uppercase=true} ${message} ${exception:format=tostring)"),
+                });
+
+                config.Configuration.AddRule(LogLevel.Debug, LogLevel.Fatal, config.Configuration.FindTargetByName("console"), "amethyst.*");
             });
+
+            Program.AdditionalDependencies = container =>
+            {
+                container.RegisterInstance(systemTimeMock.Object).AsImplementedInterfaces().SingleInstance();
+            };
         });
         _applicationFactory.Server.PreserveExecutionContext = true;
     }
@@ -73,6 +87,7 @@ public abstract class ControllerIntegrationTest
     [SetUp]
     public virtual void Setup()
     {
+        Tick = 0;
     }
 
     [TearDown]
@@ -119,7 +134,7 @@ public abstract class ControllerIntegrationTest
 
     protected async Task<TContent?> Put<TContent>(string path, object content, HttpStatusCode expectedStatusCode)
     {
-        var response = await Put(path, JsonContent.Create(content, content.GetType()), expectedStatusCode);
+        var response = await Put(path, content, expectedStatusCode);
         return await response.Content.ReadFromJsonAsync<TContent>(SerializerOptions);
     }
 
@@ -134,10 +149,11 @@ public abstract class ControllerIntegrationTest
 
     protected static async Task<TResult> Time<TResult>(string message, Func<Task<TResult>> method)
     {
+        Console.WriteLine($"<< {message}");
         var stopwatch = Stopwatch.StartNew();
         var result = await method();
         stopwatch.Stop();
-        Console.WriteLine($"{message} ({stopwatch.ElapsedMilliseconds}ms)");
+        Console.WriteLine($">> {message} ({stopwatch.ElapsedMilliseconds}ms)");
 
         return result;
     }

@@ -5,6 +5,7 @@ using amethyst.Reducers;
 using amethyst.Services;
 using FluentAssertions;
 using Func;
+using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace amethyst.tests.Services;
@@ -26,7 +27,8 @@ public class EventBusUnitTests : UnitTest<EventBus>
                 _game,
                 [],
                 GetMock<IGameStateStore>().Object,
-                GetMock<IGameClock>().Object));
+                GetMock<IGameClock>().Object, 
+                GetMock<IKeyFrameService>().Object));
 
         GetMock<IGameDataStoreFactory>()
             .Setup(mock => mock.GetDataStore($"TestGame_{_game.Id}"))
@@ -46,7 +48,7 @@ public class EventBusUnitTests : UnitTest<EventBus>
         await Subject.AddEvent(_game, @event);
 
         GetMock<IGameStateStore>()
-            .Verify(mock => mock.ApplyEvents(It.Is<IImmutableList<IReducer>>(l => !l.Any()), It.Is<Event[]>(e => e.Single().Equals(@event))), Times.Once);
+            .Verify(mock => mock.ApplyEvents(It.Is<IImmutableList<IReducer>>(l => !l.Any()), It.IsAny<Guid7?>(), It.Is<Event[]>(e => e.Single().Equals(@event))), Times.Once);
     }
 
     [Test]
@@ -90,6 +92,94 @@ public class EventBusUnitTests : UnitTest<EventBus>
         var result = await Subject.AddEvent(_game, @event);
 
         result.Tick.Should().Be(expectedTick);
+    }
+
+    [Test]
+    public async Task ReplaceEvent_WhenEventExists_DeletesOriginalEventFromDatabase()
+    {
+        var eventId = Guid.NewGuid();
+
+        GetMock<IGameDataStore>()
+            .Setup(mock => mock.GetEvent(eventId))
+            .Returns(Result.Succeed<Event>(new TestAlignedEvent(eventId)));
+
+        var result = await Subject.ReplaceEvent(_game, eventId, new TestEvent(0, new() { Value = "Test" }));
+
+        result.Should().BeSuccess();
+
+        GetMock<IGameDataStore>()
+            .Verify(mock => mock.DeleteEvent(eventId), Times.Once);
+    }
+
+    [Test]
+    public async Task ReplaceEvent_WhenEventExists_InsertsNewEventIntoDatabase()
+    {
+        var eventId = Guid.NewGuid();
+        var newEvent = new TestEvent(0, new() { Value = "Test" });
+        var newEventId = Guid.NewGuid();
+
+        GetMock<IGameDataStore>()
+            .Setup(mock => mock.GetEvent(eventId))
+            .Returns(Result.Succeed<Event>(new TestAlignedEvent(eventId)));
+
+        GetMock<IGameDataStore>()
+            .Setup(mock => mock.AddEvent(newEvent))
+            .Returns(newEventId);
+
+        var result = await Subject.ReplaceEvent(_game, eventId, newEvent);
+
+        result.Should().BeSuccess();
+
+        GetMock<IGameDataStore>()
+            .Verify(mock => mock.AddEvent(newEvent), Times.Once);
+    }
+
+    [Test]
+    public async Task ReplaceEvent_WhenEventExists_ReturnsNewEventId_WithSameTickAsOriginalEvent()
+    {
+        var eventId = Guid7.NewGuid();
+        var newEvent = new TestEvent(0, new() { Value = "Test" });
+
+        GetMock<IGameDataStore>()
+            .Setup(mock => mock.GetEvent(eventId))
+            .Returns(Result.Succeed<Event>(new TestAlignedEvent(eventId)));
+
+        GetMock<IGameDataStore>()
+            .Setup(mock => mock.AddEvent(newEvent))
+            .Returns((Event @event) => Guid7.FromTick(@event.Tick));
+
+        var result = await Subject.ReplaceEvent(_game, eventId, newEvent);
+
+        result.Should().BeSuccess<Event>()
+            .Which.Value.Tick.Should().Be(eventId.Tick);
+    }
+
+    [Test]
+    public async Task ReplaceEvent_WhenEventDoesNotExist_ReturnsEventNotFoundError()
+    {
+        GetMock<IGameDataStore>()
+            .Setup(mock => mock.GetEvent(It.IsAny<Guid>()))
+            .Returns(Result<Event>.Fail<GameDataStore.EventNotFoundError>());
+
+        var result = await Subject.ReplaceEvent(_game, Guid7.NewGuid(), new TestEvent(0, new()));
+
+        result.Should().BeFailure<GameDataStore.EventNotFoundError>();
+    }
+
+    [Test]
+    public async Task ReplaceEvent_WhenEventDoesNotExist_DoesNotModifyDatabase()
+    {
+        GetMock<IGameDataStore>()
+            .Setup(mock => mock.GetEvent(It.IsAny<Guid>()))
+            .Returns(Result<Event>.Fail<GameDataStore.EventNotFoundError>());
+
+        await Subject.ReplaceEvent(_game, Guid7.NewGuid(), new TestEvent(0, new()));
+
+        GetMock<IGameDataStore>()
+            .Verify(mock => mock.DeleteEvent(It.IsAny<Guid>()), Times.Never);
+
+        GetMock<IGameDataStore>()
+            .Verify(mock => mock.AddEvent(It.IsAny<Event>()), Times.Never);
     }
 
     [Test]

@@ -83,13 +83,36 @@ public class EventsController(
                 };
     }
 
-    [HttpDelete("{eventId:guid}")]
-    public async Task<IActionResult> DeleteEvent(Guid gameId, Guid eventId)
+    [HttpGet("{eventId:guid}")]
+    public async Task<ActionResult<EventModel>> GetEvent(Guid gameId, Guid eventId)
     {
-        logger.LogDebug("Deleting event {eventId} from game {gameId}", eventId, gameId);
+        logger.LogDebug("Getting event {eventId} for game {gameId}", eventId, gameId);
 
         return await gameDiscoveryService.GetExistingGame(gameId)
-                .Then(game => eventBus.RemoveEvent(game, eventId))
+            .Then(async game =>
+                (await gameDataStoreFactory.GetDataStore(IGameDiscoveryService.GetGameFileName(game)))
+                .GetEvent(eventId)
+                .ThenMap(e => (EventModel)e))
+            switch
+            {
+                Success<EventModel> s => Ok(s.Value),
+                Failure<GameFileNotFoundForIdError> => NotFound(),
+                Failure<MultipleGameFilesFoundForIdError> => StatusCode(500),
+                Failure<GameDataStore.EventNotFoundError> => NotFound(),
+                var r => throw new UnexpectedResultException(r)
+            };
+    }
+
+    [HttpDelete("{eventId:guid}")]
+    public async Task<IActionResult> DeleteEvent(Guid gameId, Guid eventId, [FromQuery] bool deleteFollowing)
+    {
+        if(deleteFollowing)
+            logger.LogDebug("Deleting event {eventId} and all subsequent events from game {gameId}", eventId, gameId);
+        else
+            logger.LogDebug("Deleting event {eventId} from game {gameId}", eventId, gameId);
+
+        return await gameDiscoveryService.GetExistingGame(gameId)
+                .Then(game => deleteFollowing ? eventBus.RemoveEventsStartingAt(game, eventId) : eventBus.RemoveEvent(game, eventId))
             switch
             {
                 Success => NoContent(),
@@ -101,8 +124,28 @@ public class EventsController(
             };
     }
 
+    [HttpPut("{eventId:guid}")]
+    public async Task<IActionResult> ReplaceEvent(Guid gameId, Guid eventId, [FromBody] CreateEventModel model)
+    {
+        logger.LogDebug("Replacing event {eventId} in game {gameId} with {eventType}", eventId, gameId, model.Type);
+
+        return await
+                eventConverter.DecodeEvent(model.AsUntypedEvent())
+                    .And(await gameDiscoveryService.GetExistingGame(gameId))
+                    .Then(x => eventBus.ReplaceEvent(x.Item2, eventId, x.Item1)
+                    )
+            switch
+            {
+                Success<Event> s => Ok((EventModel)s.Value),
+                Failure<GameDataStore.EventNotFoundError> => NotFound(),
+                Failure<GameFileNotFoundForIdError> => NotFound(),
+                Failure<MultipleGameFilesFoundForIdError> => StatusCode(500),
+                var r => throw new UnexpectedResultException(r)
+            };
+    }
+
     [HttpPut("{eventId:guid}/tick")]
-    public async Task<IActionResult> SetEventTick(Guid gameId, Guid eventId, [FromBody] SetEventTickModel model)
+    public async Task<ActionResult<EventTickSetModel>> SetEventTick(Guid gameId, Guid eventId, [FromBody] SetEventTickModel model)
     {
         logger.LogDebug("Setting tick for event {eventId} in game {gameId} to {tick}", eventId, gameId, model.Tick);
 
@@ -110,11 +153,15 @@ public class EventsController(
                 .Then(async game =>
                     await (await gameDataStoreFactory.GetDataStore(IGameDiscoveryService.GetGameFileName(game)))
                     .GetEvent(eventId)
-                    .Then(@event => eventBus.MoveEvent(game, @event, model.Tick))
+                    .Then(async @event => 
+                        model.OffsetFollowing
+                        ? await eventBus.OffsetEventsAfter(game, @event, (int)(model.Tick - @event.Tick))
+                        : await eventBus.MoveEvent(game, @event, model.Tick).ThenMap(e => new EventBus.OffsetEventsResult(e, []))
+                    )
                 )
             switch
             {
-                Success => Ok(),
+                Success<EventBus.OffsetEventsResult> s => Ok(new EventTickSetModel((EventModel) s.Value.NewEvent, s.Value.OtherModifiedEvents.Select(e => (EventModel)e).ToArray())),
                 Failure<GameDataStore.EventNotFoundError> => NotFound(),
                 Failure<GameFileNotFoundForIdError> => NotFound(),
                 Failure<MultipleGameFilesFoundForIdError> => StatusCode(500),
@@ -140,7 +187,9 @@ public class EventsController(
                 : new UntypedEventWithBody(Type, Body);
     }
 
-    public record SetEventTickModel(long Tick);
+    public record SetEventTickModel(long Tick, bool OffsetFollowing = false);
+
+    public record EventTickSetModel(EventModel NewEvent, EventModel[] OtherChangedEvents);
 
     public enum SortOrder
     {

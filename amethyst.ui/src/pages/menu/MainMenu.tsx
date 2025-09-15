@@ -16,7 +16,7 @@ export const MainMenu = ({ content }: MainMenuProps) => {
                 <ThemeProvider defaultTheme="system">
                     <SidebarProvider defaultOpen>
                         <MenuSidebar />
-                        <main className="w-full">
+                        <main className="w-full overflow-x-hidden">
                             { content }
                         </main>
                     </SidebarProvider>

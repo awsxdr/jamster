@@ -6,7 +6,7 @@ public sealed class JamStarted(Guid7 id) : Event(id), IPeriodClockAligned, IShow
 
 public sealed class JamEnded(Guid7 id) : Event(id), IPeriodClockAligned, IShownInUndo;
 
-public sealed class JamExpired(Guid7 id): Event(id), IReplaceOnDelete<JamAutoExpiryDisabled>, IAlwaysPersisted
+public sealed class JamExpired(Guid7 id): Event(id), IReplaceOnDelete<JamAutoExpiryDisabled>, IAlwaysPersisted, IShownInUndo
 {
     public JamAutoExpiryDisabled GetDeletionReplacement() =>
         new(Tick - 1);

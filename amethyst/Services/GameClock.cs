@@ -14,6 +14,8 @@ public class GameClock(GameInfo game, IEnumerable<ITickReceiverAsync> receivers,
 {
     public delegate IGameClock Factory(GameInfo game, IEnumerable<ITickReceiverAsync> receivers);
 
+    public static readonly Guid TickEventId = Guid.Parse("00000000-0000-0000-0000-00000000c10c");
+
     public int TicksBetweenFrames { get; init; } = 10;
 
     private volatile bool _isRunning;
@@ -38,7 +40,7 @@ public class GameClock(GameInfo game, IEnumerable<ITickReceiverAsync> receivers,
                             if (@event is IAlwaysPersisted)
                                 await eventBus.AddEvent(game, @event);
                             else
-                                await eventBus.AddEventWithoutPersisting(game, @event);
+                                await eventBus.AddEventWithoutPersisting(game, @event, TickEventId);
                         }
                     }
                     catch (Exception ex)
