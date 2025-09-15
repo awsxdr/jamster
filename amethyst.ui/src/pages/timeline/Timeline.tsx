@@ -29,7 +29,7 @@ export const Timeline = () => {
             return;
         }
 
-        moveEvent(gameId, eventId, newTick).then(() => setListDirty(true));
+        moveEvent(gameId, eventId, newTick, true).then(() => setListDirty(true));
     }
 
     const handleEventDeleted = (eventId: string) => {
