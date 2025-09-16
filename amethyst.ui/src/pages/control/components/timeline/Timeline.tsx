@@ -20,7 +20,7 @@ export const Timeline = ({ gameId }: TimelineProps) => {
         }
 
         lastItemRef.current.scrollIntoView();
-    }, [lastItemRef.current]);
+    }, [lastItemRef.current, timeline]);
     
     if(!timeline) {
         return <></>;
@@ -31,7 +31,7 @@ export const Timeline = ({ gameId }: TimelineProps) => {
     }
 
     return (
-        <div className="bg-white text-white h-[100px] w-full">
+        <div className="bg-background text-white h-[100px] w-full">
             <ScrollArea>
                 <div className="flex h-[100px] justify-stretch p-2">
                     {

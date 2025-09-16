@@ -33,9 +33,9 @@ export const TimelineItem = forwardRef<HTMLDivElement, TimelineItemProps>(({ sta
                         "--width": final ? "20vw" : `${duration * scale / 1000}px`
                     } as React.CSSProperties
                 }
-                className={cn(backgroundColor, "border border-gray-400 w-[--width]")}
+                className={cn(backgroundColor, "border border-gray-400 dark:border-gray-800 w-[--width]")}
             >
-                <div className="text-gray-700 text-sm [writing-mode:vertical-rl] pt-1">
+                <div className="text-gray-700 dark:text-gray-100 text-xs [writing-mode:vertical-rl] pt-1">
                     {stage.toString()} ({final ? "Running" : formatTime(duration)})
                 </div>
             </div>

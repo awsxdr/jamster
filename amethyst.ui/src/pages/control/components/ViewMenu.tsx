@@ -1,4 +1,4 @@
-import { Check, Clock, Eye, Maximize2, NotebookPen, Package, Play, Table, Tally5, Timer, UsersRound } from "lucide-react"
+import { Check, Clock, Eye, Maximize2, NotebookPen, Package, Play, Route, Table, Tally5, Timer, UsersRound } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger } from "@/components/ui"
 import { useCurrentUserConfiguration, useI18n, useIsMobile, useWakeLock } from "@/hooks";
 import { ControlPanelViewConfiguration, DEFAULT_CONTROL_PANEL_VIEW_CONFIGURATION, DisplaySide } from "@/types";
@@ -103,6 +103,11 @@ export const ViewMenu = ({ disabled }: ViewMenuProps) => {
         showScoreSheet: !viewConfiguration.showScoreSheet,
     });
 
+    const toggleShowTimeline = () => setViewConfiguration({
+        ...viewConfiguration,
+        showTimeline: !viewConfiguration.showTimeline,
+    });
+
     const setDisplaySide = (displaySide: DisplaySide) => setViewConfiguration({
         ...viewConfiguration,
         displaySide
@@ -185,6 +190,11 @@ export const ViewMenu = ({ disabled }: ViewMenuProps) => {
                         { viewConfiguration.showScoreSheet ? (<Check />) : (<IconSpacer />) }
                         <Table />
                         {translate("ScoreSheet")}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem disabled={disabled} onClick={toggleShowTimeline}>
+                        { viewConfiguration.showTimeline ? (<Check />) : (<IconSpacer />) }
+                        <Route />
+                        {translate("Timeline")}
                     </DropdownMenuItem>
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />

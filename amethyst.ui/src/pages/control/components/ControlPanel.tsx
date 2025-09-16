@@ -1,9 +1,9 @@
 import { MainControls } from "./MainControls"
 import { TeamControls } from "./TeamControls"
-import { ControlPanelViewConfiguration, DEFAULT_CONTROL_PANEL_VIEW_CONFIGURATION, DisplaySide, Stage, TeamSide } from "@/types";
+import { ControlPanelViewConfiguration, DisplaySide, Stage, TeamSide } from "@/types";
 import { ClocksContainer } from "./ClocksContainer";
 import { TimeoutTypePanel } from "./TimeoutTypePanel";
-import { useCurrentUserConfiguration, useGameStageState, useHasServerConnection } from "@/hooks";
+import { useGameStageState, useHasServerConnection } from "@/hooks";
 import { TimeoutList } from "./TimeoutList";
 import { ScoreSheetContainer } from "./statsSheet/ScoreSheetContainer";
 import { ConnectionLostAlert } from "@/components/ConnectionLostAlert";
@@ -11,17 +11,16 @@ import { ConnectionLostAlert } from "@/components/ConnectionLostAlert";
 type ControlPanelProps = {
     gameId?: string;
     disabled?: boolean;
+    viewConfiguration: ControlPanelViewConfiguration;
 }
 
-export const ControlPanel = ({ gameId, disabled }: ControlPanelProps) => {
+export const ControlPanel = ({ gameId, disabled, viewConfiguration }: ControlPanelProps) => {
 
     const hasConnection = useHasServerConnection();
 
     disabled = disabled || !hasConnection;
 
     const { stage, periodIsFinalized } = useGameStageState() ?? { stage: Stage.BeforeGame, periodIsFinalized: false };
-
-    const { configuration: viewConfiguration } = useCurrentUserConfiguration<ControlPanelViewConfiguration>("ControlPanelViewConfiguration", DEFAULT_CONTROL_PANEL_VIEW_CONFIGURATION);
 
     const teamControlsDisabled = 
         disabled  || stage === Stage.AfterGame && periodIsFinalized ? true

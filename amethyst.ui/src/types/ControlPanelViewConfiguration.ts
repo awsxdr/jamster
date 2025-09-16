@@ -8,6 +8,7 @@ export type ControlPanelViewConfiguration = {
     showClocks: boolean;
     showTimeoutList: boolean;
     showScoreSheet: boolean;
+    showTimeline: boolean;
     displaySide: DisplaySide;
 }
 
@@ -19,5 +20,6 @@ export const DEFAULT_CONTROL_PANEL_VIEW_CONFIGURATION: ControlPanelViewConfigura
     showClocks: true,
     showTimeoutList: true,
     showScoreSheet: true,
+    showTimeline: false,
     displaySide: DisplaySide.Both,
 }

@@ -1,11 +1,12 @@
 import { Separator } from "@/components/ui/separator";
 import { GameToolbar } from "./components/GameToolbar";
 import { useCallback, useEffect, useState } from "react";
-import { GameStateContextProvider, useCreateGame, useCurrentGame, useGamesList, useI18n } from "@/hooks";
+import { GameStateContextProvider, useCreateGame, useCurrentGame, useCurrentUserConfiguration, useGamesList, useI18n } from "@/hooks";
 import { useSearchParams } from "react-router-dom";
 import { ControlPanel } from "./components/ControlPanel";
 import { NewGameCreated, NewGameDialog, NewGameDialogContainer } from "../../components/NewGameDialog";
 import { Timeline } from "./components/timeline";
+import { ControlPanelViewConfiguration, DEFAULT_CONTROL_PANEL_VIEW_CONFIGURATION } from "@/types";
 
 export const ScoreboardControl = () => {
     const games = useGamesList();
@@ -49,6 +50,8 @@ export const ScoreboardControl = () => {
         setNewGameDialogOpen(false);
     }
 
+    const { configuration: viewConfiguration } = useCurrentUserConfiguration<ControlPanelViewConfiguration>("ControlPanelViewConfiguration", DEFAULT_CONTROL_PANEL_VIEW_CONFIGURATION);
+
     return (
         <>
             <title>{translate("ScoreboardControl.Title")} | {translate("Main.Title")}</title>
@@ -67,6 +70,7 @@ export const ScoreboardControl = () => {
                             <div className="px-0 sm:px-1 md:px-2 xl:px-5 overflow-y-auto">
                                 <ControlPanel 
                                     gameId={selectedGameId}
+                                    viewConfiguration={viewConfiguration}
                                 />
                                 <NewGameDialog 
                                     onNewGameCreated={handleNewGameCreated}
@@ -74,7 +78,9 @@ export const ScoreboardControl = () => {
                                 />
                             </div>
                             <Separator />
-                            <Timeline gameId={selectedGameId} />
+                            { viewConfiguration.showTimeline && (
+                                <Timeline gameId={selectedGameId} />
+                            )}
                         </GameStateContextProvider>
                     )}
                 </div>

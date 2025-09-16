@@ -8,6 +8,7 @@ public record ControlPanelViewConfiguration(
     bool ShowClocks,
     bool ShowTimeoutList,
     bool ShowScoreSheet,
+    bool ShowTimeline,
     DisplaySide DisplaySide
 );
 
@@ -28,5 +29,6 @@ public class ControlPanelViewConfigurationFactory : IConfigurationFactory<Contro
         true,
         false,
         true,
+        false,
         DisplaySide.Both);
 }

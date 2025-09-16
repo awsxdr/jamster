@@ -52,7 +52,7 @@ export const TimelineSeparator = ({ onAdjust }: TimelineSeparatorProps) => {
     return (
         <Popover open={isDragging}>
             <PopoverAnchor asChild>
-                <div className="bg-gray-300 cursor-ew-resize flex items-center justify-center" ref={dragBarRef} onPointerDown={handleStartDrag} onPointerMove={handleDrag} onPointerUp={handleEndDrag}>
+                <div className="bg-gray-300 dark:bg-gray-600 cursor-ew-resize flex items-center justify-center" ref={dragBarRef} onPointerDown={handleStartDrag} onPointerMove={handleDrag} onPointerUp={handleEndDrag}>
                     <EllipsisVertical size={18} />
                 </div>
             </PopoverAnchor>
