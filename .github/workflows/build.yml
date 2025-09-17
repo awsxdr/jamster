@@ -21,6 +21,10 @@ jobs:
       with:
         node-version: 22.x
 
+    - name: Lint UI
+      working-directory: ./amethyst.ui
+      run: npm run lint
+
     - name: Restore UI
       working-directory: ./amethyst.ui
       run: npm ci

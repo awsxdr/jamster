@@ -8,11 +8,11 @@ type SeparatedCollectionProps = {
 export const SeparatedCollection = ({ children }: SeparatedCollectionProps) => {
     return (
         <>
-        {
-            children.reduce((current, child) => 
-                <>{ current }{ child && current && <Separator /> }{ child }</>
-            , undefined)            
-        }
+            {
+                children.reduce((current, child) => 
+                    <>{ current }{ child && current && <Separator /> }{ child }</>
+                , undefined)            
+            }
         </>
     );
 }

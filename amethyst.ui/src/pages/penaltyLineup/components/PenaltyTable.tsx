@@ -42,7 +42,7 @@ export const PenaltyTable = ({ gameId, teamSide, offsetForLineupTable, compact }
     }
     
     const handlePenaltyClicked = (skaterNumber: string, index: number) => {
-        const selectedSkaterPenalties = skaterPenalties[skaterNumber]!;
+        const selectedSkaterPenalties = skaterPenalties[skaterNumber] ?? [];
         setEditingSkaterNumber(skaterNumber);
         setEditingIndex(index);
         if(index < selectedSkaterPenalties.length) {
@@ -54,7 +54,7 @@ export const PenaltyTable = ({ gameId, teamSide, offsetForLineupTable, compact }
     }
 
     const handlePenaltyAccept = (penalty: Penalty) => {
-        const selectedSkaterPenalties = [...skaterPenalties[editingSkaterNumber]!];
+        const selectedSkaterPenalties = [...(skaterPenalties[editingSkaterNumber] ?? [])];
         if(editingIndex < selectedSkaterPenalties.length) {
             (async () => {
                 const originalPenalty = selectedSkaterPenalties[editingIndex];
@@ -78,7 +78,7 @@ export const PenaltyTable = ({ gameId, teamSide, offsetForLineupTable, compact }
     }
 
     const handlePenaltyDelete = () => {
-        const selectedSkaterPenalties = [...skaterPenalties[editingSkaterNumber]!];
+        const selectedSkaterPenalties = [...(skaterPenalties[editingSkaterNumber] ?? [])];
         if(editingIndex >= selectedSkaterPenalties.length) {
             return;
         }

@@ -39,22 +39,21 @@ const ScoreboardContent = () => {
     const [userInteracting, setUserInteracting] = useState(0);
 
     const { languageCode, useSidebars, useNameBackgrounds } = useQueryStringConfiguration<ActivityData & ScoreboardActivity>({
-            activity: () => ClientActivity.Scoreboard,
-            gameId: v => v,
-            languageCode: v => v,
-            useSidebars: v => { 
-                return v === "true";
-            },
-            useNameBackgrounds: v => v === "true",
-        }, {
-            activity: ClientActivity.Scoreboard,
-            gameId: "",
-            languageCode: DEFAULT_DISPLAY_CONFIGURATION.language,
-            useSidebars: "true",
-            useNameBackgrounds: "true",
+        activity: () => ClientActivity.Scoreboard,
+        gameId: v => v,
+        languageCode: v => v,
+        useSidebars: v => { 
+            return v === "true";
         },
-        ["activity"]
-    );
+        useNameBackgrounds: v => v === "true",
+    }, {
+        activity: ClientActivity.Scoreboard,
+        gameId: "",
+        languageCode: DEFAULT_DISPLAY_CONFIGURATION.language,
+        useSidebars: "true",
+        useNameBackgrounds: "true",
+    },
+    ["activity"]);
 
     useEffect(() => {
         setLanguage(languageCode);

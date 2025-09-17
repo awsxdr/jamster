@@ -23,22 +23,21 @@ const OverlayContent = () => {
     const { translate, setLanguage } = useI18n();
 
     const { languageCode, scale, useBackground, backgroundColor } = useQueryStringConfiguration<ActivityData & StreamOverlayActivity>({
-            activity: () => ClientActivity.StreamOverlay,
-            gameId: v => v,
-            languageCode: v => v,
-            scale: v => parseFloat(v),
-            useBackground: v => v === "true",
-            backgroundColor: v => v,
-        }, {
-            activity: ClientActivity.StreamOverlay,
-            gameId: "",
-            languageCode: "en",
-            scale: "1",
-            useBackground: "false",
-            backgroundColor: "#00ff00",
-        },
-        ["activity"]
-    );
+        activity: () => ClientActivity.StreamOverlay,
+        gameId: v => v,
+        languageCode: v => v,
+        scale: v => parseFloat(v),
+        useBackground: v => v === "true",
+        backgroundColor: v => v,
+    }, {
+        activity: ClientActivity.StreamOverlay,
+        gameId: "",
+        languageCode: "en",
+        scale: "1",
+        useBackground: "false",
+        backgroundColor: "#00ff00",
+    },
+    ["activity"]);
 
     useEffect(() => {
         setLanguage(languageCode);

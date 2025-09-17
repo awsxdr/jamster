@@ -5,6 +5,8 @@ import { ScaledText } from '@components/ScaledText';
 import { ReviewStatus, TeamSide, TimeoutInUse } from "@/types";
 import { cn } from "@/lib/utils";
 import { SCOREBOARD_GAP_CLASS_NAME } from "../Scoreboard";
+import { switchex } from "@/utilities/switchex";
+
 
 type TeamTimeoutsProps = {
     side: TeamSide
@@ -23,9 +25,10 @@ type TimeoutSymbolProps = {
 
 const TimeoutSymbol = ({ state, active }: TimeoutSymbolProps) => {
     const symbol = useMemo(() => 
-        state === TimeoutSymbolState.Retained ? "✚" 
-        : state === TimeoutSymbolState.Hidden ? ""
-        : "⬤", 
+        switchex(state)
+            .case(TimeoutSymbolState.Retained).then("✚")
+            .case(TimeoutSymbolState.Hidden).then<string>("")
+            .default("⬤"), 
     [state]);
 
     return (

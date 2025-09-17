@@ -65,7 +65,7 @@ export const PenaltyDialog = ({ open, currentPenalty, onOpenChanged, onAccept, o
                 startJam: (periods[index - 1]?.endJam ?? 0) + 1,
                 endJam: (periods[index - 1]?.endJam ?? 0) + jamCount
             }],
-            [] as { period: number, startJam: number, endJam: number }[])
+        [] as { period: number, startJam: number, endJam: number }[])
             .filter(p => p.startJam <= totalJam)
             .at(-1);
         

@@ -42,9 +42,9 @@ export const TeamNames = ({ teamId, className }: TeamNamesProps) => {
     const onTeamNameBlur = () => {
         if (teamId && team?.names["team"] !== teamName) {
             setTeam(teamId, {
-                    ...team,
-                    names: { ...team?.names, "team": teamName },
-                    colors: team?.colors ?? {}
+                ...team,
+                names: { ...team?.names, "team": teamName },
+                colors: team?.colors ?? {}
             });
         }
     }
@@ -62,9 +62,9 @@ export const TeamNames = ({ teamId, className }: TeamNamesProps) => {
     const onScoreboardNameBlur = () => {
         if (teamId && team?.names["scoreboard"] !== scoreboardName) {
             setTeam(teamId, {
-                    ...team,
-                    names: { ...team?.names, "scoreboard": scoreboardName },
-                    colors: team?.colors ?? {}
+                ...team,
+                names: { ...team?.names, "scoreboard": scoreboardName },
+                colors: team?.colors ?? {}
             });
         }
     }
@@ -72,9 +72,9 @@ export const TeamNames = ({ teamId, className }: TeamNamesProps) => {
     const onOverlayNameBlur = () => {
         if (teamId && team?.names["overlay"] !== overlayName) {
             setTeam(teamId, {
-                    ...team,
-                    names: { ...team?.names, "overlay": overlayName },
-                    colors: team?.colors ?? {}
+                ...team,
+                names: { ...team?.names, "overlay": overlayName },
+                colors: team?.colors ?? {}
             });
         }
     }

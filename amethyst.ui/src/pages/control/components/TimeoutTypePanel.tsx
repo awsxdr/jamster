@@ -5,7 +5,8 @@ import { useEvents } from "@/hooks/EventsApiHook";
 import { useI18n } from "@/hooks/I18nHook";
 import { cn } from "@/lib/utils";
 import { Stage, TeamDetailsState, TeamSide, TimeoutType } from "@/types";
-import { TimeoutTypeSet } from "@/types/events";
+import { TimeoutTypeSet, TimeoutTypeSetBody } from "@/types/events";
+import { switchex } from "@/utilities/switchex";
 import { useMemo } from "react";
 
 type TimeoutTypePanelProps = {
@@ -45,12 +46,13 @@ export const TimeoutTypePanel = ({ gameId, disabled }: TimeoutTypePanelProps) =>
     const awayTeamName = useMemo(() => getTeamName(awayTeam, "Away"), [awayTeam]);
 
     const compoundType = useMemo<CompoundTimeoutType>(() =>
-        timeoutType?.type === TimeoutType.Team && timeoutType?.teamSide === TeamSide.Home ? 'HomeTeamTimeout'
-        : timeoutType?.type === TimeoutType.Team && timeoutType?.teamSide === TeamSide.Away ? 'AwayTeamTimeout'
-        : timeoutType?.type === TimeoutType.Review && timeoutType?.teamSide === TeamSide.Home ? 'HomeTeamReview'
-        : timeoutType?.type === TimeoutType.Review && timeoutType?.teamSide === TeamSide.Away ? 'AwayTeamReview'
-        : timeoutType?.type === TimeoutType.Official ? 'Official'
-        : 'Untyped'
+        switchex(timeoutType?.type)
+            .case(TimeoutType.Team).when(() => timeoutType?.teamSide === TeamSide.Home).then<CompoundTimeoutType>('HomeTeamTimeout')
+            .case(TimeoutType.Team).when(() => timeoutType?.teamSide === TeamSide.Away).then('AwayTeamTimeout')
+            .case(TimeoutType.Review).when(() => timeoutType?.teamSide === TeamSide.Home).then('HomeTeamReview')
+            .case(TimeoutType.Review).when(() => timeoutType?.teamSide === TeamSide.Away).then('AwayTeamReview')
+            .case(TimeoutType.Official).then('Official')
+            .default('Untyped')
     , [timeoutType]);
 
     const timeoutTypes: TooltipRadioItem<CompoundTimeoutType>[] = [
@@ -89,12 +91,13 @@ export const TimeoutTypePanel = ({ gameId, disabled }: TimeoutTypePanelProps) =>
         sendEvent(
             gameId, 
             new TimeoutTypeSet(
-                selectedType === 'HomeTeamTimeout' ? { type: 'Team', teamSide: TeamSide.Home }
-                : selectedType === 'HomeTeamReview' ? { type: 'Review', teamSide: TeamSide.Home }
-                : selectedType === 'Official' ? { type: 'Official' }
-                : selectedType === 'AwayTeamTimeout' ? { type: 'Team', teamSide: TeamSide.Away }
-                : selectedType === 'AwayTeamReview' ? { type: 'Review', teamSide: TeamSide.Away }
-                : { type: 'Untyped' }
+                switchex(selectedType)
+                    .case('HomeTeamTimeout').then<TimeoutTypeSetBody>({ type: 'Team', teamSide: TeamSide.Home })
+                    .case('HomeTeamReview').then({ type: 'Review', teamSide: TeamSide.Home })
+                    .case('Official').then({ type: 'Official' })
+                    .case('AwayTeamTimeout').then({ type: 'Team', teamSide: TeamSide.Away })
+                    .case('AwayTeamReview').then({ type: 'Review', teamSide: TeamSide.Away })
+                    .default({ type: 'Untyped' })
             ));
     }
 

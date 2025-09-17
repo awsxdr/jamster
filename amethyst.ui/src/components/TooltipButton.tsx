@@ -8,15 +8,13 @@ export type TooltipButtonProps = {
 } & ButtonProps;
 
 export const TooltipButton = forwardRef<HTMLButtonElement, TooltipButtonProps>(({ 
-        children, 
-        description,
-        notify,
-        className,
-        disabled,
-        ...props 
-    }: PropsWithChildren<TooltipButtonProps>,
-    ref
-) => {
+    children, 
+    description,
+    notify,
+    className,
+    disabled,
+    ...props 
+}: PropsWithChildren<TooltipButtonProps>, ref) => {
     return disabled ? (
         <Button disabled {...props} className={className} ref={ref}>
             { children }
@@ -26,7 +24,7 @@ export const TooltipButton = forwardRef<HTMLButtonElement, TooltipButtonProps>((
             <TooltipTrigger asChild>
                 <div className="relative inline">
                     { notify && (
-                        <Button className={cn(className, "animate-ping-small pointer-events-none absolute left-0 top-0")} {...props} ref={ref}>
+                        <Button className={cn(className, "animate-ping-small pointer-events-none absolute left-0 top-0")} {...props}>
                             { children }
                         </Button>
                     )}

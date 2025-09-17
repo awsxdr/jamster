@@ -10,14 +10,13 @@ const INITIAL_INPUT_DELAY = 600;
 const MINIMUM_DELAY = 75;
 
 export const RepeaterButton = ({ 
-        onPointerDown,
-        onPointerUp,
-        onClick,
-        onEditingStart, 
-        onEditingEnd, 
-        ...props 
-    }: RepeaterButtonProps
-) => {
+    onPointerDown,
+    onPointerUp,
+    onClick,
+    onEditingStart, 
+    onEditingEnd, 
+    ...props 
+}: RepeaterButtonProps) => {
 
     const [buttonDown, setButtonDown] = useState(false);
     const [pointerDownEvent, setPointerDownEvent] = useState<PointerEvent<HTMLButtonElement>>();
@@ -63,11 +62,11 @@ export const RepeaterButton = ({
     buttonDownRef.current = buttonDown;
 
     const repeatInput = useCallback((nextDelay: number) => {
-        if(!buttonDownRef.current) {
+        if(!buttonDownRef.current || !pointerDownEvent) {
             return;
         }
 
-        onClick?.(pointerDownEvent!);
+        onClick?.(pointerDownEvent);
 
         const inputDelay = Math.max(MINIMUM_DELAY, nextDelay / 2);
 

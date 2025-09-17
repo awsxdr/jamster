@@ -37,7 +37,7 @@ const RowLayout = ({ className, numberContent, nameContent, skatingContent, tool
                         {toolsContent}
                     </div>
                 </>
-            , rowClassName)}
+                , rowClassName)}
         </div>
     );
 }

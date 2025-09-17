@@ -1,6 +1,7 @@
 import { Column } from "@tanstack/react-table";
 import { Button } from "./ui";
 import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
+import { switchex } from "@/utilities/switchex";
 
 type SortableColumnHeaderProps<TColumn> = {
     column: Column<TColumn, string>;
@@ -17,9 +18,10 @@ export const SortableColumnHeader = <TColumn,>({ column, header }: SortableColum
         <Button variant="ghost" onClick={handleClick}>
             { header }
             { 
-                column.getIsSorted() === 'asc' ? <ArrowDown />
-                : column.getIsSorted() === 'desc' ? <ArrowUp />
-                : <ArrowUpDown />
+                switchex(column.getIsSorted())
+                    .case('asc').then(<ArrowDown />)
+                    .case('desc').then(<ArrowUp />)
+                    .default(<ArrowUpDown />)
             }
         </Button>
     );

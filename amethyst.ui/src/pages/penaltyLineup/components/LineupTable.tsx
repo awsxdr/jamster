@@ -8,6 +8,7 @@ import { useEffect, useMemo, useState } from "react";
 import { SkaterPositionColumn } from "./SkaterPositionColumn";
 import { SkaterAddedToJam, SkaterInjuryAdded, SkaterInjuryRemoved, SkaterPosition, SkaterReleasedFromBox, SkaterRemovedFromJam, SkaterSatInBox } from "@/types/events";
 import { PenaltyBoxColumn } from "./PenaltyBoxColumn";
+import { ternary } from "@/utilities/switchex";
 
 type LineupTableProps = {
     gameId: string;
@@ -16,10 +17,10 @@ type LineupTableProps = {
 }
 
 export const LineupTable = ({
-        gameId,
-        teamSide,
-        compact, 
-    }: LineupTableProps) => {
+    gameId,
+    teamSide,
+    compact, 
+}: LineupTableProps) => {
 
     const { translate } = useI18n({ prefix: "PenaltyLineup.LineupTable." })
 
@@ -57,13 +58,14 @@ export const LineupTable = ({
         team?.roster.reduce((map, { number }) => ({
             ...map,
             [number]: (
-                currentJam?.jammerNumber === number ? LineupPosition.Jammer
-                : currentJam?.pivotNumber === number ? LineupPosition.Pivot
-                : currentJam?.blockerNumbers.includes(number) ? LineupPosition.Blocker
-                : LineupPosition.Bench
+                ternary()
+                    .predicate(_ => currentJam?.jammerNumber === number).then(LineupPosition.Jammer)
+                    .predicate(_ => currentJam?.pivotNumber === number).then(LineupPosition.Pivot)
+                    .predicate(_ => currentJam?.blockerNumbers.includes(number) ?? false).then(LineupPosition.Blocker)
+                    .default(LineupPosition.Bench)
             )
         }), {} as StringMap<LineupPosition>),
-        [currentJam, team]);
+    [currentJam, team]);
 
     const skaterPenalties = useMemo(() => 
         penaltySheet.lines.reduce((map, line) => ({ ...map, [line.skaterNumber]: line.penalties }), {} as StringMap<Penalty[]>), 

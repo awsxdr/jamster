@@ -27,7 +27,7 @@ const UsersManagementInternal = () => {
             .forEach(userName => {
                 deleteUser(userName);
             });
-            setSelectedUserNames([]);
+        setSelectedUserNames([]);
     }
 
     const handleDownloadClicked = () => {

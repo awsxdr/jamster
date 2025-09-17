@@ -50,9 +50,10 @@ export enum PeriodEndBehavior {
 }
 
 export enum TimeoutPeriodClockStopBehavior {
-    OfficialTimeout = 1 << 0,
-    TeamTimeout = 1 << 1,
-    OfficialReview = 1 << 2,
+    OfficialTimeout = 1,
+    TeamTimeout = 2,
+    OfficialReview = 4,
+    // eslint-disable-next-line @typescript-eslint/prefer-literal-enum-member
     All = OfficialTimeout | TeamTimeout | OfficialReview,
 }
 

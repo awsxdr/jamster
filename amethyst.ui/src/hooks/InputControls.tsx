@@ -30,7 +30,7 @@ export const useShortcut = <TGroupKey extends keyof InputControls, TControlKey e
         throw new Error('useShortcut must be used inside a ShortcutsContextProvider');
     }
 
-    const shortcut = context.shortcuts[groupKey]![controlKey as keyof InputControls[TGroupKey]] as Control | undefined;
+    const shortcut = context.shortcuts[groupKey][controlKey as keyof InputControls[TGroupKey]] as Control | undefined;
 
     const handleShortcutTriggered = useCallback(() => {
         if(context.shortcutsEnabled) {

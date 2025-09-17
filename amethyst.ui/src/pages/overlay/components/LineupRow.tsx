@@ -34,8 +34,8 @@ export const LineupRow = ({ side }: LineupRowProps) => {
 
     const jammerText =
         jammerName
-        ? `${jammerName} (${jammerNumber})`
-        : jammerNumber ?? '-';
+            ? `${jammerName} (${jammerNumber})`
+            : jammerNumber ?? '-';
 
     return (
         <div className={cn(side === TeamSide.Home ? homeRowClassName : awayRowClassName, visible && 'w-[--lineup-row-width]')}>

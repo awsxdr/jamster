@@ -1,6 +1,7 @@
 import { Separator, Switch } from "@/components/ui";
 import { cn } from "@/lib/utils";
 import { TeamSide, TimeoutListItem, TimeoutType } from "@/types"
+import { switchex } from "@/utilities/switchex";
 import { useMemo } from "react";
 
 type TimeoutRowProps = {
@@ -11,12 +12,13 @@ type TimeoutRowProps = {
 const TimeoutRow = ({ timeout, onTimeoutRetentionChanged }: TimeoutRowProps) => {
 
     const timeoutName = useMemo(() => 
-        timeout.type === TimeoutType.Official ? "Official time out"
-        : timeout.type === TimeoutType.Team && timeout.side === TeamSide.Home ? "Home team timeout"
-        : timeout.type === TimeoutType.Team ? "Away team timeout"
-        : timeout.type === TimeoutType.Review && timeout.side === TeamSide.Home ? "Home team official review"
-        : timeout.type === TimeoutType.Review ? "Away team official review"
-        : "Untyped"
+        switchex(timeout.type)
+            .case(TimeoutType.Official).then("Official time out")
+            .case(TimeoutType.Team).when(() => timeout.side === TeamSide.Home).then("Home team timeout")
+            .case(TimeoutType.Team).then("Away team timeout")
+            .case(TimeoutType.Review).when(() => timeout.side === TeamSide.Home).then("Home team official review")
+            .case(TimeoutType.Review).then("Away team official review")
+            .default("Untyped")
     , [timeout]);
 
     const formatTime = (totalSeconds: number) => {
@@ -34,7 +36,7 @@ const TimeoutRow = ({ timeout, onTimeoutRetentionChanged }: TimeoutRowProps) => 
             <span className="col-start-3 text-center">{ timeout.durationInSeconds ? formatTime(timeout.durationInSeconds) : 'In progress' }</span>
             <span className="col-start-4">
                 { timeout.type === TimeoutType.Review && (
-                    <>Retained <Switch checked={timeout.retained} onCheckedChange={v => onTimeoutRetentionChanged?.(timeout.side!, v)} /></>
+                    <>Retained <Switch checked={timeout.retained} onCheckedChange={v => onTimeoutRetentionChanged?.(timeout.side ?? TeamSide.Home , v)} /></>
                 )}
             </span>
         </>

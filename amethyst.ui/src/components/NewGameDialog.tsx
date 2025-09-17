@@ -93,8 +93,12 @@ export const NewGameDialog = ({ onNewGameCreated, onCancelled }: NewGameDialogPr
     }
 
     const handleNewGameClicked = () => {
+        if(!homeTeamId || !awayTeamId) {
+            return;
+        }
+        
         setIsCreating(true);
-        onNewGameCreated?.(homeTeamId!, homeTeamColorIndex, awayTeamId!, awayTeamColorIndex, gameName);
+        onNewGameCreated?.(homeTeamId, homeTeamColorIndex, awayTeamId, awayTeamColorIndex, gameName);
         clearValues();
     }
 

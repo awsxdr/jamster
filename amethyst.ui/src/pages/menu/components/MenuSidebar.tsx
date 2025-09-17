@@ -18,9 +18,7 @@ type SidebarGroup = {
     items: SidebarItem[];
 }
 
-type SidebarGroupList = {
-    [group: string]: SidebarGroup;
-};
+type SidebarGroupList = Record<string, SidebarGroup>;
 
 const sidebarItems: SidebarGroupList = {
     "ControlGroup": {
@@ -169,8 +167,8 @@ export const MenuSidebar = () => {
                         }
                     })
                 }
-           </SidebarContent>
-           <SidebarFooter>
+            </SidebarContent>
+            <SidebarFooter>
                 <SidebarMenu>
                     <LanguageMenu />
                     <ThemeMenu />

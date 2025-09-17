@@ -70,6 +70,6 @@ export const LoginDialog = () => {
                     </DialogClose>
                 </DialogFooter>
             </form>
-    </DialogContent>
+        </DialogContent>
     );
 }

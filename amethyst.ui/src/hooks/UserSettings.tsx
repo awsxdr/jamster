@@ -63,9 +63,9 @@ export const useCurrentUserConfiguration = <TConfiguration,>(configurationName: 
     };
 }
 
-type ConfigurationNotifier = { [handle: CallbackHandle]: (genericConfiguration: object) => void };
-type ConfigurationNotifierMap = { [configurationName: string]: ConfigurationNotifier };
-type UserConfigurationNotifierMap = { [userName: string]: ConfigurationNotifierMap };
+type ConfigurationNotifier = Record<CallbackHandle, (genericConfiguration: object) => void>;
+type ConfigurationNotifierMap = Record<string, ConfigurationNotifier>;
+type UserConfigurationNotifierMap = Record<string, ConfigurationNotifierMap>;
 
 export const UserSettingsContextProvider = ({ children }: PropsWithChildren) => {
     const [notifiers, setNotifiers] = useState<UserConfigurationNotifierMap>({});
@@ -127,7 +127,7 @@ export const UserSettingsContextProvider = ({ children }: PropsWithChildren) => 
 
         Object.keys(notifiers).forEach(userName => {
             Object.keys(notifiers[userName]).forEach(configurationType => {
-                connection!.invoke("WatchUserConfiguration", userName, configurationType);
+                connection.invoke("WatchUserConfiguration", userName, configurationType);
             });
         });
     }, [connection, notifiers]);

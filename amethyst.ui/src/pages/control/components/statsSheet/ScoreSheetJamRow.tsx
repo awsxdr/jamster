@@ -2,6 +2,7 @@ import { cn } from "@/lib/utils";
 import { ScoreSheetJam } from "@/types"
 import { EditableCell } from "./EditableCell";
 import { CheckCell } from "./CheckCell";
+import { ternary } from "@/utilities/switchex";
 
 type ScoreSheetJamRowProps = {
     line: ScoreSheetJam;
@@ -29,13 +30,14 @@ export const ScoreSheetJamRow = ({ line, even, preStarPass, postStarPass, classN
     const checkCellClass = "text-center border-l border-b border-black dark:border-gray-400";
 
     const lineLabel =
-        postStarPass ? (line.starPassTrip == null ? "" : line.pivotNumber)
-        : line.jammerNumber;
+        postStarPass 
+            ? (line.starPassTrip == null ? "" : line.pivotNumber)
+            : line.jammerNumber;
 
-    const isPreThisTeamStarPass = preStarPass && line.starPassTrip !== null;
-    const isPostThisTeamStarPass = postStarPass && line.starPassTrip !== null;
-    const isPreOtherTeamStarPass = preStarPass && !isPreThisTeamStarPass;
-    const isPostOtherTeamStarPass = postStarPass && !isPostThisTeamStarPass;
+    const isPreThisTeamStarPass = !!preStarPass && line.starPassTrip !== null;
+    const isPostThisTeamStarPass = !!postStarPass && line.starPassTrip !== null;
+    const isPreOtherTeamStarPass = !!preStarPass && !isPreThisTeamStarPass;
+    const isPostOtherTeamStarPass = !!postStarPass && !isPostThisTeamStarPass;
     const isStarPass = preStarPass || postStarPass;
 
     const lineLost = !postStarPass && line.lost;
@@ -50,15 +52,17 @@ export const ScoreSheetJamRow = ({ line, even, preStarPass, postStarPass, classN
     const starPassSwitchTrip = Math.max(0, (line.starPassTrip ?? 0) - 1);
 
     const lineTotal = 
-        isPreThisTeamStarPass ? line.trips.slice(0, starPassSwitchTrip).map(t => t.score ?? 0).reduce((t, i) => t + i, 0)
-        : isPostThisTeamStarPass ? line.trips.slice(starPassSwitchTrip).map(t => t.score ?? 0).reduce((t, i) => t + i, 0)
-        : isPostOtherTeamStarPass ? 0
-        : line.starPassTrip !== null ? 0
-        : line.jamTotal;
+        ternary()
+            .if(isPreThisTeamStarPass).then(line.trips.slice(0, starPassSwitchTrip).map(t => t.score ?? 0).reduce((t, i) => t + i, 0))
+            .if(isPostThisTeamStarPass).then(line.trips.slice(starPassSwitchTrip).map(t => t.score ?? 0).reduce((t, i) => t + i, 0))
+            .if(isPostOtherTeamStarPass).then(0)
+            .if(line.starPassTrip !== null).then(0)
+            .default(line.jamTotal);
 
     const lineGameTotal =
-        isPreThisTeamStarPass ? line.gameTotal - line.jamTotal + lineTotal
-        : line.gameTotal;
+        isPreThisTeamStarPass 
+            ? line.gameTotal - line.jamTotal + lineTotal
+            : line.gameTotal;
 
     const nonNullTripCount = line.trips.filter(t => t.score !== null).length;
 
@@ -87,9 +91,10 @@ export const ScoreSheetJamRow = ({ line, even, preStarPass, postStarPass, classN
     const handleTripScoreChanged = (trip: number, value: string) => {
         const parsedValue = parseInt(value);
         const newValue =
-            value.trim() === "" ? null
-            : Number.isNaN(parsedValue) ? 0
-            : parsedValue;
+            ternary()
+                .predicate(() => value.trim() === "").then<number | null>(null)
+                .predicate(() => Number.isNaN(parsedValue)).then(0)
+                .default(parsedValue);
         
         onTripScoreSet?.(trip, newValue);
     }

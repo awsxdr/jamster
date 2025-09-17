@@ -52,7 +52,7 @@ const ColorRow = ({ color, disableEdit, disableSelect, existingColors, onEditSta
         setComplementaryColor(Color.rgbToHsl(Color.parseRgb(color.complementaryColor) ?? { red: 0, green: 0, blue: 0 }));
     }, [color]);
 
-    const handleNameChanged = (e: ChangeEvent<HTMLInputElement>, baseOnChange: (...event: any[]) => void) => {
+    const handleNameChanged = (e: ChangeEvent<HTMLInputElement>, baseOnChange: (...event: unknown[]) => void) => {
         baseOnChange(e);
 
         const kitColorName = e.target.value;
@@ -118,17 +118,17 @@ const ColorRow = ({ color, disableEdit, disableSelect, existingColors, onEditSta
                         )}
                     </div>
                     <ColorSelectButton 
-                            color={shirtColor} 
-                            onColorChanged={setShirtColor}
-                            className="disabled:opacity-100"
-                            disabled={!isEditing} 
-                        />
+                        color={shirtColor} 
+                        onColorChanged={setShirtColor}
+                        className="disabled:opacity-100"
+                        disabled={!isEditing} 
+                    />
                     <ColorSelectButton 
-                            color={complementaryColor} 
-                            onColorChanged={setComplementaryColor}
-                            className="disabled:opacity-100"
-                            disabled={!isEditing} 
-                        />
+                        color={complementaryColor} 
+                        onColorChanged={setComplementaryColor}
+                        className="disabled:opacity-100"
+                        disabled={!isEditing} 
+                    />
                     <div className="flex w-20 text-nowrap justify-end">
                         { isEditing ? (
                             <div className="flex gap-0.5">
@@ -165,11 +165,14 @@ export const ColorsTable = ({ team }: ColorsTableProps) => {
     const [colorItems, setColorItems] = useState<ColorItem[]>([]);
 
     useEffect(() => {
-        const keys = Object.keys(team.colors);
-        keys.sort((a, b) => a.localeCompare(b));
+        const isDefined = (value: [string, TeamColor | undefined]): value is [string, TeamColor] => 
+            value !== undefined;
 
-        setColorItems(keys.map(key => ({
-            ...team.colors[key]!,
+        const colors: [string, TeamColor][] = Object.entries(team.colors).filter(isDefined);
+        colors.sort(([a], [b]) => a.localeCompare(b));
+
+        setColorItems(colors.map(([key, color]) => ({
+            ...color,
             name: key,
             selected: false,
         })));

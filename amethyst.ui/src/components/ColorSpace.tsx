@@ -36,8 +36,8 @@ export const ColorSpace = ({ color, className, onColorChanged }: ColorSpaceProps
 
     const calculateColorFromOffset = (xOffset: number, yOffset: number) => ({
         ...hsvColor,
-        saturation: xOffset / pickerRef.current!.clientWidth,
-        value: 1 - yOffset / pickerRef.current!.clientHeight,
+        saturation: xOffset / (pickerRef.current?.clientWidth ?? 1),
+        value: 1 - yOffset / (pickerRef.current?.clientHeight ?? 1),
     })
 
     useEffect(() => {
@@ -48,7 +48,11 @@ export const ColorSpace = ({ color, className, onColorChanged }: ColorSpaceProps
         const handleMouseMove = (event: globalThis.MouseEvent) => {
             event.preventDefault();
 
-            const boundingBox = pickerRef.current!.getBoundingClientRect();
+            if(!pickerRef.current) {
+                return;
+            }
+
+            const boundingBox = pickerRef.current.getBoundingClientRect();
             
             const xOffset = event.clientX - boundingBox.left;
             const yOffset = event.clientY - boundingBox.top;
@@ -61,7 +65,11 @@ export const ColorSpace = ({ color, className, onColorChanged }: ColorSpaceProps
         const handleTouchMove = (event: globalThis.TouchEvent) => {
             event.preventDefault();
 
-            const boundingBox = pickerRef.current!.getBoundingClientRect();
+            if(!pickerRef.current) {
+                return;
+            }
+
+            const boundingBox = pickerRef.current.getBoundingClientRect();
             
             const xOffset = event.touches[0].clientX - boundingBox.left;
             const yOffset = event.touches[0].clientY - boundingBox.top;

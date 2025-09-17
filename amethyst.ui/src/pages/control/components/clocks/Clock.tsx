@@ -24,8 +24,8 @@ export const Clock = ({ name, editing, seconds, isRunning, direction, startValue
 
     const calculateTotalSeconds = () => 
         seconds
-        ? direction === 'up' ? seconds : ((startValue ?? 0) - seconds)
-        : 0;
+            ? direction === 'up' ? seconds : ((startValue ?? 0) - seconds)
+            : 0;
 
     const formatTime = (totalSeconds: number) => {
 
@@ -43,8 +43,9 @@ export const Clock = ({ name, editing, seconds, isRunning, direction, startValue
         }
 
         const totalSeconds = 
-            isEditing ? editValue
-            : calculateTotalSeconds();
+            isEditing 
+                ? editValue
+                : calculateTotalSeconds();
 
         return formatTime(totalSeconds);
     }, [seconds, direction, startValue, isEditing, editValue]);
@@ -66,7 +67,7 @@ export const Clock = ({ name, editing, seconds, isRunning, direction, startValue
     const handleSetClicked = () => {
         const parsedInput = parseInput();
 
-        if(!!parsedInput) {
+        if(parsedInput) {
             onClockSet?.(parsedInput);
             setInputValue('');
         }
@@ -79,7 +80,7 @@ export const Clock = ({ name, editing, seconds, isRunning, direction, startValue
     const handleInputBlur = () => {
         const parsedInput = parseInput();
 
-        if(!!!parsedInput) {
+        if(!parsedInput) {
             setInputValue('');
         } else {
             setInputValue(formatTime(parsedInput))

@@ -18,11 +18,12 @@ export const TimeoutDetails = ({ gameStage, visible }: TimeoutDetailsProps) => {
 
     const { translate, language } = useI18n();
     
-    const timeoutTypeName = useMemo(() =>
-        type === TimeoutType.Official ? translate("Scoreboard.TimeoutDetails.OfficialTimeout")
-        : type === TimeoutType.Review ? translate("Scoreboard.TimeoutDetails.OfficialReview")
-        : type === TimeoutType.Team ? translate("Scoreboard.TimeoutDetails.TeamTimeout")
-        : translate("Scoreboard.TimeoutDetails.Timeout")
+    const timeoutTypeName = useMemo(() => (() => {
+        if (type === TimeoutType.Official) return translate("Scoreboard.TimeoutDetails.OfficialTimeout");
+        else if (type === TimeoutType.Review) return translate("Scoreboard.TimeoutDetails.OfficialReview");
+        else if (type === TimeoutType.Team) return translate("Scoreboard.TimeoutDetails.TeamTimeout");
+        else return translate("Scoreboard.TimeoutDetails.Timeout");
+    })()
     , [type, language]);
     
     return (

@@ -82,16 +82,16 @@ export const PenaltyLineup = () => {
         <>
             <title>{translate("Title")} | {translate("Main.Title", { ignorePrefix: true })}</title>
             <GameToolbar 
-                    currentGame={currentGame} 
-                    selectedGameId={selectedGameId} 
-                    displaySide={team}
-                    pltDisplayType={pltDisplay}
-                    boxDisplayType={boxDisplay}
-                    onDisplaySideChanged={handleTeamChanged}
-                    onPltDisplayTypeChanged={handlePltTypeChanged}
-                    onBoxDisplayTypeChanged={handleBoxTypeChanged}
-                    onSelectedGameIdChanged={updateSelectedGameId}
-                />
+                currentGame={currentGame} 
+                selectedGameId={selectedGameId} 
+                displaySide={team}
+                pltDisplayType={pltDisplay}
+                boxDisplayType={boxDisplay}
+                onDisplaySideChanged={handleTeamChanged}
+                onPltDisplayTypeChanged={handlePltTypeChanged}
+                onBoxDisplayTypeChanged={handleBoxTypeChanged}
+                onSelectedGameIdChanged={updateSelectedGameId}
+            />
             { selectedGameId && (
                 <GameStateContextProvider gameId={selectedGameId}>
                     <Separator />

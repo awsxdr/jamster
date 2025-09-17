@@ -16,6 +16,6 @@ export const useTeamColorMap = (): StringMap<TeamColor> => [
     [["grey", "gray"], ["#666666", "#ffffff"]],
     [["white"], ["#ffffff", "#000000"]],
 ]
-.flatMap(x => x[0].map(name => ({ name, shirtColor: x[1][0], complementaryColor: x[1][1] })))
-.reduce((map, { name, ...current }) => ({ ...map, [name]: current}), {});
+    .flatMap(x => x[0].map(name => ({ name, shirtColor: x[1][0], complementaryColor: x[1][1] })))
+    .reduce((map, { name, ...current }) => ({ ...map, [name]: current}), {});
 

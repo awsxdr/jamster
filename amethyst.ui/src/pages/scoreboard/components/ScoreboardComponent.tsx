@@ -15,7 +15,7 @@ export const ScoreboardComponent = ({ header, style, className, headerClassName,
             style={style} 
             className={cn(
                 "flex flex-col bg-white content-stretch rounded-md sm:rounded-lg md:rounded-xl xl:rounded-3xl",
-                 className
+                className
             )}
         >
             { header && (

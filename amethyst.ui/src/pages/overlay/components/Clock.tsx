@@ -1,6 +1,7 @@
 import { useClocks, useCurrentTimeoutTypeState, useGameStageState, useI18n, useTeamDetailsState } from "@/hooks";
 import { cn } from "@/lib/utils";
 import { Stage, TeamSide, TimeoutType } from "@/types";
+import { switchex } from "@/utilities/switchex";
 import { CSSProperties, useMemo } from "react";
 
 export const Clock = () => {
@@ -20,25 +21,28 @@ export const Clock = () => {
     const Header = () => {
 
         const getTimeoutText = () =>
-            timeoutType === TimeoutType.Official ? translate("Overlay.Clock.OfficialTimeout")
-            : timeoutType === TimeoutType.Review ? translate("Overlay.Clock.OfficialReview")
-            : timeoutType === TimeoutType.Team ? translate("Overlay.Clock.TeamTimeout")
-            : translate("Overlay.Clock.Timeout");
-        
+            translate(
+                switchex(timeoutType)
+                    .case(TimeoutType.Official).then("Overlay.Clock.OfficialTimeout")
+                    .case(TimeoutType.Review).then("Overlay.Clock.OfficialReview")
+                    .case(TimeoutType.Team).then("Overlay.Clock.TeamTimeout")
+                    .default("Overlay.Clock.Timeout"));
+            
         const text = useMemo(() =>
-            stage === Stage.BeforeGame ? translate("Overlay.Clock.Upcoming")
-            : stage === Stage.Lineup ? translate("Overlay.Clock.Lineup")
-            : stage === Stage.Jam ? translate("Overlay.Clock.Jam")
-            : stage === Stage.Timeout ? getTimeoutText()
-            : stage === Stage.AfterTimeout ? translate("Overlay.Clock.Timeout")
-            : stage === Stage.Intermission ? translate("Overlay.Clock.Intermission")
-            : ""
+            switchex(stage)
+                .case(Stage.BeforeGame).then(translate("Overlay.Clock.Upcoming"))
+                .case(Stage.Lineup).then(translate("Overlay.Clock.Lineup"))
+                .case(Stage.Jam).then(translate("Overlay.Clock.Jam"))
+                .case(Stage.Timeout).then(getTimeoutText())
+                .case(Stage.AfterTimeout).then(translate("Overlay.Clock.Timeout"))
+                .case(Stage.Intermission).then(translate("Overlay.Clock.Intermission"))
+                .default("")
         , [stage]);
 
         const [backgroundColor, textColor] =
             stage === Stage.Timeout && (timeoutType === TimeoutType.Team || timeoutType === TimeoutType.Review)
-            ? [timeoutColors?.shirtColor ?? '#000', timeoutColors?.complementaryColor ?? '#fff']
-            : ['#000', '#fff'];
+                ? [timeoutColors?.shirtColor ?? '#000', timeoutColors?.complementaryColor ?? '#fff']
+                : ['#000', '#fff'];
 
         return (
             <div
@@ -51,14 +55,17 @@ export const Clock = () => {
     }
 
     const clockValue = 
-        stage === Stage.Jam ? 120 - (jamClock?.secondsPassed ?? 0)
-        : stage === Stage.Timeout || stage === Stage.AfterTimeout ? timeoutClock?.secondsPassed ?? 0
-        : stage === Stage.Lineup ? lineupClock?.secondsPassed ?? 0
-        : 0;
+        switchex(stage)
+            .case(Stage.Jam).then(120 - (jamClock?.secondsPassed ?? 0))
+            .case(Stage.Timeout).then(timeoutClock?.secondsPassed ?? 0)
+            .case(Stage.AfterTimeout).then(timeoutClock?.secondsPassed ?? 0)
+            .case(Stage.Lineup).then(lineupClock?.secondsPassed ?? 0)
+            .default(0);
     
     const formatClock = (seconds: number) =>
-        seconds >= 60 ? `${Math.floor(seconds / 60)}:${(seconds % 60).toString().padStart(2, '0')}`
-        : seconds.toString();
+        seconds >= 60 
+            ? `${Math.floor(seconds / 60)}:${(seconds % 60).toString().padStart(2, '0')}`
+            : seconds.toString();
 
     const clockContainerClassName = "absolute flex flex-col left-[--clock-left] top-[--clock-top] w-[--clock-width] h-[--clock-height] rounded-lg bg-gradient-to-b from-[#eee] to-[#aaa]";
     const intermissionClockClassName = "absolute flex flex-col left-[--clock-left] top-[--clock-top] w-[--clock-width] h-[--intermission-clock-height] rounded-lg bg-gradient-to-b from-[#eee] to-[#aaa]";

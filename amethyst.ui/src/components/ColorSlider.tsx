@@ -12,7 +12,9 @@ export const ColorSlider = ({ hue, onHueChanged }: ColorSliderProps) => {
     const [isDragging, setIsDragging] = useState(false);
 
     const calculateHueFromXOffset = (xOffset: number) =>
-        Math.min(Math.max(xOffset, 0), pickerRef.current!.clientWidth) / pickerRef.current!.clientWidth * 359;
+        pickerRef.current
+            ? Math.min(Math.max(xOffset, 0), pickerRef.current.clientWidth) / pickerRef.current.clientWidth * 359
+            : 0;
 
     useEffect(() => {
         if(!pickerRef.current) {
@@ -22,7 +24,11 @@ export const ColorSlider = ({ hue, onHueChanged }: ColorSliderProps) => {
         const handleMouseMove = (event: globalThis.MouseEvent) => {
             event.preventDefault();
 
-            const xOffset = event.clientX - pickerRef.current!.getBoundingClientRect().left;
+            if(!pickerRef.current) {
+                return;
+            }
+
+            const xOffset = event.clientX - pickerRef.current.getBoundingClientRect().left;
             const newHue = calculateHueFromXOffset(xOffset);
 
             onHueChanged?.(newHue);
@@ -31,7 +37,11 @@ export const ColorSlider = ({ hue, onHueChanged }: ColorSliderProps) => {
         const handleTouchMove = (event: globalThis.TouchEvent) => {
             event.preventDefault();
 
-            const xOffset = event.touches[0].clientX - pickerRef.current!.getBoundingClientRect().left;
+            if(!pickerRef.current) {
+                return;
+            }
+
+            const xOffset = event.touches[0].clientX - pickerRef.current.getBoundingClientRect().left;
             const newHue = calculateHueFromXOffset(xOffset);
 
             onHueChanged?.(newHue);

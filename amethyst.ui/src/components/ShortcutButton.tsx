@@ -9,14 +9,13 @@ export type ShortcutButtonProps<TGroupKey extends keyof InputControls, TControlK
 } & Omit<TooltipButtonProps, 'ref'>;
 
 export const ShortcutButton = <TGroupKey extends keyof InputControls, TControlKey extends keyof InputControls[TGroupKey]>({ 
-        children, 
-        shortcutGroup,
-        shortcutKey,
-        disabled,
-        description,
-        ...props 
-    }: PropsWithChildren<ShortcutButtonProps<TGroupKey, TControlKey>>
-) => {
+    children, 
+    shortcutGroup,
+    shortcutKey,
+    disabled,
+    description,
+    ...props 
+}: PropsWithChildren<ShortcutButtonProps<TGroupKey, TControlKey>>) => {
 
     const buttonRef = useRef<HTMLButtonElement>(null);
 

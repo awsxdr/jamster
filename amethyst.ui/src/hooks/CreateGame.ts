@@ -16,24 +16,30 @@ export const useCreateGame = () => {
     ) => {
         const gameId = await createGame(gameName);
 
-        const homeTeam = await getTeam(homeTeamId)
+        const defaultColor = {
+            name: 'Black',
+            shirtColor: '#000000',
+            complementaryColor: '#ffffff',
+        };
+
+        const homeTeam = await getTeam(homeTeamId);
         const awayTeam = await getTeam(awayTeamId);
 
         const getTeamColor = (team: Team, colorIndex: number) => {
             const colorKeys = Object.keys(team.colors);
             if(colorKeys.length === 0) {
-                return {
-                    name: 'Black',
-                    shirtColor: '#000000',
-                    complementaryColor: '#ffffff',
-                };
+                return defaultColor;
             }
 
             if(colorIndex > colorKeys.length) {
                 colorIndex = 0;
             }
 
-            return { name: colorKeys[colorIndex], ...team.colors[colorKeys[colorIndex]]! };
+            const color = 
+                team.colors[colorKeys[colorIndex]]
+                ?? defaultColor;
+
+            return { name: colorKeys[colorIndex], ...color };
         }
 
         const homeTeamColor = getTeamColor(homeTeam, homeTeamColorIndex);

@@ -37,7 +37,12 @@ export const ScaledText = ({ text, className, style, scale }: ScaledTextProps) =
     }, [spanRef, spanRef.current]);
 
     const measureText = useCallback((text: string, font: string): Measure => {
-        const context = canvas.getContext("2d")!;
+        const context = canvas.getContext("2d");
+
+        if(!context) {
+            return { width: 0, height: 0 };
+        }
+
         context.font = font;
         const metrics = context.measureText(text);
         
@@ -119,7 +124,7 @@ export const ScaledText = ({ text, className, style, scale }: ScaledTextProps) =
         const measures: StringMap<Measure> = uniqueIterations.reduce((c, t) => ({ ...c, [t]: measureText(t, `${font.weight} 40px ${font.family}`) }), {});
         
         const iterationAspectRatios = iterations
-            .map(i => i.map(t => measures[t]!))
+            .map(i => i.map(t => measures[t] ?? { width: 0, height: 0 }))
             .map(m => ({
                 width: Math.max(...m.map(x => x.width)),
                 height: m.reduce((t, x) => t + x.height, 0),

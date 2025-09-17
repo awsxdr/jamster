@@ -89,14 +89,13 @@ type ShortcutItemProps<TGroupKey extends keyof InputControls, TControlKey extend
 }
 
 const ShortcutItem = <TGroupKey extends keyof InputControls, TControlKey extends keyof InputControls[TGroupKey] & string>({ 
-        groupName, 
-        controlName, 
-        input, 
-        onRecordingStarted, 
-        onRecordingEnded, 
-        onShortcutSet 
-    }: ShortcutItemProps<TGroupKey, TControlKey>
-) => {
+    groupName, 
+    controlName, 
+    input, 
+    onRecordingStarted, 
+    onRecordingEnded, 
+    onShortcutSet 
+}: ShortcutItemProps<TGroupKey, TControlKey>) => {
     const { translate } = useI18n();
 
     const handleShortcutSet = (keys: string) => {
@@ -201,7 +200,7 @@ export const ShortcutConfigurationDialog = () => {
                         <ShortcutGroup 
                             key={groupName}
                             groupName={groupName as keyof InputControls} 
-                            group={shortcuts[groupName as keyof InputControls]!} 
+                            group={shortcuts[groupName as keyof InputControls]} 
                             onRecordingStarted={handleRecordingStarted}
                             onRecordingEnded={handleRecordingEnded}
                             onShortcutSet={handleShortcutSet}

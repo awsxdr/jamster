@@ -3,6 +3,7 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrig
 import { GameInfo, GameStageState, Stage } from "@/types";
 import { useGameApi, useI18n } from "@/hooks";
 import { SelectValue } from "@radix-ui/react-select";
+import { switchex } from "@/utilities/switchex";
 
 enum GameGroup {
     Current,
@@ -29,14 +30,14 @@ const GameSelectMenuGroup = ({ items, group, title }: GameSelectMenuGroupProps) 
 
     return (
         filteredItems.length > 0
-        ? (
-            <SelectGroup className="max-w-[90vw]">
-                <SelectLabel>{title}</SelectLabel>
-                { filteredItems.map(i => <SelectItem key={i.value} value={i.value} className="text-wrap w-full">{i.text}</SelectItem>) }
-            </SelectGroup>
-        ) : (
-            <></>
-        )
+            ? (
+                <SelectGroup className="max-w-[90vw]">
+                    <SelectLabel>{title}</SelectLabel>
+                    { filteredItems.map(i => <SelectItem key={i.value} value={i.value} className="text-wrap w-full">{i.text}</SelectItem>) }
+                </SelectGroup>
+            ) : (
+                <></>
+            )
     );
 }
 
@@ -60,11 +61,10 @@ export const GameSelectMenu = ({ games, currentGame, selectedGameId, disabled, o
 
         const state = await getGameState<GameStageState>(id, "GameStageState")
         
-        return (
-            state.stage === Stage.BeforeGame ? GameGroup.Upcoming
-            : state.stage === Stage.AfterGame ? GameGroup.Finished
-            : GameGroup.Running
-        );
+        return switchex(state.stage)
+            .case(Stage.BeforeGame).then(GameGroup.Upcoming)
+            .case(Stage.AfterGame).then(GameGroup.Finished)
+            .default(GameGroup.Running);
     }
 
     const [items, setItems] = useState<GameListItem[]>([]);

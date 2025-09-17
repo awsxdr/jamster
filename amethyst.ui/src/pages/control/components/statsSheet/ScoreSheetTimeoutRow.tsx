@@ -3,6 +3,7 @@ import { TeamSide, TimeoutListItem, TimeoutType } from "@/types"
 import { Switch } from "@/components/ui";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/hooks";
+import { switchex } from "@/utilities/switchex";
 
 type ScoreSheetTimeoutRowProps = {
     timeout: TimeoutListItem;
@@ -16,12 +17,13 @@ export const ScoreSheetTimeoutRow = ({ timeout, sheetSide, className, onTimeoutR
     const { translate, language } = useI18n({ prefix: "ScoreboardControl.StatsSheet.ScoreSheetTimeoutRow." });
 
     const timeoutName = useMemo(() => 
-        timeout.type === TimeoutType.Official ? translate("OfficialTimeout")
-        : timeout.type === TimeoutType.Team && timeout.side === sheetSide ? translate("ThisTeamTimeout")
-        : timeout.type === TimeoutType.Team ? translate("OtherTeamTimeout")
-        : timeout.type === TimeoutType.Review && timeout.side === sheetSide ? translate("ThisTeamReview")
-        : timeout.type === TimeoutType.Review ? translate("OtherTeamReview")
-        : translate("UntypedTimeout")
+        switchex(timeout.type)
+            .case(TimeoutType.Official).then(translate("OfficialTimeout"))
+            .case(TimeoutType.Team).when(() => timeout.side === sheetSide).then(translate("ThisTeamTimeout"))
+            .case(TimeoutType.Team).then(translate("OtherTeamTimeout"))
+            .case(TimeoutType.Review).when(() => timeout.side === sheetSide).then(translate("ThisTeamReview"))
+            .case(TimeoutType.Review).then(translate("OtherTeamReview"))
+            .default(translate("UntypedTimeout"))
     , [timeout, language]);
 
     const formatTime = (totalSeconds: number) => {

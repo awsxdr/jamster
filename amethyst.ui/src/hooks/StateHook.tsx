@@ -31,8 +31,8 @@ type GameStateContextProviderProps = {
     gameId: string,
 };
 
-type StateNotifier = { [handle: CallbackHandle]: (genericState: object) => void };
-type StateNotifierMap = { [key: string]: StateNotifier };
+type StateNotifier = Record<CallbackHandle, (genericState: object) => void>;
+type StateNotifierMap = Record<string, StateNotifier>;
 
 export const useCurrentTimeoutTypeState = () => useGameState<CurrentTimeoutTypeState>("CurrentTimeoutTypeState");
 export const useGameStageState = () => useGameState<GameStageState>("GameStageState");
@@ -104,7 +104,7 @@ export const GameStateContextProvider = ({ gameId, children }: PropsWithChildren
         }
 
         setStates(s => ({ ...s, [stateName]: value }));
-        notify(stateName, value!);
+        notify(stateName, value);
 
         return value;
     }, [gameId, states, stateNotifiers]);
@@ -139,15 +139,15 @@ export const GameStateContextProvider = ({ gameId, children }: PropsWithChildren
         }
 
         setStateNotifiers(sn => ({
-                ...sn,
-                [stateName]: {
-                    ...(sn[stateName] ?? {}),
-                    [newId]: genericState => {
-                        onStateChange(genericState as TState);
-                        setStates(s => ({ ...s, [stateName]: genericState }));
-                    }
+            ...sn,
+            [stateName]: {
+                ...(sn[stateName] ?? {}),
+                [newId]: genericState => {
+                    onStateChange(genericState as TState);
+                    setStates(s => ({ ...s, [stateName]: genericState }));
                 }
-            }));
+            }
+        }));
 
         return newId;
     }, [states]);
@@ -174,7 +174,7 @@ export const GameStateContextProvider = ({ gameId, children }: PropsWithChildren
         }
 
         Object.keys(stateNotifiers).forEach(stateName => {
-            connection!.invoke("WatchState", stateName);
+            connection.invoke("WatchState", stateName);
         });
     }, [connection, stateNotifiers]);
 

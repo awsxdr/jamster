@@ -15,8 +15,7 @@ export const ClientList = ({ filter, blacklist, changable }: ClientListProps) =>
 
     const controllableClients = useMemo(() =>
         clients.filter(c => !filter || (blacklist ? !filter.includes(c.activityInfo.activity) : filter.includes(c.activityInfo.activity))),
-        [clients, filter, blacklist]
-    );
+    [clients, filter, blacklist]);
 
     return (
         <div className="flex flex-col gap-4 lg:grid lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">

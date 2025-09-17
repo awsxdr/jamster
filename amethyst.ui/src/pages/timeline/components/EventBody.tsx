@@ -31,11 +31,11 @@ export const EventBody = ({ body }: EventBodyProps) => {
 
         switch(typeof value) {
             case "number":
-                case "boolean":
-                    return <ValueEdit value={value} />;
+            case "boolean":
+                return <ValueEdit value={value} />;
 
             case "string":
-                return <span>"<ValueEdit value={value} />"</span>;
+                return <span>&quot;<ValueEdit value={value} />&quot;</span>;
 
             case "object":
                 return Array.isArray(value)
@@ -54,7 +54,7 @@ export const EventBody = ({ body }: EventBodyProps) => {
         <span>[{joinList(value.map(renderObject))}]</span>
 
     const renderObject = (value: object) =>
-        <span>{"{"}{joinList(Object.keys(value).map(k => <span>"{k}": {renderValue(value[k as keyof typeof value])}</span>))}{"}"}</span>
+        <span>{"{"}{joinList(Object.keys(value).map(k => <span key={k}>&quot;{k}&quot;: {renderValue(value[k as keyof typeof value])}</span>))}{"}"}</span>
 
     return (
         <div className="border font-mono text-sm p-1 rounded">

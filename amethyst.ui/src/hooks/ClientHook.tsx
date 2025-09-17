@@ -19,7 +19,7 @@ type ClientConnectionContextProps = {
 }
 
 type ChangeActivityHandler = (activity: ActivityData) => void;
-type ChangeActivityNotifier = { [handle: CallbackHandle]: ChangeActivityHandler };
+type ChangeActivityNotifier = Record<CallbackHandle, ChangeActivityHandler>;
 
 const ClientConnectionContext = createContext<ClientConnectionContextProps>({
     clients: [],
@@ -213,17 +213,21 @@ const getActivityData = (activity: ClientActivity, searchParams: URLSearchParams
     const gameId = searchParams.get("gameId");
     const languageCode = searchParams.get("languageCode") ?? "en";
 
-    const otherProperties =
-        activity === ClientActivity.Scoreboard ? {
-            useSidebars: searchParams.get("useSidebars") === "true",
-            useNameBackgrounds: searchParams.get("useNameBackgrounds") === "true",
-        } :
-        activity === ClientActivity.StreamOverlay ? { 
-            scale: parseFloat(searchParams.get("scale") ?? "1.0"), 
-            useBackground: searchParams.get("useBackground") === "true",
-            backgroundColor: searchParams.get("backgroundColor") ?? "#00ff00",
-        } :
-        { };
+    const otherProperties = (() => {
+        if (activity === ClientActivity.Scoreboard) {
+            return {
+                useSidebars: searchParams.get("useSidebars") === "true",
+                useNameBackgrounds: searchParams.get("useNameBackgrounds") === "true",
+            };
+        } else if (activity === ClientActivity.StreamOverlay) {
+            return { 
+                scale: parseFloat(searchParams.get("scale") ?? "1.0"), 
+                useBackground: searchParams.get("useBackground") === "true",
+                backgroundColor: searchParams.get("backgroundColor") ?? "#00ff00",
+            };
+        }
+        else return { };
+    })();
     
     return { ...otherProperties, activity, gameId, languageCode } as ActivityData;
 }
@@ -246,7 +250,7 @@ const ClientActivityRoute = ({ activity, getActivityPath, children }: PropsWithC
             Object.keys(newActivity)
                 .filter(k => !["gameId", "activity"].includes(k))
                 .filter(k => newActivity[k as keyof typeof newActivity] !== undefined)
-                .map(k => `${k}=${encodeURIComponent(newActivity[k as keyof typeof newActivity]!)}`);
+                .map(k => `${k}=${encodeURIComponent(newActivity[k as keyof typeof newActivity] ?? "")}`);
 
         const params = [
             newActivity.gameId && `gameId=${newActivity.gameId}`,

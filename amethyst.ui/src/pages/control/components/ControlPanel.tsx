@@ -23,9 +23,9 @@ export const ControlPanel = ({ gameId, disabled, viewConfiguration }: ControlPan
     const { stage, periodIsFinalized } = useGameStageState() ?? { stage: Stage.BeforeGame, periodIsFinalized: false };
 
     const teamControlsDisabled = 
-        disabled  || stage === Stage.AfterGame && periodIsFinalized ? true
-        : stage === Stage.BeforeGame ? 'allExceptLineup'
-        : false;
+        stage === Stage.BeforeGame 
+            ? 'allExceptLineup'
+            : disabled  || stage === Stage.AfterGame && periodIsFinalized;
 
     return (
         <div className="flex flex-col gap-2 pt-2 pb-2">

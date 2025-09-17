@@ -35,7 +35,7 @@ const useUploadGameSchema = () => {
             .instanceof(File, { message: translate("UploadDialog.FileRequired") })
             .refine(file => 
                 file.type === "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", 
-                { message: translate("UploadDialog.InvalidFileFormat")}),
+            { message: translate("UploadDialog.InvalidFileFormat")}),
     });
 }
 
@@ -81,7 +81,7 @@ export const UploadDialog = ({ onGameUploaded, onCancelled }: UploadDialogProps)
                         <DialogDescription>{translate("UploadDialog.Description")}</DialogDescription>
                     </DialogHeader>
                     <div className="pt-4">
-                        <FormField control={form.control} name="statsBookFile" render={({ field: { value, onChange, ...fieldProps }}) => (
+                        <FormField control={form.control} name="statsBookFile" render={({ field: { value: _, onChange, ...fieldProps }}) => (
                             <FormItem>
                                 <FormControl>
                                     <Input 

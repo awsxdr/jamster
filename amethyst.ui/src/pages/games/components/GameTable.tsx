@@ -2,6 +2,7 @@ import { SortableColumnHeader } from "@/components/SortableColumnHeader";
 import { Checkbox, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui"
 import { useGameApi, useI18n } from "@/hooks";
 import { GameInfo, GameStageState, Stage, StringMap, TeamDetailsState, TeamScoreState } from "@/types"
+import { switchex } from "@/utilities/switchex";
 import { CheckedState } from "@radix-ui/react-checkbox";
 import { ColumnDef, createColumnHelper, flexRender, getCoreRowModel, getSortedRowModel, SortingState, useReactTable } from "@tanstack/react-table"
 import { useEffect, useState } from "react";
@@ -39,14 +40,16 @@ export const GameTable = ({ games, selectedGameIds, onSelectedGameIdsChanged }: 
     const getTeamName = (names: StringMap<string>) => names["team"] ?? names["league"] ?? "";
 
     const getStageName = ({ stage: { stage, homeScore, awayScore }}: GameItem) =>
-        stage === "0" ? translate("GameTable.Status.Upcoming")
-        : stage === "2" ? translate("GameTable.Status.Finished").replace("{homeScore}", homeScore.toString()).replace("{awayScore}", awayScore.toString())
-        : translate("GameTable.Status.InProgress").replace("{homeScore}", homeScore.toString()).replace("{awayScore}", awayScore.toString());
+        switchex(stage)
+            .case("0").then(translate("GameTable.Status.Upcoming"))
+            .case("2").then(translate("GameTable.Status.Finished").replace("{homeScore}", homeScore.toString()).replace("{awayScore}", awayScore.toString()))
+            .default(translate("GameTable.Status.InProgress").replace("{homeScore}", homeScore.toString()).replace("{awayScore}", awayScore.toString()));
 
     const getStageValue = (stage: Stage) => 
-        stage === Stage.BeforeGame ? 0
-        : stage === Stage.AfterGame ? 2
-        : 1;
+        switchex(stage)
+            .case(Stage.BeforeGame).then(0)
+            .case(Stage.AfterGame).then(2)
+            .default(1);
 
     useEffect(() => {
         Promise.all(games.map(async (game): Promise<GameItem> => {
@@ -142,23 +145,23 @@ export const GameTable = ({ games, selectedGameIds, onSelectedGameIdsChanged }: 
             <TableBody>
                 {
                     table.getRowModel().rows?.length
-                    ? (
-                        table.getRowModel().rows.map(row => (
-                            <TableRow key={row.id} data-state={row.getIsSelected() && "selected"}>
-                                { row.getVisibleCells().map(cell => (
-                                    <TableCell key={cell.id}>
-                                        { flexRender(cell.column.columnDef.cell, cell.getContext()) }
-                                    </TableCell>
-                                ))}
+                        ? (
+                            table.getRowModel().rows.map(row => (
+                                <TableRow key={row.id} data-state={row.getIsSelected() && "selected"}>
+                                    { row.getVisibleCells().map(cell => (
+                                        <TableCell key={cell.id}>
+                                            { flexRender(cell.column.columnDef.cell, cell.getContext()) }
+                                        </TableCell>
+                                    ))}
+                                </TableRow>
+                            ))
+                        ) : (
+                            <TableRow>
+                                <TableCell colSpan={columns.length} className="h-24 text-center italic">
+                                    { translate("GameTable.NoGames") }
+                                </TableCell>
                             </TableRow>
-                        ))
-                    ) : (
-                        <TableRow>
-                            <TableCell colSpan={columns.length} className="h-24 text-center italic">
-                                { translate("GameTable.NoGames") }
-                            </TableCell>
-                        </TableRow>
-                    )
+                        )
                 }
             </TableBody>
         </Table>

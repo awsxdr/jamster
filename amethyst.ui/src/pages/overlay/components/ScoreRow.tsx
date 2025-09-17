@@ -1,6 +1,7 @@
 import { useI18n, useJamStatsState, useTeamDetailsState, useTeamScoreState, useTeamTimeoutsState } from "@/hooks";
 import { cn } from "@/lib/utils";
 import { ReviewStatus, TeamSide, TimeoutInUse } from "@/types";
+import { switchex } from "@/utilities/switchex";
 import { Star, StarOff } from "lucide-react";
 import { CSSProperties, useMemo } from "react";
 
@@ -49,9 +50,11 @@ export const ScoreRow = ({ side }: ScoreRowProps) => {
         <div className={side === TeamSide.Home ? homeScoreRowClassName : awayScoreRowClassName} style={style}>
             <div className="w-[--score-row-height] flex items-center justify-center">
                 { 
-                    lead && lost ? <StarOff className="h-[--star-height]" /> 
-                    : lead ? <Star className="h-[--star-height]" /> 
-                    : <></> 
+                    lead && lost 
+                        ? <StarOff className="h-[--star-height]" /> 
+                        : lead 
+                            ? <Star className="h-[--star-height]" /> 
+                            : <></> 
                 }
             </div>
             <div className="grow">{teamName}</div>
@@ -64,9 +67,10 @@ export const ScoreRow = ({ side }: ScoreRowProps) => {
                     <div key={i} className={timeoutItemClassName}></div>
                 ))}
                 {
-                    timeouts?.reviewStatus === ReviewStatus.Unused ? (<div className={reviewClass}></div>)
-                    : timeouts?.reviewStatus === ReviewStatus.Retained ? (<div className={reviewClass}></div>)
-                    : (<div className={timeoutItemClassName}></div>)
+                    switchex(timeouts?.reviewStatus)
+                        .case(ReviewStatus.Unused).then(<div className={reviewClass}></div>)
+                        .case(ReviewStatus.Retained).then(<div className={reviewClass}></div>)
+                        .default(<div className={timeoutItemClassName}></div>)
                 }
             </div>
             <div className="flex w-[calc(var(--score-row-height)_*_2)] h-full items-center justify-center font-bold text-[--complementary-color] bg-[--team-color]">

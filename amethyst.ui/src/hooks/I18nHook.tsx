@@ -52,7 +52,7 @@ const I18nContext = createContext<I18nContextProps>({
 });
 
 const makeDevTranslation = (key: string) => {
-    const characterReplacements: { [key: string]: string } = {
+    const characterReplacements: Record<string, string> = {
         a: 'ä', A: '𝒜', b: '𝓫', B: 'Ꞵ', c: 'ċ', C: '𝑪', d: 'ɗ', D: '𝔻', e: 'é', E: '⋿',
         f: '𝕗', F: '𝓕', g: 'ġ', G: '𝔊', h: 'һ', H: '𝓗', i: 'í', I: 'Ǐ', j: 'ј', J: 'Ｊ',
         k: 'κ', K: 'Ｋ', l: 'ḷ', L: 'ℒ', M: '𝕸', n: 'ո', N: '𝒩', o: 'ỏ', O: 'Ｏ',
@@ -78,8 +78,8 @@ export const I18nContextProvider = ({ usageKey, defaultLanguage, languages, chil
     const translate = useCallback((key: string) => {
         const translation = 
             language === 'dev'
-            ? makeDevTranslation(languages[defaultLanguage][key])
-            : translations[key];
+                ? makeDevTranslation(languages[defaultLanguage][key])
+                : translations[key];
             
         if (translation === undefined) {
             console.warn("Translation missing for key", key);

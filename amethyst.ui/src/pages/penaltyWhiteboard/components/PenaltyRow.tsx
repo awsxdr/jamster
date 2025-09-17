@@ -1,6 +1,7 @@
 import { useRulesState } from "@/hooks";
 import { cn } from "@/lib/utils";
 import { PenaltySheetLine } from "@/types";
+import { switchex } from "@/utilities/switchex";
 import { CrossCircledIcon, ExclamationTriangleIcon } from "@radix-ui/react-icons";
 import { CSSProperties } from "react";
 
@@ -21,10 +22,11 @@ export const PenaltyRow = ({ skaterNumber, expulsionPenalty, penalties, row }: P
     const even = row % 2 === 0;
 
     const rowClassOverride =
-        expulsionPenalty || penalties.length >= rules.penaltyRules.foulOutPenaltyCount ? "bg-red-700 text-white"
-        : penalties.length === rules.penaltyRules.foulOutPenaltyCount - 1 ? "bg-orange-600 text-white"
-        : penalties.length === rules.penaltyRules.foulOutPenaltyCount - 2 ? "bg-yellow-400 text-black"
-        : undefined;
+        switchex(penalties.length)
+            .predicate(l => !!expulsionPenalty || l >= rules.penaltyRules.foulOutPenaltyCount).then("bg-red-700 text-white")
+            .case(rules.penaltyRules.foulOutPenaltyCount - 1).then("bg-orange-600 text-white")
+            .case(rules.penaltyRules.foulOutPenaltyCount - 2).then("bg-yellow-400 text-black")
+            .default(undefined);
 
     const penaltyRowClass = 
         even 

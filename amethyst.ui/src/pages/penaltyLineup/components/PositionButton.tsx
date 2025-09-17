@@ -1,7 +1,8 @@
-import { Button } from "@/components/ui";
+import { Button, ButtonVariant } from "@/components/ui";
 import { useI18n } from "@/hooks";
 import { cn } from "@/lib/utils";
 import { LineupPosition } from "@/types";
+import { switchex } from "@/utilities/switchex";
 
 type PositionButtonProps = {
     position: LineupPosition;
@@ -17,9 +18,10 @@ export const PositionButton = ({ position, targetPosition, className, rowClassNa
     const { translate } = useI18n({ prefix: "PenaltyLineup.PenaltyButton." })
 
     const variant =
-        position === targetPosition && injured ? "destructive"
-        : position === targetPosition ? "default" 
-        : "outline";
+        switchex(position)
+            .case(targetPosition).when(() => injured ?? false).then<ButtonVariant>("destructive")
+            .case(targetPosition).then("default")
+            .default("outline");
 
     return (
         <Button 

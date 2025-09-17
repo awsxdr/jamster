@@ -23,14 +23,16 @@ export const TeamSelect = ({ titleKey, teamId, exceptIds, colorIndex, onTeamIdCh
         team.names["team"] || team.names["league"] || team.names["default"] || "";
 
     const teamItems = useMemo(() =>
-        teams.map(team => ({
-            value: team.id,
-            text: 
-                !!team.names["league"] && !!team.names["team"] ? `${team.names["team"]} (${team.names["league"]})`
-                : getDisplayName(team),
-        }))
-        .filter(team => !(exceptIds?.find(eid => team.value === eid))),
-        [teams, exceptIds]);
+        teams
+            .map(team => ({
+                value: team.id,
+                text: 
+                    !!team.names["league"] && !!team.names["team"] 
+                        ? `${team.names["team"]} (${team.names["league"]})`
+                        : getDisplayName(team),
+            }))
+            .filter(team => !(exceptIds?.find(eid => team.value === eid))),
+    [teams, exceptIds]);
 
     const teamColors = useMemo(() => {
         const team = teams.find(team => team.id === teamId);

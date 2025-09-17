@@ -52,8 +52,8 @@ export const useConfiguration = <TConfiguration,>(configurationName: string) => 
 type ConfigurationChanged<TConfiguration> = (value: TConfiguration) => void;
 
 type CallbackHandle = string;
-type ConfigurationNotifier = { [handle: CallbackHandle]: (genericConfiguration: object) => void };
-type ConfigurationNotifierMap = { [key: string]: ConfigurationNotifier };
+type ConfigurationNotifier = Record<CallbackHandle, (genericConfiguration: object) => void>;
+type ConfigurationNotifierMap = Record<string, ConfigurationNotifier>;
 
 export const ConfigurationContextProvider = ({ children }: PropsWithChildren) => {
     const [notifiers, setNotifiers] = useState<ConfigurationNotifierMap>({});
@@ -105,7 +105,7 @@ export const ConfigurationContextProvider = ({ children }: PropsWithChildren) =>
         }
 
         Object.keys(notifiers).forEach(configurationName => {
-            connection!.invoke("WatchConfiguration", configurationName);
+            connection.invoke("WatchConfiguration", configurationName);
         });
     }, [connection, notifiers]);
 

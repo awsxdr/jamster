@@ -45,47 +45,47 @@ export const RadioButtonGroup = <TValue,>({ items, value, variant, size, rowClas
     return (
         <div className={cn("flex flex-wrap gap-2", rowClassName)}>
             <TooltipProvider>
-            {
-                items.map((item, i) => 
-                (item as ShortcutTooltipRadioItem<TValue>)?.shortcutKey ? (
-                    <ShortcutButton
-                        shortcutGroup={(item as ShortcutTooltipRadioItem<TValue>).shortcutGroup}
-                        shortcutKey={(item as ShortcutTooltipRadioItem<TValue>).shortcutKey}
-                        description={(item as ShortcutTooltipRadioItem<TValue>).description}
-                        size={size}
-                        variant={variant ?? "secondary"}
-                        className={cn("border-2", value === item.value ? "border-primary" : "", buttonClassName)}
-                        disabled={disabled}
-                        key={i}
-                        onClick={() => handleButtonClick(item.value)}
-                    >
-                        {item.name}
-                    </ShortcutButton>
-                ) : (item as TooltipRadioItem<TValue>)?.description ? (
-                    <TooltipButton 
-                        description={(item as TooltipRadioItem<TValue>).description}
-                        size={size}
-                        variant={variant ?? "secondary"}
-                        className={cn("border-2", value === item.value ? "border-primary" : "", buttonClassName)}
-                        disabled={disabled}
-                        key={i}
-                        onClick={() => handleButtonClick(item.value)}
-                    >
-                        {item.name}
-                    </TooltipButton>
-                ) : (
-                    <Button 
-                        size={size}
-                        variant={variant ?? "secondary"}
-                        className={cn("border-2", value === item.value ? "border-primary" : "", buttonClassName)}
-                        disabled={disabled}
-                        key={i}
-                        onClick={() => handleButtonClick(item.value)}
-                    >
-                        {item.name}
-                    </Button>
-                ))
-            }
+                {
+                    items.map((item, i) => 
+                        (item as ShortcutTooltipRadioItem<TValue>)?.shortcutKey ? (
+                            <ShortcutButton
+                                shortcutGroup={(item as ShortcutTooltipRadioItem<TValue>).shortcutGroup}
+                                shortcutKey={(item as ShortcutTooltipRadioItem<TValue>).shortcutKey}
+                                description={(item as ShortcutTooltipRadioItem<TValue>).description}
+                                size={size}
+                                variant={variant ?? "secondary"}
+                                className={cn("border-2", value === item.value ? "border-primary" : "", buttonClassName)}
+                                disabled={disabled}
+                                key={i}
+                                onClick={() => handleButtonClick(item.value)}
+                            >
+                                {item.name}
+                            </ShortcutButton>
+                        ) : (item as TooltipRadioItem<TValue>)?.description ? (
+                            <TooltipButton 
+                                description={(item as TooltipRadioItem<TValue>).description}
+                                size={size}
+                                variant={variant ?? "secondary"}
+                                className={cn("border-2", value === item.value ? "border-primary" : "", buttonClassName)}
+                                disabled={disabled}
+                                key={i}
+                                onClick={() => handleButtonClick(item.value)}
+                            >
+                                {item.name}
+                            </TooltipButton>
+                        ) : (
+                            <Button 
+                                size={size}
+                                variant={variant ?? "secondary"}
+                                className={cn("border-2", value === item.value ? "border-primary" : "", buttonClassName)}
+                                disabled={disabled}
+                                key={i}
+                                onClick={() => handleButtonClick(item.value)}
+                            >
+                                {item.name}
+                            </Button>
+                        ))
+                }
             </TooltipProvider>
         </div>
     )

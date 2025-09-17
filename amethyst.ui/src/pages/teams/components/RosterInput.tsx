@@ -65,15 +65,15 @@ export const RosterInput = ({ existingNumbers, onSkatersAdded }: RosterRowProps)
         const matches = [...pastedText.matchAll(rosterRegex)];
 
         const pastedSkaters = matches.map(match => {
-                const name = match.groups?.["name"] || match.groups?.["name2"];
-                const number = match.groups?.["number"] || match.groups?.["number2"];
+            const name = match.groups?.["name"] || match.groups?.["name2"];
+            const number = match.groups?.["number"] || match.groups?.["number2"];
 
-                return name && number
-                    ? { number, name } as Skater
-                    : undefined;
-            }).filter(skater =>
-                skater !== undefined
-            );
+            return name && number
+                ? { number, name } as Skater
+                : undefined;
+        }).filter(skater =>
+            skater !== undefined
+        );
 
         if(pastedSkaters.length == 0) {
             return;

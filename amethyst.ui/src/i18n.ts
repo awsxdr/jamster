@@ -1,9 +1,7 @@
-export type Languages = {
-    [key: string]: Translations;
-}
+export type Languages = Record<string, Translations>
 
 export type Translations = {
-    name: string,
+    name: string;
     [key: string]: string;
 }
 

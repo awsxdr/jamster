@@ -46,7 +46,7 @@ export const ColorInput = ({ existingColors, onColorAdded }: ColorInputProps) =>
         }
     });
 
-    const handleNameChanged = (e: ChangeEvent<HTMLInputElement>, baseOnChange: (...event: any[]) => void) => {
+    const handleNameChanged = (e: ChangeEvent<HTMLInputElement>, baseOnChange: (...event: unknown[]) => void) => {
         baseOnChange(e);
 
         const kitColorName = e.target.value;

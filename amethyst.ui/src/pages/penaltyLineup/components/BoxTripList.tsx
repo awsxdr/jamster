@@ -3,6 +3,7 @@ import { useBoxTripsState } from "@/hooks";
 import { TeamSide } from "@/types";
 import { BoxDisplayType, BoxTripItem } from ".";
 import { SkaterPosition } from "@/types/events";
+import { switchex } from "@/utilities/switchex";
 
 type BoxTripListProps = {
     teamSide: TeamSide;
@@ -13,11 +14,12 @@ export const BoxTripList = ({ teamSide, boxDisplayType }: BoxTripListProps) => {
 
     const { boxTrips } = useBoxTripsState(teamSide) ?? { boxTrips: [] };
 
-    const visiblePositions =
-        boxDisplayType === "Both" ? [SkaterPosition.Jammer, SkaterPosition.Pivot, SkaterPosition.Blocker]
-        : boxDisplayType === "Jammers" ? [SkaterPosition.Jammer]
-        : boxDisplayType === "Blockers" ? [SkaterPosition.Pivot, SkaterPosition.Blocker]
-        : [];
+    const visiblePositions: SkaterPosition[] =
+        switchex(boxDisplayType)
+            .case("Both").then([SkaterPosition.Jammer, SkaterPosition.Pivot, SkaterPosition.Blocker])
+            .case("Jammers").then([SkaterPosition.Jammer])
+            .case("Blockers").then([SkaterPosition.Pivot, SkaterPosition.Blocker])
+            .default([]);
 
     const orderedTrips = useMemo(() => {
 

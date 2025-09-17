@@ -34,11 +34,11 @@ export const Clock = <TClockState,>({ secondsMapper, state, direction, textOnZer
 
     return (
         <>
-        {
-            autoScale
-            ? <ScaledText text={time} className={cn("w-full", textClassName)} scale={autoScale} />
-            : <span className={textClassName}>{time}</span>
-        }
+            {
+                autoScale
+                    ? <ScaledText text={time} className={cn("w-full", textClassName)} scale={autoScale} />
+                    : <span className={textClassName}>{time}</span>
+            }
         </>
     );
 };

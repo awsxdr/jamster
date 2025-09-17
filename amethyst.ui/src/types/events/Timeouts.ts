@@ -6,7 +6,8 @@ export class TimeoutTypeSet extends EventWithBody {
         super("TimeoutTypeSet", body);
     }
 }
-type TimeoutTypeSetBody = {
+
+export type TimeoutTypeSetBody = {
     type: "Untyped" | "Team" | "Review" | "Official";
     teamSide?: TeamSide;
 }

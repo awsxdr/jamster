@@ -31,7 +31,7 @@ const useUploadStatsBookSchema = () => {
             .instanceof(File, { message: translate("FileRequired") })
             .refine(file => 
                 file.type === "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", 
-                { message: translate("InvalidFileFormat")}),
+            { message: translate("InvalidFileFormat")}),
     });
 }
 
@@ -61,7 +61,7 @@ export const BlankStatsBookDialog = ({ onUploadSuccessful, onCancel }: BlankStat
         try {
             await setBlankStatsBook(statsBookFile);
             onUploadSuccessful?.();
-        } catch(InvalidStatsBookError) {
+        } catch {
             form.setError("statsBookFile", { message: translate("InvalidStatsBook") });
         } finally {
             setIsUploading(false);
@@ -85,6 +85,7 @@ export const BlankStatsBookDialog = ({ onUploadSuccessful, onCancel }: BlankStat
                             <a 
                                 href="https://resources.wftda.org/competition/statsbook/" 
                                 target="_blank"
+                                rel="noreferrer"
                                 className="underline underline-offset-4 text-primary"
                             >
                                 {translate("Description.Link")}
@@ -93,7 +94,7 @@ export const BlankStatsBookDialog = ({ onUploadSuccessful, onCancel }: BlankStat
                         </DialogDescription>
                     </DialogHeader>
                     <div className="pt-4">
-                        <FormField control={form.control} name="statsBookFile" render={({ field: { value, onChange, ...fieldProps }}) => (
+                        <FormField control={form.control} name="statsBookFile" render={({ field: { value: _, onChange, ...fieldProps }}) => (
                             <FormItem>
                                 <FormControl>
                                     <Input 

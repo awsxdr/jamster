@@ -3,6 +3,7 @@ import { PenaltyCell } from ".";
 import { useGameStageState, useRulesState } from "@/hooks";
 import { CSSProperties } from "react";
 import { cn } from "@/lib/utils";
+import { switchex } from "@/utilities/switchex";
 
 type PenaltyRowProps = {
     skaterNumber: string;
@@ -34,15 +35,12 @@ export const PenaltyRow = ({ skaterNumber, penalties, expulsionPenalty, offsetFo
         ? "bg-white dark:bg-rose-950"
         : "bg-red-100 dark:bg-rose-900";
 
-    const isExpelledOrFouledOut = expulsionPenalty || penalties.length >= rules.penaltyRules.foulOutPenaltyCount;
-    const isOneAwayFromFoulOut = penalties.length === rules.penaltyRules.foulOutPenaltyCount - 1;
-    const isTwoAwayFromFoulOut = penalties.length === rules.penaltyRules.foulOutPenaltyCount - 2;
-
-    const rowClassOverride =
-        isExpelledOrFouledOut ? "bg-red-700 text-white"
-        : isOneAwayFromFoulOut ? "bg-orange-600 text-white dark:bg-orange-700"
-        : isTwoAwayFromFoulOut ? "bg-yellow-400 text-black dark:bg-yellow-600"
-        : undefined;
+    const rowClassOverride = switchex(penalties.length)
+        .predicate(() => !!expulsionPenalty).then("bg-red-700 text-white")
+        .predicate(l => l >= rules.penaltyRules.foulOutPenaltyCount).then("bg-red-700 text-white")
+        .case(rules.penaltyRules.foulOutPenaltyCount - 1).then("bg-orange-600 text-white dark:bg-orange-700")
+        .case(rules.penaltyRules.foulOutPenaltyCount - 2).then("bg-yellow-400 text-black dark:bg-yellow-600")
+        .default(undefined);
 
     const penaltyRowClassAccent = even
         ? "bg-red-100 dark:bg-rose-900"
@@ -56,8 +54,8 @@ export const PenaltyRow = ({ skaterNumber, penalties, expulsionPenalty, offsetFo
 
     const getPenaltyCellClass = (penalty: Penalty | undefined) => 
         penalty && penalty.period < periodNumber
-        ? cn(cellClass, penaltyCellPreviousPeriod, "font-light")
-        : cn(cellClass, rowClassOverride ?? penaltyRowClass, penalty && penalty.period === periodNumber && penalty.jam === Math.max(1, jamNumber) && "underline");
+            ? cn(cellClass, penaltyCellPreviousPeriod, "font-light")
+            : cn(cellClass, rowClassOverride ?? penaltyRowClass, penalty && penalty.period === periodNumber && penalty.jam === Math.max(1, jamNumber) && "underline");
     
     if (!rules) {
         return (<></>);
@@ -102,9 +100,11 @@ export const PenaltyRow = ({ skaterNumber, penalties, expulsionPenalty, offsetFo
             })}
             <PenaltyCell
                 penalty={
-                    expulsionPenalty !== null ? expulsionPenalty
-                    : penalties?.length >= rules.penaltyRules.foulOutPenaltyCount ? { ...penalties[rules.penaltyRules.foulOutPenaltyCount - 1], code: "FO" } 
-                    : undefined
+                    expulsionPenalty !== null 
+                        ? expulsionPenalty
+                        : penalties?.length >= rules.penaltyRules.foulOutPenaltyCount 
+                            ? { ...penalties[rules.penaltyRules.foulOutPenaltyCount - 1], code: "FO" } 
+                            : undefined
                 }
                 onClick={onExpulsionClicked}
                 compact={compact}

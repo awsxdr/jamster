@@ -19,16 +19,15 @@ const PenaltyWhiteboardInner = () => {
     const [team, setTeam] = useState(DisplaySide.Both);
 
     const { languageCode } = useQueryStringConfiguration<ActivityData>({
-            activity: () => ClientActivity.PenaltyWhiteboard,
-            gameId: v => v,
-            languageCode: v => v,
-        }, {
-            activity: ClientActivity.PenaltyWhiteboard,
-            gameId: "",
-            languageCode: "en",
-        },
-        ["activity"]
-    );
+        activity: () => ClientActivity.PenaltyWhiteboard,
+        gameId: v => v,
+        languageCode: v => v,
+    }, {
+        activity: ClientActivity.PenaltyWhiteboard,
+        gameId: "",
+        languageCode: "en",
+    },
+    ["activity"]);
 
     useEffect(() => {
         setLanguage(languageCode);

@@ -39,7 +39,7 @@ const useNewTeamSchema = () => {
     return z.object({
         teamName: z.string()
             .min(1, { message: translate("NewTeamDialog.TeamNameRequired") }),
-            shirtColorName: z.string()
+        shirtColorName: z.string()
             .min(1, { message: translate("NewTeamDialog.KitColorRequired") }),
     });
 }

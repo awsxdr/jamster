@@ -40,7 +40,7 @@ const RowLayout = ({ className, selectContent, numberContent, nameContent, tools
                         {toolsContent}
                     </div>
                 </>
-            , rowClassName)}
+                , rowClassName)}
         </div>
     );
 }

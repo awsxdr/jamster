@@ -1,6 +1,7 @@
 import { Card, CardContent, Separator, Switch } from "@/components/ui";
 import { cn } from "@/lib/utils";
 import { TeamSide, TimeoutListItem, TimeoutType } from "@/types"
+import { switchex } from "@/utilities/switchex";
 import { useMemo } from "react";
 
 type TimeoutRowProps = {
@@ -12,12 +13,13 @@ type TimeoutRowProps = {
 const TimeoutRow = ({ sheetSide, timeout, onTimeoutRetentionChanged }: TimeoutRowProps) => {
 
     const timeoutName = useMemo(() => 
-        timeout.type === TimeoutType.Official ? "Official time out"
-        : timeout.type === TimeoutType.Team && timeout.side === sheetSide ? "Timeout this team"
-        : timeout.type === TimeoutType.Team ? "Timeout other team"
-        : timeout.type === TimeoutType.Review && timeout.side === sheetSide ? "Official review this team"
-        : timeout.type === TimeoutType.Review ? "Official review other team"
-        : "Untyped"
+        switchex(timeout.type)
+            .case(TimeoutType.Official).then("Official time out")
+            .case(TimeoutType.Team).when(() => timeout.side === sheetSide).then("Timeout this team")
+            .case(TimeoutType.Team).then("Timeout other team")
+            .case(TimeoutType.Review).when(() => timeout.side === sheetSide).then("Official review this team")
+            .case(TimeoutType.Review).then("Official review other team")
+            .default("Untyped")
     , [timeout]);
 
     const formatTime = (totalSeconds: number) => {

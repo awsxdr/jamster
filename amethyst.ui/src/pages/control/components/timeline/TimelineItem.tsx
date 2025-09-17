@@ -19,11 +19,12 @@ export const TimelineItem = forwardRef<HTMLDivElement, TimelineItemProps>(({ sta
         return minutes ? `${minutes}:${seconds}` : `${seconds}`;
     }
 
-    const backgroundColor = 
-        stage === Stage.Jam ? "bg-green-100"
-        : stage === Stage.Lineup ? "bg-blue-100"
-        : stage === Stage.Timeout ? "bg-orange-100"
-        : "bg-gray-100";
+    const backgroundColor = (() => {
+        if (stage === Stage.Jam) return "bg-green-100 dark:bg-green-800";
+        else if (stage === Stage.Lineup) return "bg-blue-100 dark:bg-blue-800";
+        else if (stage === Stage.Timeout) return "bg-orange-100 dark:bg-orange-800";
+        else return "bg-gray-100 dark:bg-gray-800";
+    })();
 
     return (
         <div className="flex">

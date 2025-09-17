@@ -8,12 +8,11 @@ export type TooltipToggleButtonProps = {
 } & ToggleProps;
 
 export const TooltipToggleButton = forwardRef<HTMLButtonElement, TooltipToggleButtonProps>(({ 
-        children, 
-        description,
-        ...props 
-    }: PropsWithChildren<TooltipToggleButtonProps>,
-    ref
-) => {
+    children, 
+    description,
+    ...props 
+}: PropsWithChildren<TooltipToggleButtonProps>,
+ref) => {
     return (
         <Tooltip>
             <TooltipTrigger asChild>

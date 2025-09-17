@@ -3,6 +3,7 @@ import { useEvents, useI18n, useRulesState } from "@/hooks";
 import { cn } from "@/lib/utils";
 import { IntermissionRules, JamRules, LineupRules, PenaltyRules, PeriodEndBehavior, PeriodRules, Ruleset, TimeoutPeriodClockStopBehavior, TimeoutResetBehavior, TimeoutRules } from "@/types";
 import { RulesetSet } from "@/types/events";
+import { ternary } from "@/utilities/switchex";
 import { DialogProps, DialogTriggerProps } from "@radix-ui/react-dialog";
 import { ChevronRight } from "lucide-react";
 import { KeyboardEvent, PropsWithChildren, useEffect, useRef, useState } from "react";
@@ -119,9 +120,10 @@ export const RulesDialog = ({ gameId }: RulesDialogProps) => {
 
         const padComponent = (value: number) => value.toString().padStart(2, '0');
 
-        return hours > 0 ? `${hours}:${padComponent(minutes)}:${padComponent(seconds)}`
-            : minutes > 0 ? `${minutes}:${padComponent(seconds)}`
-            : seconds.toString();
+        return ternary()
+            .if(hours > 0).then(`${hours}:${padComponent(minutes)}:${padComponent(seconds)}`)
+            .if(minutes > 0).then(`${minutes}:${padComponent(seconds)}`)
+            .default(seconds.toString());
     }
 
     const handleChange = (value: (rules: Ruleset) => Ruleset) =>
