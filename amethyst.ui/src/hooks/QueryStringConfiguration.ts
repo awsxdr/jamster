@@ -32,7 +32,7 @@ export const useQueryStringConfiguration = <TValue,>(valueMapper: ValuePropertyM
                 return { ...result, [key]: valueMapper[key as keyof typeof valueMapper](paramsValue) };
             }, {} as TValue);
 
-        setSearchParams(searchParams);
+        setSearchParams(searchParams, { replace: true });
         setValue(newValue);
     }, []);
 
@@ -47,26 +47,6 @@ export const useQueryStringConfiguration = <TValue,>(valueMapper: ValuePropertyM
 
     return value;
 }
-
-// export const useQueryStringConfiguration = <TValue = string,>(propName: string, defaultValue: string | undefined, mapper: (value: string | undefined) => TValue = (s => s as TValue)) => {
-//     const [ searchParams, setSearchParams ] = useSearchParams();
-//     const [value, setValue] = useState<string | undefined>(searchParams.get(propName) ?? undefined);
-
-//     useEffect(() => {
-//         if(value && defaultValue) {
-//             searchParams.set(propName, defaultValue);
-//             setSearchParams(searchParams, { replace: true });
-//             setValue(defaultValue);
-//         }
-//     }, [value, defaultValue]);
-
-//     useEffect(() => {
-//         const searchParamsValue = searchParams.get(propName);
-//         setValue(searchParamsValue ?? defaultValue);
-//     }, [value, searchParams]);
-
-//     return mapper(value);
-// }
 
 export const useGameIdFromQueryString = () => {
     const [ searchParams, setSearchParams ] = useSearchParams();
@@ -94,5 +74,3 @@ export const useGameIdFromQueryString = () => {
 
     return gameId;
 }
-
-// export const useLanguageFromQueryString = () => useQueryStringConfiguration("language", "en");
