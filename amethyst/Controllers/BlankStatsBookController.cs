@@ -9,23 +9,19 @@ namespace amethyst.Controllers;
 public class BlankStatsBookController(IBlankStatsBookStore blankStatsBookStore, IStatsBookSerializer statsBookSerializer) : Controller
 {
     [HttpGet]
-    public async Task<IActionResult> GetBlankStatsBook()
-    {
-        return await blankStatsBookStore.GetBlankStatsBook() switch
+    public async Task<IActionResult> GetBlankStatsBook() =>
+        await blankStatsBookStore.GetBlankStatsBook() switch
         {
             Success<byte[]> s => File(s.Value, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
             Failure<BlankStatsBookNotConfiguredError> => NotFound(),
             var r => throw new UnexpectedResultException(r)
         };
-    }
 
     [HttpHead]
-    public IActionResult GetBlankStatsBookResponse()
-    {
-        return blankStatsBookStore.BlankStatsBookPresent
+    public IActionResult GetBlankStatsBookResponse() =>
+        blankStatsBookStore.BlankStatsBookPresent
             ? Ok()
             : NotFound();
-    }
 
     [HttpPost]
     public async Task<IActionResult> SetBlankStatsBook(IFormFile file)

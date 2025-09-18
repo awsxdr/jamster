@@ -14,9 +14,9 @@ public class ConfigurationsController : Controller
         string configurationKey, 
         [FromQuery] Guid? gameId, 
         [FromServices] IConfigurationService configurationService, 
-        [FromServices] IDefaultConfigurationFactory defaultConfigurationFactory)
-    {
-        return await defaultConfigurationFactory.GetKnownConfigurationTypeForKey(configurationKey)
+        [FromServices] IDefaultConfigurationFactory defaultConfigurationFactory) 
+    =>
+        await defaultConfigurationFactory.GetKnownConfigurationTypeForKey(configurationKey)
                 .Then(type => gameId is not null
                     ? configurationService.GetConfigurationForGame((Guid)gameId, type)
                     : configurationService.GetConfiguration(type).ToTask())
@@ -26,7 +26,6 @@ public class ConfigurationsController : Controller
                 Failure<GameFileNotFoundForIdError> => NotFound(),
                 var r => throw new UnexpectedResultException(r)
             };
-    }
 
     [HttpPut("")]
     public async Task<ActionResult> SetConfiguration(
@@ -34,9 +33,9 @@ public class ConfigurationsController : Controller
         [FromQuery] Guid? gameId,
         [FromBody] JsonObject configuration,
         [FromServices] IConfigurationService configurationService,
-        [FromServices] IDefaultConfigurationFactory defaultConfigurationFactory)
-    {
-        return await defaultConfigurationFactory.GetKnownConfigurationTypeForKey(configurationKey)
+        [FromServices] IDefaultConfigurationFactory defaultConfigurationFactory) 
+    =>
+        await defaultConfigurationFactory.GetKnownConfigurationTypeForKey(configurationKey)
                 .Then(DeserializeConfiguration, configuration)
                 .Then(deserializedConfiguration => gameId is not null
                     ? configurationService.SetConfigurationForGame((Guid)gameId, deserializedConfiguration, deserializedConfiguration.GetType())
@@ -48,7 +47,6 @@ public class ConfigurationsController : Controller
                 Failure<InvalidConfigurationJsonError> => BadRequest(),
                 var r => throw new UnexpectedResultException(r)
             };
-    }
 
     private static Result<object> DeserializeConfiguration(JsonObject json, Type configurationType)
     {

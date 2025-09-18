@@ -39,10 +39,8 @@ public class EventsControllerIntegrationTests : ControllerIntegrationTest
     }
 
     [Test]
-    public async Task AddEvent_WhenGameNotFound_ReturnsNotFound()
-    {
+    public async Task AddEvent_WhenGameNotFound_ReturnsNotFound() =>
         await AddEvent(new TestEvent(Guid.Empty, new TestEventBody {Value = "Hello, World!"}), gameId: Guid.NewGuid(), expectedResult: HttpStatusCode.NotFound);
-    }
 
     [Test]
     public async Task EventsChangeState()
@@ -70,7 +68,7 @@ public class EventsControllerIntegrationTests : ControllerIntegrationTest
             var body = new TestEventBody {Value = i.ToString()};
             var createResult = await AddEvent(new TestEvent(Guid.Empty, body));
 
-            testEvents.Add(new TestEvent(createResult!.Id, body));
+            testEvents.Add(new TestEvent(createResult.Id, body));
         }
 
         var events = await GetEvents();
@@ -120,7 +118,7 @@ public class EventsControllerIntegrationTests : ControllerIntegrationTest
 
         var events = await GetUndoEvents();
         var typedEvents = events
-            .Select((e, i) => e.AsUntypedEvent().AsEvent(typeof(TestUndoEvent)))
+            .Select(e => e.AsUntypedEvent().AsEvent(typeof(TestUndoEvent)))
             .Select(r => r switch
             {
                 Success<Event> s => s.Value,
@@ -143,7 +141,7 @@ public class EventsControllerIntegrationTests : ControllerIntegrationTest
 
         var events = await GetUndoEvents(query: $"sortOrder={(descending ? "Desc" : "Asc")}");
         var typedEvents = events
-            .Select((e, i) => e.AsUntypedEvent().AsEvent(typeof(TestUndoEvent)))
+            .Select(e => e.AsUntypedEvent().AsEvent(typeof(TestUndoEvent)))
             .Select(r => r switch
             {
                 Success<Event> s => s.Value,
@@ -175,7 +173,7 @@ public class EventsControllerIntegrationTests : ControllerIntegrationTest
 
         var events = await GetUndoEvents(query: $"maxCount={maxCount}");
         var typedEvents = events
-            .Select((e, i) => e.AsUntypedEvent().AsEvent(typeof(TestUndoEvent)))
+            .Select(e => e.AsUntypedEvent().AsEvent(typeof(TestUndoEvent)))
             .Select(r => r switch
             {
                 Success<Event> s => s.Value,
@@ -248,11 +246,9 @@ public class EventsControllerIntegrationTests : ControllerIntegrationTest
     }
 
     [Test]
-    public async Task DeleteEvent_WhenEventNotFound_ReturnsNotFound()
-    {
+    public async Task DeleteEvent_WhenEventNotFound_ReturnsNotFound() =>
         await DeleteEvent(Guid.NewGuid(), expectedResult: HttpStatusCode.NotFound);
-    }
-
+    
     [Test]
     public async Task DeleteEvent_WhenGameNotFound_ReturnsNotFound()
     {
@@ -329,10 +325,8 @@ public class EventsControllerIntegrationTests : ControllerIntegrationTest
     }
 
     [Test]
-    public async Task ReplaceEvent_WhenEventNotFound_ReturnsNotFound()
-    {
+    public async Task ReplaceEvent_WhenEventNotFound_ReturnsNotFound() =>
         await ReplaceEvent(Guid.NewGuid(), new TestEvent(0, new()), expectedResult: HttpStatusCode.NotFound);
-    }
 
     [Test]
     public async Task ReplaceEvent_WhenGameNotFound_ReturnsNotFound()

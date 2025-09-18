@@ -72,10 +72,8 @@ public class EventBusIntegrationTests
     }
 
     [TearDown]
-    public void Teardown()
-    {
+    public void Teardown() =>
         _mocker.Dispose();
-    }
 
     [Test]
     public async Task SingleEventInEmptyGame_SetsExpectedState()
@@ -172,10 +170,8 @@ public class EventBusIntegrationTests
     {
         protected override ComplexStateTestReducerState DefaultState => new(0);
 
-        public IEnumerable<Event> Handle(TestEvent @event)
-        {
-            return [new TestIncremented(@event.Tick, new(GetState().Count + 1))];
-        }
+        public IEnumerable<Event> Handle(TestEvent @event) =>
+            [new TestIncremented(@event.Tick, new(GetState().Count + 1))];
 
         public IEnumerable<Event> Handle(TestIncremented @event)
         {

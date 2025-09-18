@@ -59,10 +59,8 @@ public abstract class DataStore : IDataStore
     public void RollbackTransaction() =>
         Connection.Rollback();
 
-    public void Dispose()
-    {
+    public void Dispose() =>
         Connection.Dispose();
-    }
 }
 
 public class UnexpectedUpdateCountException : Exception;
