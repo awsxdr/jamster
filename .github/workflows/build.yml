@@ -43,15 +43,15 @@ jobs:
       
     - name: Build win-x64
       working-directory: ./jamster.engine
-      run: dotnet publish ./jamster.csproj /p:PublishProfile=./Properties/PublishProfiles/WinX64.pubxml
+      run: dotnet publish ./jamster.engine.csproj /p:PublishProfile=./Properties/PublishProfiles/WinX64.pubxml
 
     - name: Build linux-x64
       working-directory: ./jamster.engine
-      run: dotnet publish ./jamster.csproj /p:PublishProfile=./Properties/PublishProfiles/LinuxX64.pubxml
+      run: dotnet publish ./jamster.engine.csproj /p:PublishProfile=./Properties/PublishProfiles/LinuxX64.pubxml
       
     - name: Build linux-arm64
       working-directory: ./jamster.engine
-      run: dotnet publish ./jamster.csproj /p:PublishProfile=./Properties/PublishProfiles/LinuxArm64.pubxml
+      run: dotnet publish ./jamster.engine.csproj /p:PublishProfile=./Properties/PublishProfiles/LinuxArm64.pubxml
 
     - name: Prepare output
       shell: bash
