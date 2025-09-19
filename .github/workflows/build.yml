@@ -22,36 +22,36 @@ jobs:
         node-version: 22.x
 
     - name: Restore UI
-      working-directory: ./amethyst.ui
+      working-directory: ./jamster.ui
       run: npm ci
 
     - name: Lint UI
-      working-directory: ./amethyst.ui
+      working-directory: ./jamster.ui
       run: npm run lint
 
     - name: Build UI
-      working-directory: ./amethyst.ui
+      working-directory: ./jamster.ui
       run: npm run build
 
     - name: Restore API
-      working-directory: ./amethyst
+      working-directory: ./jamster.engine
       run: dotnet restore
       
     - name: Test API
-      working-directory: ./amethyst.tests
+      working-directory: ./jamster.engine.tests
       run: dotnet test
       
     - name: Build win-x64
-      working-directory: ./amethyst
-      run: dotnet publish ./amethyst.csproj /p:PublishProfile=./Properties/PublishProfiles/WinX64.pubxml
+      working-directory: ./jamster.engine
+      run: dotnet publish ./jamster.csproj /p:PublishProfile=./Properties/PublishProfiles/WinX64.pubxml
 
     - name: Build linux-x64
-      working-directory: ./amethyst
-      run: dotnet publish ./amethyst.csproj /p:PublishProfile=./Properties/PublishProfiles/LinuxX64.pubxml
+      working-directory: ./jamster.engine
+      run: dotnet publish ./jamster.csproj /p:PublishProfile=./Properties/PublishProfiles/LinuxX64.pubxml
       
     - name: Build linux-arm64
-      working-directory: ./amethyst
-      run: dotnet publish ./amethyst.csproj /p:PublishProfile=./Properties/PublishProfiles/LinuxArm64.pubxml
+      working-directory: ./jamster.engine
+      run: dotnet publish ./jamster.csproj /p:PublishProfile=./Properties/PublishProfiles/LinuxArm64.pubxml
 
     - name: Prepare output
       shell: bash
@@ -61,9 +61,9 @@ jobs:
         mkdir ./output/bin/win-x64
         mkdir ./output/bin/linux-x64
         mkdir ./output/bin/linux-arm64
-        mv ./amethyst/bin/Release/net8.0/win-x64/publish/** ./output/bin/win-x64/
-        mv ./amethyst/bin/Release/net8.0/linux-x64/publish/** ./output/bin/linux-x64/
-        mv ./amethyst/bin/Release/net8.0/linux-arm64/publish/** ./output/bin/linux-arm64/
+        mv ./jamster.engine/bin/Release/net8.0/win-x64/publish/** ./output/bin/win-x64/
+        mv ./jamster.engine/bin/Release/net8.0/linux-x64/publish/** ./output/bin/linux-x64/
+        mv ./jamster.engine/bin/Release/net8.0/linux-arm64/publish/** ./output/bin/linux-arm64/
         cp -r ./output/bin/win-x64/wwwroot ./output/wwwroot
         rm -r ./output/bin/win-x64/wwwroot
         rm -r ./output/bin/linux-x64/wwwroot

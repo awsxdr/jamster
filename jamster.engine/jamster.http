@@ -1,0 +1,6 @@
+@jamster_HostAddress = http://localhost:5249
+
+GET {{jamster_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

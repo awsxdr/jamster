@@ -1,8 +1,8 @@
-# Project Amethyst Derby Scoreboard
+# Jamster - Roller Derby Scoreboard and Stats Tool
 
 **This README, much like the rest of the project, is a work-in-progress**
 
-Amethyst (temporary name) is a scoreboard and live stats system for running roller derby games.
+Jamster is a scoreboard and live stats system for running roller derby games.
 
 Right now it's in early alpha testing. The core functionality is nearing completion but it is still a work-in-progress. It is not recommended for open-door or sanctioned games at this stage.
 
@@ -10,29 +10,29 @@ Right now it's in early alpha testing. The core functionality is nearing complet
 
 In order to test the language selection system, a rough Spanish translation has been added. This translation was done by a non-native speaker with the help of automated tools; as such, and despite best efforts, the translation is unlikely to be fully accurate.
 
-If you have any suggestions for translations or would like to help translate the app, head over to the [translations discussion](https://github.com/awsxdr/amethyst/discussions/categories/translations).
+If you have any suggestions for translations or would like to help translate the app, head over to the [translations discussion](https://github.com/awsxdr/jamster/discussions/categories/translations).
 
 ## Getting started
 
-Amethyst currently works on Windows and Linux with x64 and ARM64 processors. It has been tested on Windows 11 and Debian-based Linux on ARM64. Additional OSs may work and any feedback would be much appreciated regarding this.
+Jamster currently works on Windows and Linux with x64 and ARM64 processors. It has been tested on Windows 11 and Debian-based Linux on ARM64. Additional OSs may work and any feedback would be much appreciated regarding this.
 
-Amethyst has no dependencies so head over to the Releases section and grab the release ZIP. Unzip this file and then run `start.cmd` either by double-clicking on it or from the console (this should work on any OS). You should then be able to view the scoreboard by opening a browser and going to `http://localhost:8000`.
+Jamster has no dependencies so head over to the Releases section and grab the release ZIP. Unzip this file and then run `start.cmd` either by double-clicking on it or from the console (this should work on any OS). You should then be able to view the scoreboard by opening a browser and going to `http://localhost:8000`.
 
 For command line options, run `start.cmd --help` from the console.
 
 ## Differences with CRG
 
-Carolina/CRG is the most commonly used scoreboard for roller derby. Amethyst was designed to be familiar to users of CRG but does have a few important differences.
+Carolina/CRG is the most commonly used scoreboard for roller derby. Jamster was designed to be familiar to users of CRG but does have a few important differences.
 
 ### Finalizing periods
 
-CRG has the concept of finalizing a game which marks the score as final once the game is complete. Amethyst takes this a step further and requires that each individual period is finalized. This is to allow greater control of whether the next jam is run in the previous period or the next when the intermission clock is running.
+CRG has the concept of finalizing a game which marks the score as final once the game is complete. Jamster takes this a step further and requires that each individual period is finalized. This is to allow greater control of whether the next jam is run in the previous period or the next when the intermission clock is running.
 
 ### Initial trip completed vs No initial
 
-The Amethyst UI takes the approach of all toggles having positive labeled. This is a common approach to avoid double-negatives when a control is toggled off to turn something on.
+The Jamster UI takes the approach of all toggles having positive labeled. This is a common approach to avoid double-negatives when a control is toggled off to turn something on.
 
-The primary area where this makes a difference is when marking the completion of an initial trip. In CRG the standard is to uncheck the "No initial" button; however, in Amethyst the equivalent is checking the "Initial trip complete" button.
+The primary area where this makes a difference is when marking the completion of an initial trip. In CRG the standard is to uncheck the "No initial" button; however, in Jamster the equivalent is checking the "Initial trip complete" button.
 
 ### No need to end timeouts
 
@@ -40,15 +40,15 @@ Timeouts will automatically end if another jam is started. Timeouts _can_ be end
 
 ### Scoreboard first
 
-Amethyst has a design philosophy of "scoreboard first, stats second". What this means is that it endeavours to give the operator full control over what is displayed on the scoreboard, regardless of rules regarding stats. For example, the score can always be reduced; even if this would result in negative points in the jam.
+Jamster has a design philosophy of "scoreboard first, stats second". What this means is that it endeavours to give the operator full control over what is displayed on the scoreboard, regardless of rules regarding stats. For example, the score can always be reduced; even if this would result in negative points in the jam.
 
 The rationale for this is that the scoreboard display is very time-dependent and can have large game impact if incorrect. The stats on the other hand can be corrected later.
 
-Amethyst will do its best to derive correct stats from the inputs received but this may not always be possible. The software includes a stats validator which will help indicate where errors may have occurred and stats can be freely modified without impacting the displayed scoreboard.
+Jamster will do its best to derive correct stats from the inputs received but this may not always be possible. The software includes a stats validator which will help indicate where errors may have occurred and stats can be freely modified without impacting the displayed scoreboard.
 
 ## Technical details
 
-Amethyst is, at its heart, and event-sourced system. This means that games are represented not by a point-in-time state, but rather by a series of events. This approach allows the state of a game to be calculated for any point in time.
+Jamster is, at its heart, and event-sourced system. This means that games are represented not by a point-in-time state, but rather by a series of events. This approach allows the state of a game to be calculated for any point in time.
 
 The event-sourced approach was chosen primarily to help keep the system deterministic. It also allows for advanced features in the future like game playback and timeline editing.
 
