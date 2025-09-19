@@ -1,10 +1,8 @@
-﻿using System.Collections.Immutable;
-using amethyst.DataStores;
+﻿using amethyst.DataStores;
 using amethyst.Domain;
 using amethyst.Events;
 using amethyst.Reducers;
 using amethyst.Services;
-using amethyst.tests.GameGeneration;
 using Autofac;
 using FluentAssertions;
 using Moq;
@@ -13,6 +11,8 @@ namespace amethyst.tests.Reducers;
 
 public class TimelineIntegrationTests : IntegrationTest<Timeline>
 {
+    private Tick Tick { get; set; } = 0;
+
     private readonly List<Event> _events = new();
     private GameInfo _game;
 
@@ -24,12 +24,20 @@ public class TimelineIntegrationTests : IntegrationTest<Timeline>
         builder.RegisterConfigurations();
         builder.RegisterReducers();
 
+        var systemTimeMock = new Mock<ISystemTime>();
+        systemTimeMock
+            .Setup(mock => mock.GetTick())
+            .Returns(() => Tick);
+        builder.RegisterInstance(systemTimeMock.Object).As<ISystemTime>();
+
         //builder.RegisterInstance(() => Resolve<IGameStateStore>()).As<GameStateStoreFactory>();
     }
 
     protected override void Setup()
     {
         base.Setup();
+
+        Tick = 0;
 
         _events.Clear();
         _game = new();
@@ -50,15 +58,20 @@ public class TimelineIntegrationTests : IntegrationTest<Timeline>
     }
 
     [Test]
-    public async Task Test()
+    public async Task Timeline_UpdatesWithLatestState()
     {
         var eventBus = Resolve<IEventBus>();
+
+        Tick = Tick.FromSeconds(30);
 
         await eventBus.AddEvent(_game, new JamStarted(0));
         ValidateStages([Stage.BeforeGame, Stage.Jam]);
 
+        Tick = Tick.FromSeconds(110);
+        
         await eventBus.AddEvent(_game, new CallMarked(100_000, new(TeamSide.Home, true)));
         ValidateStages([Stage.BeforeGame, Stage.Jam, Stage.Lineup]);
+
     }
 
     private void ValidateStages(IEnumerable<Stage> stages)

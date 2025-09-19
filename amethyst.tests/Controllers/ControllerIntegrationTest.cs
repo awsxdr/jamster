@@ -85,16 +85,12 @@ public abstract class ControllerIntegrationTest
     }
 
     [SetUp]
-    public virtual void Setup()
-    {
+    public virtual void Setup() =>
         Tick = 0;
-    }
 
     [TearDown]
-    public virtual void TearDown()
-    {
+    public virtual void TearDown() =>
         CleanDatabase();
-    }
 
     protected Task<HttpResponseMessage> Get(string path) =>
         Time($"GET {path}", () => Client.GetAsync(path));
