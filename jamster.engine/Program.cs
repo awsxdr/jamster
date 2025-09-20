@@ -30,6 +30,11 @@ if (parseCommandLineResult.Errors.Any() && !SkipCommandLineParse) return;
 
 var commandLineOptions = parseCommandLineResult.Value;
 
+if (commandLineOptions.RootPath != null)
+{
+    RunningEnvironment.RootPath = commandLineOptions.RootPath;
+}
+
 var builder = WebApplication.CreateBuilder(args);
 
 RunningEnvironment.IsDevelopment = builder.Environment.IsDevelopment();
@@ -85,6 +90,7 @@ builder.Services.AddSpaStaticFiles(config =>
 builder.Services.AddSingleton(new KeyFrameSettings(commandLineOptions.KeyFrameFrequency > 0, commandLineOptions.KeyFrameFrequency));
 
 var databasesPath = Path.Combine(RunningEnvironment.RootPath, "db");
+logger.Debug("Using database path {databasePath}", databasesPath);
 Directory.CreateDirectory(databasesPath);
 Directory.CreateDirectory(Path.Combine(databasesPath, GameDataStore.GamesFolderName));
 Directory.CreateDirectory(Path.Combine(databasesPath, GameDataStore.GamesFolderName, GameDataStore.ArchiveFolderName));
@@ -139,7 +145,7 @@ foreach (var notifier in app.Services.GetService<IEnumerable<INotifier>>() ?? []
 
 if (commandLineOptions.Hostname is "0.0.0.0" or "::")
 {
-    Console.WriteLine("Application starting. Use a web browser to go to one of these addresses:");
+    Console.WriteLine("Jamster started. Use a web browser to go to one of these addresses:");
 
     var urls = GetLocalAddresses(commandLineOptions.Hostname == "::").Select(x => $"{GetHostUrl(x.Address)}{(x.IsLocalOnly ? " (This machine only)" : "")}");
 
@@ -150,10 +156,12 @@ if (commandLineOptions.Hostname is "0.0.0.0" or "::")
 }
 else
 {
-    Console.WriteLine($"Application starting. Use a web browser to go to {hostUrl}");
+    Console.WriteLine("Jamster started. Use a web browser to go to one of these addresses:");
+
+    // TODO: Handle this case
 }
 
-if(!SkipFirstRunSetup)
+if (!SkipFirstRunSetup)
     await app.Services.GetService<IFirstRunConfigurator>()!.PerformFirstRunTasksIfRequired();
 
 try
@@ -364,6 +372,9 @@ namespace jamster
 
         [Option("key-frequency", Required = false, Default = (ushort)5, HelpText = "Set how often keyframes are captured; the lower the number, the more often frames are captured. More keyframes will make undo and timeline changes quicker but will require more memory. Set to 0 to disable keyframes.")]
         public ushort KeyFrameFrequency { get; set; }
+
+        [Option("root-path", Required = false, Hidden = true, HelpText = "Set the path to the folder to use as the root folder.")]
+        public string? RootPath { get; set; }
     }
     // ReSharper restore UnusedAutoPropertyAccessor.Global
 }

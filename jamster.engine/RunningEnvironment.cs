@@ -7,9 +7,7 @@ public static class RunningEnvironment
     public static bool IsDevelopment { get; internal set; }
 
     private static readonly Lazy<string> RootPathFactory = new(() =>
-        IsDevelopment
-        ? Path.GetDirectoryName(Assembly.GetEntryAssembly()!.Location)!
-        : Directory.GetParent(Path.GetDirectoryName(Assembly.GetEntryAssembly()!.Location)!)!.Parent!.FullName);
+        Path.GetDirectoryName(Assembly.GetEntryAssembly()!.Location)!);
 
     private static string? _setRootPath;
 
