@@ -25,11 +25,12 @@ export const useColorInputSchema = (existingColors: string[]) => {
 }
 
 type ColorInputProps = {
+    id?: string;
     existingColors: string[];
     onColorAdded?: (name: string, color: TeamColor) => void;
 }
 
-export const ColorInput = ({ existingColors, onColorAdded }: ColorInputProps) => {
+export const ColorInput = ({ id, existingColors, onColorAdded }: ColorInputProps) => {
 
     const { translate } = useI18n();
 
@@ -84,7 +85,7 @@ export const ColorInput = ({ existingColors, onColorAdded }: ColorInputProps) =>
                     <FormItem className="grow">
                         <FormLabel>{translate("ColorInput.Name")}</FormLabel>
                         <FormControl className="grow">
-                            <Input {...field} onChange={e => handleNameChanged(e, field.onChange)} />
+                            <Input {...field} id={id} onChange={e => handleNameChanged(e, field.onChange)} />
                         </FormControl>
                         <FormMessage />
                     </FormItem>

@@ -16,6 +16,7 @@ type ColorItem = TeamColor & {
 }
 
 type ColorRowProps = {
+    id?: string;
     color: ColorItem;
     disableEdit?: boolean;
     disableSelect?: boolean;
@@ -26,7 +27,7 @@ type ColorRowProps = {
     onColorChanged?: (name: string, color: TeamColor) => void;
 }
 
-const ColorRow = ({ color, disableEdit, disableSelect, existingColors, onEditStart, onEditEnd, onSelectedChanged, onColorChanged }: ColorRowProps) => {
+const ColorRow = ({ id, color, disableEdit, disableSelect, existingColors, onEditStart, onEditEnd, onSelectedChanged, onColorChanged }: ColorRowProps) => {
     const [isEditing, setIsEditing] = useState(false);
 
     const [shirtColor, setShirtColor] = useState<HslColor>({ hue: 0, saturation: 0, lightness: 1 });
@@ -97,7 +98,7 @@ const ColorRow = ({ color, disableEdit, disableSelect, existingColors, onEditSta
     }
 
     return (
-        <div className={cn("flex w-full flex-nowrap gap-2")}>
+        <div id={id} className={cn("flex w-full flex-nowrap gap-2")}>
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(handleAcceptEdit)} className="flex w-full flex-nowrap items-center gap-1">
                     <div className="flex w-8 text-nowrap justify-center">
@@ -152,10 +153,11 @@ const ColorRow = ({ color, disableEdit, disableSelect, existingColors, onEditSta
 }
 
 type ColorsTableProps = {
+    id?: string;
     team: Team;
 }
 
-export const ColorsTable = ({ team }: ColorsTableProps) => {
+export const ColorsTable = ({ id, team }: ColorsTableProps) => {
 
     const { translate } = useI18n();
     const [isEditing, setIsEditing] = useState(false);
@@ -206,7 +208,7 @@ export const ColorsTable = ({ team }: ColorsTableProps) => {
     }
 
     return (
-        <Card className="pt-4">
+        <Card className="pt-4" id={id}>
             <CardContent className="flex flex-col gap-4">
                 <div className="flex w-full justify-end">
                     <Button variant="destructive" disabled={selectedColors.length < 1 || selectedColors.length === colorItems.length} onClick={handleDeleteSelected}>
@@ -217,6 +219,7 @@ export const ColorsTable = ({ team }: ColorsTableProps) => {
                 { colorItems.map((color, i) => 
                     <ColorRow 
                         key={i}
+                        id={id?.concat(`.${i}`)}
                         color={color} 
                         existingColors={Object.keys(team.colors).filter(c => c !== color.name)} 
                         disableEdit={isEditing}

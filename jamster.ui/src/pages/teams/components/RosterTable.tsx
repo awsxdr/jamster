@@ -10,6 +10,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 type RowLayoutProps = {
+    id?: string;
     selectContent?: ReactNode;
     numberContent?: ReactNode;
     nameContent?: ReactNode;
@@ -19,14 +20,14 @@ type RowLayoutProps = {
     onClick?: () => void;
 }
 
-const RowLayout = ({ className, selectContent, numberContent, nameContent, toolsContent, contentWrapper, onClick }: RowLayoutProps) => {
+const RowLayout = ({ id, className, selectContent, numberContent, nameContent, toolsContent, contentWrapper, onClick }: RowLayoutProps) => {
 
     const defaultContentWrapper = (children: ReactNode) => <>{children}</>;
 
     const rowClassName = cn("flex w-full flex-nowrap items-center", className);
 
     return (
-        <div className={rowClassName} onClick={onClick}>
+        <div id={id} className={rowClassName} onClick={onClick}>
             {(contentWrapper ?? defaultContentWrapper)(
                 <>
                     <div className="flex w-8 text-nowrap justify-center">
@@ -46,6 +47,7 @@ const RowLayout = ({ className, selectContent, numberContent, nameContent, tools
 }
 
 type RosterTableRowProps = {
+    id?: string;
     number: string;
     name: string;
     preventEdit?: boolean;
@@ -58,7 +60,7 @@ type RosterTableRowProps = {
     onSkaterChanged?: (number: string, name: string) => void;
 }
 
-const RosterTableRow = ({ number, name, preventEdit, selected, existingNumbers, disableSelect, onEditStart, onEditEnd, onSelectedChanged, onSkaterChanged }: RosterTableRowProps) => {
+const RosterTableRow = ({ id, number, name, preventEdit, selected, existingNumbers, disableSelect, onEditStart, onEditEnd, onSelectedChanged, onSkaterChanged }: RosterTableRowProps) => {
 
     const [isEditing, setIsEditing] = useState(false);
 
@@ -97,6 +99,7 @@ const RosterTableRow = ({ number, name, preventEdit, selected, existingNumbers, 
 
     return (
         <RowLayout
+            id={id}
             className={cn("py-2", selected && "bg-accent")}
             contentWrapper={(children, rowClassName) => 
                 <Form {...form}>
@@ -275,6 +278,7 @@ export const RosterTable = ({ team }: RosterTableProps) => {
                 { tableRoster.map((skater, i) => (
                     <RosterTableRow 
                         {...skater} 
+                        id={`RosterTable.Row.${i}`}
                         key={skater.number}
                         preventEdit={isEditing}
                         existingNumbers={tableRoster.map(s => s.number).filter(n => n !== skater.number)}

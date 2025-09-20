@@ -123,7 +123,7 @@ export const NewTeamDialog = ({ onNewTeamCreated, onCancelled }: NewTeamDialogPr
                                 <FormItem>
                                     <FormLabel>{translate("NewTeamDialog.TeamName")}</FormLabel>
                                     <FormControl>
-                                        <Input {...field} disabled={isCreating} />
+                                        <Input {...field} disabled={isCreating} id="NewTeamDialog.TeamName" />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -133,7 +133,7 @@ export const NewTeamDialog = ({ onNewTeamCreated, onCancelled }: NewTeamDialogPr
                                     <FormLabel>{translate("NewTeamDialog.KitColor")}</FormLabel>
                                     <FormControl>
                                         <div className="flex gap-2">
-                                            <Input {...field} className="grow" disabled={isCreating} />
+                                            <Input {...field} className="grow" disabled={isCreating} id="NewTeamDialog.KitColor" />
                                             <ColorSelectButton 
                                                 color={shirtColor} 
                                                 title={translate("NewTeamDialog.KitColorTitle")} 
@@ -162,6 +162,7 @@ export const NewTeamDialog = ({ onNewTeamCreated, onCancelled }: NewTeamDialogPr
                                         type="submit"
                                         className="mt-4"
                                         disabled={isCreating}
+                                        id="NewTeamDialog.CreateButton"
                                     >
                                         { isCreating && <Loader2 className="animate-spin" /> }
                                         {translate("NewTeamDialog.Create")}

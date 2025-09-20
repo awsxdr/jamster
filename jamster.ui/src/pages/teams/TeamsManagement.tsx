@@ -55,7 +55,7 @@ export const TeamsManagement = () => {
                     </div>
                     <div className="flex gap-2">
                         <NewTeamDialogTrigger>
-                            <Button variant="creative">
+                            <Button variant="creative" id="TeamsManagement.AddTeamButton">
                                 <Plus />
                                 { translate("TeamsManagement.AddTeam") }
                             </Button>

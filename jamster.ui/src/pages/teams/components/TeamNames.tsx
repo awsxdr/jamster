@@ -86,23 +86,23 @@ export const TeamNames = ({ teamId, className }: TeamNamesProps) => {
             </CardHeader>
             <CardContent className="flex flex-col grid items-center gap-4">
                 <div className="flex flex-col gap-1.5">
-                    <Label htmlFor="teamName">{ translate("TeamNames.TeamName") }</Label>
-                    <Input value={teamName} id="teamName" onChange={onTeamNameChanged} onBlur={onTeamNameBlur} />
+                    <Label htmlFor="TeamNames.TeamName">{ translate("TeamNames.TeamName") }</Label>
+                    <Input value={teamName} id="TeamNames.TeamName" onChange={onTeamNameChanged} onBlur={onTeamNameBlur} />
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                    <Label htmlFor="leagueName">{ translate("TeamNames.LeagueName") }</Label>
-                    <Input value={leagueName} id="leagueName" onChange={onLeagueNameChanged} onBlur={onLeagueNameBlur} />
+                    <Label htmlFor="TeamNames.LeagueName">{ translate("TeamNames.LeagueName") }</Label>
+                    <Input value={leagueName} id="TeamNames.LeagueName" onChange={onLeagueNameChanged} onBlur={onLeagueNameBlur} />
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                    <Label htmlFor="scoreboardName">{ translate("TeamNames.ScoreboardName") }</Label>
-                    <Input value={scoreboardName} id="scoreboardName" placeholder={teamName} onChange={onScoreboardNameChanged} onBlur={onScoreboardNameBlur} />
+                    <Label htmlFor="TeamNames.ScoreboardName">{ translate("TeamNames.ScoreboardName") }</Label>
+                    <Input value={scoreboardName} id="TeamNames.ScoreboardName" placeholder={teamName} onChange={onScoreboardNameChanged} onBlur={onScoreboardNameBlur} />
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                    <Label htmlFor="overlayName">{ translate("TeamNames.OverlayName") }</Label>
-                    <Input value={overlayName} id="overlayName" placeholder={teamName} onChange={onOverlayNameChanged} onBlur={onOverlayNameBlur} />
+                    <Label htmlFor="TeamNames.OverlayName">{ translate("TeamNames.OverlayName") }</Label>
+                    <Input value={overlayName} id="TeamNames.OverlayName" placeholder={teamName} onChange={onOverlayNameChanged} onBlur={onOverlayNameBlur} />
                 </div>
 
             </CardContent>

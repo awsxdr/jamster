@@ -25,8 +25,8 @@ export const TeamColors = ({ team, className }: TeamColorsProps) => {
                 <CardTitle>{ translate("TeamColors.Title") }</CardTitle>
             </CardHeader>
             <CardContent className="flex flex-col gap-2">
-                <ColorInput existingColors={Object.keys(team.colors)} onColorAdded={handleColorAdded} />
-                <ColorsTable team={team} />
+                <ColorInput id="TeamColors.Color" existingColors={Object.keys(team.colors)} onColorAdded={handleColorAdded} />
+                <ColorsTable id="TeamColors.ColorsTable" team={team} />
             </CardContent>
         </Card>
     );

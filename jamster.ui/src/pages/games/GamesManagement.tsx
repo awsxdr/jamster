@@ -57,7 +57,7 @@ export const GamesManagement = () => {
                 <div className="flex gap-2">
                     <NewGameDialogContainer open={newGameDialogOpen} onOpenChange={setNewGameDialogOpen}>
                         <NewGameDialogTrigger>
-                            <Button variant="creative">
+                            <Button variant="creative" id="GamesManagement.NewGameButton">
                                 <Plus />
                                 { !isMobile && translate("GamesManagement.NewGame") }
                             </Button>

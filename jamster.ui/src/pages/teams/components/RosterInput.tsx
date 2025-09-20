@@ -94,7 +94,7 @@ export const RosterInput = ({ existingNumbers, onSkatersAdded }: RosterRowProps)
                                 <FormItem className="w-1/3">
                                     <FormLabel>{ translate("RosterInput.Number") }</FormLabel>
                                     <FormControl>
-                                        <Input {...field} onPaste={handlePaste} />
+                                        <Input {...field} id="RosterInput.Number" onPaste={handlePaste} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -103,7 +103,7 @@ export const RosterInput = ({ existingNumbers, onSkatersAdded }: RosterRowProps)
                                 <FormItem className="w-2/3">
                                     <FormLabel>{ translate("RosterInput.Name") }</FormLabel>
                                     <FormControl>
-                                        <Input {...field} onPaste={handlePaste} />
+                                        <Input {...field} id="RosterInput.Name" onPaste={handlePaste} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -111,7 +111,7 @@ export const RosterInput = ({ existingNumbers, onSkatersAdded }: RosterRowProps)
                         </div>
                         <FormItem>
                             <div className="h-6"></div>
-                            <Button type="submit" variant="creative"><Plus /> { translate("RosterInput.AddSkater") }</Button>
+                            <Button type="submit" variant="creative" id="RosterInput.AddSkaterButton"><Plus /> { translate("RosterInput.AddSkater") }</Button>
                         </FormItem>
                     </div>
                     <FormDescription>

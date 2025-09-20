@@ -22,7 +22,11 @@ export const TeamRoster = ({ team, className }: TeamRosterProps) => {
         setRoster(team.id, [
             ...team.roster,
             ...skaters,
-        ]);
+        ].filter((v, i, a) => a.findIndex(s => s.number === v.number) === i));
+        console.log([
+            ...team.roster,
+            ...skaters,
+        ].filter((v, i, a) => a.findIndex(s => s.number === v.number) === i));
     }
 
     return (

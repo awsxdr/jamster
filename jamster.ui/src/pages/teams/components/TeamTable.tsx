@@ -75,7 +75,7 @@ export const TeamTable = ({ teams, selectedTeamIds, onSelectedTeamIdsChanged }: 
     }
 
     return (
-        <Table>
+        <Table id="TeamTable">
             <TableHeader>
                 {
                     table.getHeaderGroups().map(headerGroup => (

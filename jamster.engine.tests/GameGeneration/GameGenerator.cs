@@ -7,6 +7,9 @@ public static class GameGenerator
         var homeTeam = TeamGenerator.GenerateRandom();
         var awayTeam = TeamGenerator.GenerateRandom();
 
+        while (awayTeam.DomainTeam.Names["league"] == homeTeam.DomainTeam.Names["league"])
+            awayTeam = TeamGenerator.GenerateRandom();
+
         return new(
             homeTeam,
             awayTeam
