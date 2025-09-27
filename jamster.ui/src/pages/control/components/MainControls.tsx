@@ -112,6 +112,7 @@ export const MainControls = ({ gameId, disabled }: MainControlsProps) => {
             <CardContent className="flex p-0 px-2 flex-wrap gap-2 justify-evenly">
                 <TooltipProvider>
                     <ShortcutButton 
+                        id="ScoreboardControl.MainControls.StartButton"
                         shortcutGroup="clocks" 
                         shortcutKey="start"
                         notify={shouldStartJam}

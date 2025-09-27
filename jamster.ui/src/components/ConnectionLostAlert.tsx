@@ -7,7 +7,7 @@ export const ConnectionLostAlert = () => {
     const hasConnection = useHasServerConnection();
 
     return !hasConnection && (
-        <Alert className="rounded-none" variant="destructive">
+        <Alert id="ConnectionLostAlert" className="rounded-none" variant="destructive">
             <WifiOff />
             <AlertTitle className="ml-2">{translate("Title")}</AlertTitle>
             <AlertDescription className="ml-2">{translate("Description")}</AlertDescription>

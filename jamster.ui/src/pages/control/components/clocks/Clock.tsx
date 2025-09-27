@@ -6,6 +6,7 @@ import { Minus, Plus } from "lucide-react";
 import { RepeaterButton } from "../RepeaterButton";
 
 export type ClockProps = {
+    id?: string;
     name: string;
     editing?: boolean;
     seconds?: number;
@@ -16,7 +17,7 @@ export type ClockProps = {
     onClockSet?: (seconds: number) => void;
 }
 
-export const Clock = ({ name, editing, seconds, isRunning, direction, startValue, className, onClockSet }: ClockProps) => {
+export const Clock = ({ id, name, editing, seconds, isRunning, direction, startValue, className, onClockSet }: ClockProps) => {
 
     const [isEditing, setIsEditing] = useState(false);
     const [editValue, setEditValue] = useState(0);
@@ -111,6 +112,7 @@ export const Clock = ({ name, editing, seconds, isRunning, direction, startValue
                         {!!editing && (
                             <div className="text-center">
                                 <RepeaterButton 
+                                    id={id ? `${id}.Name` : undefined}
                                     size="icon" 
                                     variant="secondary" 
                                     className="p-0 h-5 w-full" 
@@ -122,7 +124,7 @@ export const Clock = ({ name, editing, seconds, isRunning, direction, startValue
                                 </RepeaterButton>
                             </div>
                         )}
-                        <span className="block text-center xl:text-right h-full text-2xl lg:text-3xl xl:text-4xl">{time}</span>
+                        <span id={id} className="block text-center xl:text-right h-full text-2xl lg:text-3xl xl:text-4xl">{time}</span>
                         {!!editing && (
                             <div className="text-center">
                                 <RepeaterButton 

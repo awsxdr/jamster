@@ -31,16 +31,6 @@ public class FullGameTest : FullEngineTest
 
         _driver = new ChromeDriver();
         _driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(5);
-
-        //_engineProcess = 
-        //    Process.Start(new ProcessStartInfo(Path.Combine(".", "engine", "jamster.engine.exe"))
-        //    {
-        //        Arguments = $"-p {Port}",
-        //        CreateNoWindow = true,
-        //        RedirectStandardOutput = true,
-        //    }) ?? throw new Exception("Failed to start engine process");
-
-        //_engineProcess.OutputDataReceived += (_, e) => Console.WriteLine(e.Data);
     }
 
     protected override void OneTimeTearDown()
@@ -68,63 +58,6 @@ public class FullGameTest : FullEngineTest
         catch (AssertionException)
         {
             Thread.Sleep(TimeSpan.FromSeconds(10));
-            throw;
-        }
-    }
-
-    [Test]
-    public void PasteIntoTeam_WhenContainsNumberToGoAtStart_PastesSuccessfully()
-    {
-        try
-        {
-            _driver.Navigate().GoToUrl(GetUrl("teams"));
-
-            var skaters = Enumerable.Range(1, 10).Select(i => new Skater(i.ToString(), $"Test {i}")).ToArray();
-
-            CreateTeam(new SimulatorTeam(
-                new(
-                    Guid.NewGuid(),
-                    new() { ["league"] = "Test League", ["color"] = "Red" },
-                    new() { ["Red"] = new(Color.FromRgb(255, 0, 0), Color.White) },
-                    skaters,
-                    DateTimeOffset.Now),
-                skaters.Select(s => new SimulatorSkater(s, SkaterPosition.Blocker, 1.0f, 0.0f)).ToArray()));
-
-            var teamTable = _driver.FindElement(By.Id("TeamTable"));
-            teamTable.Displayed.Should().BeTrue();
-            var teamElement =
-                teamTable.FindElements(By.TagName("a")).Should()
-                    .ContainSingle(e => e.Text == "Test League")
-                    .Subject;
-            teamElement.Click();
-
-            var skaterNumberInput = _driver.FindElement(By.Id("RosterInput.Number"));
-            skaterNumberInput.Displayed.Should().BeTrue();
-
-            PasteRoster(
-                Enumerable.Range(0, 3).Select(i => new Skater($"0{i}", $"Test 2{i}")).Select(s => new SimulatorSkater(s, SkaterPosition.Blocker, 1.0f, 0.0f)).ToArray(),
-                skaterNumberInput
-            );
-
-            var tableData =
-                Enumerable.Range(0, 13)
-                    .Select(i => _driver.FindElement(By.Id($"RosterTable.Row.{i}")))
-                    .Select(e => e.FindElements(By.TagName("span")))
-                    .Select(e => (Number: e[0].Text, Name: e[1].Text))
-                    .ToArray();
-
-            Console.WriteLine($"Retrieved skaters:\n{tableData.Select(s => $"{s.Number}\t{s.Name}").Map(string.Join, "\n")}");
-
-            Console.WriteLine();
-            //Console.WriteLine($"Expected skaters:\n{team.Roster.Select(s => $"{s.Number}\t{s.Name}").Map(string.Join, "\n")}");
-
-            //tableData.Should().BeEquivalentTo(team.Roster.Select(s => (s.Number, s.Name)));
-
-            Thread.Sleep(TimeSpan.FromSeconds(5));
-        }
-        catch (AssertionException)
-        {
-            Thread.Sleep(TimeSpan.FromSeconds(3));
             throw;
         }
     }

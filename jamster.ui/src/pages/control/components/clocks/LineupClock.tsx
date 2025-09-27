@@ -10,6 +10,7 @@ export const LineupClock = (props: LineupClockProps) => {
 
     return (
         <Clock
+            id="LineupClock"
             seconds={clockState?.secondsPassed} 
             isRunning={clockState?.isRunning ?? false}
             direction="up" 

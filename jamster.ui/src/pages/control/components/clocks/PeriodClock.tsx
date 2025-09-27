@@ -16,6 +16,7 @@ export const PeriodClock = (props: PeriodClockProps) => {
 
     return (
         <Clock
+            id="PeriodClock"
             seconds={clockState?.secondsPassed} 
             isRunning={clockState?.isRunning ?? false}
             direction="down" 

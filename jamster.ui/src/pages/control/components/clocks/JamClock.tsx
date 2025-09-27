@@ -16,6 +16,7 @@ export const JamClock = (props: JamClockProps) => {
 
     return (
         <Clock
+            id="JamClock"
             seconds={clockState?.secondsPassed} 
             isRunning={clockState?.isRunning ?? false}
             direction="down" 

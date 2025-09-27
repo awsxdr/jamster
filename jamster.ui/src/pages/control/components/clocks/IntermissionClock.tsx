@@ -10,6 +10,7 @@ export const IntermissionClock = (props: IntermissionClockProps) => {
 
     return (
         <Clock 
+            id="IntermissionClock"
             seconds={clockState?.secondsRemaining}
             isRunning={clockState?.isRunning ?? false}
             direction="up"

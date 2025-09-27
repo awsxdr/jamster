@@ -13,6 +13,7 @@ export const TimeoutClock = (props: TimeoutClockProps) => {
 
     return (
         <Clock
+            id="TimeoutClock"
             seconds={clockState?.secondsPassed}
             isRunning={isRunning}
             direction="up" 

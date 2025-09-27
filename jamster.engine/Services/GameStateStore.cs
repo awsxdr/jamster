@@ -33,6 +33,7 @@ public interface IGameStateStore
     void ApplyKeyFrame(IImmutableList<IReducer> reducers, KeyFrame keyFrame);
     Task<IEnumerable<Event>> ApplyEvents(IImmutableList<IReducer> reducers, Guid7? rootSourceEventId, params Event[] events);
     Result<object> GetStateByName(string stateName);
+    Result SetStateByName(string stateName, object state);
     void WatchState<TState>(string stateName, Func<TState, Task> onStateUpdate) where TState : class;
     void WatchStateByName(string stateName, Func<object, Task> onStateUpdate);
     void EnableNotifications();
@@ -81,6 +82,16 @@ public class GameStateStore(ILogger<GameStateStore> logger) : IGameStateStore
 
     public void SetKeyedState<TState>(string key, TState state) where TState : class =>
         SetState($"{GetStateName<TState>()}_{key}", state);
+
+    public Result SetStateByName(string stateName, object state)
+    {
+        if (!_states.ContainsKey(stateName))
+            return Result.Fail<StateNotFoundError>();
+
+        SetState(stateName, state);
+
+        return Result.Succeed();
+    }
 
     public void LoadDefaultStates(IImmutableList<IReducer> reducers)
     {
