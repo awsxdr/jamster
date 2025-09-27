@@ -1,11 +1,12 @@
-﻿using jamster.DataStores;
-using jamster.Domain;
-using jamster.Serialization;
-using jamster.Services;
-using jamster.Services.Stats;
+﻿using jamster.engine.DataStores;
+using jamster.engine.Domain;
+using jamster.engine.Serialization;
+using jamster.engine.Services;
+using jamster.engine.Services.Stats;
+
 using Microsoft.AspNetCore.Mvc;
 
-namespace jamster.Controllers;
+namespace jamster.engine.Controllers;
 
 [ApiController, Route("api/games")]
 public class GamesController(

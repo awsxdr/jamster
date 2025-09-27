@@ -1,7 +1,8 @@
 ﻿using System.IO.Compression;
-using jamster.Serialization;
 
-namespace jamster.Services.Stats;
+using jamster.engine.Serialization;
+
+namespace jamster.engine.Services.Stats;
 
 public interface IPenaltySheetSerializer
 {

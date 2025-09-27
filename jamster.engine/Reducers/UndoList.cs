@@ -1,7 +1,7 @@
-﻿using jamster.Events;
-using jamster.Services;
+﻿using jamster.engine.Events;
+using jamster.engine.Services;
 
-namespace jamster.Reducers;
+namespace jamster.engine.Reducers;
 
 public class UndoList(ReducerGameContext context) : Reducer<UndoListState>(context), IHandlesAllEvents
 {

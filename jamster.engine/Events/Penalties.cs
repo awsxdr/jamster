@@ -1,7 +1,7 @@
-﻿using jamster.Domain;
-using jamster.Services;
+﻿using jamster.engine.Domain;
+using jamster.engine.Services;
 
-namespace jamster.Events;
+namespace jamster.engine.Events;
 
 public sealed class SkaterSatInBox(Guid7 id, SkaterSatInBoxBody body) : Event<SkaterSatInBoxBody>(id, body);
 public sealed record SkaterSatInBoxBody(TeamSide TeamSide, string SkaterNumber) : TeamEventBody(TeamSide);

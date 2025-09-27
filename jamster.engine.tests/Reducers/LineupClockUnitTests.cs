@@ -1,8 +1,10 @@
-﻿using jamster.Events;
-using jamster.Reducers;
-using jamster.Services;
-using FluentAssertions;
-using DomainTick = jamster.Domain.Tick;
+﻿using FluentAssertions;
+
+using jamster.engine.Events;
+using jamster.engine.Reducers;
+using jamster.engine.Services;
+
+using DomainTick = jamster.engine.Domain.Tick;
 
 using static jamster.engine.tests.DataGenerator;
 

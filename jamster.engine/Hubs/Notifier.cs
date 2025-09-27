@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.SignalR;
 
-namespace jamster.Hubs;
+namespace jamster.engine.Hubs;
 
 public interface INotifier
 {

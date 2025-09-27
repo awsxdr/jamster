@@ -1,7 +1,7 @@
-﻿using jamster.Domain;
-using jamster.Services;
+﻿using jamster.engine.Domain;
+using jamster.engine.Services;
 
-namespace jamster.Events;
+namespace jamster.engine.Events;
 
 public sealed class TimeoutStarted(Guid7 id) : Event(id), IPeriodClockAligned, IShownInUndo;
 public sealed class TimeoutEnded(Guid7 id) : Event(id), IShownInUndo;

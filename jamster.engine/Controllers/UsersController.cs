@@ -1,13 +1,15 @@
 ﻿using System.Net.Mime;
 using System.Text;
 using System.Text.Json.Nodes;
-using jamster.Configurations;
-using jamster.DataStores;
-using jamster.Domain;
-using jamster.Services;
+
+using jamster.engine.Configurations;
+using jamster.engine.DataStores;
+using jamster.engine.Domain;
+using jamster.engine.Services;
+
 using Microsoft.AspNetCore.Mvc;
 
-namespace jamster.Controllers;
+namespace jamster.engine.Controllers;
 
 [ApiController, Route("/api/users")]
 public class UsersController(IUserService userService, IEnumerable<IConfigurationFactory> configurationFactories, ILogger<UsersController> logger) : Controller

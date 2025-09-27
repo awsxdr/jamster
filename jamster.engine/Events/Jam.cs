@@ -1,6 +1,6 @@
-﻿using jamster.Services;
+﻿using jamster.engine.Services;
 
-namespace jamster.Events;
+namespace jamster.engine.Events;
 
 public sealed class JamStarted(Guid7 id) : Event(id), IPeriodClockAligned, IShownInUndo;
 

@@ -1,11 +1,13 @@
 ﻿using System.Collections.Concurrent;
-using jamster.DataStores;
-using jamster.Domain;
-using jamster.Events;
-using jamster.Reducers;
+
 using DotNext.Threading;
 
-namespace jamster.Services;
+using jamster.engine.DataStores;
+using jamster.engine.Domain;
+using jamster.engine.Events;
+using jamster.engine.Reducers;
+
+namespace jamster.engine.Services;
 
 public interface IEventBus
 {

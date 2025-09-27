@@ -1,10 +1,13 @@
 ﻿using System.Collections.Immutable;
-using jamster.DataStores;
-using jamster.Events;
-using jamster.Reducers;
-using jamster.Services;
+
 using FluentAssertions;
 using Func;
+
+using jamster.engine.DataStores;
+using jamster.engine.Events;
+using jamster.engine.Reducers;
+using jamster.engine.Services;
+
 using Microsoft.Extensions.Logging;
 using Moq;
 

@@ -1,15 +1,18 @@
-﻿using jamster.Controllers;
-using jamster.DataStores;
-using jamster.Events;
-using jamster.Reducers;
-using System.Net;
+﻿using System.Net;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using jamster.Domain;
-using jamster.Hubs;
-using jamster.Services;
+
 using FluentAssertions;
 using Func;
+
+using jamster.engine.Controllers;
+using jamster.engine.DataStores;
+using jamster.engine.Domain;
+using jamster.engine.Events;
+using jamster.engine.Hubs;
+using jamster.engine.Reducers;
+using jamster.engine.Services;
+
 using Microsoft.AspNetCore.SignalR.Client;
 
 namespace jamster.engine.tests.Controllers;

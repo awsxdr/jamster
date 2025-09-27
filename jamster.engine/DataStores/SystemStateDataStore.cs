@@ -1,6 +1,6 @@
-﻿using jamster.Domain;
+﻿using jamster.engine.Domain;
 
-namespace jamster.DataStores;
+namespace jamster.engine.DataStores;
 
 public interface ISystemStateDataStore : IDisposable
 {

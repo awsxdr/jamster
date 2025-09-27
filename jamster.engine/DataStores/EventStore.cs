@@ -1,6 +1,6 @@
 ﻿using SQLite;
 
-namespace jamster.DataStores;
+namespace jamster.engine.DataStores;
 
 public interface IEventStore : IDisposable
 {

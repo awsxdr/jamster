@@ -1,11 +1,13 @@
 ﻿using System.Collections.Concurrent;
-using System.Diagnostics;
 using System.Collections.Immutable;
-using jamster.DataStores;
-using jamster.Domain;
-using jamster.Reducers;
+using System.Diagnostics;
 
-namespace jamster.Services;
+using jamster.engine.DataStores;
+using jamster.engine.Domain;
+using jamster.engine.Extensions;
+using jamster.engine.Reducers;
+
+namespace jamster.engine.Services;
 
 public interface IGameContextFactory : IDisposable
 {

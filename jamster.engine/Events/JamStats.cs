@@ -1,7 +1,7 @@
-﻿using jamster.Domain;
-using jamster.Services;
+﻿using jamster.engine.Domain;
+using jamster.engine.Services;
 
-namespace jamster.Events;
+namespace jamster.engine.Events;
 
 public sealed class LeadMarked(Guid7 id, LeadMarkedBody body) : Event<LeadMarkedBody>(id, body);
 public sealed record LeadMarkedBody(TeamSide TeamSide, bool Lead) : TeamEventBody(TeamSide);

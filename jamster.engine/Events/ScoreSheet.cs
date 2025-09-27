@@ -1,7 +1,7 @@
-﻿using jamster.Domain;
-using jamster.Services;
+﻿using jamster.engine.Domain;
+using jamster.engine.Services;
 
-namespace jamster.Events;
+namespace jamster.engine.Events;
 
 public sealed class ScoreSheetTripScoreSet(Guid7 id, ScoreSheetTripScoreSetBody body) : Event<ScoreSheetTripScoreSetBody>(id, body);
 public sealed record ScoreSheetTripScoreSetBody(TeamSide TeamSide, int TotalJamNumber, int TripNumber, int? Value) : TeamEventBody(TeamSide);

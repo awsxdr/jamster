@@ -1,6 +1,6 @@
 ﻿using System.Reflection;
 
-namespace jamster;
+namespace jamster.engine;
 
 public static class RunningEnvironment
 {

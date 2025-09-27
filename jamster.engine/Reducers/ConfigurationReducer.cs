@@ -1,7 +1,7 @@
-﻿using jamster.Events;
-using jamster.Services;
+﻿using jamster.engine.Events;
+using jamster.engine.Services;
 
-namespace jamster.Reducers;
+namespace jamster.engine.Reducers;
 
 public class ConfigurationReducer(ReducerGameContext context, IDefaultConfigurationFactory defaultConfigurationFactory, ILogger<ConfigurationReducer> logger) 
     : Reducer<ConfigurationState>(context)

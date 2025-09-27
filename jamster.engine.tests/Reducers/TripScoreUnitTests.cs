@@ -1,7 +1,8 @@
-﻿using jamster.Domain;
-using jamster.Events;
-using jamster.Reducers;
-using FluentAssertions;
+﻿using FluentAssertions;
+
+using jamster.engine.Domain;
+using jamster.engine.Events;
+using jamster.engine.Reducers;
 
 namespace jamster.engine.tests.Reducers;
 
@@ -30,7 +31,7 @@ public class TripScoreUnitTests : ReducerUnitTest<HomeTripScore, TripScoreState>
         State = new(3, 1, 0);
         MockState(new JamClockState(false, 0, 0, true, false));
 
-        await Subject.Handle(new ScoreModifiedRelative(TripScore.TripScoreResetTimeInTicks + jamster.Domain.Tick.FromSeconds(2), new(TeamSide.Home, 1)));
+        await Subject.Handle(new ScoreModifiedRelative(TripScore.TripScoreResetTimeInTicks + engine.Domain.Tick.FromSeconds(2), new(TeamSide.Home, 1)));
 
         State.Score.Should().Be(4);
     }
@@ -123,7 +124,7 @@ public class TripScoreUnitTests : ReducerUnitTest<HomeTripScore, TripScoreState>
     [Test]
     public async Task Tick_WhenJamNotRunning_DoesNotClearTripScore()
     {
-        var checkTick = TripScore.TripScoreResetTimeInTicks + jamster.Domain.Tick.FromSeconds(2);
+        var checkTick = TripScore.TripScoreResetTimeInTicks + engine.Domain.Tick.FromSeconds(2);
 
         State = new(3, 1, 0);
         MockState(new JamClockState(false, 0, checkTick, true, true));

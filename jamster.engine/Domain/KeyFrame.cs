@@ -1,7 +1,7 @@
 ﻿using System.Collections;
 using System.Diagnostics.CodeAnalysis;
 
-namespace jamster.Domain;
+namespace jamster.engine.Domain;
 
 public sealed class KeyFrame(Tick tick, IDictionary<string, object> states) : IReadOnlyDictionary<string, object>
 {

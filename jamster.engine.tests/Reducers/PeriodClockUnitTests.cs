@@ -1,9 +1,11 @@
-﻿using jamster.Domain;
-using jamster.Events;
-using jamster.Reducers;
-using jamster.Services;
-using FluentAssertions;
-using DomainTick = jamster.Domain.Tick;
+﻿using FluentAssertions;
+
+using jamster.engine.Domain;
+using jamster.engine.Events;
+using jamster.engine.Reducers;
+using jamster.engine.Services;
+
+using DomainTick = jamster.engine.Domain.Tick;
 
 using static jamster.engine.tests.DataGenerator;
 
@@ -44,7 +46,7 @@ public class PeriodClockUnitTests : ReducerUnitTest<PeriodClock, PeriodClockStat
     [Test]
     public async Task JamStart_WhenPeriodClockRunning_DoesNotChangeState()
     {
-        Tick ticksPassed = Random.Shared.Next(1000);
+        DomainTick ticksPassed = Random.Shared.Next(1000);
         State = new(true, false, 0, 0, ticksPassed);
 
         MockState(new JamClockState(false, 0, ticksPassed, true, false));

@@ -1,7 +1,7 @@
-﻿using jamster.Domain;
-using jamster.Services;
+﻿using jamster.engine.Domain;
+using jamster.engine.Services;
 
-namespace jamster.Events;
+namespace jamster.engine.Events;
 
 public sealed class TeamSet(Guid7 id, TeamSetBody body) : Event<TeamSetBody>(id, body);
 public sealed record TeamSetBody(TeamSide TeamSide, GameTeam Team) : TeamEventBody(TeamSide);

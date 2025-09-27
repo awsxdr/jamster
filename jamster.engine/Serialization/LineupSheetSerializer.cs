@@ -1,8 +1,9 @@
-﻿using jamster.Domain;
-using jamster.Reducers;
-using jamster.Services;
+﻿using jamster.engine.Domain;
+using jamster.engine.Extensions;
+using jamster.engine.Reducers;
+using jamster.engine.Services;
 
-namespace jamster.Serialization;
+namespace jamster.engine.Serialization;
 
 public interface ILineupSheetSerializer
 {

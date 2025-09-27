@@ -1,5 +1,7 @@
-﻿using jamster.Services;
-using FluentAssertions;
+﻿using FluentAssertions;
+
+using jamster.engine.Services;
+
 using static jamster.engine.tests.DataGenerator;
 
 namespace jamster.engine.tests;

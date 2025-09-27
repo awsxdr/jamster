@@ -1,7 +1,8 @@
 ﻿using System.Text.Json;
-using jamster.Services;
 
-namespace jamster.DataStores;
+using jamster.engine.Services;
+
+namespace jamster.engine.DataStores;
 
 public interface IConfigurationDataStore : IDataStore
 {

@@ -1,4 +1,4 @@
-﻿namespace jamster.Services;
+﻿namespace jamster.engine.Services;
 
 public interface ISystemTime
 {

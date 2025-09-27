@@ -1,7 +1,11 @@
 ﻿using System.IO.Compression;
-using jamster.Serialization;
 
-namespace jamster.Services.Stats;
+using LineupSheetCollection = jamster.engine.Serialization.LineupSheetCollection;
+using PenaltySheetCollection = jamster.engine.Serialization.PenaltySheetCollection;
+using ScoreSheetCollection = jamster.engine.Serialization.ScoreSheetCollection;
+using StatsBook = jamster.engine.Serialization.StatsBook;
+
+namespace jamster.engine.Services.Stats;
 
 public interface IStatsBookSerializer
 {
@@ -79,7 +83,7 @@ public class StatsBookSerializer(
         }
     }
 
-    private static StatsBook CreateStatsBook((Igrf Igrf, ScoreSheetCollection ScoreSheets, PenaltySheetCollection PenaltySheets, LineupSheetCollection LineupSheets) sheets) =>
+    private static StatsBook CreateStatsBook((Serialization.Igrf Igrf, ScoreSheetCollection ScoreSheets, PenaltySheetCollection PenaltySheets, LineupSheetCollection LineupSheets) sheets) =>
         new(sheets.Igrf, sheets.ScoreSheets, sheets.PenaltySheets, sheets.LineupSheets);
 }
 

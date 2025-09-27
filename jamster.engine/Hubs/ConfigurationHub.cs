@@ -1,8 +1,8 @@
-﻿using jamster.Events;
-using jamster.Services;
+﻿using jamster.engine.Services;
+
 using Microsoft.AspNetCore.SignalR;
 
-namespace jamster.Hubs;
+namespace jamster.engine.Hubs;
 
 public class ConfigurationNotifier : Notifier<ConfigurationHub>
 {

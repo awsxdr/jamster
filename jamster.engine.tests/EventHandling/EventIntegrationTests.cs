@@ -1,10 +1,12 @@
 ﻿using System.Collections.Immutable;
-using jamster.Events;
-using jamster.Reducers;
-using jamster.Services;
+
 using jamster.engine.tests.GameGeneration;
 using FluentAssertions;
 using Func;
+
+using jamster.engine.Events;
+using jamster.engine.Reducers;
+using jamster.engine.Services;
 
 namespace jamster.engine.tests.EventHandling;
 
@@ -63,7 +65,7 @@ public class EventIntegrationTests : EventBusIntegrationTest
         var stateTypes = reducers.Select(r => r.GetStateKey() is Some<string> k ? (Key: k.Value, r.StateType) : (null, r.StateType)).ToArray();
         var stateGetters = stateTypes.Select(x => GetStateGetter(x.Key, x.StateType)).ToArray();
 
-        var tick = jamster.Domain.Tick.FromSeconds(0);
+        var tick = engine.Domain.Tick.FromSeconds(0);
         const int tickStep = 50;
 
         var stateCaptures = new Dictionary<Guid, object[]>();

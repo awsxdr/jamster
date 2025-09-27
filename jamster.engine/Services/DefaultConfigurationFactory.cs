@@ -1,6 +1,6 @@
-﻿using jamster.Configurations;
+﻿using jamster.engine.Configurations;
 
-namespace jamster.Services;
+namespace jamster.engine.Services;
 
 public interface IDefaultConfigurationFactory
 {

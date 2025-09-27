@@ -1,11 +1,13 @@
 ﻿using System.Linq.Expressions;
 using System.Text.Json;
-using jamster.Domain;
-using jamster.Events;
-using jamster.Extensions;
-using jamster.Reducers;
+
 using jamster.engine.tests.EventHandling;
 using Func;
+
+using jamster.engine.Domain;
+using jamster.engine.Events;
+using jamster.engine.Extensions;
+using jamster.engine.Reducers;
 
 // ReSharper disable RedundantDefaultMemberInitializer
 // ReSharper disable AutoPropertyCanBeMadeGetOnly.Local
@@ -728,7 +730,7 @@ public class GameSimulator(SimulatorGame game)
     private class PenaltySheetLine
     {
         public string SkaterNumber { get; set; } = string.Empty;
-        public List<jamster.Reducers.Penalty> Penalties { get; set; } = new();
+        public List<engine.Reducers.Penalty> Penalties { get; set; } = new();
     }
 
     private class TeamsSheets

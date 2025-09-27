@@ -1,4 +1,4 @@
-﻿namespace jamster.Serialization;
+﻿namespace jamster.engine.Serialization;
 
 public sealed record StatsBook(Igrf Igrf, ScoreSheetCollection ScoreSheets, PenaltySheetCollection PenaltySheets, LineupSheetCollection LineupSheets);
 

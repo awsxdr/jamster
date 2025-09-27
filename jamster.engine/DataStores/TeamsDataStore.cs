@@ -1,8 +1,9 @@
 ﻿using System.Text.Json.Nodes;
-using jamster.Domain;
-using jamster.Services;
 
-namespace jamster.DataStores;
+using jamster.engine.Domain;
+using jamster.engine.Services;
+
+namespace jamster.engine.DataStores;
 
 public interface ITeamsDataStore
 {

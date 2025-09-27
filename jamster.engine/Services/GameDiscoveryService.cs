@@ -1,7 +1,7 @@
-﻿using jamster.DataStores;
-using jamster.Domain;
+﻿using jamster.engine.DataStores;
+using jamster.engine.Domain;
 
-namespace jamster.Services;
+namespace jamster.engine.Services;
 
 public interface IGameDiscoveryService
 {

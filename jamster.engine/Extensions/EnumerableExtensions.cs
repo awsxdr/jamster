@@ -1,4 +1,4 @@
-﻿namespace jamster.Extensions;
+﻿namespace jamster.engine.Extensions;
 
 public static class EnumerableExtensions
 {

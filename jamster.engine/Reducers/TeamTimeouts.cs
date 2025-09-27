@@ -1,8 +1,9 @@
-﻿using jamster.Domain;
-using jamster.Events;
-using jamster.Services;
+﻿using jamster.engine.Domain;
+using jamster.engine.Events;
+using jamster.engine.Extensions;
+using jamster.engine.Services;
 
-namespace jamster.Reducers;
+namespace jamster.engine.Reducers;
 
 public abstract class TeamTimeouts(TeamSide teamSide, ReducerGameContext context, ILogger logger) 
     : Reducer<TeamTimeoutsState>(context)

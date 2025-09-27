@@ -1,9 +1,10 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
-using jamster.Configurations;
 
-namespace jamster.Services;
+using jamster.engine.Configurations;
+
+namespace jamster.engine.Services;
 
 public interface IUserDataSerializer
 {

@@ -1,11 +1,12 @@
 ﻿using System.Collections.Immutable;
 using System.Collections.ObjectModel;
 using System.Reflection;
-using jamster.Domain;
-using jamster.Events;
-using jamster.Reducers;
 
-namespace jamster.Services;
+using jamster.engine.Domain;
+using jamster.engine.Events;
+using jamster.engine.Reducers;
+
+namespace jamster.engine.Services;
 
 public delegate IGameStateStore GameStateStoreFactory();
 

@@ -1,4 +1,4 @@
-﻿namespace jamster.Domain;
+﻿namespace jamster.engine.Domain;
 
 public record ActivityData(ClientActivity Activity, string? GameId, string LanguageCode);
 public record UnknownActivity() : ActivityData(ClientActivity.Unknown, null, "en");

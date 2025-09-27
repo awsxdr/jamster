@@ -1,11 +1,13 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Nodes;
-using jamster.Controllers;
-using jamster.Domain;
-using jamster.Services;
+
+using jamster.engine.Controllers;
+using jamster.engine.Domain;
+using jamster.engine.Services;
+
 using Microsoft.AspNetCore.SignalR;
 
-namespace jamster.Hubs;
+namespace jamster.engine.Hubs;
 
 public class ConnectedClientsNotifier : Notifier<ConnectedClientsHub>
 {

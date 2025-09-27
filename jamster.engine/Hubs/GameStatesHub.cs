@@ -1,9 +1,12 @@
 ﻿using System.Collections.Concurrent;
-using jamster.Services;
+
 using DotNext.Threading;
+
+using jamster.engine.Services;
+
 using Microsoft.AspNetCore.SignalR;
 
-namespace jamster.Hubs;
+namespace jamster.engine.Hubs;
 
 public class GameStatesNotifier(IGameDiscoveryService gameDiscoveryService, IHubContext<GameStatesHub> hubContext, IGameContextFactory contextFactory)
     : Notifier<GameStatesHub>(hubContext)

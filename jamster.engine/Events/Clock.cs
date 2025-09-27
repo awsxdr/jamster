@@ -1,6 +1,6 @@
-﻿using jamster.Services;
+﻿using jamster.engine.Services;
 
-namespace jamster.Events;
+namespace jamster.engine.Events;
 
 public sealed class IntermissionClockSet(Guid7 id, IntermissionClockSetBody body) : Event<IntermissionClockSetBody>(id, body);
 public sealed record IntermissionClockSetBody(int SecondsRemaining);

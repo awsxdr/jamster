@@ -1,7 +1,9 @@
-﻿using jamster.Events;
-using jamster.Reducers;
-using FluentAssertions;
-using DomainTick = jamster.Domain.Tick;
+﻿using FluentAssertions;
+
+using jamster.engine.Events;
+using jamster.engine.Reducers;
+
+using DomainTick = jamster.engine.Domain.Tick;
 
 namespace jamster.engine.tests.Reducers;
 

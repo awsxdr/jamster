@@ -1,4 +1,4 @@
-﻿namespace jamster.Configurations;
+﻿namespace jamster.engine.Configurations;
 
 public record OverlayConfiguration(float Scale, bool UseBackground, string BackgroundColor, string Language);
 

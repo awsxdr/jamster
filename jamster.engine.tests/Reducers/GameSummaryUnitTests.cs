@@ -1,9 +1,11 @@
-﻿using jamster.Domain;
-using jamster.Events;
-using jamster.Reducers;
-using FluentAssertions;
+﻿using FluentAssertions;
+
+using jamster.engine.Domain;
+using jamster.engine.Events;
+using jamster.engine.Reducers;
+
 using static jamster.engine.tests.DataGenerator;
-using GameSummary = jamster.Reducers.GameSummary;
+using GameSummary = jamster.engine.Reducers.GameSummary;
 
 namespace jamster.engine.tests.Reducers;
 

@@ -1,5 +1,6 @@
-﻿using jamster.Domain;
-using Func;
+﻿using Func;
+
+using jamster.engine.Domain;
 
 namespace jamster.engine.tests.GameGeneration;
 

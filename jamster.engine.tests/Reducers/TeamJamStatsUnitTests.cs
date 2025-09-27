@@ -1,7 +1,8 @@
-﻿using jamster.Domain;
-using jamster.Events;
-using jamster.Reducers;
-using FluentAssertions;
+﻿using FluentAssertions;
+
+using jamster.engine.Domain;
+using jamster.engine.Events;
+using jamster.engine.Reducers;
 
 namespace jamster.engine.tests.Reducers;
 
@@ -133,7 +134,7 @@ public class TeamJamStatsUnitTests : ReducerUnitTest<HomeTeamJamStats, TeamJamSt
     {
         State = new(true, false, false, false, false);
         MockState<TimeoutClockState>(new(false, 0, 0, TimeoutClockStopReason.None, 0));
-        MockState<JamClockState>(new(false, 0, jamster.Domain.Tick.FromSeconds(Rules.DefaultRules.JamRules.DurationInSeconds / 2), true, false));
+        MockState<JamClockState>(new(false, 0, engine.Domain.Tick.FromSeconds(Rules.DefaultRules.JamRules.DurationInSeconds / 2), true, false));
 
         var implicitEvents = await Subject.Handle(new JamEnded(0));
 
@@ -148,7 +149,7 @@ public class TeamJamStatsUnitTests : ReducerUnitTest<HomeTeamJamStats, TeamJamSt
     {
         State = new(true, false, false, false, false);
         MockState<TimeoutClockState>(new(false, 0, 0, TimeoutClockStopReason.None, 0));
-        MockState<JamClockState>(new(false, 0, jamster.Domain.Tick.FromSeconds(Rules.DefaultRules.JamRules.DurationInSeconds), true, true));
+        MockState<JamClockState>(new(false, 0, engine.Domain.Tick.FromSeconds(Rules.DefaultRules.JamRules.DurationInSeconds), true, true));
 
         var implicitEvents = await Subject.Handle(new JamEnded(0));
 

@@ -1,7 +1,7 @@
-﻿using jamster.Domain;
-using jamster.Services;
+﻿using jamster.engine.Domain;
+using jamster.engine.Services;
 
-namespace jamster.Events;
+namespace jamster.engine.Events;
 
 public sealed class LastTripDeleted(Guid7 id, LastTripDeletedBody body) : Event<LastTripDeletedBody>(id, body);
 public sealed record LastTripDeletedBody(TeamSide TeamSide) : TeamEventBody(TeamSide);

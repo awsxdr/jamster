@@ -1,9 +1,7 @@
-﻿using jamster.DataStores;
-using jamster.Domain;
-using jamster.Reducers;
-using jamster.Services;
+﻿using jamster.engine.DataStores;
+using jamster.engine.Services;
 
-namespace jamster.Serialization;
+namespace jamster.engine.Serialization;
 
 public interface IGameSerializer
 {

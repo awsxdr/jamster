@@ -1,4 +1,4 @@
-﻿namespace jamster.Configurations;
+﻿namespace jamster.engine.Configurations;
 
 public record ControlPanelViewConfiguration(
     bool ShowClockControls,

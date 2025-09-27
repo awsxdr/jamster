@@ -1,6 +1,6 @@
-﻿using jamster.Services;
+﻿using jamster.engine.Services;
 
-namespace jamster.Events;
+namespace jamster.engine.Events;
 
 public class IntermissionStarted(Guid7 id) : Event(id), IPeriodClockAligned;
 

@@ -1,8 +1,8 @@
-﻿using jamster.Domain;
-using jamster.Events;
-using jamster.Services;
+﻿using jamster.engine.Domain;
+using jamster.engine.Events;
+using jamster.engine.Services;
 
-namespace jamster.Reducers;
+namespace jamster.engine.Reducers;
 
 public class GameStage(ReducerGameContext context, ILogger<GameStage> logger) 
     : Reducer<GameStageState>(context)

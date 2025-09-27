@@ -1,6 +1,4 @@
-﻿using System.Text.Json.Serialization;
-
-namespace jamster.Domain;
+﻿namespace jamster.engine.Domain;
 
 public record Ruleset(
     PeriodRules PeriodRules,

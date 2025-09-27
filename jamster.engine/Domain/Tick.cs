@@ -1,7 +1,7 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace jamster.Domain;
+namespace jamster.engine.Domain;
 
 public readonly struct Tick(long value)
 {

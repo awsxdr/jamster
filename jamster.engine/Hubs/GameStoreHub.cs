@@ -1,7 +1,8 @@
-﻿using jamster.Services;
+﻿using jamster.engine.Services;
+
 using Microsoft.AspNetCore.SignalR;
 
-namespace jamster.Hubs;
+namespace jamster.engine.Hubs;
 
 public class GameStoreNotifier : Notifier<GameStoreHub>, IDisposable
 {

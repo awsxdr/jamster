@@ -1,10 +1,12 @@
-﻿using jamster.DataStores;
-using jamster.Domain;
-using jamster.Services;
-using DotNext.Collections.Generic;
+﻿using DotNext.Collections.Generic;
+
+using jamster.engine.DataStores;
+using jamster.engine.Domain;
+using jamster.engine.Services;
+
 using Microsoft.AspNetCore.Mvc;
 
-namespace jamster.Controllers;
+namespace jamster.engine.Controllers;
 
 [ApiController, Route("api/teams")]
 public class TeamsController(

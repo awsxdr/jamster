@@ -1,9 +1,11 @@
-﻿using jamster.Domain;
-using jamster.Services.Stats;
-using Microsoft.AspNetCore.Mvc;
-using static jamster.Services.Stats.StatsBookValidator;
+﻿using jamster.engine.Domain;
+using jamster.engine.Services.Stats;
 
-namespace jamster.Controllers;
+using Microsoft.AspNetCore.Mvc;
+
+using static jamster.engine.Services.Stats.StatsBookValidator;
+
+namespace jamster.engine.Controllers;
 
 [ApiController, Route("api/blankStatsBook")]
 public class BlankStatsBookController(IBlankStatsBookStore blankStatsBookStore, IStatsBookSerializer statsBookSerializer) : Controller

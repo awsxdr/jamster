@@ -1,6 +1,6 @@
-﻿using jamster.Reducers;
+﻿using jamster.engine.Reducers;
 
-namespace jamster.Extensions;
+namespace jamster.engine.Extensions;
 
 public static class ReducerSortExtensions
 {

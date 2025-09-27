@@ -1,8 +1,9 @@
-﻿using jamster.Domain;
-using jamster.Reducers;
-using jamster.Serialization;
-using jamster.Services;
-using FluentAssertions;
+﻿using FluentAssertions;
+
+using jamster.engine.Domain;
+using jamster.engine.Reducers;
+using jamster.engine.Serialization;
+using jamster.engine.Services;
 
 namespace jamster.engine.tests.Serialization;
 

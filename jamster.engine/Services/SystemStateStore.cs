@@ -1,6 +1,7 @@
-﻿using jamster.DataStores;
+﻿using jamster.engine.DataStores;
+using jamster.engine.Extensions;
 
-namespace jamster.Services;
+namespace jamster.engine.Services;
 
 public delegate Task AsyncEventHandler<in TEventArgs>(object sender, TEventArgs e);
 

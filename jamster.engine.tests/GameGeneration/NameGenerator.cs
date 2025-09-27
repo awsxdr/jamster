@@ -1,5 +1,5 @@
-﻿using jamster.Domain;
-using jamster.Extensions;
+﻿using jamster.engine.Domain;
+using jamster.engine.Extensions;
 
 namespace jamster.engine.tests.GameGeneration;
 

@@ -1,9 +1,11 @@
-﻿using jamster.Domain;
-using jamster.Events;
-using jamster.Services;
+﻿using jamster.engine.Domain;
+using jamster.engine.Events;
+using jamster.engine.Extensions;
+using jamster.engine.Services;
+
 // ReSharper disable WithExpressionModifiesAllMembers
 
-namespace jamster.Reducers;
+namespace jamster.engine.Reducers;
 
 //TODO: Handle skater added to bench while in box
 public abstract class BoxTrips(TeamSide teamSide, ReducerGameContext context, ILogger logger) 

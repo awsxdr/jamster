@@ -1,7 +1,7 @@
-﻿using jamster.Domain;
-using jamster.Services;
+﻿using jamster.engine.Domain;
+using jamster.engine.Services;
 
-namespace jamster.Events;
+namespace jamster.engine.Events;
 
 public sealed class SkaterOnTrack(Guid7 id, SkaterOnTrackBody body) : Event<SkaterOnTrackBody>(id, body);
 public sealed record SkaterOnTrackBody(TeamSide TeamSide, string SkaterNumber, SkaterPosition Position) : TeamEventBody(TeamSide);

@@ -1,8 +1,9 @@
-﻿using jamster.DataStores;
-using jamster.Events;
-using jamster.Reducers;
+﻿using jamster.engine.DataStores;
+using jamster.engine.Events;
+using jamster.engine.Extensions;
+using jamster.engine.Reducers;
 
-namespace jamster.Services;
+namespace jamster.engine.Services;
 
 public interface IConfigurationService
 {

@@ -1,8 +1,10 @@
 ﻿using System.Collections.Concurrent;
-using jamster.Domain;
+
 using DotNext.Collections.Generic;
 
-namespace jamster.Services;
+using jamster.engine.Domain;
+
+namespace jamster.engine.Services;
 
 public interface IKeyFrameService
 {

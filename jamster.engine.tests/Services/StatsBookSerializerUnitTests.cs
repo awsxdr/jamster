@@ -1,14 +1,17 @@
 ﻿using System.IO.Compression;
 using System.Reflection;
-using jamster.Serialization;
-using jamster.Services.Stats;
+
 using FluentAssertions;
 using Func;
+
+using jamster.engine.Serialization;
+using jamster.engine.Services.Stats;
+
 using Moq;
-using IgrfSerializer = jamster.Services.Stats.IgrfSerializer;
-using IIgrfSerializer = jamster.Services.Stats.IIgrfSerializer;
-using IScoreSheetSerializer = jamster.Services.Stats.IScoreSheetSerializer;
-using ScoreSheetSerializer = jamster.Services.Stats.ScoreSheetSerializer;
+using IgrfSerializer = jamster.engine.Services.Stats.IgrfSerializer;
+using IIgrfSerializer = jamster.engine.Services.Stats.IIgrfSerializer;
+using IScoreSheetSerializer = jamster.engine.Services.Stats.IScoreSheetSerializer;
+using ScoreSheetSerializer = jamster.engine.Services.Stats.ScoreSheetSerializer;
 
 namespace jamster.engine.tests.Services;
 

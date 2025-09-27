@@ -1,9 +1,11 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Nodes;
-using jamster.Services;
-using jamster.Domain;
 
-namespace jamster.Events;
+using jamster.engine.Domain;
+using jamster.engine.Extensions;
+using jamster.engine.Services;
+
+namespace jamster.engine.Events;
 
 public abstract class Event
 {

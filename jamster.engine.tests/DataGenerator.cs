@@ -1,4 +1,4 @@
-﻿using jamster.Domain;
+﻿using jamster.engine.Domain;
 
 namespace jamster.engine.tests;
 

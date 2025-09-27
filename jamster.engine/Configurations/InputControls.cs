@@ -1,4 +1,4 @@
-﻿namespace jamster.Configurations;
+﻿namespace jamster.engine.Configurations;
 
 public record InputControls(ClockControls Clocks, ScoreControls HomeScore, ScoreControls AwayScore, StatsControls HomeStats, StatsControls AwayStats);
 

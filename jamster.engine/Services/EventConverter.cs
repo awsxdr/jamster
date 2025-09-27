@@ -1,7 +1,9 @@
 ﻿using System.Collections.Immutable;
-using jamster.Events;
 
-namespace jamster.Services;
+using jamster.engine.Events;
+using jamster.engine.Extensions;
+
+namespace jamster.engine.Services;
 
 public interface IEventConverter
 {

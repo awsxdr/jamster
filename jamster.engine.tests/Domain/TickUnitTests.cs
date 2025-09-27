@@ -1,5 +1,6 @@
-﻿using jamster.Domain;
-using FluentAssertions;
+﻿using FluentAssertions;
+
+using jamster.engine.Domain;
 
 namespace jamster.engine.tests.Domain;
 

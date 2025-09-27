@@ -1,13 +1,16 @@
 ﻿using System.Reflection;
-using jamster.Configurations;
-using jamster.DataStores;
-using jamster.Hubs;
-using jamster.Reducers;
-using jamster.Services;
+
 using Autofac;
+
+using jamster.engine.Configurations;
+using jamster.engine.DataStores;
+using jamster.engine.Hubs;
+using jamster.engine.Reducers;
+using jamster.engine.Services;
+
 using SQLite;
 
-namespace jamster;
+namespace jamster.engine;
 
 public static class DependencyInjection
 {

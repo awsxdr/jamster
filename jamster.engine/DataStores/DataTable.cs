@@ -1,9 +1,11 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Nodes;
-using jamster.Domain;
+
+using jamster.engine.Domain;
+
 using SQLite;
 
-namespace jamster.DataStores;
+namespace jamster.engine.DataStores;
 
 public delegate TKey KeySelector<in TData, out TKey>(TData dataItem) where TData : new();
 

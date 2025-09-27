@@ -1,4 +1,4 @@
-﻿namespace jamster.Services.Stats;
+﻿namespace jamster.engine.Services.Stats;
 
 public interface IBlankStatsBookStore
 {

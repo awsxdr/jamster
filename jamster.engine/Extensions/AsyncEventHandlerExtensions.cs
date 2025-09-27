@@ -1,6 +1,6 @@
-﻿using jamster.Services;
+﻿using jamster.engine.Services;
 
-namespace jamster.Extensions;
+namespace jamster.engine.Extensions;
 
 public static class AsyncEventHandlerExtensions
 {

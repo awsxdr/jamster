@@ -28,7 +28,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Using Include="jamster.Extensions" />
+    <Using Include="jamster.engine.Extensions" />
     <Using Include="Func" />
   </ItemGroup>
 

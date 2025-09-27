@@ -1,8 +1,9 @@
-﻿using jamster.Controllers;
-using jamster.Services;
+﻿using jamster.engine.Controllers;
+using jamster.engine.Services;
+
 using Microsoft.AspNetCore.SignalR;
 
-namespace jamster.Hubs;
+namespace jamster.engine.Hubs;
 
 public class TeamsNotifier : Notifier<TeamsHub, ITeamsHubClient>
 {

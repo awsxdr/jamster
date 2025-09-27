@@ -1,9 +1,11 @@
-﻿using jamster.DataStores;
-using jamster.Events;
-using jamster.Reducers;
-using jamster.Services;
-using FluentAssertions;
+﻿using FluentAssertions;
 using Func;
+
+using jamster.engine.DataStores;
+using jamster.engine.Events;
+using jamster.engine.Reducers;
+using jamster.engine.Services;
+
 using Moq;
 
 namespace jamster.engine.tests.Services;

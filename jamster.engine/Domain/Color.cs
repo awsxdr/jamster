@@ -2,7 +2,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace jamster.Domain;
+namespace jamster.engine.Domain;
 
 [JsonConverter(typeof(ColorJsonConverter))]
 public readonly struct Color

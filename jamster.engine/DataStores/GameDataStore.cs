@@ -1,9 +1,10 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Nodes;
-using jamster.Services;
-using jamster.Events;
 
-namespace jamster.DataStores;
+using jamster.engine.Events;
+using jamster.engine.Services;
+
+namespace jamster.engine.DataStores;
 
 public interface IGameDataStore : IEventStore
 {

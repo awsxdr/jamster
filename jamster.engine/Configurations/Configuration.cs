@@ -1,7 +1,7 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Nodes;
 
-namespace jamster.Configurations;
+namespace jamster.engine.Configurations;
 
 public interface IConfigurationFactory
 {

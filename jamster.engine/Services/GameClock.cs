@@ -1,8 +1,8 @@
-﻿using jamster.DataStores;
-using jamster.Domain;
-using jamster.Events;
+﻿using jamster.engine.DataStores;
+using jamster.engine.Domain;
+using jamster.engine.Events;
 
-namespace jamster.Services;
+namespace jamster.engine.Services;
 
 public interface IGameClock : IDisposable
 {

@@ -1,8 +1,8 @@
 ﻿//ReSharper disable all
 
-using jamster.Domain;
-using jamster.Events;
-using jamster.Reducers;
+using jamster.engine.Domain;
+using jamster.engine.Events;
+using jamster.engine.Reducers;
 
 namespace jamster.engine.tests.EventHandling;
 
@@ -875,10 +875,10 @@ public static class TestGameEventsSource
             new("984", "Test Skater 10", true),
         ]);
 
-    public static PenaltySheetState GetPenaltySheetState(GameTeam team, jamster.Reducers.PenaltySheetLine[] modifiedLines) =>
+    public static PenaltySheetState GetPenaltySheetState(GameTeam team, PenaltySheetLine[] modifiedLines) =>
         new(
             team.Roster.Select(s =>
-                    new jamster.Reducers.PenaltySheetLine(
+                    new PenaltySheetLine(
                         s.Number,
                         null,
                         modifiedLines.SingleOrDefault(l => l.SkaterNumber == s.Number)?.Penalties ?? []))

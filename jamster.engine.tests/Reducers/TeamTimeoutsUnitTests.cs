@@ -1,8 +1,9 @@
-﻿using jamster.Domain;
-using jamster.Events;
-using jamster.Reducers;
-using jamster.Services;
-using FluentAssertions;
+﻿using FluentAssertions;
+
+using jamster.engine.Domain;
+using jamster.engine.Events;
+using jamster.engine.Reducers;
+using jamster.engine.Services;
 
 namespace jamster.engine.tests.Reducers;
 

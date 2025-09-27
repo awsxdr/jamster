@@ -1,5 +1,4 @@
-﻿using jamster.Domain;
-using jamster.Reducers;
+﻿using jamster.engine.Reducers;
 
 namespace jamster.engine.tests.GameGeneration;
 

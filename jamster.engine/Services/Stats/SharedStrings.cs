@@ -1,11 +1,12 @@
 ﻿using System.ComponentModel;
 using System.Xml.Schema;
 using System.Xml.Serialization;
+
 // ReSharper disable InconsistentNaming
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
 #pragma warning disable CS8981 // The type name only contains lower-cased ascii characters. Such names may become reserved for the language.
 
-namespace jamster.Services.Stats;
+namespace jamster.engine.Services.Stats;
 
 [Serializable]
 [XmlType(AnonymousType = true, Namespace = "http://schemas.openxmlformats.org/spreadsheetml/2006/main")]

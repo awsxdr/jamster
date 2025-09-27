@@ -1,6 +1,6 @@
-﻿using jamster.Services;
+﻿using jamster.engine.Services;
 
-namespace jamster.Events;
+namespace jamster.engine.Events;
 
 /// <summary>
 /// The period clock has expired

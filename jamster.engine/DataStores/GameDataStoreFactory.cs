@@ -1,7 +1,8 @@
-﻿using DotNext.Threading;
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 
-namespace jamster.DataStores;
+using DotNext.Threading;
+
+namespace jamster.engine.DataStores;
 
 public interface IGameDataStoreFactory
 {

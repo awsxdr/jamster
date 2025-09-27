@@ -1,4 +1,4 @@
-﻿namespace jamster.Domain;
+﻿namespace jamster.engine.Domain;
 
 public enum TeamSide
 {

@@ -1,6 +1,6 @@
-﻿using jamster.DataStores;
+﻿using jamster.engine.DataStores;
 
-namespace jamster.Services;
+namespace jamster.engine.Services;
 
 public interface IFirstRunConfigurator
 {

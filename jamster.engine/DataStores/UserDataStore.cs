@@ -1,8 +1,9 @@
 ﻿using System.Text.Json;
-using jamster.Configurations;
-using jamster.Domain;
 
-namespace jamster.DataStores;
+using jamster.engine.Configurations;
+using jamster.engine.Domain;
+
+namespace jamster.engine.DataStores;
 
 public interface IUserDataStore : IDisposable
 {

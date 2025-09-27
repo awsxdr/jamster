@@ -1,7 +1,7 @@
-﻿using jamster.Domain;
-using jamster.Events;
+﻿using jamster.engine.Domain;
+using jamster.engine.Events;
 
-namespace jamster.Extensions;
+namespace jamster.engine.Extensions;
 
 public static class EventExtensions
 {

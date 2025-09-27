@@ -1,6 +1,6 @@
 ﻿using System.IO.Compression;
 
-namespace jamster.Services.Stats;
+namespace jamster.engine.Services.Stats;
 
 public interface IStatsBookValidator
 {

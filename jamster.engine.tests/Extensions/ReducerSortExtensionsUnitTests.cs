@@ -1,8 +1,9 @@
-﻿using jamster.Extensions;
-using jamster.Reducers;
-using FluentAssertions;
+﻿using FluentAssertions;
 using Func;
-using static jamster.Extensions.ReducerSortExtensions;
+
+using jamster.engine.Reducers;
+
+using static jamster.engine.Extensions.ReducerSortExtensions;
 
 namespace jamster.engine.tests.Extensions;
 

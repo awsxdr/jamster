@@ -1,8 +1,9 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Serialization;
-using jamster.Domain;
 
-namespace jamster.Services;
+using jamster.engine.Domain;
+
+namespace jamster.engine.Services;
 
 [JsonConverter(typeof(Guid7JsonConverter))]
 public class Guid7 : IComparable<Guid>, IComparable<Guid7>

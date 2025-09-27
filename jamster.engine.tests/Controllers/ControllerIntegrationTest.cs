@@ -3,11 +3,13 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 
-using jamster.DataStores;
-using jamster.Domain;
-using jamster.Services;
 using Autofac;
 using FluentAssertions;
+
+using jamster.engine.DataStores;
+using jamster.engine.Domain;
+using jamster.engine.Services;
+
 using Microsoft.AspNetCore.Http.Connections;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.SignalR.Client;

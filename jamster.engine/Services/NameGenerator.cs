@@ -1,4 +1,6 @@
-﻿namespace jamster.Services;
+﻿using jamster.engine.Extensions;
+
+namespace jamster.engine.Services;
 
 public static class NameGenerator
 {

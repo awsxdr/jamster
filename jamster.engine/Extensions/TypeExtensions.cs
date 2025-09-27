@@ -1,4 +1,4 @@
-﻿namespace jamster.Extensions;
+﻿namespace jamster.engine.Extensions;
 
 internal static class TypeExtensions
 {

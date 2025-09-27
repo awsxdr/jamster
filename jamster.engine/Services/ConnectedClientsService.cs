@@ -1,9 +1,12 @@
 ﻿using System.Collections.Concurrent;
-using jamster.Domain;
-using jamster.Hubs;
+
+using jamster.engine.Domain;
+using jamster.engine.Extensions;
+using jamster.engine.Hubs;
+
 using Microsoft.AspNetCore.SignalR;
 
-namespace jamster.Services;
+namespace jamster.engine.Services;
 
 public interface IConnectedClientsService
 {

@@ -3,7 +3,7 @@ using System.Xml;
 using System.Xml.Linq;
 using System.Xml.Serialization;
 
-namespace jamster.Services.Stats;
+namespace jamster.engine.Services.Stats;
 
 public abstract class StatsSheetSerializerBase(ILogger logger)
 {

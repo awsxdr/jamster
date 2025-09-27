@@ -1,7 +1,8 @@
-﻿using jamster.DataStores;
-using jamster.Domain;
+﻿using jamster.engine.DataStores;
+using jamster.engine.Domain;
+using jamster.engine.Extensions;
 
-namespace jamster.Services;
+namespace jamster.engine.Services;
 
 public interface ITeamStore
 {

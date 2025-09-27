@@ -1,8 +1,9 @@
-﻿using jamster.DataStores;
-using jamster.Domain;
-using jamster.Events;
-using jamster.Reducers;
-using jamster.Services;
+﻿using jamster.engine.DataStores;
+using jamster.engine.Domain;
+using jamster.engine.Events;
+using jamster.engine.Reducers;
+using jamster.engine.Services;
+
 using Moq;
 using Result = Func.Result;
 

@@ -1,5 +1,5 @@
-﻿using jamster.Events;
-using jamster.Services;
+﻿using jamster.engine.Events;
+using jamster.engine.Services;
 
 namespace jamster.engine.tests;
 

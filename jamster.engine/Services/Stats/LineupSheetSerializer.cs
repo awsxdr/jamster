@@ -1,7 +1,8 @@
-﻿using jamster.Serialization;
-using System.IO.Compression;
+﻿using System.IO.Compression;
 
-namespace jamster.Services.Stats;
+using jamster.engine.Serialization;
+
+namespace jamster.engine.Services.Stats;
 
 public interface ILineupSheetSerializer
 {
