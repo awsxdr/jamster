@@ -4,9 +4,10 @@ using FluentAssertions;
 
 using Func;
 
-using jamster.Domain;
+using jamster.engine.Domain;
+using jamster.engine.Extensions;
 using jamster.engine.tests.GameGeneration;
-using jamster.Extensions;
+using jamster.ui.tests.MockEngine;
 
 using NUnit.Framework;
 
@@ -15,37 +16,37 @@ using OpenQA.Selenium.Chrome;
 
 using TextCopy;
 
+using static jamster.ui.tests.SeleniumHelpers;
+
 namespace jamster.ui.tests;
 
 [TestFixture]
-public class FullGameTest
+public class FullGameTest : FullEngineTest
 {
     private IWebDriver _driver;
-    private Process _engineProcess;
 
-    [OneTimeSetUp]
-    public void OneTimeSetup()
+    protected override void OneTimeSetup()
     {
+        base.OneTimeSetup();
+
         _driver = new ChromeDriver();
         _driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(5);
 
-        Directory.Delete(Path.Combine(".", "engine", "db"), true);
+        //_engineProcess = 
+        //    Process.Start(new ProcessStartInfo(Path.Combine(".", "engine", "jamster.engine.exe"))
+        //    {
+        //        Arguments = $"-p {Port}",
+        //        CreateNoWindow = true,
+        //        RedirectStandardOutput = true,
+        //    }) ?? throw new Exception("Failed to start engine process");
 
-        _engineProcess = 
-            Process.Start(new ProcessStartInfo(Path.Combine(".", "engine", "jamster.engine.exe"))
-            {
-                CreateNoWindow = true,
-                RedirectStandardOutput = true,
-            }) ?? throw new Exception("Failed to start engine process");
-
-        _engineProcess.OutputDataReceived += (_, e) => Console.WriteLine(e.Data);
+        //_engineProcess.OutputDataReceived += (_, e) => Console.WriteLine(e.Data);
     }
 
-    [OneTimeTearDown]
-    public void OneTimeTearDown()
+    protected override void OneTimeTearDown()
     {
-        _engineProcess.Kill();
-        _engineProcess.Dispose();
+        base.OneTimeTearDown();
+
         _driver.Dispose();
     }
 
@@ -56,10 +57,13 @@ public class FullGameTest
         {
             var game = GameGenerator.GenerateRandom();
 
-            _driver.Navigate().GoToUrl("http://localhost:8000/teams");
+            _driver.Navigate().GoToUrl(GetUrl("teams"));
 
             CreateTeam(game.HomeTeam);
             CreateTeam(game.AwayTeam);
+
+            _driver.Navigate().GoToUrl(GetUrl("games"));
+            Thread.Sleep(TimeSpan.FromSeconds(10));
         }
         catch (AssertionException)
         {
@@ -73,7 +77,7 @@ public class FullGameTest
     {
         try
         {
-            _driver.Navigate().GoToUrl("http://localhost:8000/teams");
+            _driver.Navigate().GoToUrl(GetUrl("teams"));
 
             var skaters = Enumerable.Range(1, 10).Select(i => new Skater(i.ToString(), $"Test {i}")).ToArray();
 
@@ -98,7 +102,7 @@ public class FullGameTest
             skaterNumberInput.Displayed.Should().BeTrue();
 
             PasteRoster(
-                Enumerable.Range(0, 3).Select(i => new Skater($"{i}0", $"Test 2{i}")).Select(s => new SimulatorSkater(s, SkaterPosition.Blocker, 1.0f, 0.0f)).ToArray(),
+                Enumerable.Range(0, 3).Select(i => new Skater($"0{i}", $"Test 2{i}")).Select(s => new SimulatorSkater(s, SkaterPosition.Blocker, 1.0f, 0.0f)).ToArray(),
                 skaterNumberInput
             );
 
@@ -116,47 +120,40 @@ public class FullGameTest
 
             //tableData.Should().BeEquivalentTo(team.Roster.Select(s => (s.Number, s.Name)));
 
-            Thread.Sleep(5);
+            Thread.Sleep(TimeSpan.FromSeconds(5));
         }
         catch (AssertionException)
         {
-            Thread.Sleep(TimeSpan.FromSeconds(10));
+            Thread.Sleep(TimeSpan.FromSeconds(3));
             throw;
         }
     }
 
     private void CreateTeam(SimulatorTeam team)
     {
-        var addTeamButton = _driver.FindElement(By.Id("TeamsManagement.AddTeamButton"));
-        addTeamButton.Displayed.Should().BeTrue();
-        addTeamButton.Click();
+        var teamPageInteractor = new TeamsPageInteractor(_driver);
+        teamPageInteractor.OpenAddTeamDialog();
 
-        var teamNameInput = _driver.FindElement(By.Id("NewTeamDialog.TeamName"));
-        teamNameInput.WaitForVisible();
-        teamNameInput.Displayed.Should().BeTrue();
-        teamNameInput.SendKeys(team.DomainTeam.Names["league"]);
+        var addTeamDialogInteractor = new AddTeamDialogInteractor(_driver);
+        addTeamDialogInteractor.SetTeamName(team.DomainTeam.Names["league"]);
+        addTeamDialogInteractor.SetKitColor(team.DomainTeam.Names["color"]);
 
-        var colorInput = _driver.FindElement(By.Id("NewTeamDialog.KitColor"));
-        colorInput.Displayed.Should().BeTrue();
-        colorInput.SendKeys(team.DomainTeam.Names["color"]);
+        Thread.Sleep(TimeSpan.FromSeconds(.5));
 
-        var createButton = _driver.FindElement(By.Id("NewTeamDialog.CreateButton"));
-        createButton.Displayed.Should().BeTrue();
-        createButton.Click();
+        addTeamDialogInteractor.ClickCreate();
 
-        var teamTable = _driver.FindElement(By.Id("TeamTable"));
-        teamTable.Displayed.Should().BeTrue();
-        var teamElement =
-            teamTable.FindElements(By.TagName("a")).Should()
-                .ContainSingle(e => e.Text == team.DomainTeam.Names["league"])
-                .Subject;
-        teamElement.Displayed.Should().BeTrue();
+        var teamDetails = teamPageInteractor.GetTeam(team.DomainTeam.Names["league"]);
+        teamDetails.TeamName.Should().Be(team.DomainTeam.Names["league"]);
 
-        teamElement.Click();
+        teamPageInteractor.ClickTeam(team.DomainTeam.Names["league"]);
 
         EnterTeamDetails(team);
 
         _driver.Navigate().Back();
+
+        teamDetails = teamPageInteractor.GetTeam(team.DomainTeam.Names["league"]);
+        teamDetails.LeagueName.Should().Be($"{team.DomainTeam.Names["league"]} (League)");
+        teamDetails.TeamName.Should().Be($"{team.DomainTeam.Names["league"]}");
     }
 
     private void EnterTeamDetails(SimulatorTeam team)
@@ -230,6 +227,11 @@ public class FullGameTest
         Console.WriteLine();
         Console.WriteLine($"Expected skaters:\n{team.Roster.Select(s => $"{s.Number}\t{s.Name}").Map(string.Join, "\n")}");
 
+        if (!tableData.Zip(team.Roster.Select(s => (s.Number, s.Name)), (a, b) => a.Number == b.Number && a.Name == b.Name).All(x => x))
+        {
+            Thread.Sleep(30000);
+        }
+
         tableData.Should().BeEquivalentTo(team.Roster.Select(s => (s.Number, s.Name)));
     }
 
@@ -240,5 +242,98 @@ public class FullGameTest
         Console.WriteLine($"Pasting skater data: {pasteText}");
 
         skaterNumberInput.SendKeys(Keys.Control + "v");
+    }
+}
+
+public class TeamsPageInteractor(IWebDriver driver)
+{
+    public record TeamPageTeam(string TeamName, string LeagueName, DateTime LastModified);
+
+    public void OpenAddTeamDialog()
+    {
+        var addTeamButton = driver.FindElement(By.Id("TeamsManagement.AddTeamButton"));
+        addTeamButton.Displayed.Should().BeTrue();
+        addTeamButton.Click();
+    }
+
+    public TeamPageTeam GetTeam(string teamName) => RetryOnStale(() =>
+    {
+        var team = driver.FindElement(By.Id("TeamTable"))
+            .FindElements(By.TagName("tr"))
+            .Select(row => row.FindElements(By.TagName("td")).Select(item => item.Text).ToArray())
+            .Where(row => row.Length == 4)
+            .Single(row => row[1] == teamName);
+
+        return new TeamPageTeam(team[1], team[2], DateTime.TryParse(team[3], out var modified) ? modified : DateTime.MinValue);
+    });
+
+    public TeamPageTeam[] GetTeams() => RetryOnStale(() =>
+    {
+        var teamTable = driver.FindElement(By.Id("TeamTable"));
+        teamTable.Displayed.Should().BeTrue();
+
+        var teams = teamTable.FindElements(By.TagName("tr"))
+            .Select(row =>
+            {
+                var items = row.FindElements(By.TagName("td"));
+
+                if (items.Count != 4)
+                    return null;
+
+                return new TeamPageTeam(
+                    items[1].Text,
+                    items[2].Text,
+                    DateTime.TryParse(items[3].Text, out var modified) ? modified : DateTime.MinValue
+                );
+            })
+            .Where(item => item != null)
+            .Cast<TeamPageTeam>()
+            .ToArray();
+
+        return teams;
+    });
+
+    public void ClickTeam(string teamName)
+    {
+        var teamTable = driver.FindElement(By.Id("TeamTable"));
+        teamTable.Displayed.Should().BeTrue();
+
+        var team = teamTable.FindElements(By.TagName("tr"))
+            .Select(row => row.FindElements(By.TagName("td")))
+            .Where(row => row.Count == 4)
+            .FirstOrDefault(row => row[1].Text == teamName)
+            ?[1];
+
+        team.Should().NotBeNull();
+
+        team!.Displayed.Should().BeTrue();
+
+        team.Click();
+    }
+}
+
+public class AddTeamDialogInteractor(IWebDriver driver)
+{
+    public void SetTeamName(string teamName)
+    {
+        var teamNameInput = driver.FindElement(By.Id("NewTeamDialog.TeamName"));
+        teamNameInput.WaitForVisible();
+
+        teamNameInput.Displayed.Should().BeTrue();
+        teamNameInput.SendKeys(teamName);
+    }
+
+    public void SetKitColor(string color)
+    {
+        var colorInput = driver.FindElement(By.Id("NewTeamDialog.KitColor"));
+        colorInput.Displayed.Should().BeTrue();
+        colorInput.SendKeys(color);
+    }
+
+    public void ClickCreate()
+    {
+        var createButton = driver.FindElement(By.Id("NewTeamDialog.CreateButton"));
+        createButton.Displayed.Should().BeTrue();
+        createButton.Click();
     }
 }

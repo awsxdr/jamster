@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
@@ -26,14 +26,15 @@
     <PackageReference Include="TextCopy" Version="6.2.1" />
   </ItemGroup>
 
-  <ItemGroup>
-    <None Include="..\jamster.engine\bin\$(Configuration)\net8.0\**" LinkBase="engine">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
+    <ItemGroup>
+        <None Include="..\jamster.ui\dist\**" LinkBase="wwwroot">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+    </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\jamster.engine.tests\jamster.engine.tests.csproj" />
+    <ProjectReference Include="..\jamster.engine\jamster.engine.csproj" />
   </ItemGroup>
 
 

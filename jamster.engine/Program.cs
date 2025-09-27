@@ -77,12 +77,12 @@ public class Program
             .AddJsonOptions(options =>
             {
                 options.JsonSerializerOptions.Converters.Clear();
-                options.JsonSerializerOptions.Converters.AddAll(jamster.engine.Program.JsonSerializerOptions.Converters);
+                options.JsonSerializerOptions.Converters.AddAll(JsonSerializerOptions.Converters);
             });
 
         builder.Services.AddSignalR().AddJsonProtocol(options =>
         {
-            options.PayloadSerializerOptions = jamster.engine.Program.JsonSerializerOptions;
+            options.PayloadSerializerOptions = JsonSerializerOptions;
         });
 
         builder.Services.AddEndpointsApiExplorer();
@@ -203,14 +203,6 @@ public class Program
     public static Action<Autofac.ContainerBuilder>? AdditionalDependencies { get; set; } = null;
     public static JsonSerializerOptions JsonSerializerOptions { get; } = GetSerializerOptions();
 
-    private static void MapHub<THub>(WebApplication app, string pattern) where THub : Hub =>
-        app
-            .MapHub<THub>(pattern)
-            .RequireCors(policyBuilder =>
-            {
-                policyBuilder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
-            });
-
     private static JsonSerializerOptions GetSerializerOptions()
     {
         var serializerOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web);
@@ -249,6 +241,14 @@ public class Program
     };
 
     private static LogLevel MapLogLevel(Microsoft.Extensions.Logging.LogLevel logLevel) => LogLevel.FromOrdinal((int)logLevel);
+
+    private static void MapHub<THub>(WebApplication app, string pattern) where THub : Hub =>
+        app
+            .MapHub<THub>(pattern)
+            .RequireCors(policyBuilder =>
+            {
+                policyBuilder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
+            });
 
     private static MethodInfo GetGenericMapHubMethod() =>
         typeof(Program)

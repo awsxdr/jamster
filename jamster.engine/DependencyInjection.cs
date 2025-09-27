@@ -14,17 +14,19 @@ namespace jamster.engine;
 
 public static class DependencyInjection
 {
+    public static ICollection<Type> GetServiceTypes() =>
+        Assembly.GetExecutingAssembly().GetTypes()
+            .Where(t =>
+                (t.Namespace?.StartsWith($"{typeof(Program).Namespace}.{nameof(Services)}") ?? false)
+                || (t.Namespace?.StartsWith($"{typeof(Program).Namespace}.{nameof(Serialization)}") ?? false)
+            )
+            .Where(t => t is { IsAbstract: false, IsGenericType: false, IsNested: false, IsClass: true })
+            .Where(t => !t.IsAssignableTo<MulticastDelegate>())
+            .ToArray();
+
     public static void RegisterServices(this ContainerBuilder builder)
     {
-        var serviceTypes =
-            Assembly.GetExecutingAssembly().GetTypes()
-                .Where(t => 
-                    (t.Namespace?.StartsWith($"{typeof(Program).Namespace}.{nameof(Services)}") ?? false)
-                    || (t.Namespace?.StartsWith($"{typeof(Program).Namespace}.{nameof(Serialization)}") ?? false)
-                )
-                .Where(t => t is { IsAbstract: false, IsGenericType: false, IsNested: false, IsClass: true })
-                .Where(t => !t.IsAssignableTo<MulticastDelegate>())
-                .ToArray();
+        var serviceTypes = GetServiceTypes();
 
         foreach (var type in serviceTypes)
         {
@@ -39,12 +41,14 @@ public static class DependencyInjection
         }
     }
 
+    public static ICollection<Type> GetReducerTypes() =>
+        Assembly.GetExecutingAssembly().GetTypes()
+            .Where(t => !t.IsAbstract && t.IsAssignableTo<IReducer>())
+            .ToArray();
+
     public static void RegisterReducers(this ContainerBuilder builder)
     {
-        var reducerTypes =
-            Assembly.GetExecutingAssembly().GetTypes()
-                .Where(t => !t.IsAbstract && t.IsAssignableTo<IReducer>())
-                .ToArray();
+        var reducerTypes = GetReducerTypes();
 
         foreach (var reducerType in reducerTypes)
         {
@@ -58,13 +62,16 @@ public static class DependencyInjection
         }
     }
 
-    public static void RegisterConfigurations(this ContainerBuilder builder)
-    {
-        var configurationFactoryTypes = AppDomain.CurrentDomain.GetAssemblies()
+    public static ICollection<Type> GetConfigurationFactoryTypes() =>
+        AppDomain.CurrentDomain.GetAssemblies()
             .Where(ass => !ass.IsDynamic)
             .SelectMany(ass => ass.GetTypes())
             .Where(t => !t.IsAbstract && t.IsAssignableTo<IConfigurationFactory>())
             .ToArray();
+
+    public static void RegisterConfigurations(this ContainerBuilder builder)
+    {
+        var configurationFactoryTypes = GetConfigurationFactoryTypes().ToArray();
 
         builder.RegisterTypes(configurationFactoryTypes).AsImplementedInterfaces().SingleInstance();
     }
