@@ -19,8 +19,8 @@ public static class DependencyInjection
         var serviceTypes =
             Assembly.GetExecutingAssembly().GetTypes()
                 .Where(t => 
-                    (t.Namespace?.StartsWith($"{nameof(jamster)}.{nameof(Services)}") ?? false)
-                    || (t.Namespace?.StartsWith($"{nameof(jamster)}.{nameof(Serialization)}") ?? false)
+                    (t.Namespace?.StartsWith($"{typeof(Program).Namespace}.{nameof(Services)}") ?? false)
+                    || (t.Namespace?.StartsWith($"{typeof(Program).Namespace}.{nameof(Serialization)}") ?? false)
                 )
                 .Where(t => t is { IsAbstract: false, IsGenericType: false, IsNested: false, IsClass: true })
                 .Where(t => !t.IsAssignableTo<MulticastDelegate>())

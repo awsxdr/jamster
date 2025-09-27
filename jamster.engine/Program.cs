@@ -69,7 +69,7 @@ public class Program
             container.RegisterDataStores();
             container.RegisterReducers();
             container.RegisterHubNotifiers();
-            jamster.engine.Program.AdditionalDependencies?.Invoke(container);
+            AdditionalDependencies?.Invoke(container);
         }));
 
         builder.Services
