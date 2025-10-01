@@ -6,6 +6,7 @@ import { ShortcutButton } from "./ShortcutButton";
 import { InputControls } from "@/types";
 
 export type RadioItem<TValue> = { 
+    id?: string;
     value: TValue;
     name: string;
 };
@@ -49,6 +50,7 @@ export const RadioButtonGroup = <TValue,>({ items, value, variant, size, rowClas
                     items.map((item, i) => 
                         (item as ShortcutTooltipRadioItem<TValue>)?.shortcutKey ? (
                             <ShortcutButton
+                                id={item.id}
                                 shortcutGroup={(item as ShortcutTooltipRadioItem<TValue>).shortcutGroup}
                                 shortcutKey={(item as ShortcutTooltipRadioItem<TValue>).shortcutKey}
                                 description={(item as ShortcutTooltipRadioItem<TValue>).description}
@@ -63,6 +65,7 @@ export const RadioButtonGroup = <TValue,>({ items, value, variant, size, rowClas
                             </ShortcutButton>
                         ) : (item as TooltipRadioItem<TValue>)?.description ? (
                             <TooltipButton 
+                                id={item.id}
                                 description={(item as TooltipRadioItem<TValue>).description}
                                 size={size}
                                 variant={variant ?? "secondary"}
@@ -75,6 +78,7 @@ export const RadioButtonGroup = <TValue,>({ items, value, variant, size, rowClas
                             </TooltipButton>
                         ) : (
                             <Button 
+                                id={item.id}
                                 size={size}
                                 variant={variant ?? "secondary"}
                                 className={cn("border-2", value === item.value ? "border-primary" : "", buttonClassName)}

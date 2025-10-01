@@ -49,6 +49,7 @@ export const JamStats = ({ side, disabled, onLeadChanged, onLostChanged, onCallC
         <>
             <div className="flex flex-wrap w-full justify-center items-center gap-2 py-2">
                 <StatsButton 
+                    id={`ScoreboardControl.JamStats.${side}.LeadButton`}
                     description={translate("Lead.Tooltip")} 
                     active={jamStats?.lead} 
                     disabled={disabled}
@@ -59,6 +60,7 @@ export const JamStats = ({ side, disabled, onLeadChanged, onLostChanged, onCallC
                     {translate("Lead")}
                 </StatsButton>
                 <StatsButton 
+                    id={`ScoreboardControl.JamStats.${side}.LostButton`}
                     description={translate("Lost.Tooltip")} 
                     active={jamStats?.lost} 
                     disabled={disabled}
@@ -69,6 +71,7 @@ export const JamStats = ({ side, disabled, onLeadChanged, onLostChanged, onCallC
                     {translate("Lost")}
                 </StatsButton>
                 <StatsButton 
+                    id={`ScoreboardControl.JamStats.${side}.CallButton`}
                     description={translate("Call.Tooltip")} 
                     active={jamStats?.called} 
                     disabled={disabled} 
@@ -79,6 +82,7 @@ export const JamStats = ({ side, disabled, onLeadChanged, onLostChanged, onCallC
                     {translate("Call")}
                 </StatsButton>
                 <StatsButton 
+                    id={`ScoreboardControl.JamStats.${side}.StarPassButton`}
                     description={translate("StarPass.Tooltip")} 
                     active={jamStats?.starPass} 
                     disabled={disabled} 
@@ -89,6 +93,7 @@ export const JamStats = ({ side, disabled, onLeadChanged, onLostChanged, onCallC
                     {translate("StarPass")}
                 </StatsButton>
                 <StatsButton 
+                    id={`ScoreboardControl.JamStats.${side}.InitialButton`}
                     description={translate("InitialComplete.Tooltip")} 
                     active={jamStats?.hasCompletedInitial} 
                     disabled={disabled} 

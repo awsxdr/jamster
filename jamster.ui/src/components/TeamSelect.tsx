@@ -6,6 +6,7 @@ import { ColorBlock } from "./ColorBlock";
 import { cn } from "@/lib/utils";
 
 type TeamSelectProps = {
+    id?: string;
     titleKey: string;
     teamId?: string;
     exceptIds?: string[];
@@ -14,7 +15,7 @@ type TeamSelectProps = {
     onColorIndexChanged?: (colorIndex: number) => void;
 }
 
-export const TeamSelect = ({ titleKey, teamId, exceptIds, colorIndex, onTeamIdChanged, onColorIndexChanged }: TeamSelectProps) => {
+export const TeamSelect = ({ id, titleKey, teamId, exceptIds, colorIndex, onTeamIdChanged, onColorIndexChanged }: TeamSelectProps) => {
     const { translate } = useI18n();
 
     const teams = useTeamList();
@@ -65,6 +66,7 @@ export const TeamSelect = ({ titleKey, teamId, exceptIds, colorIndex, onTeamIdCh
         <>
             <Label className="font-bold text-lg">{translate(titleKey)}</Label>
             <ComboBox 
+                id={id}
                 items={teamItems} 
                 value={teamId ?? ""} 
                 placeholder={translate("NewGameDialog.SelectTeam")} 

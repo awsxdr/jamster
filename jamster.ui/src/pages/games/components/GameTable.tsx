@@ -126,7 +126,7 @@ export const GameTable = ({ games, selectedGameIds, onSelectedGameIdsChanged }: 
     }, [table, selectedGameIds]);
 
     return (
-        <Table>
+        <Table id="GamesManagement.GamesTable">
             <TableHeader>
                 {
                     table.getHeaderGroups().map(headerGroup => (
@@ -146,8 +146,8 @@ export const GameTable = ({ games, selectedGameIds, onSelectedGameIdsChanged }: 
                 {
                     table.getRowModel().rows?.length
                         ? (
-                            table.getRowModel().rows.map(row => (
-                                <TableRow key={row.id} data-state={row.getIsSelected() && "selected"}>
+                            table.getRowModel().rows.map((row, i) => (
+                                <TableRow id={`GamesManagement.GamesTable.Row.${i}`} key={row.id} data-state={row.getIsSelected() && "selected"}>
                                     { row.getVisibleCells().map(cell => (
                                         <TableCell key={cell.id}>
                                             { flexRender(cell.column.columnDef.cell, cell.getContext()) }

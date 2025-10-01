@@ -242,7 +242,7 @@ export const RosterTable = ({ team }: RosterTableProps) => {
 
     return (
         <Card className="pt-4">
-            <CardContent className="flex flex-col">
+            <CardContent className="flex flex-col" id="RosterTable">
                 <div className="flex w-full justify-end">
                     <AlertDialog>
                         <AlertDialogTrigger asChild>

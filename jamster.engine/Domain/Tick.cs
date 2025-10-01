@@ -14,6 +14,7 @@ public readonly struct Tick(long value)
     private readonly long _value = value;
 
     public static Tick FromSeconds(float seconds) => (int)(seconds * TicksPerSecond);
+    public static Tick FromSeconds(double seconds) => (int)(seconds * TicksPerSecond);
 
     public int Seconds => (int)(_value / TicksPerSecond);
 

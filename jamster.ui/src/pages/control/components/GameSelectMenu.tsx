@@ -91,7 +91,7 @@ export const GameSelectMenu = ({ games, currentGame, selectedGameId, disabled, o
                 disabled={disabled}
                 onValueChange={onSelectedGameIdChanged}
             >
-                <SelectTrigger>
+                <SelectTrigger id="ScoreboardControl.GameSelectMenu">
                     <SelectValue placeholder={translate("SelectGame")} className="overflow-hidden text-ellipsis" />
                 </SelectTrigger>
                 <SelectContent className="w-150 max-w-[90vw]">

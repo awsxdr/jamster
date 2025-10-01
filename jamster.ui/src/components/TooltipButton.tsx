@@ -8,6 +8,7 @@ export type TooltipButtonProps = {
 } & ButtonProps;
 
 export const TooltipButton = forwardRef<HTMLButtonElement, TooltipButtonProps>(({ 
+    id,
     children, 
     description,
     notify,
@@ -15,6 +16,7 @@ export const TooltipButton = forwardRef<HTMLButtonElement, TooltipButtonProps>((
     disabled,
     ...props 
 }: PropsWithChildren<TooltipButtonProps>, ref) => {
+
     return disabled ? (
         <Button disabled {...props} className={className} ref={ref}>
             { children }
@@ -28,7 +30,7 @@ export const TooltipButton = forwardRef<HTMLButtonElement, TooltipButtonProps>((
                             { children }
                         </Button>
                     )}
-                    <Button {...props} className={cn(className)} ref={ref}>
+                    <Button {...props} id={id} className={cn(className)} ref={ref}>
                         { children }
                     </Button>
                 </div>

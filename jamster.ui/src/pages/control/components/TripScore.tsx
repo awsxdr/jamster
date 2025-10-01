@@ -18,6 +18,7 @@ export const TripScore = ({ teamSide, tripScore, disabled, onTripScoreSet }: Tri
             <span className={disabled ? "opacity-50" : ""}>{translate("TripScore")}</span>
             <RadioButtonGroup
                 items={['-', 0, 1, 2, 3, 4].map((k, i) => ({ 
+                    id: `ScoreboardControl.TripScore.${teamSide}.${k}`,
                     value: i - 1, 
                     name: k.toString(), 
                     description: translate(`SetScore${k}`), 

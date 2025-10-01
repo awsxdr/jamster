@@ -246,9 +246,9 @@ public class GameSimulator(SimulatorGame game)
     private void TickJam()
     {
         const float penaltyChance = 1 / 180f / TicksPerSecond;
-        const float completeTripChance = 1 / 60f / TicksPerSecond;
+        const float completeTripChance = 1 / 15f / TicksPerSecond;
         const float boxEntryChance = 1 / 15f / TicksPerSecond;
-        const float callChance = 1 / 180f / TicksPerSecond;
+        const float callChance = 1 / 160f / TicksPerSecond;
 
         TickClock(c => c.JamClock);
         TickClock(c => c.PeriodClock, Tick.FromSeconds(Rules.DefaultRules.PeriodRules.DurationInSeconds));
@@ -294,22 +294,7 @@ public class GameSimulator(SimulatorGame game)
                 }
                 else
                 {
-                    tripTeamScoreSheet[^1].GameTotal += 4;
-                    tripTeamScoreSheet[^1].JamTotal += 4;
-                    tripTeamScoreSheet[^1].TripScores[^1] = 4;
-                    if (tripTeamSide == TeamSide.Home)
-                    {
-                        _gameState.Scores.HomeScore.GameTotal += 4;
-                        _gameState.Scores.HomeScore.JamTotal += 4;
-                    }
-                    else
-                    {
-                        _gameState.Scores.AwayScore.GameTotal += 4;
-                        _gameState.Scores.AwayScore.JamTotal += 4;
-                    }
-
-                    LogDebug($"Adding 4 points for {tripTeamSide} team");
-                    _events.Add(new ScoreModifiedRelative(_tick, new(tripTeamSide, 4)));
+                    SetTripScore(tripTeamSide, 4);
                 }
                 tripTeamScoreSheet[^1].TripScores.Add(0);
             }
@@ -320,7 +305,9 @@ public class GameSimulator(SimulatorGame game)
             AddRandomPenalty();
         }
 
-        if ((_gameState.JamInfo.HomeTeam.Lead || _gameState.JamInfo.AwayTeam.Lead) && RandomTrigger(callChance))
+        if (
+            (_gameState.JamInfo.HomeTeam.Lead || _gameState.JamInfo.AwayTeam.Lead) 
+            && RandomTrigger(callChance * (_gameState.JamInfo.HomeTeam.CompletedInitial && _gameState.JamInfo.AwayTeam.CompletedInitial ? 4 : 1)))
         {
             _gameState.JamInfo.HomeTeam.Called = _gameState.JamInfo.HomeTeam.Lead;
             _gameState.JamInfo.AwayTeam.Called = _gameState.JamInfo.AwayTeam.Lead;
@@ -382,9 +369,39 @@ public class GameSimulator(SimulatorGame game)
             skater.Penalty.EntryTick = _tick;
         }
 
+        void SetTripScore(TeamSide side, int score)
+        {
+            var tripTeamScoreSheet = side == TeamSide.Home
+                ? _gameState.Sheets.HomeSheets.ScoreSheet
+                : _gameState.Sheets.AwaySheets.ScoreSheet;
+
+            tripTeamScoreSheet[^1].GameTotal += score;
+            tripTeamScoreSheet[^1].JamTotal += score;
+            tripTeamScoreSheet[^1].TripScores[^1] = score;
+            if (side == TeamSide.Home)
+            {
+                _gameState.Scores.HomeScore.GameTotal += score;
+                _gameState.Scores.HomeScore.JamTotal += score;
+            }
+            else
+            {
+                _gameState.Scores.AwayScore.GameTotal += score;
+                _gameState.Scores.AwayScore.JamTotal += score;
+            }
+
+            LogDebug($"Adding {score} points for {side} team");
+            _events.Add(new ScoreModifiedRelative(_tick, new(side, score)));
+
+        }
+
         void EndJam(string endReason)
         {
             StopClock(c => c.JamClock);
+
+            if(_gameState.JamInfo.HomeTeam.CompletedInitial)
+                SetTripScore(TeamSide.Home, Random.Shared.Next(5));
+            if (_gameState.JamInfo.AwayTeam.CompletedInitial)
+                SetTripScore(TeamSide.Away, Random.Shared.Next(5));
 
             if (_gameState.Clocks.PeriodClock.PassedTicks >= Tick.FromSeconds(Rules.DefaultRules.PeriodRules.DurationInSeconds))
             {
@@ -494,7 +511,7 @@ public class GameSimulator(SimulatorGame game)
 
     private void TickLineupTracker()
     {
-        const float recordSkaterChance = 0.1f / TicksPerSecond;
+        const float recordSkaterChance = 0.2f / TicksPerSecond;
 
         if (_gameState.Stage is Stage.Intermission or Stage.AfterGame)
             return;
@@ -502,10 +519,10 @@ public class GameSimulator(SimulatorGame game)
         if (_gameState.Clocks.LineupClock.Running && _gameState.Clocks.LineupClock.PassedTicks < Tick.FromSeconds(5))
             return;
 
-        if (_gameState.Sheets.HomeSheets.LineupSheet[^1].SkaterNumbers.Length < 5 && RandomTrigger(recordSkaterChance))
+        if (_gameState.Sheets.HomeSheets.LineupSheet[^1].SkaterNumbers.Length < 5 && RandomTrigger(recordSkaterChance * (_gameState.Stage == Stage.Jam ? 2 : 1)))
             SetCurrentJam(TeamSide.Home);
 
-        if (_gameState.Sheets.AwaySheets.LineupSheet[^1].SkaterNumbers.Length < 5 && RandomTrigger(recordSkaterChance))
+        if (_gameState.Sheets.AwaySheets.LineupSheet[^1].SkaterNumbers.Length < 5 && RandomTrigger(recordSkaterChance * (_gameState.Stage == Stage.Jam ? 2 : 1)))
             SetCurrentJam(TeamSide.Away);
 
         return;

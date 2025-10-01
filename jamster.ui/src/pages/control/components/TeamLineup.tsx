@@ -24,7 +24,10 @@ export const TeamLineup = ({ side, onLineupSelected, disabled }: TeamLineupProps
                     <div className="flex flex-wrap justify-center items-center gap-2 p-2 pb-1 items-baseline">
                         <span className={disabled ? "opacity-50" : ""}>{translate("TeamLineup.Jammer")}</span>
                         <RadioButtonGroup
-                            items={[{value: null, name: "?"}, ...skaterNumbers.map(s => ({ value: s, name: s}))]}
+                            items={[
+                                {value: null, name: "?", id: `ScoreboardControl.TeamLineup.${side}.Jammer.Unknown`},
+                                ...skaterNumbers.map(s => ({ value: s, name: s, id: `ScoreboardControl.TeamLineup.${side}.Jammer.${s}`}))
+                            ]}
                             value={lineup?.jammerNumber}
                             rowClassName="gap-0.5"
                             variant="ghost"
@@ -36,7 +39,10 @@ export const TeamLineup = ({ side, onLineupSelected, disabled }: TeamLineupProps
                     <div className="flex flex-wrap justify-center items-center gap-2 p-2 pt-0 items-baseline">
                         <span className={disabled ? "opacity-50" : ""}>{translate("TeamLineup.Pivot")}</span>
                         <RadioButtonGroup
-                            items={[{value: null, name: "?"}, ...skaterNumbers.map(s => ({ value: s, name: s}))]}
+                            items={[
+                                {value: null, name: "?", id: `ScoreboardControl.TeamLineup.${side}.Pivot.Unknown`},
+                                ...skaterNumbers.map(s => ({ value: s, name: s, id: `ScoreboardControl.TeamLineup.${side}.Pivot.${s}`}))
+                            ]}
                             value={lineup?.pivotNumber}
                             rowClassName="gap-0.5"
                             size="sm"

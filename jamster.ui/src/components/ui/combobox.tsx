@@ -6,6 +6,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { cn } from "@/lib/utils";
 
 export type ComboBoxProps = {
+    id?: string;
     value: string;
     items: ComboBoxItem[];
     placeholder: string;
@@ -21,13 +22,14 @@ export type ComboBoxItem = {
     value: string,
 };
 
-export const ComboBox = ({ value, onValueChanged, items, placeholder, className, dropdownClassName, disabled, hideSearch }: ComboBoxProps) => {
+export const ComboBox = ({ id, value, onValueChanged, items, placeholder, className, dropdownClassName, disabled, hideSearch }: ComboBoxProps) => {
     const [isOpen, setIsOpen] = useState(false);
 
     return (
         <Popover open={isOpen} onOpenChange={setIsOpen} modal>
             <PopoverTrigger asChild disabled={disabled}>
                 <Button
+                    id={id}
                     variant="outline"
                     role="combobox"
                     aria-expanded={isOpen}
@@ -43,15 +45,16 @@ export const ComboBox = ({ value, onValueChanged, items, placeholder, className,
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
             </PopoverTrigger>
-            <PopoverContent className={cn("p-0", dropdownClassName)}>
+            <PopoverContent className={cn("p-0", dropdownClassName)} id={id ? `${id}.List` : undefined}>
                 <Command>
                     { !hideSearch && <CommandInput placeholder={placeholder} /> }
                     <CommandList>
                         <CommandEmpty>Nothing found.</CommandEmpty>
                         <CommandGroup>
                             {
-                                items.map(item => (
+                                items.map((item, i) => (
                                     <CommandItem
+                                        id={id ? `${id}.List.${i}` : undefined}
                                         key={item.value}
                                         value={item.value}
                                         onSelect={currentValue => {

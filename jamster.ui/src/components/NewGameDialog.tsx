@@ -116,6 +116,7 @@ export const NewGameDialog = ({ onNewGameCreated, onCancelled }: NewGameDialogPr
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
                     <TeamSelect 
+                        id="NewGameDialog.HomeTeamSelect"
                         titleKey="NewGameDialog.HomeTeam" 
                         teamId={homeTeamId} 
                         exceptIds={awayTeamId ? [awayTeamId] : []}
@@ -124,6 +125,7 @@ export const NewGameDialog = ({ onNewGameCreated, onCancelled }: NewGameDialogPr
                         onColorIndexChanged={setHomeTeamColorIndex}
                     />
                     <TeamSelect 
+                        id="NewGameDialog.AwayTeamSelect"
                         titleKey="NewGameDialog.AwayTeam" 
                         teamId={awayTeamId} 
                         exceptIds={homeTeamId ? [homeTeamId] : []}
@@ -133,7 +135,7 @@ export const NewGameDialog = ({ onNewGameCreated, onCancelled }: NewGameDialogPr
                     />
                     <Label className="text-lg font-bold">{translate("NewGameDialog.GameName")}</Label>
                     <div className="flex">
-                        <Input value={gameName} onChange={handleTeamNameChanged} />
+                        <Input id="NewGameDialog.GameName" value={gameName} onChange={handleTeamNameChanged} />
                         <Tooltip>
                             <TooltipTrigger asChild>
                                 <Button variant="ghost" size="icon" onClick={handleResetTeamName} disabled={!gameNameDirty}>
@@ -147,6 +149,7 @@ export const NewGameDialog = ({ onNewGameCreated, onCancelled }: NewGameDialogPr
                     </div>
                     <DialogFooter>
                         <Button
+                            id="NewGameDialog.CancelButton"
                             variant="outline"
                             className="mt-4"
                             onClick={handleCancelClicked}
@@ -154,6 +157,7 @@ export const NewGameDialog = ({ onNewGameCreated, onCancelled }: NewGameDialogPr
                             {translate("NewGameDialog.Cancel")}
                         </Button>
                         <Button 
+                            id="NewGameDialog.CreateButton"
                             variant="default" 
                             type="submit"
                             className="mt-4" 

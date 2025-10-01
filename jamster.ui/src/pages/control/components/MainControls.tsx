@@ -126,6 +126,7 @@ export const MainControls = ({ gameId, disabled }: MainControlsProps) => {
                         { startText }
                     </ShortcutButton>
                     <ShortcutButton
+                        id="ScoreboardControl.MainControls.StopButton"
                         shortcutGroup="clocks"
                         shortcutKey="stop"
                         notify={shouldFinalizePeriod}
@@ -139,6 +140,7 @@ export const MainControls = ({ gameId, disabled }: MainControlsProps) => {
                         { endText }
                     </ShortcutButton>
                     <ShortcutButton
+                        id="ScoreboardControl.MainControls.TimeoutButton"
                         shortcutGroup="clocks"
                         shortcutKey="timeout"
                         notify={shouldStartJam}
