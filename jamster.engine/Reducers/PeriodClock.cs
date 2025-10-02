@@ -19,7 +19,7 @@ public class PeriodClock(ReducerGameContext context, ILogger<PeriodClock> logger
     , IDependsOnState<RulesState>
     , ITickReceiver
 {
-    protected override PeriodClockState DefaultState => new(false, true, 0, 0, 0);
+    protected override PeriodClockState DefaultState => new(false, true, false, 0, 0, 0);
 
     public IEnumerable<Event> Handle(JamStarted @event)
     {
@@ -42,6 +42,7 @@ public class PeriodClock(ReducerGameContext context, ILogger<PeriodClock> logger
         {
             IsRunning = true, 
             HasExpired = false,
+            HasStarted = true,
             TicksPassedAtLastStart = roundedTicksPassed,
             TicksPassed = roundedTicksPassed,
             LastStartTick = @event.Tick,
@@ -107,7 +108,7 @@ public class PeriodClock(ReducerGameContext context, ILogger<PeriodClock> logger
     {
         var state = GetState();
 
-        if (!state.HasExpired) return [];
+        if (!state.HasExpired || !state.HasStarted) return [];
 
         logger.LogDebug("Ending period as timeout ended with no time on the period clock");
 
@@ -287,6 +288,7 @@ public class PeriodClock(ReducerGameContext context, ILogger<PeriodClock> logger
 public record PeriodClockState(
     bool IsRunning,
     bool HasExpired,
+    bool HasStarted,
     Tick LastStartTick,
     Tick TicksPassedAtLastStart,
     [property: IgnoreChange] Tick TicksPassed)

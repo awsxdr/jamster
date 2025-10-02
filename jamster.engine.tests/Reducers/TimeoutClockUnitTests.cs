@@ -68,7 +68,7 @@ public class TimeoutClockUnitTests : ReducerUnitTest<TimeoutClock, TimeoutClockS
     public async Task TimeoutEnded_WhenClockRunningAndEndTickIsZero_SetsEndTick()
     {
         State = new(true, 10000, 0, TimeoutClockStopReason.None, 20000);
-        MockState(new PeriodClockState(false, false, 0, 0, 0));
+        MockState(new PeriodClockState(false, false, true, 0, 0, 0));
         var initialState = State;
 
         await Subject.Handle(new TimeoutEnded(30000));
@@ -160,7 +160,7 @@ public class TimeoutClockUnitTests : ReducerUnitTest<TimeoutClock, TimeoutClockS
             }
         }));
         MockState<TimeoutTypeState>(new(timeoutType == TimeoutType.Official ? CompoundTimeoutType.HomeTeamTimeout : CompoundTimeoutType.OfficialTimeout, 0));
-        MockState<PeriodClockState>(new(!periodHasExpired, periodHasExpired, 0, 0, 20000));
+        MockState<PeriodClockState>(new(!periodHasExpired, periodHasExpired, true, 0, 0, 20000));
 
         await Subject.Handle(new TimeoutTypeSet(10000, new(timeoutType, TeamSide.Home)));
         await Tick(20000);

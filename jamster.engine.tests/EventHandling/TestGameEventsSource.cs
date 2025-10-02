@@ -30,6 +30,36 @@ public static class TestGameEventsSource
         ])
         .Build();
 
+    public static Event[] TimeoutBeforeFirstJam => new EventsBuilder(0, [])
+        .Event<TeamSet>(0).WithBody(new TeamSetBody(TeamSide.Home, new(HomeTeam.Names, HomeTeam.Color, HomeTeam.Roster)))
+        .Event<TeamSet>(0).WithBody(new TeamSetBody(TeamSide.Away, new(AwayTeam.Names, AwayTeam.Color, AwayTeam.Roster)))
+        .Wait(15)
+        .Event<IntermissionEnded>(15)
+        .Validate([
+            new GameStageState(Stage.Lineup, 1, 0, 0, false),
+            new PeriodClockState(false, true, false, 0, 0, 0),
+            new LineupClockState(true, Tick.FromSeconds(15), Tick.FromSeconds(15)),
+            new TimeoutClockState(false, 0, 0, TimeoutClockStopReason.None, 0),
+            new IntermissionClockState(false, true, Tick.FromSeconds(Rules.DefaultRules.IntermissionRules.DurationInSeconds), 0, 0),
+        ])
+        .Event<TimeoutStarted>(10)
+        .Validate([
+            new GameStageState(Stage.Timeout, 1, 0, 0, false),
+            new PeriodClockState(false, true, false, 0, 0, 0),
+            new LineupClockState(false, Tick.FromSeconds(15), Tick.FromSeconds(15)),
+            new TimeoutClockState(true, Tick.FromSeconds(30), 0, TimeoutClockStopReason.None, Tick.FromSeconds(10)),
+            new IntermissionClockState(false, true, Tick.FromSeconds(Rules.DefaultRules.IntermissionRules.DurationInSeconds), 0, 0),
+        ])
+        .Event<TimeoutEnded>(10)
+        .Validate([
+            new GameStageState(Stage.AfterTimeout, 1, 0, 0, false),
+            new PeriodClockState(false, true, false, 0, 0, 0),
+            new LineupClockState(false, Tick.FromSeconds(15), Tick.FromSeconds(15)),
+            new TimeoutClockState(true, Tick.FromSeconds(30), Tick.FromSeconds(40), TimeoutClockStopReason.Other, Tick.FromSeconds(20)),
+            new IntermissionClockState(false, true, Tick.FromSeconds(Rules.DefaultRules.IntermissionRules.DurationInSeconds), 0, 0),
+        ])
+        .Build();
+
     public static Event[] JamsWithLineupsAndPenalties => new EventsBuilder(0, [])
         .Event<TeamSet>(0).WithBody(new TeamSetBody(TeamSide.Home, new(HomeTeam.Names, HomeTeam.Color, HomeTeam.Roster)))
         .Event<TeamSet>(0).WithBody(new TeamSetBody(TeamSide.Away, new(AwayTeam.Names, AwayTeam.Color, AwayTeam.Roster)))
@@ -354,7 +384,7 @@ public static class TestGameEventsSource
                 new(1, 2, AwayTeam.Roster[1].Number, AwayTeam.Roster[3].Number, false, true, false, false, false, [new JamLineTrip(4)], null, 4, 9),
             ]))
         )
-        .Wait(5)
+        .Wait(4)
         .Event<CallMarked>(2).WithBody(new CallMarkedBody(TeamSide.Away, true))
         .Validate(
             ("Home", new ScoreSheetState([
@@ -478,7 +508,7 @@ public static class TestGameEventsSource
         .Validate(tick => [
             new GameStageState(Stage.Jam, 1, 1, 1, false),
             new JamClockState(true, tick, 0, true, false),
-            new PeriodClockState(true, false, tick, 0, 0),
+            new PeriodClockState(true, false, true, tick, 0, 0),
             ("Home", new TeamTimeoutsState(0, ReviewStatus.Unused, TimeoutInUse.None)),
             ("Away", new TeamTimeoutsState(0, ReviewStatus.Unused, TimeoutInUse.None))
         ])
@@ -491,40 +521,40 @@ public static class TestGameEventsSource
         .Validate(tick => [
             new GameStageState(Stage.Timeout, 1, 1, 1, false),
             new TimeoutClockState(true, timeoutStartTick, 0, TimeoutClockStopReason.None, tick - timeoutStartTick),
-            new PeriodClockState(true, false, periodStartTick, 0, tick - periodStartTick),
+            new PeriodClockState(true, false, true, periodStartTick, 0, tick - periodStartTick),
         ])
         .Event<TimeoutTypeSet>(1).WithBody(new TimeoutTypeSetBody(TimeoutType.Official, null))
         .Validate(tick => [
             new GameStageState(Stage.Timeout, 1, 1, 1, false),
             new TimeoutClockState(true, timeoutStartTick, 0, TimeoutClockStopReason.None, tick - timeoutStartTick),
-            new PeriodClockState(false, false, periodStartTick, 0, timeoutStartTick - periodStartTick),
+            new PeriodClockState(false, false, true, periodStartTick, 0, timeoutStartTick - periodStartTick),
         ])
         .Wait(10)
         .Event<TimeoutTypeSet>(1).WithBody(new TimeoutTypeSetBody(TimeoutType.Team, TeamSide.Home))
         .Validate(tick => [
             new GameStageState(Stage.Timeout, 1, 1, 1, false),
             new TimeoutClockState(true, timeoutStartTick, 0, TimeoutClockStopReason.None, tick - timeoutStartTick),
-            new PeriodClockState(true, false, periodStartTick, 0, tick - periodStartTick)
+            new PeriodClockState(true, false, true, periodStartTick, 0, tick - periodStartTick)
         ])
         .Wait(539) // Need to force a couple of Ticks
         .Wait(1)
         .Validate([
             new GameStageState(Stage.Intermission, 1, 1, 1, false),
             new TimeoutClockState(false, timeoutStartTick, periodStartTick + Tick.FromSeconds(60 * 10), TimeoutClockStopReason.PeriodExpired, Tick.FromSeconds(60 * 10) - (timeoutStartTick - periodStartTick)),
-            new PeriodClockState(false, true, periodStartTick, 0, Tick.FromSeconds(60 * 10)),
+            new PeriodClockState(false, true, true, periodStartTick, 0, Tick.FromSeconds(60 * 10)),
             new IntermissionClockState(true, false, Tick.FromSeconds(5 * 60), periodStartTick + Tick.FromSeconds(10 * 60) + Tick.FromSeconds(5 * 60), 5 * 60 - 14)
         ])
         .Event<TimeoutTypeSet>(1).WithBody(new TimeoutTypeSetBody(TimeoutType.Official, null))
         .Validate(tick => [
             new GameStageState(Stage.Timeout, 1, 1, 1, false),
             new TimeoutClockState(true, timeoutStartTick, 0, TimeoutClockStopReason.None, tick - timeoutStartTick),
-            new PeriodClockState(false, false, periodStartTick, 0, timeoutStartTick - periodStartTick),
+            new PeriodClockState(false, false, true, periodStartTick, 0, timeoutStartTick - periodStartTick),
         ])
         .Event<TimeoutTypeSet>(1).WithBody(new TimeoutTypeSetBody(TimeoutType.Team, TeamSide.Home))
         .Validate([
             new GameStageState(Stage.Intermission, 1, 1, 1, false),
             new TimeoutClockState(false, timeoutStartTick, periodStartTick + Tick.FromSeconds(60 * 10), TimeoutClockStopReason.PeriodExpired, Tick.FromSeconds(60 * 10) - (timeoutStartTick - periodStartTick)),
-            new PeriodClockState(false, true, periodStartTick, 0, Tick.FromSeconds(60 * 10)),
+            new PeriodClockState(false, true, true, periodStartTick, 0, Tick.FromSeconds(60 * 10)),
             ("Home", new TeamTimeoutsState(1, ReviewStatus.Unused, TimeoutInUse.Timeout))
         ])
         .Wait(120)
@@ -573,12 +603,12 @@ public static class TestGameEventsSource
         .Wait(550)
         .Validate(tick => [
             new GameStageState(Stage.Lineup, 4, 1, 6, false),
-            new PeriodClockState(true, true, periodStartTick2, 0, tick - periodStartTick2),
+            new PeriodClockState(true, true, true, periodStartTick2, 0, tick - periodStartTick2),
         ])
         .Event<PeriodEnded>(1).GetTick(out var periodEndTick)
         .Validate(
             new GameStageState(Stage.Intermission, 4, 1, 6, false),
-            new PeriodClockState(false, true, periodStartTick2, 0, periodEndTick - periodStartTick2)
+            new PeriodClockState(false, true, true, periodStartTick2, 0, periodEndTick - periodStartTick2)
         )
         .Event<RulesetSet>(0).WithBody(new RulesetSetBody(
             CustomRuleset with
@@ -599,7 +629,7 @@ public static class TestGameEventsSource
         .Wait(7 * 60 - 50)
         .Validate(tick => [
             new GameStageState(Stage.Lineup, 5, 2, 7, false),
-            new PeriodClockState(true, true, periodStartTick3, 0, Tick.FromSeconds(7 * 60)),
+            new PeriodClockState(true, true, true, periodStartTick3, 0, Tick.FromSeconds(7 * 60)),
         ])
         .Event<JamStarted>(30)
         .Validate(
@@ -608,7 +638,7 @@ public static class TestGameEventsSource
         .Event<JamEnded>(1)
         .Validate(
             new GameStageState(Stage.AfterGame, 5, 3, 8, false),
-            new PeriodClockState(false, true, periodStartTick3, 0, Tick.FromSeconds(7 * 60))
+            new PeriodClockState(false, true, true, periodStartTick3, 0, Tick.FromSeconds(7 * 60))
         )
         .Build();
 
@@ -760,6 +790,7 @@ public static class TestGameEventsSource
             new PeriodClockState(
                 false,
                 false,
+                true,
                 tick - (94 + 30 + 120 + 15 + 160 + 60 + 16 + 7 + 2) * 1000,
                 0,
                 (94 + 30 + 120 + 15) * 1000),
@@ -783,6 +814,7 @@ public static class TestGameEventsSource
             new PeriodClockState(
                 true, 
                 false,
+                true,
                 tick - 10000,
                 (94 + 30 + 120 + 15 + 109 + 30 + 35) * 1000,
                 (94 + 30 + 120 + 15 + 109 + 30 + 35 + 10) * 1000),

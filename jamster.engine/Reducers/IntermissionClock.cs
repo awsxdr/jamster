@@ -91,7 +91,7 @@ public class IntermissionClock(ReducerGameContext context, ILogger<IntermissionC
     {
         var periodClock = GetState<PeriodClockState>();
 
-        if (!periodClock.HasExpired) return [];
+        if (!periodClock.HasExpired || !periodClock.HasStarted) return [];
 
         logger.LogDebug("Restarting intermission clock after timeout");
 

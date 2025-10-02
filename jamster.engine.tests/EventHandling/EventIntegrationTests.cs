@@ -19,6 +19,7 @@ public class EventIntegrationTests : EventBusIntegrationTest
     [TestCase(typeof(TestGameEventsSource), nameof(TestGameEventsSource.CustomRules))]
     [TestCase(typeof(TestGameEventsSource), nameof(TestGameEventsSource.JamsWithLineupsAndPenalties))]
     [TestCase(typeof(TestGameEventsSource), nameof(TestGameEventsSource.JamsWithOverrunningJam))]
+    [TestCase(typeof(TestGameEventsSource), nameof(TestGameEventsSource.TimeoutBeforeFirstJam))]
     public async Task EventSources_UpdateStatesAsExpected(Type eventSourceType, string eventSourceName)
     {
         var events = GetEvents(eventSourceType, eventSourceName);

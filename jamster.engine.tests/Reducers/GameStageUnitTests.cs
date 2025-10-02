@@ -102,7 +102,7 @@ public class GameStageUnitTests : ReducerUnitTest<GameStage, GameStageState>
             }
         }));
 
-        MockState<PeriodClockState>(new (!periodClockExpired, periodClockExpired, 0, 0, DomainTick.FromSeconds(Rules.DefaultRules.PeriodRules.DurationInSeconds + (periodClockExpired ? 10 : -10))));
+        MockState<PeriodClockState>(new (!periodClockExpired, periodClockExpired, true, 0, 0, DomainTick.FromSeconds(Rules.DefaultRules.PeriodRules.DurationInSeconds + (periodClockExpired ? 10 : -10))));
 
         await Subject.Handle(new JamEnded(0));
 
@@ -187,7 +187,7 @@ public class GameStageUnitTests : ReducerUnitTest<GameStage, GameStageState>
     public async Task PeriodEnded_WhenEnteringIntermission_AndIntermissionClockSet_StartsIntermissionClockWithoutChangingValue()
     {
         State = new(Stage.Jam, 1, 15, 15, false);
-        MockState<PeriodClockState>(new(false, true, 0, 0, DomainTick.FromSeconds(Rules.DefaultRules.PeriodRules.DurationInSeconds + 10)));
+        MockState<PeriodClockState>(new(false, true, true, 0, 0, DomainTick.FromSeconds(Rules.DefaultRules.PeriodRules.DurationInSeconds + 10)));
         MockState<IntermissionClockState>(new(false, false, DomainTick.FromSeconds(Rules.DefaultRules.IntermissionRules.DurationInSeconds), 0, 10));
         MockState<RulesState>(new(Rules.DefaultRules));
 
@@ -221,7 +221,7 @@ public class GameStageUnitTests : ReducerUnitTest<GameStage, GameStageState>
     public async Task TimeoutTypeSet_ShouldUpdateStageCorrectly(TimeoutType newTimeoutType, bool periodExpired, bool periodFinalized, Stage expectedStage)
     {
         State = new(Stage.Intermission, 1, 1, 1, periodFinalized);
-        MockState<PeriodClockState>(new(false, periodExpired, 0, 0, 0));
+        MockState<PeriodClockState>(new(false, periodExpired, true, 0, 0, 0));
         MockState<TimeoutTypeState>(new(CompoundTimeoutType.HomeTeamTimeout, 0));
         MockState<RulesState>(new(Rules.DefaultRules with
         {

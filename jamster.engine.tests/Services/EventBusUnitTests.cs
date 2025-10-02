@@ -88,7 +88,7 @@ public class EventBusUnitTests : UnitTest<EventBus>
 
         GetMock<IGameStateStore>()
             .Setup(mock => mock.GetState<PeriodClockState>())
-            .Returns(new PeriodClockState(true, false, periodStartTick, 0, currentTick - periodStartTick));
+            .Returns(new PeriodClockState(true, false, true, periodStartTick, 0, currentTick - periodStartTick));
 
         var @event = new TestAlignedEvent(Guid7.FromTick(currentTick));
 

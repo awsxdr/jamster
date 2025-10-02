@@ -122,7 +122,7 @@ public sealed class JamClock(ReducerGameContext gameContext, ILogger<JamClock> l
 
         if (ticksPassed < Domain.Tick.FromSeconds(rules.Rules.JamRules.DurationInSeconds)) return [];
 
-        if (!state.AutoExpire)
+        if (!state.AutoExpire || state.Expired)
         {
             return [];
         }
