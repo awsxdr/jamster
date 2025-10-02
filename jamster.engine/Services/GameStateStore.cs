@@ -138,7 +138,10 @@ public class GameStateStore(ILogger<GameStateStore> logger) : IGameStateStore
             {
                 using var _ = logger.BeginScope(new Dictionary<string, object> { ["eventType"] = @event.GetType().Name, ["tick"] = @event.Event.Tick });
 
-                var tickImplicitEvents = (await Tick(reducers, @event.Event.Tick - 1)).ToArray();
+                var tickImplicitEvents = (await Tick(reducers, @event.Event.Tick)).ToArray();
+
+                if(tickImplicitEvents.Length > 0)
+                    logger.LogDebug("Tick produced implicit events: {events}", tickImplicitEvents.Select(e => e.Type));
 
                 eventsToPersist.AddRange(tickImplicitEvents.Where(e => e is IAlwaysPersisted));
 
@@ -148,7 +151,7 @@ public class GameStateStore(ILogger<GameStateStore> logger) : IGameStateStore
                         queuedEvents
                             .Concat(tickImplicitEvents.Select(e => new EventDetails(e, null)))
                             .Append(@event)
-                            .OrderBy(e => e.Event.Id));
+                            .OrderBy(e => e.Event.Tick));
 
                     continue;
                 }
@@ -157,11 +160,15 @@ public class GameStateStore(ILogger<GameStateStore> logger) : IGameStateStore
                 implicitEvents = implicitEvents.ToArray();
 
                 if (implicitEvents.Any())
+                {
+                    logger.LogDebug("Event {event} produced implicit events: {events}", @event.Event.Type, implicitEvents.Select(e => e.Type));
+
                     // ReSharper disable once AccessToModifiedClosure
                     queuedEvents = new Queue<EventDetails>(queuedEvents.Concat(
-                        implicitEvents
-                            .Select(e => new EventDetails(e, GetSourceEventId(e, @event))))
-                        .OrderBy(e => e.Event.Id));
+                            implicitEvents
+                                .Select(e => new EventDetails(e, GetSourceEventId(e, @event))))
+                        .OrderBy(e => e.Event.Tick));
+                }
             }
 
             return eventsToPersist;

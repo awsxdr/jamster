@@ -17,6 +17,7 @@ public abstract class TeamJamStats(TeamSide teamSide, ReducerGameContext gameCon
     , IHandlesEvent<ScoreModifiedRelative>
     , IDependsOnState<TimeoutClockState>
     , IDependsOnState<JamClockState>
+    , IDependsOnState<TeamScoreState>
 {
     protected override TeamJamStatsState DefaultState => new(false, false, false, false, false);
 

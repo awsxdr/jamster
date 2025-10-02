@@ -94,7 +94,7 @@ public static class EventsBuilderExtensions
 
 public interface IFakeEvent;
 
-public class ValidateStateFakeEvent(Tick tick, params object[] states) : Event(tick + 1), IFakeEvent
+public class ValidateStateFakeEvent(Tick tick, params object[] states) : Event(tick), IFakeEvent
 {
     public void ValidateStates(IGameStateStore stateStore)
     {
