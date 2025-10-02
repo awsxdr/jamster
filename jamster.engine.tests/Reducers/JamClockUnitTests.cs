@@ -202,7 +202,7 @@ public class JamClockUnitTests : ReducerUnitTest<JamClock, JamClockState>
     [Test]
     public async Task Tick_WhenOverJamTimeLimit_AndJamSetToAutoExpire_SendsJamExpiredEvent()
     {
-        State = new(true, 0, 0, true, true);
+        State = new(true, 0, 0, true, false);
         MockState<RulesState>(new(Rules.DefaultRules));
 
         var result = await Tick(130 * 1000);

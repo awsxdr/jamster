@@ -9,6 +9,7 @@ using jamster.engine.DataStores;
 using jamster.engine.Events;
 using jamster.engine.Reducers;
 using jamster.engine.Services;
+using jamster.ui.tests.Interactors;
 using jamster.ui.tests.MockEngine;
 
 using Moq;
@@ -17,6 +18,7 @@ using NUnit.Framework;
 
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
+using OpenQA.Selenium.Support.UI;
 
 namespace jamster.ui.tests;
 
@@ -93,30 +95,13 @@ public class ScoreboardControlTests : MockedEngineTest
             .Returns(Result.Succeed<object>(new GameStageState(Stage.BeforeGame, 1, 1, 1, false)));
 
         await _driver.Navigate().GoToUrlAsync(GetUrl("sbo"));
+        var wait = new WebDriverWait(_driver, TimeSpan.FromSeconds(5));
 
-        SeleniumHelpers.RetryOnStale(() =>
-        {
-            try
-            {
-                var connectionLostAlert = _driver.FindElement(By.Id("ConnectionLostAlert"));
+        wait.Until(driver => driver.FindElement(By.Id("ConnectionLostAlert")));
 
-                connectionLostAlert.WaitForNotVisible();
-            }
-            catch (NoSuchElementException)
-            {
-                // Element isn't present
-            }
-        });
+        var scoreboardOperatorInteractor = new ScoreboardOperatorInteractor(_driver);
 
-        SeleniumHelpers.RetryOnStale(() =>
-        {
-            var startButton = _driver.FindElement(By.Id("ScoreboardControl.MainControls.StartButton"));
-
-            startButton.Displayed.Should().BeTrue();
-            startButton.Enabled.Should().BeTrue();
-
-            startButton.Click();
-        });
+        scoreboardOperatorInteractor.ClickStart();
 
         GetMock<IEventBus>()
             .WaitVerify(mock => mock.AddEventAtCurrentTick(_game, It.IsAny<JamStarted>()), Times.Once);
@@ -126,37 +111,29 @@ public class ScoreboardControlTests : MockedEngineTest
         StateStore.SetState(new JamClockState(true, 0, 1500, true, false));
         StateStore.SetState(new PeriodClockState(true, false, true, 0, 0, 1500));
 
-        SeleniumHelpers.RetryOnStale(() =>
+        wait.Until(driver =>
         {
-            var startButton = _driver.FindElement(By.Id("ScoreboardControl.MainControls.StartButton"));
+            var startButton = driver.FindElement(By.Id("ScoreboardControl.MainControls.StartButton"));
 
-            startButton.Enabled.Should().BeFalse();
+            return !startButton.Enabled;
         });
 
         StateStore.SetState(new GameStageState(Stage.Lineup, 1, 1, 1, false));
         StateStore.SetState(new JamClockState(false, 0, 90_000, true, false));
         StateStore.SetState(new PeriodClockState(true, false, true, 0, 0, 95_000));
 
-        SeleniumHelpers.RetryOnStale(() =>
+        wait.Until(driver =>
         {
-            var startButton = _driver.FindElement(By.Id("ScoreboardControl.MainControls.StartButton"));
+            var startButton = driver.FindElement(By.Id("ScoreboardControl.MainControls.StartButton"));
 
-            startButton.Enabled.Should().BeTrue();
+            return startButton.Enabled;
         });
 
         StateStore.SetState(new GameStageState(Stage.Timeout, 1, 1, 1, false));
         StateStore.SetState(new TimeoutClockState(true, 100_000, 0, TimeoutClockStopReason.None, 5_000));
         StateStore.SetState(new PeriodClockState(false, false, true, 0, 0, 100_000));
 
-        SeleniumHelpers.RetryOnStale(() =>
-        {
-            var startButton = _driver.FindElement(By.Id("ScoreboardControl.MainControls.StartButton"));
-
-            startButton.Displayed.Should().BeTrue();
-            startButton.Enabled.Should().BeTrue();
-
-            startButton.Click();
-        });
+        scoreboardOperatorInteractor.ClickStart();
 
         GetMock<IEventBus>()
             .WaitVerify(mock => mock.AddEventAtCurrentTick(_game, It.IsAny<JamStarted>()), Times.Once);
@@ -165,15 +142,7 @@ public class ScoreboardControlTests : MockedEngineTest
         StateStore.SetState(new GameStageState(Stage.AfterGame, 2, 22, 45, false));
         StateStore.SetState(new PeriodClockState(false, true, true, 100_000, 100_000, 30 * 2 * 60 * 1000));
 
-        SeleniumHelpers.RetryOnStale(() =>
-        {
-            var startButton = _driver.FindElement(By.Id("ScoreboardControl.MainControls.StartButton"));
-
-            startButton.Displayed.Should().BeTrue();
-            startButton.Enabled.Should().BeTrue();
-
-            startButton.Click();
-        });
+        scoreboardOperatorInteractor.ClickStart();
 
         GetMock<IEventBus>()
             .WaitVerify(mock => mock.AddEventAtCurrentTick(_game, It.IsAny<JamStarted>()), Times.Once);
@@ -182,14 +151,11 @@ public class ScoreboardControlTests : MockedEngineTest
         StateStore.SetState(new GameStageState(Stage.AfterGame, 2, 22, 45, true));
         StateStore.SetState(new PeriodClockState(false, true, true, 100_000, 100_000, 30 * 2 * 60 * 1000));
 
-        Thread.Sleep(TimeSpan.FromSeconds(.1));
-
-        SeleniumHelpers.RetryOnStale(() =>
+        wait.Until(driver =>
         {
-            var startButton = _driver.FindElement(By.Id("ScoreboardControl.MainControls.StartButton"));
+            var startButton = driver.FindElement(By.Id("ScoreboardControl.MainControls.StartButton"));
 
-            startButton.Displayed.Should().BeTrue();
-            startButton.Enabled.Should().BeFalse();
+            return startButton is { Displayed: true, Enabled: false };
         });
     }
 }

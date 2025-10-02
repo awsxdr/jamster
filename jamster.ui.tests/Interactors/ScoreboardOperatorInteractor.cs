@@ -1,4 +1,5 @@
 ﻿using jamster.engine.Domain;
+using jamster.engine.Events;
 
 using OpenQA.Selenium;
 
@@ -37,6 +38,14 @@ public class ScoreboardOperatorInteractor(IWebDriver driver) : Interactor(driver
                 return (endButton is { Displayed: true, Enabled: true }, endButton);
             },
             endButton => endButton.Click());
+
+    public void ClickNewTimeout() =>
+        Wait.Until(driver =>
+            {
+                var newTimeoutButton = driver.FindElement(By.Id("ScoreboardControl.MainControls.TimeoutButton"));
+                return (newTimeoutButton is { Displayed: true, Enabled: true }, newTimeoutButton);
+            },
+            newTimeoutButton => newTimeoutButton.Click());
 
     public void SetLead(TeamSide side) =>
         Wait.Until(driver =>
@@ -93,4 +102,23 @@ public class ScoreboardOperatorInteractor(IWebDriver driver) : Interactor(driver
                 return (tripScoreButton is { Displayed: true, Enabled: true }, tripScoreButton);
             },
             tripScoreButton => tripScoreButton.Click());
+
+    public void SetTimeoutType(TimeoutType type, TeamSide? team) =>
+        Wait.Until(driver =>
+            {
+                var buttonId = (type, team) switch
+                {
+                    (TimeoutType.Official, _) => "ScoreboardControl.TimeoutTypePanel.Official",
+                    (TimeoutType.Team, TeamSide.Home) => "ScoreboardControl.TimeoutTypePanel.HomeTeamTimeout",
+                    (TimeoutType.Team, TeamSide.Away) => "ScoreboardControl.TimeoutTypePanel.AwayTeamTimeout",
+                    (TimeoutType.Review, TeamSide.Home) => "ScoreboardControl.TimeoutTypePanel.HomeTeamReview",
+                    (TimeoutType.Review, TeamSide.Away) => "ScoreboardControl.TimeoutTypePanel.AwayTeamReview",
+                    _ => throw new ArgumentException()
+                };
+
+                var timeoutButton = driver.FindElement(By.Id(buttonId));
+
+                return (timeoutButton is { Displayed: true, Enabled: true }, timeoutButton);
+            },
+            timeoutButton => timeoutButton.Click());
 }

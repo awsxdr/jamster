@@ -57,26 +57,31 @@ export const TimeoutTypePanel = ({ gameId, disabled }: TimeoutTypePanelProps) =>
 
     const timeoutTypes: TooltipRadioItem<CompoundTimeoutType>[] = [
         { 
+            id: 'ScoreboardControl.TimeoutTypePanel.HomeTeamTimeout',
             value: 'HomeTeamTimeout', 
             name: translate("TimeoutType.Team").replace("{teamName}", homeTeamName), 
             description: translate("TimeoutType.Team.Description").replace("{teamName}", homeTeamName),
         },
         { 
+            id: 'ScoreboardControl.TimeoutTypePanel.HomeTeamReview',
             value: 'HomeTeamReview', 
             name: translate("TimeoutType.TeamReview").replace("{teamName}", homeTeamName), 
             description: translate("TimeoutType.TeamReview.Description").replace("{teamName}", homeTeamName),
         },
         { 
+            id: 'ScoreboardControl.TimeoutTypePanel.Official',
             value: 'Official', 
             name: translate("TimeoutType.Official"), 
             description: translate("TimeoutType.Official.Description"),
         },
         { 
+            id: 'ScoreboardControl.TimeoutTypePanel.AwayTeamReview',
             value: 'AwayTeamReview', 
             name: translate("TimeoutType.TeamReview").replace("{teamName}", awayTeamName), 
             description: translate("TimeoutType.TeamReview.Description").replace("{teamName}", awayTeamName), 
         },
         {
+            id: 'ScoreboardControl.TimeoutTypePanel.AwayTeamTimeout',
             value: 'AwayTeamTimeout', 
             name: translate("TimeoutType.Team").replace("{teamName}", awayTeamName), 
             description: translate("TimeoutType.Team.Description").replace("{teamName}", awayTeamName),

@@ -53,6 +53,8 @@ public class GameSimulator(SimulatorGame game)
                 Stage.BeforeGame => TickBeforeGame,
                 Stage.Lineup => TickLineup,
                 Stage.Jam => TickJam,
+                Stage.Timeout => TickTimeout,
+                Stage.AfterTimeout => TickAfterTimeout,
                 Stage.Intermission => TickIntermission,
                 _ => throw new Exception($"Unexpected game stage during simulation: {_gameState.Stage}")
             };
@@ -87,23 +89,31 @@ public class GameSimulator(SimulatorGame game)
             new PeriodClockState(
                 _gameState.Clocks.PeriodClock.Running,
                 _gameState.Stage == Stage.BeforeGame 
-                    || _gameState is { Stage: Stage.Lineup, Period: 1, Jam: 0 }
-                    || _gameState.Clocks.PeriodClock.PassedTicks >= Tick.FromSeconds(Rules.DefaultRules.PeriodRules.DurationInSeconds),
+                    || _gameState is { Stage: Stage.Lineup or Stage.Timeout or Stage.AfterTimeout, Jam: 0 }
+                    || _gameState.Clocks.PeriodClock.Running && _gameState.Clocks.PeriodClock.TicksPassedAtLastStart + _tick - _gameState.Clocks.PeriodClock.LastStartTick >= Tick.FromSeconds(Rules.DefaultRules.PeriodRules.DurationInSeconds)
+                    || !_gameState.Clocks.PeriodClock.Running && _gameState.Clocks.PeriodClock.PassedTicks >= Tick.FromSeconds(Rules.DefaultRules.PeriodRules.DurationInSeconds),
+                _gameState.Clocks.PeriodClock.PassedTicks > 0,
                 _gameState.Clocks.PeriodClock.LastStartTick,
-                Math.Max(0, _gameState.Clocks.PeriodClock.PassedTicks - (_tick - _gameState.Clocks.PeriodClock.LastStartTick)),
-                _gameState.Clocks.PeriodClock.PassedTicks
+                _gameState.Clocks.PeriodClock.TicksPassedAtLastStart,
+                _gameState.Clocks.PeriodClock.Running
+                    ? Math.Min(_gameState.Clocks.PeriodClock.TicksPassedAtLastStart + _tick - _gameState.Clocks.PeriodClock.LastStartTick, Tick.FromSeconds(Rules.DefaultRules.PeriodRules.DurationInSeconds))
+                    : _gameState.Clocks.PeriodClock.PassedTicks
             ),
             new JamClockState(
                 _gameState.Clocks.JamClock.Running,
                 _gameState.Clocks.JamClock.LastStartTick,
-                _gameState.Clocks.JamClock.PassedTicks,
+                _gameState.Clocks.JamClock.Running
+                    ? _gameState.Clocks.JamClock.TicksPassedAtLastStart + _tick - _gameState.Clocks.JamClock.LastStartTick
+                    : _gameState.Clocks.JamClock.PassedTicks,
                 true,
                 !_gameState.JamInfo.HomeTeam.Called && !_gameState.JamInfo.AwayTeam.Called && _gameState.Clocks.JamClock.PassedTicks.Seconds == Rules.DefaultRules.JamRules.DurationInSeconds
             ),
             new LineupClockState(
                 _gameState.Clocks.LineupClock.Running,
                 _gameState.Clocks.LineupClock.LastStartTick,
-                _gameState.Clocks.LineupClock.PassedTicks
+                _gameState.Clocks.LineupClock.Running
+                    ? _gameState.Clocks.LineupClock.TicksPassedAtLastStart + _tick - _gameState.Clocks.LineupClock.LastStartTick
+                    : _gameState.Clocks.LineupClock.PassedTicks
             ),
             new IntermissionClockState(
                 _gameState.Clocks.IntermissionClock.Running,
@@ -195,6 +205,8 @@ public class GameSimulator(SimulatorGame game)
 
     private void TickLineup()
     {
+        const float timeoutChance = 1 / 150f / TicksPerSecond;
+
         TickClock(c => c.LineupClock);
         TickClock(c => c.PeriodClock, Tick.FromSeconds(Rules.DefaultRules.PeriodRules.DurationInSeconds));
 
@@ -207,10 +219,6 @@ public class GameSimulator(SimulatorGame game)
                 _gameState.Clocks.PeriodClock.Running = false;
                 _gameState.Clocks.PeriodClock.PassedTicks = Tick.FromSeconds(Rules.DefaultRules.PeriodRules.DurationInSeconds);
                 _gameState.Clocks.LineupClock.Running = false;
-                _gameState.Clocks.LineupClock.PassedTicks--;
-                //_gameState.Lineups = new();
-                //_gameState.Sheets.HomeSheets.LineupSheet[^1] = new();
-                //_gameState.Sheets.AwaySheets.LineupSheet[^1] = new();
                 StartClock(c => c.IntermissionClock, reset: true);
                 _events.Add(new DebugFakeEvent(_tick, "Intermission start"));
             }
@@ -226,21 +234,46 @@ public class GameSimulator(SimulatorGame game)
 
         var passedSeconds = _gameState.Clocks.LineupClock.PassedTicks / (float) Tick.TicksPerSecond;
 
-        if (passedSeconds < Rules.DefaultRules.LineupRules.DurationInSeconds)
-            return;
+        if (passedSeconds >= Rules.DefaultRules.LineupRules.DurationInSeconds)
+        {
+            LogDebug("Starting jam");
+            _events.Add(new JamStarted(_tick));
+            _gameState.Stage = Stage.Jam;
+            StopClock(c => c.LineupClock);
+            StartClock(c => c.PeriodClock);
+            StartClock(c => c.JamClock, reset: true, align: true);
+            _gameState.Jam += 1;
+            _gameState.TotalJam += 1;
+            _gameState.JamInfo = new();
+            _gameState.Scores.HomeScore.JamTotal = 0;
+            _gameState.Scores.AwayScore.JamTotal = 0;
 
-        LogDebug("Starting jam");
-        _events.Add(new JamStarted(_tick));
-        _gameState.Stage = Stage.Jam;
-        StopClock(c => c.LineupClock);
-        _gameState.Clocks.LineupClock.PassedTicks -= 1;
-        StartClock(c => c.PeriodClock);
-        StartClock(c => c.JamClock, reset: true, align: true);
-        _gameState.Jam += 1;
-        _gameState.TotalJam += 1;
-        _gameState.JamInfo = new();
-        _gameState.Scores.HomeScore.JamTotal = 0;
-        _gameState.Scores.AwayScore.JamTotal = 0;
+            return;
+        }
+
+        if (RandomTrigger(timeoutChance))
+        {
+            LogDebug("Starting timeout");
+
+            if (_gameState.Clocks.PeriodClock.Running)
+            {
+                StopClock(c => c.LineupClock, align: true);
+                StartClock(c => c.TimeoutClock, reset: true, align: true);
+                StopClock(c => c.PeriodClock, align: true);
+            }
+            else
+            {
+                StartClock(c => c.TimeoutClock, align: true, alignTo: _gameState.Clocks.LineupClock);
+                StopClock(c => c.LineupClock);
+            }
+
+            _gameState.Stage = Stage.Timeout;
+            _gameState.TimeoutInfo = new();
+
+            _events.Add(new TimeoutStarted(_tick));
+
+            return;
+        }
     }
 
     private void TickJam()
@@ -307,7 +340,8 @@ public class GameSimulator(SimulatorGame game)
 
         if (
             (_gameState.JamInfo.HomeTeam.Lead || _gameState.JamInfo.AwayTeam.Lead) 
-            && RandomTrigger(callChance * (_gameState.JamInfo.HomeTeam.CompletedInitial && _gameState.JamInfo.AwayTeam.CompletedInitial ? 4 : 1)))
+            && RandomTrigger(callChance * (_gameState.JamInfo.HomeTeam.CompletedInitial && _gameState.JamInfo.AwayTeam.CompletedInitial ? 4 : 1))
+            && Rules.DefaultRules.JamRules.DurationInSeconds - _gameState.Clocks.JamClock.PassedTicks.Seconds > 1 /* Hard to calculate state when called in the last second */)
         {
             _gameState.JamInfo.HomeTeam.Called = _gameState.JamInfo.HomeTeam.Lead;
             _gameState.JamInfo.AwayTeam.Called = _gameState.JamInfo.AwayTeam.Lead;
@@ -411,7 +445,7 @@ public class GameSimulator(SimulatorGame game)
                 {
                     LogDebug($"Jam {endReason} and period expired, starting intermission");
                     _gameState.Stage = Stage.Intermission;
-                    StopClock(c => c.PeriodClock);
+                    StopClock(c => c.PeriodClock, maxTick: Tick.FromSeconds(Rules.DefaultRules.PeriodRules.DurationInSeconds));
                     StartClock(c => c.LineupClock, reset: true, align: true);
                     StopClock(c => c.LineupClock);
                     _gameState.Clocks.LineupClock.PassedTicks = -1;
@@ -497,6 +531,94 @@ public class GameSimulator(SimulatorGame game)
 
         _events.Add(new PenaltyAssessed(_tick, new(penaltySide, skater.Number, "X")));
         skater.Penalty = new();
+    }
+
+    private void TickTimeout()
+    {
+        const float setTimeoutChance = 1 / 5f / TicksPerSecond;
+        const float officialTimeoutEndChance = 1 / 30f / TicksPerSecond;
+
+        TickClock(c => c.TimeoutClock);
+
+        if (_gameState.TimeoutInfo.Type == TimeoutType.Untyped && RandomTrigger(setTimeoutChance))
+        {
+            var timeoutType = Random.Shared.Next(100) switch
+            {
+                < 50 => TimeoutType.Official,
+                < 90 => TimeoutType.Team,
+                _ => TimeoutType.Review
+            };
+
+            var timeoutTeam = RandomTrigger(.5f) ? TeamSide.Home : TeamSide.Away;
+            var teamTimeoutsRemaining = timeoutTeam == TeamSide.Home
+                ? _gameState.TimeoutInfo.HomeTeam.RemainingTimeouts
+                : _gameState.TimeoutInfo.AwayTeam.RemainingTimeouts;
+            var teamReviewStatus = timeoutTeam == TeamSide.Home
+                ? _gameState.TimeoutInfo.HomeTeam.ReviewStatus
+                : _gameState.TimeoutInfo.AwayTeam.ReviewStatus;
+
+            switch (timeoutType)
+            {
+                case TimeoutType.Official:
+                    LogDebug("Setting timeout type to Official");
+                    _gameState.TimeoutInfo.Type = TimeoutType.Official;
+                    _events.Add(new TimeoutTypeSet(_tick, new(TimeoutType.Official, null)));
+                    break;
+
+                case TimeoutType.Team when teamTimeoutsRemaining > 0:
+                    LogDebug($"Setting timeout type to Team for {timeoutType} team");
+                    _gameState.TimeoutInfo.Type = TimeoutType.Team;
+                    _gameState.TimeoutInfo.Side = timeoutTeam;
+                    if (timeoutTeam == TeamSide.Home) 
+                        _gameState.TimeoutInfo.HomeTeam.RemainingTimeouts--;
+                    else 
+                        _gameState.TimeoutInfo.AwayTeam.RemainingTimeouts--;
+                    _events.Add(new TimeoutTypeSet(_tick, new(TimeoutType.Team, timeoutTeam)));
+                    break;
+
+                case TimeoutType.Review when teamReviewStatus != ReviewStatus.Used:
+                    LogDebug($"Setting timeout type to Review for {timeoutType} team");
+                    _gameState.TimeoutInfo.Type = TimeoutType.Review;
+                    _gameState.TimeoutInfo.Side = timeoutTeam;
+                    _events.Add(new TimeoutTypeSet(_tick, new(TimeoutType.Review, timeoutTeam)));
+                    break;
+            }
+        }
+
+        if (_gameState.TimeoutInfo.Type == TimeoutType.Official && RandomTrigger(officialTimeoutEndChance))
+        {
+            _gameState.Stage = Stage.AfterTimeout;
+            _events.Add(new TimeoutEnded(_tick));
+        }
+
+        if (_gameState.TimeoutInfo.Type != TimeoutType.Official && _gameState.Clocks.TimeoutClock.PassedTicks.Seconds >= Rules.DefaultRules.TimeoutRules.TeamTimeoutDurationInSeconds)
+        {
+            _gameState.Stage = Stage.AfterTimeout;
+            _events.Add(new TimeoutEnded(_tick));
+        }
+    }
+
+    private void TickAfterTimeout()
+    {
+        const float jamStartChance = 1 / 20f / TicksPerSecond;
+
+        TickClock(c => c.TimeoutClock);
+
+        if (RandomTrigger(jamStartChance))
+        {
+            LogDebug("Starting jam");
+            _events.Add(new JamStarted(_tick));
+            _gameState.Stage = Stage.Jam;
+            StopClock(c => c.TimeoutClock);
+            _gameState.Clocks.TimeoutClock.PassedTicks -= 1;
+            StartClock(c => c.PeriodClock);
+            StartClock(c => c.JamClock, reset: true, align: true);
+            _gameState.Jam += 1;
+            _gameState.TotalJam += 1;
+            _gameState.JamInfo = new();
+            _gameState.Scores.HomeScore.JamTotal = 0;
+            _gameState.Scores.AwayScore.JamTotal = 0;
+        }
     }
 
     private void TickIntermission()
@@ -628,6 +750,7 @@ public class GameSimulator(SimulatorGame game)
         public int Jam { get; set; } = 0;
         public int TotalJam { get; set; } = 0;
         public TeamJamInfo JamInfo { get; set; } = new();
+        public TimeoutInfo TimeoutInfo { get; set; } = new();
         public Teams Teams { get; set; } = new();
         public Scores Scores { get; set; } = new();
         public Lineups Lineups { get; set; } = new();
@@ -650,6 +773,20 @@ public class GameSimulator(SimulatorGame game)
         public bool CompletedInitial { get; set; } = false;
     }
 
+    private class TimeoutInfo
+    {
+        public TimeoutType Type { get; set; } = TimeoutType.Untyped;
+        public TeamSide? Side { get; set; } = null;
+        public TeamTimeoutInfo HomeTeam { get; set; } = new();
+        public TeamTimeoutInfo AwayTeam { get; set; } = new();
+    }
+
+    private class TeamTimeoutInfo
+    {
+        public ReviewStatus ReviewStatus { get; set; } = ReviewStatus.Unused;
+        public int RemainingTimeouts { get; set; } = Rules.DefaultRules.TimeoutRules.TeamTimeoutAllowance;
+    }
+
     private class Teams
     {
         public GameTeam HomeTeam { get; set; } = new([], new (Color.White, Color.Black), []);
@@ -661,6 +798,7 @@ public class GameSimulator(SimulatorGame game)
         public Tick PassedTicks { get; set; } = 0;
         public bool Running { get; set; } = false;
         public Tick LastStartTick { get; set; } = 0;
+        public Tick TicksPassedAtLastStart { get; set; } = 0;
     }
 
     private class Clocks
@@ -764,7 +902,7 @@ public class GameSimulator(SimulatorGame game)
 
         if (clock.Running)
         {
-            clock.PassedTicks += TickIncrement;
+            clock.PassedTicks = clock.TicksPassedAtLastStart + _tick - clock.LastStartTick;
             if (maxTick != null && clock.PassedTicks > maxTick)
                 clock.PassedTicks = (Tick)maxTick;
         }
@@ -772,26 +910,30 @@ public class GameSimulator(SimulatorGame game)
         clockProperty.SetValue(_gameState.Clocks, clock);
     }
 
-    private void StartClock(Expression<Func<Clocks, Clock>> clockSelector, bool reset = false, bool align = false)
+    private void StartClock(Expression<Func<Clocks, Clock>> clockSelector, bool reset = false, bool align = false, Clock? alignTo = null)
     {
         var clockName = (clockSelector.Body as MemberExpression)!.Member.Name;
         var clockProperty = typeof(Clocks).GetProperty(clockName)!;
         var clock = (Clock)clockProperty.GetValue(_gameState.Clocks)!;
-        var alignedTick = AlignToClock(_tick, _gameState.Clocks.PeriodClock);
+        var alignedTick = AlignToClock(_tick, alignTo ?? _gameState.Clocks.PeriodClock);
 
         if (!clock.Running)
         {
             clock.Running = true;
             clock.LastStartTick = align ? alignedTick : _tick;
-
-            if (reset)
-                clock.PassedTicks = align ? _tick - alignedTick : 0;
+            clock.PassedTicks = (reset, align) switch
+            {
+                (true, _) => 0,
+                (false, true) => _tick - alignedTick,
+                _ => clock.PassedTicks
+            };
+            clock.TicksPassedAtLastStart = clock.PassedTicks;
         }
 
         clockProperty.SetValue(_gameState.Clocks, clock);
     }
 
-    private void StopClock(Expression<Func<Clocks, Clock>> clockSelector)
+    private void StopClock(Expression<Func<Clocks, Clock>> clockSelector, bool align = false, Tick? maxTick = null)
     {
         var clockName = (clockSelector.Body as MemberExpression)!.Member.Name;
         var clockProperty = typeof(Clocks).GetProperty(clockName)!;
@@ -800,6 +942,12 @@ public class GameSimulator(SimulatorGame game)
         if (clock.Running)
         {
             clock.Running = false;
+            clock.PassedTicks = align
+                ? clock.TicksPassedAtLastStart + AlignToClock(_tick, _gameState.Clocks.PeriodClock) - clock.LastStartTick
+                : clock.TicksPassedAtLastStart + _tick - clock.LastStartTick;
+
+            if (maxTick != null && clock.PassedTicks > maxTick)
+                clock.PassedTicks = (Tick)maxTick;
         }
 
         clockProperty.SetValue(_gameState.Clocks, clock);

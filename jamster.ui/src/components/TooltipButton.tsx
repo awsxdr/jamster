@@ -18,7 +18,7 @@ export const TooltipButton = forwardRef<HTMLButtonElement, TooltipButtonProps>((
 }: PropsWithChildren<TooltipButtonProps>, ref) => {
 
     return disabled ? (
-        <Button disabled {...props} className={className} ref={ref}>
+        <Button disabled {...props} id={id} className={className} ref={ref}>
             { children }
         </Button>
     ) : (

@@ -66,8 +66,6 @@ public class FullGameTest : FullEngineTest
         gameClock.Start(startTick);
 
         Task.WaitAll(sboTask);
-
-        //Thread.Sleep(10_000);
     }
 
     private Task SboGame(IEnumerable<Event> events, IReminderSetter reminderSetter) => Task.Run(async () =>
@@ -89,6 +87,10 @@ public class FullGameTest : FullEngineTest
                 case IntermissionEnded:
                 case TimeoutEnded:
                     interactor.ClickStop();
+                    break;
+
+                case TimeoutStarted:
+                    interactor.ClickNewTimeout();
                     break;
 
                 case LeadMarked leadMarked:
@@ -117,6 +119,10 @@ public class FullGameTest : FullEngineTest
 
                 case ScoreModifiedRelative { Body.Value: >= 0 } scoreModifiedRelative:
                     interactor.SetTripScore(scoreModifiedRelative.Body.TeamSide, scoreModifiedRelative.Body.Value);
+                    break;
+
+                case TimeoutTypeSet timeoutTypeSet:
+                    interactor.SetTimeoutType(timeoutTypeSet.Body.Type, timeoutTypeSet.Body.TeamSide);
                     break;
             }
         }
