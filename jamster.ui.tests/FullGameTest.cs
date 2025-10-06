@@ -86,6 +86,7 @@ public class FullGameTest : FullEngineTest
                 case JamEnded:
                 case IntermissionEnded:
                 case TimeoutEnded:
+                case PeriodFinalized:
                     interactor.ClickStop();
                     break;
 

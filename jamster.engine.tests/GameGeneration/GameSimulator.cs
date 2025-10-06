@@ -56,11 +56,13 @@ public class GameSimulator(SimulatorGame game)
                 Stage.Timeout => TickTimeout,
                 Stage.AfterTimeout => TickAfterTimeout,
                 Stage.Intermission => TickIntermission,
+                Stage.AfterGame => TickAfterGame,
                 _ => throw new Exception($"Unexpected game stage during simulation: {_gameState.Stage}")
             };
             tickMethod();
 
-            TickLineupTracker();
+            if(_gameState.Stage != Stage.AfterGame)
+                TickLineupTracker();
 
             if (_tick - lastValidationTick > Tick.FromSeconds(ValidationIntervalInSeconds) && _events.All(e => e.Tick != _tick))
             {
@@ -70,7 +72,7 @@ public class GameSimulator(SimulatorGame game)
 
             _tick += TickIncrement;
         }
-        while (_gameState.Stage != Stage.AfterGame);
+        while (_gameState is not { Period: 2, Stage: Stage.AfterGame, PeriodFinalized: true });
 
         foreach (var @event in _events)
         {
@@ -87,9 +89,14 @@ public class GameSimulator(SimulatorGame game)
     private Event GenerateValidationEvent() =>
         new ValidateStateFakeEvent(_tick, [
             new PeriodClockState(
-                _gameState.Clocks.PeriodClock.Running,
-                _gameState.Stage == Stage.BeforeGame 
+                _gameState.Clocks.PeriodClock.Running 
+                    && (
+                        _gameState.Stage is Stage.Jam or Stage.Timeout
+                        || (_gameState.Clocks.PeriodClock.TicksPassedAtLastStart + _tick - _gameState.Clocks.PeriodClock.LastStartTick).Seconds < Rules.DefaultRules.PeriodRules.DurationInSeconds
+                    ),
+                _gameState.Stage is Stage.BeforeGame or Stage.AfterGame
                     || _gameState is { Stage: Stage.Lineup or Stage.Timeout or Stage.AfterTimeout, Jam: 0 }
+                    || _gameState is { Stage: Stage.Intermission, PeriodFinalized: true }
                     || _gameState.Clocks.PeriodClock.Running && _gameState.Clocks.PeriodClock.TicksPassedAtLastStart + _tick - _gameState.Clocks.PeriodClock.LastStartTick >= Tick.FromSeconds(Rules.DefaultRules.PeriodRules.DurationInSeconds)
                     || !_gameState.Clocks.PeriodClock.Running && _gameState.Clocks.PeriodClock.PassedTicks >= Tick.FromSeconds(Rules.DefaultRules.PeriodRules.DurationInSeconds),
                 _gameState.Clocks.PeriodClock.PassedTicks > 0,
@@ -116,11 +123,11 @@ public class GameSimulator(SimulatorGame game)
                     : _gameState.Clocks.LineupClock.PassedTicks
             ),
             new IntermissionClockState(
-                _gameState.Clocks.IntermissionClock.Running,
+                _gameState.Clocks.IntermissionClock.Running && (_gameState.Clocks.IntermissionClock.LastStartTick - _tick).Seconds < Rules.DefaultRules.IntermissionRules.DurationInSeconds,
                 _gameState.Stage is not Stage.Intermission || _gameState.Clocks.IntermissionClock.PassedTicks >= Tick.FromSeconds(Rules.DefaultRules.IntermissionRules.DurationInSeconds),
                 Tick.FromSeconds(Rules.DefaultRules.IntermissionRules.DurationInSeconds),
-                _gameState.Stage is Stage.Intermission or Stage.AfterGame ? _gameState.Clocks.IntermissionClock.LastStartTick + Tick.FromSeconds(Rules.DefaultRules.IntermissionRules.DurationInSeconds) : 0,
-                _gameState.Stage is Stage.Intermission or Stage.AfterGame ? (_gameState.Clocks.IntermissionClock.LastStartTick + Tick.FromSeconds(Rules.DefaultRules.IntermissionRules.DurationInSeconds) - _tick).Seconds : 0
+                _gameState.Stage is Stage.Intermission ? _gameState.Clocks.IntermissionClock.LastStartTick + Tick.FromSeconds(Rules.DefaultRules.IntermissionRules.DurationInSeconds) : 0,
+                _gameState.Stage is Stage.Intermission ? Math.Max(0, (_gameState.Clocks.IntermissionClock.LastStartTick + Tick.FromSeconds(Rules.DefaultRules.IntermissionRules.DurationInSeconds) - _tick).Seconds) : 0
             ),
             ("Home", new PenaltyBoxState(
                 _gameState.Lineups.HomeTeamLineup.Skaters
@@ -168,7 +175,7 @@ public class GameSimulator(SimulatorGame game)
                 _gameState.Sheets.AwaySheets.ScoreSheet[^1].StarPassTrip != null,
                 _gameState.JamInfo.AwayTeam.CompletedInitial)
             ),
-            new GameStageState(_gameState.Stage is Stage.AfterGame ? Stage.Intermission : _gameState.Stage, _gameState.Period + (_gameState.Stage == Stage.BeforeGame ? 1 : 0), _gameState.Jam, _gameState.TotalJam, false),
+            new GameStageState(_gameState.Stage, _gameState.Period + (_gameState.Stage == Stage.BeforeGame ? 1 : 0), _gameState.Jam, _gameState.TotalJam, _gameState.PeriodFinalized),
         ]);
 
     private void TickBeforeGame()
@@ -179,14 +186,16 @@ public class GameSimulator(SimulatorGame game)
         if (!RandomTrigger(gameStartChance))
             return;
 
+        StopClock(c => c.IntermissionClock);
+        _gameState.PeriodFinalized = false;
+
         if (RandomTrigger(startLineupOnGameStartChance))
         {
             LogDebug("Lineup starting before game");
             _events.Add(new IntermissionEnded(_tick));
             _gameState.Stage = Stage.Lineup;
-            _gameState.Period = 1;
+            _gameState.Period = Math.Max(1, _gameState.Period);
             _gameState.Jam = 0;
-            _gameState.TotalJam = 0;
             _gameState.Clocks.LineupClock = new() { Running = true, LastStartTick = _tick };
             StartClock(c => c.LineupClock, reset: true);
         }
@@ -195,9 +204,12 @@ public class GameSimulator(SimulatorGame game)
             LogDebug("Starting jam");
             _events.Add(new JamStarted(_tick));
             _gameState.Stage = Stage.Jam;
-            _gameState.Period = 1;
+            _gameState.Period = Math.Max(1, _gameState.Period);
             _gameState.Jam = 1;
-            _gameState.TotalJam = 1;
+            _gameState.TotalJam++;
+            _gameState.JamInfo = new();
+            _gameState.Scores.HomeScore.JamTotal = 0;
+            _gameState.Scores.AwayScore.JamTotal = 0;
             StartClock(c => c.JamClock, reset: true);
             StartClock(c => c.PeriodClock, reset: true);
         }
@@ -225,8 +237,9 @@ public class GameSimulator(SimulatorGame game)
             else
             {
                 LogDebug("Period expired, ending game");
+                StopClock(c => c.LineupClock);
                 _gameState.Stage = Stage.AfterGame;
-                _gameState.Clocks = new();
+                //_gameState.Clocks = new();
             }
 
             return;
@@ -245,6 +258,7 @@ public class GameSimulator(SimulatorGame game)
             _gameState.Jam += 1;
             _gameState.TotalJam += 1;
             _gameState.JamInfo = new();
+            _gameState.PeriodFinalized = false;
             _gameState.Scores.HomeScore.JamTotal = 0;
             _gameState.Scores.AwayScore.JamTotal = 0;
 
@@ -409,6 +423,10 @@ public class GameSimulator(SimulatorGame game)
                 ? _gameState.Sheets.HomeSheets.ScoreSheet
                 : _gameState.Sheets.AwaySheets.ScoreSheet;
 
+            if (tripTeamScoreSheet[^1].TripScores.Count == 0)
+            {
+                int a = 0;
+            }
             tripTeamScoreSheet[^1].GameTotal += score;
             tripTeamScoreSheet[^1].JamTotal += score;
             tripTeamScoreSheet[^1].TripScores[^1] = score;
@@ -439,16 +457,15 @@ public class GameSimulator(SimulatorGame game)
 
             if (_gameState.Clocks.PeriodClock.PassedTicks >= Tick.FromSeconds(Rules.DefaultRules.PeriodRules.DurationInSeconds))
             {
-                LogDebug($"Lineups: {JsonSerializer.Serialize(_gameState.Lineups)}");
+                StartClock(c => c.LineupClock, reset: true, align: true);
+                StopClock(c => c.LineupClock);
+                _gameState.Clocks.LineupClock.PassedTicks = 0;
 
                 if (_gameState.Period == 1)
                 {
                     LogDebug($"Jam {endReason} and period expired, starting intermission");
                     _gameState.Stage = Stage.Intermission;
                     StopClock(c => c.PeriodClock, maxTick: Tick.FromSeconds(Rules.DefaultRules.PeriodRules.DurationInSeconds));
-                    StartClock(c => c.LineupClock, reset: true, align: true);
-                    StopClock(c => c.LineupClock);
-                    _gameState.Clocks.LineupClock.PassedTicks = -1;
                     StartClock(c => c.IntermissionClock, reset: true, align: true);
                     _events.Add(new DebugFakeEvent(_tick, "Intermission start"));
                 }
@@ -456,7 +473,6 @@ public class GameSimulator(SimulatorGame game)
                 {
                     LogDebug($"Jam {endReason} and period expired, ending game");
                     _gameState.Stage = Stage.AfterGame;
-                    _gameState.Clocks = new();
                 }
 
                 AddJam();
@@ -623,11 +639,44 @@ public class GameSimulator(SimulatorGame game)
 
     private void TickIntermission()
     {
+        const float finalizeChance = 1 / 90f / TicksPerSecond;
+
         TickClock(c => c.IntermissionClock);
+
+        if (!_gameState.PeriodFinalized && RandomTrigger(finalizeChance))
+        {
+            LogDebug("Finalizing period");
+            _events.Add(new PeriodFinalized(_tick));
+            _gameState.PeriodFinalized = true;
+            _gameState.Clocks.PeriodClock = new();
+
+            if (_gameState.Period == 2)
+            {
+                _gameState.Stage = Stage.AfterGame;
+                return;
+            }
+
+            _gameState.Jam = 0;
+            _gameState.Period++;
+        }
 
         if (_gameState.Clocks.IntermissionClock.PassedTicks >= Tick.FromSeconds(Rules.DefaultRules.IntermissionRules.DurationInSeconds))
         {
-            _gameState.Stage = Stage.AfterGame;
+            TickBeforeGame();
+        }
+    }
+
+    private void TickAfterGame()
+    {
+        const float finalizeChance = 1 / 90f / TicksPerSecond;
+
+        if (!_gameState.PeriodFinalized && RandomTrigger(finalizeChance))
+        {
+            LogDebug("Finalizing period and ending game");
+            _events.Add(new PeriodFinalized(_tick));
+            _gameState.PeriodFinalized = true;
+            _gameState.Clocks.PeriodClock = new();
+            _gameState.Clocks = new();
         }
     }
 
@@ -756,6 +805,7 @@ public class GameSimulator(SimulatorGame game)
         public Lineups Lineups { get; set; } = new();
         public Clocks Clocks { get; set; } = new();
         public TeamsSheets Sheets { get; set; } = new();
+        public bool PeriodFinalized { get; set; } = false;
     }
 
     private class TeamJamInfo

@@ -26,7 +26,7 @@ public class GameStage(ReducerGameContext context, ILogger<GameStage> logger)
         var state = GetState();
         var newState = state.Stage switch
         {
-            Stage.Intermission => state with { Stage = Stage.Lineup },
+            Stage.Intermission => state with { Stage = Stage.Lineup, PeriodIsFinalized = false },
             Stage.BeforeGame => state with { Stage = Stage.Lineup },
             _ => state
         };
@@ -169,19 +169,22 @@ public class GameStage(ReducerGameContext context, ILogger<GameStage> logger)
         var state = GetState();
 
         if (state.Stage is not Stage.Jam and not Stage.Lineup and not Stage.Timeout and not Stage.AfterTimeout)
+        {
+            logger.LogDebug("Ignoring period end due to stage being {stage}", state.Stage);
             return [];
+        }
 
         var rules = GetState<RulesState>().Rules;
         GameStageState newState;
 
         if (state.PeriodNumber >= rules.PeriodRules.PeriodCount)
         {
-            logger.LogDebug("Setting game state to AfterGame after period end");
+            logger.LogDebug("Setting game state to AfterGame after period {periodNumber} end", state.PeriodNumber);
             newState = state with { Stage = Stage.AfterGame };
         }
         else
         {
-            logger.LogDebug("Setting game state to Intermission after period end");
+            logger.LogDebug("Setting game state to Intermission after period {periodNumber} end", state.PeriodNumber);
             newState = state with { Stage = Stage.Intermission };
         }
 

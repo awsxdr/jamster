@@ -31,6 +31,13 @@ public class ScoreboardOperatorInteractor(IWebDriver driver) : Interactor(driver
             },
             startButton => startButton.Click());
 
+    public void ValidateStartEnabled(bool shouldBeEnabled) =>
+        Wait.Until(driver =>
+        {
+            var startButton = driver.FindElement(By.Id("ScoreboardControl.MainControls.StartButton"));
+            return startButton.Displayed && startButton.Enabled == shouldBeEnabled;
+        });
+
     public void ClickStop() =>
         Wait.Until(driver =>
             {
@@ -39,6 +46,13 @@ public class ScoreboardOperatorInteractor(IWebDriver driver) : Interactor(driver
             },
             endButton => endButton.Click());
 
+    public void ValidateStopEnabled(bool shouldBeEnabled) =>
+        Wait.Until(driver =>
+        {
+            var endButton = driver.FindElement(By.Id("ScoreboardControl.MainControls.StopButton"));
+            return endButton.Enabled == shouldBeEnabled;
+        });
+
     public void ClickNewTimeout() =>
         Wait.Until(driver =>
             {
@@ -46,6 +60,13 @@ public class ScoreboardOperatorInteractor(IWebDriver driver) : Interactor(driver
                 return (newTimeoutButton is { Displayed: true, Enabled: true }, newTimeoutButton);
             },
             newTimeoutButton => newTimeoutButton.Click());
+
+    public void ValidateNewTimeoutEnabled(bool shouldBeEnabled) =>
+        Wait.Until(driver =>
+        {
+            var newTimeoutButton = driver.FindElement(By.Id("ScoreboardControl.MainControls.TimeoutButton"));
+            return newTimeoutButton.Enabled == shouldBeEnabled;
+        });
 
     public void SetLead(TeamSide side) =>
         Wait.Until(driver =>
