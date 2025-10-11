@@ -57,16 +57,16 @@ export const ViewMenu = ({
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button size="icon" variant="ghost" disabled={disabled}>
+                <Button id="PenaltyLineup.ViewMenu" size="icon" variant="ghost" disabled={disabled}>
                     <Eye />
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-56">
                 <DropdownMenuLabel>{translate("Team")}</DropdownMenuLabel>
                 <DropdownMenuRadioGroup value={displaySide} onValueChange={v => onDisplaySideChanged(DisplaySide[v as keyof typeof DisplaySide])}>
-                    <DropdownMenuRadioItem disabled={disabled} value={DisplaySide.Both}>{translate("Teams.Both")}</DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem disabled={disabled} value={DisplaySide.Home}>{homeTeamName}</DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem disabled={disabled} value={DisplaySide.Away}>{awayTeamName}</DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem id="PenaltyLineup.ViewMenu.Team.Both" disabled={disabled} value={DisplaySide.Both}>{translate("Teams.Both")}</DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem id="PenaltyLineup.ViewMenu.Team.Home" disabled={disabled} value={DisplaySide.Home}>{homeTeamName}</DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem id="PenaltyLineup.ViewMenu.Team.Away" disabled={disabled} value={DisplaySide.Away}>{awayTeamName}</DropdownMenuRadioItem>
                 </DropdownMenuRadioGroup>
                 <DropdownMenuSeparator />
                 <DropdownMenuGroup>

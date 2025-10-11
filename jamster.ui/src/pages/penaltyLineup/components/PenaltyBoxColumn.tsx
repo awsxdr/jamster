@@ -39,6 +39,7 @@ export const PenaltyBoxColumn = ({ teamSide, skaterNumbers, skaterPenalties, com
                             style={{ '--row': row + 2} as CSSProperties}
                         >
                             <Button 
+                                id={`PenaltyLineup.LineupTable.Skater${skaterNumber}.InBox`}
                                 className={cn(
                                     "rounded-none w-full px-1 md:px-4 border-0 h-full", 
                                     !inBox && rowClass,
@@ -46,6 +47,7 @@ export const PenaltyBoxColumn = ({ teamSide, skaterNumbers, skaterPenalties, com
                                 variant={inBox ? "default" : "outline"}
                                 disabled={disabled}
                                 onClick={() => onClick?.(skaterNumber, inBox)}
+                                aria-checked={inBox}
                             >
                                 <span className="sm:hidden">{translate("Box.Short")}</span>
                                 <span className={cn("hidden sm:inline", !compact && "lg:hidden")}>{translate("Box.Medium")}</span>

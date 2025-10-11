@@ -140,6 +140,7 @@ export const LineupTable = ({
         <>
             <div className={cn("col-start-2 row-start-1 flex items-end", headerClassName)}>
                 <Button 
+                    id="PenaltyLineup.PreviousJamButton"
                     className="w-full p-0 lg:p-2 rounded-none"
                     variant="secondary" 
                     disabled={totalJamNumber <= 0} 
@@ -149,7 +150,7 @@ export const LineupTable = ({
                     <span className={cn("hidden", !compact && "lg:inline")}>{translate("PreviousJam")}</span>
                 </Button>
             </div>
-            <div className={cn("col-start-3 col-span-4 row-start-1 gap-2", headerClassName, headerTextClassName, "items-center")}>
+            <div id="PenaltyLineup.PeriodJamDisplay" className={cn("col-start-3 col-span-4 row-start-1 gap-2", headerClassName, headerTextClassName, "items-center")}>
                 <span>
                     <span className={cn(!compact && "lg:hidden")}>{translate("Period.Short")}</span>
                     <span className={cn("hidden", !compact && "lg:inline")}>{translate("Period.Long")}</span>
@@ -164,6 +165,7 @@ export const LineupTable = ({
             </div>
             <div className={cn("col-start-7 row-start-1 flex items-end", headerClassName)}>
                 <Button 
+                    id="PenaltyLineup.NextJamButton"
                     className="w-full p-0 lg:p-2 rounded-none"
                     disabled={totalJamNumber >= jams.length - 1 || totalJamNumber === -1} 
                     onClick={() => setTotalJamNumber(t => t + 1)}

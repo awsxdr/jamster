@@ -3,6 +3,7 @@ import { cn } from "@/lib/utils";
 import { Penalty } from "@/types";
 
 type PenaltyCellProps = {
+    id?: string;
     penalty?: Penalty;
     className?: string;
     style?: CSSProperties;
@@ -10,9 +11,10 @@ type PenaltyCellProps = {
     onClick?: () => void;
 }
 
-export const PenaltyCell = ({penalty, className, style, compact, onClick}: PenaltyCellProps) => {
+export const PenaltyCell = ({id, penalty, className, style, compact, onClick}: PenaltyCellProps) => {
     return (
-        <div 
+        <div
+            id={id} 
             className={cn(
                 "flex flex-col",
                 "text-xs font-bold text-center justify-center align-center items-center cursor-pointer", 

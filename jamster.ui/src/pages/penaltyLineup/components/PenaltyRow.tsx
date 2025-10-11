@@ -82,6 +82,7 @@ export const PenaltyRow = ({ skaterNumber, penalties, expulsionPenalty, offsetFo
             { Array.from(Array(rules.penaltyRules.foulOutPenaltyCount + 2)).map((_, i) => {
                 return (
                     <PenaltyCell 
+                        id={`PenaltyLineup.PenaltyRow.${skaterNumber}.${i + 1}`}
                         key={i}
                         penalty={penalties[i]}
                         compact={compact}

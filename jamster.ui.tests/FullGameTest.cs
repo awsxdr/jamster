@@ -1,5 +1,6 @@
 ﻿using FluentAssertions;
 
+using jamster.engine.Configurations;
 using jamster.engine.Domain;
 using jamster.engine.Events;
 using jamster.engine.Extensions;
@@ -19,21 +20,14 @@ namespace jamster.ui.tests;
 [TestFixture]
 public class FullGameTest : FullEngineTest
 {
-    private IWebDriver _driver;
-
-    protected override void OneTimeSetup()
-    {
-        base.OneTimeSetup();
-
-        _driver = new ChromeDriver();
-        _driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(5);
-    }
+    private readonly List<WebDriver> _drivers = new();
 
     protected override void OneTimeTearDown()
     {
         base.OneTimeTearDown();
 
-        _driver.Dispose();
+        foreach (var driver in _drivers)
+            driver.Dispose();
     }
 
     [Test]
@@ -41,36 +35,56 @@ public class FullGameTest : FullEngineTest
     {
         var game = GameGenerator.GenerateRandom();
 
-        _driver.Navigate().GoToUrl(GetUrl("teams"));
+        var sboDriver = CreateDriver();
 
-        CreateTeam(game.HomeTeam);
-        CreateTeam(game.AwayTeam);
+        sboDriver.Navigate().GoToUrl(GetUrl("teams"));
 
-        _driver.Navigate().GoToUrl(GetUrl("games"));
+        CreateTeam(game.HomeTeam, sboDriver);
+        CreateTeam(game.AwayTeam, sboDriver);
 
-        var gameName = CreateGame(game);
+        sboDriver.Navigate().GoToUrl(GetUrl("games"));
 
-        _driver.Navigate().GoToUrl(GetUrl("sbo"));
+        var gameName = CreateGame(game, sboDriver);
+
+        sboDriver.Navigate().GoToUrl(GetUrl("sbo"));
+        sboDriver.Manage().Window.Position = new(0, 0);
+        sboDriver.Manage().Window.Size = new(1920 / 2, 1080);
 
         var gameEvents = new GameSimulator(game).SimulateGame().Where(e => e is not IFakeEvent).ToArray();
+        //gameEvents = gameEvents.TakeWhile(e => e is not CallMarked).ToArray();
         using var gameClock = new GameClock();
 
-        var sboInteractor = new ScoreboardOperatorInteractor(_driver);
+        var sboInteractor = new ScoreboardOperatorInteractor(sboDriver);
         sboInteractor.ClickGameSelect();
         sboInteractor.SelectGame(gameName);
 
-        var sboTask = SboGame(gameEvents, gameClock);
+        var pltTasks = new[] { TeamSide.Home, TeamSide.Away }.Select((side, i) =>
+        {
+            var penaltyLineupDriver = CreateDriver();
+            penaltyLineupDriver.Manage().Window.Position = new(1920 / 2, 1080 / 2 * i);
+            penaltyLineupDriver.Manage().Window.Size = new(1920 / 2, 1080 / 2);
+            penaltyLineupDriver.Navigate().GoToUrl(GetUrl("plt"));
+
+            var penaltyLineupInteractor = new PenaltyLineupInteractor(penaltyLineupDriver);
+            var penaltyDialogInteractor = new PenaltyDialogInteractor(penaltyLineupDriver);
+            penaltyLineupInteractor.ClickGameSelect();
+            penaltyLineupInteractor.SelectGame(gameName);
+
+            return PltGame(gameEvents, gameClock, side, penaltyLineupInteractor, penaltyDialogInteractor);
+        }).ToArray();
+
+        var sboTask = SboGame(gameEvents, gameClock, sboInteractor);
 
         var startTick = gameEvents.First(e => e is not TeamSet).Tick - Tick.FromSeconds(5);
 
         gameClock.Start(startTick);
 
-        Task.WaitAll(sboTask);
+        Task.WaitAll([sboTask, ..pltTasks]);
     }
 
-    private Task SboGame(IEnumerable<Event> events, IReminderSetter reminderSetter) => Task.Run(async () =>
+    private Task SboGame(IEnumerable<Event> events, IReminderSetter reminderSetter, ScoreboardOperatorInteractor interactor) => Task.Run(async () =>
     {
-        var interactor = new ScoreboardOperatorInteractor(_driver);
+        var jamNumber = 0;
 
         foreach (var @event in events)
         {
@@ -80,6 +94,7 @@ public class FullGameTest : FullEngineTest
             switch (@event)
             {
                 case JamStarted:
+                    ++jamNumber;
                     interactor.ClickStart();
                     break;
 
@@ -114,7 +129,7 @@ public class FullGameTest : FullEngineTest
                     interactor.SetInitialTrip(initialTripCompleted.Body.TeamSide);
                     break;
 
-                case SkaterOnTrack { Body.Position: SkaterPosition.Jammer or SkaterPosition.Pivot } skaterOnTrack:
+                case SkaterOnTrack { Body.Position: SkaterPosition.Jammer or SkaterPosition.Pivot } skaterOnTrack when jamNumber % 2 == 1:
                     interactor.LineupSkater(skaterOnTrack.Body.TeamSide, skaterOnTrack.Body.Position, skaterOnTrack.Body.SkaterNumber);
                     break;
 
@@ -129,14 +144,74 @@ public class FullGameTest : FullEngineTest
         }
     });
 
-    private void CreateTeam(SimulatorTeam team)
+    private Task PltGame(
+        IEnumerable<Event> events,
+        IReminderSetter reminderSetter,
+        TeamSide teamSide,
+        PenaltyLineupInteractor interactor,
+        PenaltyDialogInteractor penaltyDialogInteractor
+    ) => 
+        Task.Run(async () =>
+        {
+            var jamNumber = 0;
+
+            var penaltyCounts = new Dictionary<string, int>();
+
+            interactor.ClickViewMenu();
+            interactor.ClickViewMenuTeam(teamSide == TeamSide.Home ? DisplaySide.Home : DisplaySide.Away);
+
+            foreach (var @event in events)
+            {
+                Console.WriteLine(@event.GetType().Name);
+                await reminderSetter.WaitForTick(@event.Tick);
+
+                if (@event is not CallMarked && @event.HasBody && @event.GetBodyObject() is TeamEventBody teamBody && teamBody.TeamSide != teamSide)
+                    continue;
+
+                switch (@event)
+                {
+                    case JamStarted:
+                        ++jamNumber;
+                        break;
+
+                    case SkaterOnTrack { Body.Position: SkaterPosition.Blocker } skaterOnTrack:
+                        interactor.TryGoToNextJam();
+                        interactor.AddSkaterToJam(skaterOnTrack.Body.SkaterNumber, skaterOnTrack.Body.Position);
+                        break;
+
+                    case SkaterOnTrack skaterOnTrack when jamNumber % 2 == 0:
+                        interactor.TryGoToNextJam();
+                        interactor.AddSkaterToJam(skaterOnTrack.Body.SkaterNumber, skaterOnTrack.Body.Position);
+                        break;
+
+                    case PenaltyAssessed penaltyAssessed:
+                        penaltyCounts.TryAdd(penaltyAssessed.Body.SkaterNumber, 0);
+                        var penaltyNumber = ++penaltyCounts[penaltyAssessed.Body.SkaterNumber];
+                        interactor.ClickPenalty(penaltyAssessed.Body.SkaterNumber, penaltyNumber);
+                        penaltyDialogInteractor.ClickPenalty(penaltyAssessed.Body.PenaltyCode);
+                        break;
+
+                    case SkaterSatInBox skaterSatInBox:
+                        interactor.ClickBoxButton(skaterSatInBox.Body.SkaterNumber);
+                        break;
+
+                    case SkaterReleasedFromBox skaterReleasedFromBox:
+                        interactor.ClickBoxButton(skaterReleasedFromBox.Body.SkaterNumber);
+                        break;
+                }
+            }
+        });
+
+    private void CreateTeam(SimulatorTeam team, IWebDriver driver)
     {
-        var teamPageInteractor = new TeamsPageInteractor(_driver);
+        var teamPageInteractor = new TeamsPageInteractor(driver);
         teamPageInteractor.OpenAddTeamDialog();
 
-        var addTeamDialogInteractor = new AddTeamDialogInteractor(_driver);
+        var addTeamDialogInteractor = new AddTeamDialogInteractor(driver);
         addTeamDialogInteractor.SetTeamName(team.DomainTeam.Names["league"]);
+        addTeamDialogInteractor.ValidateTeamName(team.DomainTeam.Names["league"]);
         addTeamDialogInteractor.SetKitColor(team.DomainTeam.Names["color"]);
+        addTeamDialogInteractor.ValidateKitName(team.DomainTeam.Names["color"]);
 
         addTeamDialogInteractor.ClickCreate();
 
@@ -145,26 +220,29 @@ public class FullGameTest : FullEngineTest
 
         teamPageInteractor.ClickTeam(team.DomainTeam.Names["league"]);
 
-        EnterTeamDetails(team);
+        EnterTeamDetails(team, driver);
 
-        _driver.Navigate().Back();
+        driver.Navigate().Back();
 
         teamDetails = teamPageInteractor.GetTeam(team.DomainTeam.Names["league"]);
         teamDetails.LeagueName.Should().Be($"{team.DomainTeam.Names["league"]} (League)");
         teamDetails.TeamName.Should().Be($"{team.DomainTeam.Names["league"]}");
     }
 
-    private void EnterTeamDetails(SimulatorTeam team)
+    private void EnterTeamDetails(SimulatorTeam team, IWebDriver driver)
     {
-        var teamDetailsInteractor = new TeamDetailsPageInteractor(_driver);
-        teamDetailsInteractor.GetTeamName().Should().Be(team.DomainTeam.Names["league"]);
+        var teamDetailsInteractor = new TeamDetailsPageInteractor(driver);
+        teamDetailsInteractor.ValidateTeamName(team.DomainTeam.Names["league"]);
 
-        var wait = new WebDriverWait(_driver, TimeSpan.FromSeconds(5));
+        var wait = new WebDriverWait(driver, TimeSpan.FromSeconds(5));
         wait.IgnoreExceptionTypes(typeof(StaleElementReferenceException));
 
         teamDetailsInteractor.SetLeagueName(team.DomainTeam.Names["league"] + " (League)");
+        teamDetailsInteractor.ValidateLeagueName(team.DomainTeam.Names["league"] + " (League)");
         teamDetailsInteractor.SetScoreboardName(team.DomainTeam.Names["league"] + " (Scoreboard)");
+        teamDetailsInteractor.ValidateScoreboardName(team.DomainTeam.Names["league"] + " (Scoreboard)");
         teamDetailsInteractor.SetOverlayName(team.DomainTeam.Names["league"] + " (Overlay)");
+        teamDetailsInteractor.ValidateOverlayName(team.DomainTeam.Names["league"] + " (Overlay)");
 
         teamDetailsInteractor.ValidateColorPresent(team.DomainTeam.Names["color"]);
 
@@ -189,13 +267,13 @@ public class FullGameTest : FullEngineTest
         tableData.Select(s => (s.Number, s.Name)).Should().BeEquivalentTo(sortedRoster.Select(s => (s.Number, s.Name)));
     }
 
-    private string CreateGame(SimulatorGame game)
+    private string CreateGame(SimulatorGame game, IWebDriver driver)
     {
-        var gamesPageInteractor = new GamesPageInteractor(_driver);
+        var gamesPageInteractor = new GamesPageInteractor(driver);
 
         gamesPageInteractor.OpenAddGameDialog();
 
-        var newGameDialogInteractor = new NewGameDialogInteractor(_driver);
+        var newGameDialogInteractor = new NewGameDialogInteractor(driver);
 
         newGameDialogInteractor.ClickHomeTeamSelect();
         newGameDialogInteractor.SelectHomeTeam($"{game.HomeTeam.DomainTeam.Names["league"]} ({game.HomeTeam.DomainTeam.Names["league"]} (League))");
@@ -214,5 +292,15 @@ public class FullGameTest : FullEngineTest
         createdGame.Status.Should().Be("Upcoming");
 
         return gameName;
+    }
+
+    private IWebDriver CreateDriver()
+    {
+        var driver = new ChromeDriver();
+        driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(5);
+
+        _drivers.Add(driver);
+
+        return driver;
     }
 }

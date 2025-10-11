@@ -122,7 +122,8 @@ export const PenaltyDialog = ({ open, currentPenalty, onOpenChanged, onAccept, o
                 <ScrollArea className="w-full max-h-full overflow-auto">
                     <div className=" grid grid-cols-[auto_auto_1fr] w-full">
                         { PENALTIES.map(p => (
-                            <Button 
+                            <Button
+                                id={`PenaltyLineup.PenaltyDialog.Penalty.${p.code}`}
                                 key={p.code} 
                                 variant={penaltyCode === p.code ? "secondary" : "ghost"} 
                                 className="justify-start items-center grid col-span-3 col-start-1 grid-cols-subgrid text-base w-full h-auto"
@@ -137,14 +138,14 @@ export const PenaltyDialog = ({ open, currentPenalty, onOpenChanged, onAccept, o
                 </ScrollArea>
                 <DialogFooter className="gap-1">
                     <DialogClose asChild>
-                        <Button variant="secondary">{translate("Cancel")}</Button>
+                        <Button id="PenaltyLineup.PenaltyDialog.Cancel" variant="secondary">{translate("Cancel")}</Button>
                     </DialogClose>
                     { currentPenalty && (
                         <>
                             <DialogClose asChild>
-                                <Button onClick={handleDelete} variant="destructive">{translate("Delete")}</Button>
+                                <Button id="PenaltyLineup.PenaltyDialog.Delete" onClick={handleDelete} variant="destructive">{translate("Delete")}</Button>
                             </DialogClose>
-                            <Button onClick={handleAccept}>{translate("Update")}</Button>
+                            <Button id="PenaltyLineup.PenaltyDialog.Update" onClick={handleAccept}>{translate("Update")}</Button>
                         </>
                     )}
                 </DialogFooter>

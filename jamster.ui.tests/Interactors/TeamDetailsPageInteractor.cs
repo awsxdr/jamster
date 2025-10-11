@@ -18,6 +18,13 @@ public class TeamDetailsPageInteractor(IWebDriver driver) : Interactor(driver)
             },
             teamNameInput => teamNameInput.GetAttribute("value"));
 
+    public void ValidateTeamName(string expectedName) =>
+        Wait.Until(driver =>
+        {
+            var teamNameInput = driver.FindElement(By.Id("TeamNames.TeamName"));
+            return teamNameInput.Displayed && teamNameInput.GetAttribute("value") == expectedName;
+        });
+
     public void SetLeagueName(string name) =>
         Wait.Until(driver =>
             {
@@ -29,6 +36,13 @@ public class TeamDetailsPageInteractor(IWebDriver driver) : Interactor(driver)
                 leagueNameInput.SendKeys(name);
                 leagueNameInput.SendKeys(Keys.Tab);
             });
+
+    public void ValidateLeagueName(string expectedName) =>
+        Wait.Until(driver =>
+        {
+            var leagueNameInput = driver.FindElement(By.Id("TeamNames.LeagueName"));
+            return leagueNameInput.Displayed && leagueNameInput.GetAttribute("value") == expectedName;
+        });
 
     public void SetScoreboardName(string name) =>
         Wait.Until(driver =>
@@ -42,6 +56,13 @@ public class TeamDetailsPageInteractor(IWebDriver driver) : Interactor(driver)
                 scoreboardNameInput.SendKeys(Keys.Tab);
             });
 
+    public void ValidateScoreboardName(string expectedName) =>
+        Wait.Until(driver =>
+        {
+            var scoreboardNameInput = driver.FindElement(By.Id("TeamNames.ScoreboardName"));
+            return scoreboardNameInput.Displayed && scoreboardNameInput.GetAttribute("value") == expectedName;
+        });
+
     public void SetOverlayName(string name) =>
         Wait.Until(driver =>
             {
@@ -53,6 +74,13 @@ public class TeamDetailsPageInteractor(IWebDriver driver) : Interactor(driver)
                 overlayNameInput.SendKeys(name);
                 overlayNameInput.SendKeys(Keys.Tab);
             });
+
+    public void ValidateOverlayName(string expectedName) =>
+        Wait.Until(driver =>
+        {
+            var overlayNameInput = driver.FindElement(By.Id("TeamNames.OverlayName"));
+            return overlayNameInput.Displayed && overlayNameInput.GetAttribute("value") == expectedName;
+        });
 
     public void ValidateColorPresent(string color) =>
         Wait.Until(driver =>

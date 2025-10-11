@@ -4,39 +4,53 @@ namespace jamster.ui.tests.Interactors;
 
 public class AddTeamDialogInteractor(IWebDriver driver) : Interactor(driver)
 {
-    public void SetTeamName(string teamName) => Wait.Until(driver =>
-    {
-        var teamNameInput = driver.FindElement(By.Id("NewTeamDialog.TeamName"));
+    public void SetTeamName(string teamName) =>
+        Wait.Until(driver =>
+            {
+                var teamNameInput = driver.FindElement(By.Id("NewTeamDialog.TeamName"));
 
-        var result = teamNameInput.Displayed;
+                return (teamNameInput.Displayed, teamNameInput);
+            },
+            teamNameInput =>
+            {
+                teamNameInput.SendKeys(teamName);
+                teamNameInput.SendKeys(Keys.Tab);
+            });
 
-        if(result)
-            teamNameInput.SendKeys(teamName);
+    public void ValidateTeamName(string expectedName) =>
+        Wait.Until(driver =>
+        {
+            var teamNameInput = driver.FindElement(By.Id("NewTeamDialog.TeamName"));
 
-        return result;
-    });
+            return teamNameInput.Displayed && teamNameInput.GetAttribute("value") == expectedName;
+        });
 
     public void SetKitColor(string color) => Wait.Until(driver =>
-    {
-        var colorInput = driver.FindElement(By.Id("NewTeamDialog.KitColor"));
+        {
+            var colorInput = driver.FindElement(By.Id("NewTeamDialog.KitColor"));
 
-        var result = colorInput.Displayed;
-
-        if (result)
+            return (colorInput.Displayed, colorInput);
+        },
+        colorInput =>
+        {
             colorInput.SendKeys(color);
+            colorInput.SendKeys(Keys.Tab);
+        });
 
-        return result;
-    });
+    public void ValidateKitName(string expectedName) =>
+        Wait.Until(driver =>
+        {
+            var teamNameInput = driver.FindElement(By.Id("NewTeamDialog.KitColor"));
+
+            return teamNameInput.Displayed && teamNameInput.GetAttribute("value") == expectedName;
+        });
 
     public void ClickCreate() => Wait.Until(driver =>
-    {
-        var createButton = driver.FindElement(By.Id("NewTeamDialog.CreateButton"));
+        {
+            var createButton = driver.FindElement(By.Id("NewTeamDialog.CreateButton"));
 
-        var result = createButton.Displayed;
-
-        if(result)
-            createButton.Click();
-
-        return result;
-    });
+            return (createButton.Displayed, createButton);
+        },
+        createButton => createButton.Click()
+    );
 }

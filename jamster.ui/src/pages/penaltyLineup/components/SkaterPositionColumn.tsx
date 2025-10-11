@@ -55,6 +55,7 @@ export const SkaterPositionColumn = ({ teamSide, position, skaterNumbers, select
                             style={{ '--row': row + 2} as CSSProperties}
                         >
                             <Button 
+                                id={`PenaltyLineup.LineupTable.Skater${skaterNumber}.Position.${position}`}
                                 className={cn("rounded-none w-full px-1 md:px-4 border-0 h-full", !selected && rowClass)}
                                 variant={variant}
                                 onClick={() => onSkaterClicked?.(skaterNumber)}

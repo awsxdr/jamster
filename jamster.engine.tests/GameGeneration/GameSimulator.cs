@@ -292,7 +292,7 @@ public class GameSimulator(SimulatorGame game)
 
     private void TickJam()
     {
-        const float penaltyChance = 1 / 180f / TicksPerSecond;
+        const float penaltyChance = 1 / 60f / TicksPerSecond;
         const float completeTripChance = 1 / 15f / TicksPerSecond;
         const float boxEntryChance = 1 / 15f / TicksPerSecond;
         const float callChance = 1 / 160f / TicksPerSecond;
@@ -381,13 +381,6 @@ public class GameSimulator(SimulatorGame game)
 
         void TickBoxVisit(LineupSkater skater, TeamSide teamSide)
         {
-            var spaceInBox = teamSide == TeamSide.Home
-                ? _gameState.Lineups.HomeTeamLineup.Skaters[1..4].Count(s => s?.Penalty is { EntryTick: not null }) < 2
-                : _gameState.Lineups.AwayTeamLineup.Skaters[1..4].Count(s => s?.Penalty is { EntryTick: not null }) < 2;
-
-            if (!spaceInBox)
-                return;
-
             if (skater.Penalty is null)
                 return;
 
@@ -409,6 +402,13 @@ public class GameSimulator(SimulatorGame game)
             if (skater.Penalty is not { EntryTick: null })
                 return;
 
+            var spaceInBox = teamSide == TeamSide.Home
+                ? _gameState.Lineups.HomeTeamLineup.Skaters[1..4].Count(s => s?.Penalty is { EntryTick: not null }) < 2
+                : _gameState.Lineups.AwayTeamLineup.Skaters[1..4].Count(s => s?.Penalty is { EntryTick: not null }) < 2;
+
+            if (!spaceInBox)
+                return;
+
             if (!RandomTrigger(boxEntryChance))
                 return;
 
@@ -423,10 +423,6 @@ public class GameSimulator(SimulatorGame game)
                 ? _gameState.Sheets.HomeSheets.ScoreSheet
                 : _gameState.Sheets.AwaySheets.ScoreSheet;
 
-            if (tripTeamScoreSheet[^1].TripScores.Count == 0)
-            {
-                int a = 0;
-            }
             tripTeamScoreSheet[^1].GameTotal += score;
             tripTeamScoreSheet[^1].JamTotal += score;
             tripTeamScoreSheet[^1].TripScores[^1] = score;
@@ -490,6 +486,8 @@ public class GameSimulator(SimulatorGame game)
 
     private void AddRandomPenalty()
     {
+        string[] penaltyCodes = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "L", "M", "N", "P", "X"];
+
         var penaltySide = RandomTrigger(.5f) ? TeamSide.Home : TeamSide.Away;
         var lineup = penaltySide == TeamSide.Home ? _gameState.Lineups.HomeTeamLineup : _gameState.Lineups.AwayTeamLineup;
         var availableSkaterIndexes = lineup.Skaters
@@ -545,7 +543,7 @@ public class GameSimulator(SimulatorGame game)
 
         LogDebug($"Skater {skater.Number} on {penaltySide} team penalized");
 
-        _events.Add(new PenaltyAssessed(_tick, new(penaltySide, skater.Number, "X")));
+        _events.Add(new PenaltyAssessed(_tick, new(penaltySide, skater.Number, penaltyCodes.Random()!)));
         skater.Penalty = new();
     }
 
