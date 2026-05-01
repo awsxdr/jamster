@@ -39,8 +39,6 @@ public class StatsBookSerializer(
         if (!blankStatsBookStore.BlankStatsBookPresent)
             return Result<byte[]>.Fail<BlankStatsBookNotConfiguredError>();
 
-        var test = System.Text.Json.JsonSerializer.Serialize(statsBook);
-
         using var stream = new MemoryStream();
         await stream.WriteAsync(await File.ReadAllBytesAsync(BlankStatsBookStore.BlankStatsBookPath));
         stream.Position = 0;

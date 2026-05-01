@@ -12,6 +12,7 @@ public abstract class StatsSheetSerializerBase(ILogger logger)
             .Then(entry =>
             {
                 sheet.SharedStrings.uniqueCount = sheet.SharedStrings.si.Length;
+                sheet.SharedStrings.count = sheet.SharedStrings.si.Length;
 
                 using var outputStream = new MemoryStream();
                 new XmlSerializer(typeof(SharedStrings)).Serialize(outputStream, sheet.SharedStrings);
@@ -66,6 +67,8 @@ public abstract class StatsSheetSerializerBase(ILogger logger)
             .Then(x =>
             {
                 var (cell, @namespace) = x;
+
+                cell.Element(@namespace + "v")?.Remove();
                 cell.Attribute("t")?.Remove();
                 cell.Add(new XElement(@namespace + "v", value));
 
@@ -81,6 +84,8 @@ public abstract class StatsSheetSerializerBase(ILogger logger)
             {
                 var (cell, @namespace) = x;
 
+                cell.Element(@namespace + "v")?.Remove();
+                cell.Attribute("t")?.Remove();
                 if (value != null)
                     cell.Add(new XElement(@namespace + "v", value));
 
@@ -92,6 +97,8 @@ public abstract class StatsSheetSerializerBase(ILogger logger)
             .Then(x =>
             {
                 var (cell, @namespace) = x;
+
+                cell.Element(@namespace + "v")?.Remove();
                 cell.Attribute("t")?.Remove();
 
                 if (value != null)
@@ -137,7 +144,7 @@ public abstract class StatsSheetSerializerBase(ILogger logger)
 
         string ReadSharedString(string reference) =>
             int.TryParse(reference, out var index) && index < document.SharedStrings.si.Length
-                ? document.SharedStrings.si[index].t.Value
+                ? document.SharedStrings.si[index].t?.Value ?? string.Empty
                 : string.Empty;
     }
 

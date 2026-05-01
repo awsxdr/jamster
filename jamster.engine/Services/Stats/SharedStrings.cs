@@ -32,7 +32,7 @@ public class sstSI
     [XmlElement("r")]
     public sstSIR[] r { get; set; }
 
-    public sstSIT t { get; set; }
+    public sstSIT? t { get; set; }
 }
 
 [Serializable]
