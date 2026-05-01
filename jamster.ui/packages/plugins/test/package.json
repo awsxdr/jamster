@@ -1,0 +1,19 @@
+{
+  "name": "@jamster/ui.plugins",
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build && npm run zip-build",
+    "zip-build": "node ./scripts/zip-build.cjs",
+    "lint": "eslint .",
+    "preview": "vite preview --port 3002 --strictPort"
+  },
+  "devDependencies": {
+    "@originjs/vite-plugin-federation": "^1.4.1",
+    "cross-zip": "^4.0.1"
+  },
+  "dependencies": {
+    "@awsxdr/jamster.ui.shared": "1.0.8"
+  }
+}

@@ -9,7 +9,20 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Install GitVersion
+      uses: gittools/actions/gitversion/setup@v4.0.0
+      with:
+        versionSpec: '6.3.x'
+
+    - name: Determine version
+      uses: gittools/actions/gitversion/execute@v4.0.0
+      with:
+        updateAssemblyInfo: true
     
     - name: Setup dotnet
       uses: actions/setup-dotnet@v4
