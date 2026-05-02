@@ -62,7 +62,7 @@ public class sstSIRRPr
 public class sstSIRRPrSZ
 {
     [XmlAttribute]
-    public byte val { get; set; }
+    public float val { get; set; }
 }
 
 [Serializable]
