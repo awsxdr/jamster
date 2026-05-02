@@ -68,7 +68,7 @@ public class EventsController(
     [HttpPost("")]
     public async Task<ActionResult<EventModel>> AddEvent(Guid gameId, [FromBody] CreateEventModel model)
     {
-        logger.LogDebug("Adding event {eventType} to game {gameId}", model.Type, gameId);
+        logger.LogDebug("Adding event {eventType} to game {gameId}", model.Type.ReplaceLineEndings(""), gameId);
 
         return
             (await eventConverter.DecodeEvent(model.AsUntypedEvent())
@@ -129,7 +129,7 @@ public class EventsController(
     [HttpPut("{eventId:guid}")]
     public async Task<IActionResult> ReplaceEvent(Guid gameId, Guid eventId, [FromBody] CreateEventModel model)
     {
-        logger.LogDebug("Replacing event {eventId} in game {gameId} with {eventType}", eventId, gameId, model.Type);
+        logger.LogDebug("Replacing event {eventId} in game {gameId} with {eventType}", eventId, gameId, model.Type.ReplaceLineEndings(""));
 
         return await
                 eventConverter.DecodeEvent(model.AsUntypedEvent())

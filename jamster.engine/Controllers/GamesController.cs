@@ -33,7 +33,7 @@ public class GamesController(
     [HttpPost]
     public async Task<ActionResult<GameModel>> CreateGame([FromBody] CreateGameModel model)
     {
-        logger.LogInformation("Creating game with name: {name}", model.Name);
+        logger.LogInformation("Creating game with name: {name}", model.Name.ReplaceLineEndings(""));
 
         var game = (GameModel) await gameDiscoveryService.GetGame(new(Guid.NewGuid(), model.Name));
         return Created($"api/games/{game.Id}", game);
@@ -106,7 +106,7 @@ public class GamesController(
     [HttpGet("{gameId:guid}/state/{stateName}")]
     public async Task<ActionResult> GetState(Guid gameId, string stateName)
     {
-        logger.LogDebug("Retrieving state {stateName} for game {gameId}", stateName, gameId);
+        logger.LogDebug("Retrieving state {stateName} for game {gameId}", stateName.ReplaceLineEndings(""), gameId);
 
         return await gameDiscoveryService.GetExistingGame(gameId)
                 .ThenMap(contextFactory.GetGame)

@@ -28,7 +28,7 @@ public class UsersController(IUserService userService, IEnumerable<IConfiguratio
     [HttpPost]
     public async Task<ActionResult> CreateUser([FromBody] UserModel user)
     {
-        logger.LogDebug("Creating user {userName} if not already present", user.UserName);
+        logger.LogDebug("Creating user {userName} if not already present", user.UserName.ReplaceLineEndings(""));
 
         await userService.CreateIfNotExists(user.UserName);
         
@@ -38,7 +38,7 @@ public class UsersController(IUserService userService, IEnumerable<IConfiguratio
     [HttpPost]
     public async Task<ActionResult> UploadUser(IFormFile userFile)
     {
-        logger.LogDebug("Importing user JSON file");
+        logger.LogDebug("Importing user JSON file".ReplaceLineEndings(""));
 
         if (userFile.ContentType != MediaTypeNames.Application.Json)
             return new UnsupportedMediaTypeResult();
@@ -56,7 +56,7 @@ public class UsersController(IUserService userService, IEnumerable<IConfiguratio
     [HttpGet("file")]
     public ActionResult GetUserExportFile([FromQuery] string[] userNames)
     {
-        logger.LogDebug("Exporting user file");
+        logger.LogDebug("Exporting user file".ReplaceLineEndings(""));
 
         return userService.GetUsersJson(userNames) switch
         {
@@ -68,7 +68,7 @@ public class UsersController(IUserService userService, IEnumerable<IConfiguratio
     [HttpGet("{userName}")]
     public ActionResult<UserConfigurationsModel> GetUser(string userName)
     {
-        logger.LogDebug("Getting user details for {userName}", userName);
+        logger.LogDebug("Getting user details for {userName}".ReplaceLineEndings(""), userName.ReplaceLineEndings(""));
 
         return userService.GetUser(userName)
             switch
@@ -82,7 +82,7 @@ public class UsersController(IUserService userService, IEnumerable<IConfiguratio
     [HttpDelete("{userName}")]
     public async Task<ActionResult> DeleteUser(string userName)
     {
-        logger.LogDebug("Deleting user {userName}", userName);
+        logger.LogDebug("Deleting user {userName}".ReplaceLineEndings(""), userName.ReplaceLineEndings(""));
 
         return await userService.DeleteUser(userName)
             switch
@@ -96,7 +96,10 @@ public class UsersController(IUserService userService, IEnumerable<IConfiguratio
     [HttpGet("{userName}/configuration/{configurationType}")]
     public ActionResult GetConfiguration(string userName, string configurationType)
     {
-        logger.LogDebug("Getting configuration {configurationName} for user {userName}", configurationType, userName);
+        logger.LogDebug(
+            "Getting configuration {configurationName} for user {userName}".ReplaceLineEndings(""), 
+            configurationType.ReplaceLineEndings(""), 
+            userName.ReplaceLineEndings(""));
 
         if (!_configurationFactories.TryGetValue(configurationType.ToLowerInvariant(), out var factory))
             return BadRequest();
@@ -114,7 +117,10 @@ public class UsersController(IUserService userService, IEnumerable<IConfiguratio
     [HttpPut("{userName}/configuration/{configurationType}")]
     public async Task<ActionResult> SetConfiguration(string userName, string configurationType, [FromBody] JsonObject configuration)
     {
-        logger.LogDebug("Setting configuration {configurationType} for user {userName}", configurationType, userName);
+        logger.LogDebug(
+            "Setting configuration {configurationType} for user {userName}", 
+            configurationType.ReplaceLineEndings(""), 
+            userName.ReplaceLineEndings(""));
 
         return await DeserializeConfiguration(configurationType, configuration)
                 .Then(userService.SetConfiguration, userName)

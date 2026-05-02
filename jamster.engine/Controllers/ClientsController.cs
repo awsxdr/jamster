@@ -25,7 +25,7 @@ public class ClientsController(IConnectedClientsService connectedClientsService,
     [HttpGet("{clientName}")]
     public ActionResult<ClientModel> GetClient(string clientName)
     {
-        logger.LogDebug("Getting details for client {clientName}", clientName);
+        logger.LogDebug("Getting details for client {clientName}", clientName.ReplaceLineEndings(""));
 
         return connectedClientsService.GetClientByName(clientName) switch
         {
@@ -38,7 +38,7 @@ public class ClientsController(IConnectedClientsService connectedClientsService,
     [HttpPut("{clientName}/name")]
     public async Task<IActionResult> SetConnectionName(string clientName, [FromBody] SetNameModel model)
     {
-        logger.LogDebug("Setting connection name from {connectionId} to {name}", clientName, model.Name);
+        logger.LogDebug("Setting connection name from {connectionId} to {name}", clientName.ReplaceLineEndings(""), model.Name.ReplaceLineEndings(""));
 
         return await connectedClientsService.SetClientName(clientName, model.Name) switch
         {
@@ -51,7 +51,7 @@ public class ClientsController(IConnectedClientsService connectedClientsService,
     [HttpPut("{clientName}/activity")]
     public async Task<IActionResult> SetConnectionActivity(string clientName, [FromBody] SetActivityModel model)
     {
-        logger.LogDebug("Setting connection activity for {clientName} to {activity}", clientName, model.ActivityDetails[nameof(ActivityData.Activity)]);
+        logger.LogDebug("Setting connection activity for {clientName} to {activity}", clientName.ReplaceLineEndings(""), model.ActivityDetails[nameof(ActivityData.Activity)]?.ToString().ReplaceLineEndings(""));
 
         var baseActivityData = model.ActivityDetails.Deserialize<ActivityData>(Program.JsonSerializerOptions);
 
