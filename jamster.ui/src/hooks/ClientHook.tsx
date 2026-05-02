@@ -1,4 +1,4 @@
-import { createContext, PropsWithChildren, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, PropsWithChildren, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useHubConnection } from "./SignalRHubConnection";
 import { ActivityData, Client, ClientActivity } from "@/types";
 import { createBrowserRouter, RouteObject, useNavigate, useSearchParams } from "react-router-dom";
@@ -98,11 +98,14 @@ export const ClientConnectionContextProvider = ({ children }: PropsWithChildren)
         return () => connection.off("ConnectedClientsChanged");
     }, [connection]);
 
+    const clientActivityRef = useRef(clientActivity);
+    clientActivityRef.current = clientActivity;
+
     useEffect(() => {
         connection?.onreconnected(() => {
-            connection.send("SetActivity", clientActivity);
+            connection.send("SetActivity", clientActivityRef.current);
         });
-    }, [connection, changeActivityNotifiers]);
+    }, [connection]);
 
     useEffect(() => {
         if(!connection) {
@@ -128,11 +131,11 @@ export const ClientConnectionContextProvider = ({ children }: PropsWithChildren)
         
     }, [connection]);
 
-    const handleChangeActivity = (activity: ActivityData) => {
+    const handleChangeActivity = useCallback((activity: ActivityData) => {
         Object.values(changeActivityNotifiers).forEach(notifier => {
             notifier(activity);
         });
-    }
+    }, [changeActivityNotifiers]);
 
     const setActivity = (activity: ActivityData) => {
         setClientActivity(activity);
@@ -179,7 +182,10 @@ export const ClientConnectionContextProvider = ({ children }: PropsWithChildren)
         setClientName(name);
     }
 
-    connection?.on("ChangeActivity", handleChangeActivity);
+    useEffect(() => {
+        connection?.on("ChangeActivity", handleChangeActivity);
+        return () => connection?.off("ChangeActivity", handleChangeActivity);
+    }, [connection, handleChangeActivity]);
 
     return (
         <ClientConnectionContext.Provider 

@@ -8,39 +8,35 @@ export const useHubConnection = (hubPath?: string, onDisconnect?: () => Promise<
     const [isConnected, setIsConnected] = useState(false);
     const hubUrl = useMemo(() => `${API_URL}/api/Hubs/${hubPath}`, [hubPath]);
 
-    const hubConnection = useMemo(() => {
-        console.debug("Connecting to hub", hubUrl);
+    useEffect(() => {
 
-        if(!hubPath) {
+        if (!hubPath) {
             return;
         }
-        
-        return new SignalR.HubConnectionBuilder()
+
+        let stopped = false;
+
+        const hubConnection = new SignalR.HubConnectionBuilder()
             .withUrl(hubUrl, { withCredentials: false })
             .withAutomaticReconnect({ nextRetryDelayInMilliseconds: context => {
-                if(context.previousRetryCount < 10) {
+                if (context.previousRetryCount < 10) {
                     return 250;
-                } else if(context.previousRetryCount < 40) {
+                } else if (context.previousRetryCount < 40) {
                     return 1000;
                 } else {
                     return 5000;
                 }
             }})
             .build();
-    }, [hubUrl]);
-
-    useEffect(() => {
-
-        if(!hubConnection) {
-            return () => {};
-        }
-
-        if(hubConnection.state !== "Disconnected") {
-            return () => {};
-        }
 
         (async () => {
-            await hubConnection.start();
+            try {
+                await hubConnection.start();
+            } catch {
+                return;
+            }
+
+            if (stopped) return;
 
             console.debug("Hub connected", hubUrl);
 
@@ -52,7 +48,12 @@ export const useHubConnection = (hubPath?: string, onDisconnect?: () => Promise<
             hubConnection.onreconnected(() => setIsConnected(true));
         })();
 
-    }, [hubConnection]);
+        return () => {
+            stopped = true;
+            hubConnection.stop();
+        };
+
+    }, [hubUrl]);
 
     useEffect(() => {
 

@@ -1,4 +1,4 @@
-import { createContext, PropsWithChildren, useCallback, useContext, useEffect, useMemo, useState } from "react"
+import { createContext, PropsWithChildren, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react"
 import { useHubConnection } from "./SignalRHubConnection";
 import { HubConnection } from "@microsoft/signalr";
 import { useGameApi } from "./GameApiHook";
@@ -178,13 +178,15 @@ export const GameStateContextProvider = ({ gameId, children }: PropsWithChildren
         });
     }, [connection, stateNotifiers]);
 
+    const stateNotifiersRef = useRef(stateNotifiers);
+    stateNotifiersRef.current = stateNotifiers;
+
     useEffect(() => {
-        (async () => {
-            connection?.onreconnected(() => {
-                Object.keys(stateNotifiers).forEach(stateName => connection?.invoke("WatchState", stateName));
-            });
-        })();
-    }, [connection, stateNotifiers]);
+        if(!connection) return;
+        connection.onreconnected(() => {
+            Object.keys(stateNotifiersRef.current).forEach(stateName => connection.invoke("WatchState", stateName));
+        });
+    }, [connection]);
 
     const notify = useCallback((stateName: string, state: object) => {
         if(!stateNotifiers[stateName]) {

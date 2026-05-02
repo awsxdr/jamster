@@ -3,19 +3,23 @@ import { useHubConnection } from "./SignalRHubConnection";
 import { HubConnection } from "@microsoft/signalr";
 import { GameInfo } from "@/types";
 import { useGameApi } from "./GameApiHook";
+import { v4 as uuidv4 } from 'uuid';
+
+type CallbackHandle = string;
 
 type GamesListChanged = (games: GameInfo[]) => void;
-type GamesListWatch = (onGamesListChanged: GamesListChanged) => void;
+type GamesListWatch = (onGamesListChanged: GamesListChanged) => CallbackHandle;
+type GamesListUnwatch = (handle: CallbackHandle) => void;
 
 type GamesListContextProps = {
-    gamesListNotifiers: GamesListChanged[],
     watchGamesList: GamesListWatch,
+    unwatchGamesList: GamesListUnwatch,
     connection?: HubConnection,
 };
 
 const GamesListContext = createContext<GamesListContextProps>({
-    gamesListNotifiers: [],
     watchGamesList: () => { throw new Error('watchGamesList called before context created'); },
+    unwatchGamesList: () => { throw new Error('unwatchGamesList called before context created'); },
 });
 
 export const useGamesList = () => {
@@ -32,22 +36,42 @@ export const useGamesList = () => {
     }, []);
     
     useEffect(() => {
-        context.watchGamesList(setValue);
+        const handle = context.watchGamesList(setValue);
+
+        return () => context.unwatchGamesList(handle);
     }, []);
 
     return value;
 }
 
 export const GamesListContextProvider = ({ children }: PropsWithChildren) => {
-    const [gamesListNotifiers, setGamesListNotifiers] = useState<GamesListChanged[]>([]);
+    const [gamesListNotifiers, setGamesListNotifiers] = useState<Record<CallbackHandle, GamesListChanged>>({});
 
     const { connection } = useHubConnection('games');
 
     const watchGamesList = (onStateChange: GamesListChanged) => {
-        setGamesListNotifiers(notifiers => [
+        const newId = uuidv4();
+
+        setGamesListNotifiers(notifiers => ({
             ...notifiers,
-            onStateChange
-        ]);
+            [newId]: onStateChange,
+        }));
+
+        return newId;
+    }
+
+    const unwatchGamesList = (handle: CallbackHandle) => {
+        setGamesListNotifiers(notifiers => {
+            if(!notifiers[handle]) {
+                console.warn("Attempt to unwatch games list change with invalid handle", handle);
+                return notifiers;
+            }
+
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            const { [handle]: _, ...newNotifiers } = notifiers;
+
+            return newNotifiers;
+        })
     }
 
     useEffect(() => {
@@ -55,15 +79,13 @@ export const GamesListContextProvider = ({ children }: PropsWithChildren) => {
     }, [connection]);
 
     useEffect(() => {
-        (async () => {
-            connection?.onreconnected(() => {
-                connection?.invoke("WatchGamesList");
-            });
-        })();
+        connection?.onreconnected(() => {
+            connection?.invoke("WatchGamesList");
+        });
     }, [connection]);
 
     const notify = useCallback((games: GameInfo[]) => {
-        gamesListNotifiers.forEach(n => n(games));
+        Object.values(gamesListNotifiers).forEach(n => n(games));
     }, [gamesListNotifiers]);
 
     useEffect(() => {
@@ -75,7 +97,7 @@ export const GamesListContextProvider = ({ children }: PropsWithChildren) => {
     }, [connection, notify]);
 
     return (
-        <GamesListContext.Provider value={{ gamesListNotifiers, watchGamesList, connection  }}>
+        <GamesListContext.Provider value={{ watchGamesList, unwatchGamesList, connection  }}>
             { children }
         </GamesListContext.Provider>
     )
