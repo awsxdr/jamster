@@ -107,7 +107,7 @@ export const GameStateContextProvider = ({ gameId, children }: PropsWithChildren
         notify(stateName, value);
 
         return value;
-    }, [gameId, states, stateNotifiers]);
+    }, [gameId, stateNotifiers]);
 
     useEffect(() => {
         if(!gameId) {
@@ -128,12 +128,15 @@ export const GameStateContextProvider = ({ gameId, children }: PropsWithChildren
 
     const { connection, isConnected } = useHubConnection(gameId && `game/${gameId}`, handleConnectionDisconnect);
 
+    const statesRef = useRef(states);
+    statesRef.current = states;
+
     const watchState = useCallback(<TState,>(stateName: string, onStateChange: StateChanged<TState>): CallbackHandle => {
         
         const newId = uuidv4();
 
-        if(Object.keys(states).includes(stateName)) {
-            onStateChange(states[stateName] as TState);
+        if(Object.keys(statesRef.current).includes(stateName)) {
+            onStateChange(statesRef.current[stateName] as TState);
         } else {
             getInitialState(stateName).then(v => v && onStateChange(v as TState));
         }
@@ -150,7 +153,7 @@ export const GameStateContextProvider = ({ gameId, children }: PropsWithChildren
         }));
 
         return newId;
-    }, [states]);
+    }, [getInitialState]);
 
     const unwatchState = (stateName: string, handle: CallbackHandle) => {
         setStateNotifiers(sn => {

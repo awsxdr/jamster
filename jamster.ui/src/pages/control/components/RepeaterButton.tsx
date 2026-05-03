@@ -21,6 +21,8 @@ export const RepeaterButton = ({
     const [buttonDown, setButtonDown] = useState(false);
     const [pointerDownEvent, setPointerDownEvent] = useState<PointerEvent<HTMLButtonElement>>();
     const buttonRef = useRef<HTMLButtonElement>(null);
+    const onClickRef = useRef(onClick);
+    onClickRef.current = onClick;
 
     const handlePointerDown = (event: PointerEvent<HTMLButtonElement>) => {
         onPointerDown?.(event);
@@ -62,11 +64,11 @@ export const RepeaterButton = ({
     buttonDownRef.current = buttonDown;
 
     const repeatInput = useCallback((nextDelay: number) => {
-        if(!buttonDownRef.current || !pointerDownEvent) {
+        if(!buttonDownRef.current || !pointerDownEvent || !onClickRef.current) {
             return;
         }
 
-        onClick?.(pointerDownEvent);
+        onClickRef.current(pointerDownEvent);
 
         const inputDelay = Math.max(MINIMUM_DELAY, nextDelay / 2);
 
