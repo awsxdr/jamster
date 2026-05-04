@@ -12,7 +12,7 @@ public class InjuriesUnitTests : ReducerUnitTest<HomeInjuries, InjuriesState>
     public async Task SkaterInjuryAdded_WhenNotDuplicate_AddsNewInjury()
     {
         State = new([new("1", 1, 2, 2, true)]);
-        MockState<GameStageState>(new(Stage.Timeout, 2, 12, 30, false));
+        MockState<GameStageState>(new(Stage.Timeout, 2, 12, 30, false, false));
 
         await Subject.Handle(new SkaterInjuryAdded(0, new(TeamSide.Home, "123")));
 
@@ -27,7 +27,7 @@ public class InjuriesUnitTests : ReducerUnitTest<HomeInjuries, InjuriesState>
     public async Task SkaterInjuryAdded_WhenDuplicate_DoesNotChangeState()
     {
         State = new([new("1", 1, 2, 2, true), new("123", 2, 12, 30, false)]);
-        MockState<GameStageState>(new(Stage.Timeout, 2, 12, 30, false));
+        MockState<GameStageState>(new(Stage.Timeout, 2, 12, 30, false, false));
 
         var originalState = State;
 
@@ -40,7 +40,7 @@ public class InjuriesUnitTests : ReducerUnitTest<HomeInjuries, InjuriesState>
     public async Task SkaterInjuryAdded_WhenTeamDoesNotMatch_DoesNotChangeState()
     {
         State = new([new("1", 1, 2, 2, true)]);
-        MockState<GameStageState>(new(Stage.Timeout, 2, 12, 30, false));
+        MockState<GameStageState>(new(Stage.Timeout, 2, 12, 30, false, false));
 
         var originalState = State;
 
@@ -101,7 +101,7 @@ public class InjuriesUnitTests : ReducerUnitTest<HomeInjuries, InjuriesState>
             new("3", 2, 5, 25, true),
             new(skaterNumber, 2, 10, 30, false)
         ]);
-        MockState<GameStageState>(new(Stage.Lineup, 2, jamNumber, 20 + jamNumber, false));
+        MockState<GameStageState>(new(Stage.Lineup, 2, jamNumber, 20 + jamNumber, false, false));
         MockState<RulesState>(new(Rules.DefaultRules with
         {
             InjuryRules = new(injuryDuration, injuriesBeforeSittingOutPeriod)
@@ -126,7 +126,7 @@ public class InjuriesUnitTests : ReducerUnitTest<HomeInjuries, InjuriesState>
             new("5", 1, 17, 17, false),
         ]);
         MockState<RulesState>(new(Rules.DefaultRules));
-        MockState<GameStageState>(new(Stage.Intermission, 2, 0, 20, true));
+        MockState<GameStageState>(new(Stage.Intermission, 2, 0, 20, false, true));
 
         await Subject.Handle(new PeriodFinalized(0));
 

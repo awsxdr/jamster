@@ -92,7 +92,7 @@ public class ScoreboardControlTests : MockedEngineTest
     {
         GetMock<IGameStateStore>()
             .Setup(mock => mock.GetStateByName(nameof(GameStageState)))
-            .Returns(Result.Succeed<object>(new GameStageState(Stage.BeforeGame, 1, 1, 1, false)));
+            .Returns(Result.Succeed<object>(new GameStageState(Stage.BeforeGame, 1, 1, 1, false, false)));
 
         await _driver.Navigate().GoToUrlAsync(GetUrl("sbo"));
         var wait = new WebDriverWait(_driver, TimeSpan.FromSeconds(5));
@@ -105,29 +105,29 @@ public class ScoreboardControlTests : MockedEngineTest
         scoreboardOperatorInteractor.ClickStart();
         VerifyEvent<JamStarted>();
 
-        StateStore.SetState(new GameStageState(Stage.Jam, 1, 1, 1, false));
+        StateStore.SetState(new GameStageState(Stage.Jam, 1, 1, 1, false, false));
         StateStore.SetState(new JamClockState(true, 0, 1500, true, false));
         StateStore.SetState(new PeriodClockState(true, false, true, 0, 0, 1500));
         scoreboardOperatorInteractor.ValidateStartEnabled(false);
 
-        StateStore.SetState(new GameStageState(Stage.Lineup, 1, 1, 1, false));
+        StateStore.SetState(new GameStageState(Stage.Lineup, 1, 1, 1, false, false));
         StateStore.SetState(new JamClockState(false, 0, 90_000, true, false));
         StateStore.SetState(new PeriodClockState(true, false, true, 0, 0, 95_000));
         scoreboardOperatorInteractor.ValidateStartEnabled(true);
 
-        StateStore.SetState(new GameStageState(Stage.Timeout, 1, 1, 1, false));
+        StateStore.SetState(new GameStageState(Stage.Timeout, 1, 1, 1, false, false));
         StateStore.SetState(new TimeoutClockState(true, 100_000, 0, TimeoutClockStopReason.None, 5_000));
         StateStore.SetState(new PeriodClockState(false, false, true, 0, 0, 100_000));
         scoreboardOperatorInteractor.ClickStart();
 
         VerifyEvent<JamStarted>();
-        StateStore.SetState(new GameStageState(Stage.AfterGame, 2, 22, 45, false));
+        StateStore.SetState(new GameStageState(Stage.AfterGame, 2, 22, 45, false, false));
         StateStore.SetState(new PeriodClockState(false, true, true, 100_000, 100_000, 30 * 2 * 60 * 1000));
 
         scoreboardOperatorInteractor.ClickStart();
         VerifyEvent<JamStarted>();
 
-        StateStore.SetState(new GameStageState(Stage.AfterGame, 2, 22, 45, true));
+        StateStore.SetState(new GameStageState(Stage.AfterGame, 2, 22, 45, false, true));
         StateStore.SetState(new PeriodClockState(false, true, true, 100_000, 100_000, 30 * 2 * 60 * 1000));
         scoreboardOperatorInteractor.ValidateStartEnabled(false);
     }
@@ -137,7 +137,7 @@ public class ScoreboardControlTests : MockedEngineTest
     {
         GetMock<IGameStateStore>()
             .Setup(mock => mock.GetStateByName(nameof(GameStageState)))
-            .Returns(Result.Succeed<object>(new GameStageState(Stage.BeforeGame, 1, 1, 1, false)));
+            .Returns(Result.Succeed<object>(new GameStageState(Stage.BeforeGame, 1, 1, 1, false, false)));
 
         await _driver.Navigate().GoToUrlAsync(GetUrl("sbo"));
         var wait = new WebDriverWait(_driver, TimeSpan.FromSeconds(5));
@@ -151,33 +151,33 @@ public class ScoreboardControlTests : MockedEngineTest
         scoreboardOperatorInteractor.ClickStop();
         VerifyEvent<IntermissionEnded>();
 
-        StateStore.SetState(new GameStageState(Stage.Lineup, 1, 1, 1, false));
+        StateStore.SetState(new GameStageState(Stage.Lineup, 1, 1, 1, false, false));
         scoreboardOperatorInteractor.ValidateStopEnabled(false);
 
-        StateStore.SetState(new GameStageState(Stage.Jam, 1, 1, 1, false));
+        StateStore.SetState(new GameStageState(Stage.Jam, 1, 1, 1, false, false));
         scoreboardOperatorInteractor.ValidateStopEnabled(true);
         scoreboardOperatorInteractor.ClickStop();
         VerifyEvent<JamEnded>();
 
-        StateStore.SetState(new GameStageState(Stage.Timeout, 1, 1, 1, false));
+        StateStore.SetState(new GameStageState(Stage.Timeout, 1, 1, 1, false, false));
         scoreboardOperatorInteractor.ValidateStopEnabled(true);
         scoreboardOperatorInteractor.ClickStop();
         VerifyEvent<TimeoutEnded>();
 
-        StateStore.SetState(new GameStageState(Stage.AfterTimeout, 1, 1, 1, false));
+        StateStore.SetState(new GameStageState(Stage.AfterTimeout, 1, 1, 1, false, false));
         scoreboardOperatorInteractor.ValidateStopEnabled(false);
 
-        StateStore.SetState(new GameStageState(Stage.Intermission, 1, 1, 1, false));
+        StateStore.SetState(new GameStageState(Stage.Intermission, 1, 1, 1, false, false));
         scoreboardOperatorInteractor.ValidateStopEnabled(true);
         scoreboardOperatorInteractor.ClickStop();
         VerifyEvent<PeriodFinalized>();
 
-        StateStore.SetState(new GameStageState(Stage.Intermission, 1, 1, 1, true));
+        StateStore.SetState(new GameStageState(Stage.Intermission, 1, 1, 1, false, true));
         scoreboardOperatorInteractor.ValidateStopEnabled(true);
         scoreboardOperatorInteractor.ClickStop();
         VerifyEvent<IntermissionEnded>();
 
-        StateStore.SetState(new GameStageState(Stage.AfterGame, 2, 1, 1, true));
+        StateStore.SetState(new GameStageState(Stage.AfterGame, 2, 1, 1, false, true));
         scoreboardOperatorInteractor.ValidateStopEnabled(false);
     }
 

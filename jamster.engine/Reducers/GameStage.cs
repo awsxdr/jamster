@@ -15,11 +15,13 @@ public class GameStage(ReducerGameContext context, ILogger<GameStage> logger)
     , IHandlesEvent<PeriodEnded>
     , IHandlesEvent<PeriodFinalized>
     , IHandlesEvent<JamNumberOffset>
+    , IHandlesEvent<OvertimeStarted>
+    , IHandlesEvent<OvertimeEnded>
     , IDependsOnState<PeriodClockState>
     , IDependsOnState<RulesState>
     , IDependsOnState<TimeoutTypeState>
 {
-    protected override GameStageState DefaultState => new(Stage.BeforeGame, 1, 0, 0, false);
+    protected override GameStageState DefaultState => GameStageState.Default;
 
     public IEnumerable<Event> Handle(IntermissionEnded @event)
     {
@@ -202,13 +204,13 @@ public class GameStage(ReducerGameContext context, ILogger<GameStage> logger)
 
         var newState = state switch
         {
-            (Stage.Intermission, _, _, _, false) => state with
+            (Stage.Intermission, _, _, _, _, false) => state with
             {
                 JamNumber = rules.JamRules.ResetJamNumbersBetweenPeriods ? 0 : state.JamNumber,
                 PeriodNumber = state.PeriodNumber + 1,
                 PeriodIsFinalized = true,
             },
-            (Stage.AfterGame, _, _, _, false) => state with {PeriodIsFinalized = true},
+            (Stage.AfterGame, _, _, _, _, false) => state with {PeriodIsFinalized = true},
             _ => state
         };
 
@@ -229,9 +231,39 @@ public class GameStage(ReducerGameContext context, ILogger<GameStage> logger)
 
         return [];
     }
+
+    public IEnumerable<Event> Handle(OvertimeStarted @event)
+    {
+        var state = GetState();
+
+        if (state.Stage is not Stage.AfterGame)
+            return [];
+
+        SetState(state with { IsInOvertime = true });
+
+        return [];
+    }
+
+    public IEnumerable<Event> Handle(OvertimeEnded @event)
+    {
+        var state = GetState();
+
+        SetState(state with { IsInOvertime = false });
+
+        return [];
+    }
 }
 
-public record GameStageState(Stage Stage, int PeriodNumber, int JamNumber, int TotalJamNumber, bool PeriodIsFinalized);
+public record GameStageState(
+    Stage Stage,
+    int PeriodNumber,
+    int JamNumber,
+    int TotalJamNumber,
+    bool IsInOvertime,
+    bool PeriodIsFinalized)
+{
+    public static GameStageState Default => new(Stage.BeforeGame, 1, 0, 0, false, false);
+}
 
 public enum Stage
 {

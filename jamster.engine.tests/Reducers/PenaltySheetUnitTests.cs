@@ -55,7 +55,7 @@ public class PenaltySheetUnitTests : ReducerUnitTest<HomePenaltySheet, PenaltySh
             new("3", null, []),
             new("4", null, [new("P", 1, 1, true), new("E", 1, 7, true)]),
         ]);
-        MockState<GameStageState>(new(Stage.Jam, 1, 9, 9, false));
+        MockState<GameStageState>(new(Stage.Jam, 1, 9, 9, false, false));
 
         await Subject.Handle(new PenaltyAssessed(0, new(TeamSide.Home, "2", "P")));
 
@@ -74,7 +74,7 @@ public class PenaltySheetUnitTests : ReducerUnitTest<HomePenaltySheet, PenaltySh
     public async Task PenaltyAssessed_WhenSkaterNumberKnown_AddsPenaltyInCorrectJam(int period, int jam, int expectedJam)
     {
         State = new([new("123", null, [])]);
-        MockState<GameStageState>(new(Stage.Lineup, period, jam, (period - 1) * 20 + jam, false));
+        MockState<GameStageState>(new(Stage.Lineup, period, jam, (period - 1) * 20 + jam, false, false));
 
         await Subject.Handle(new PenaltyAssessed(0, new(TeamSide.Home, "123", "X")));
 
@@ -92,7 +92,7 @@ public class PenaltySheetUnitTests : ReducerUnitTest<HomePenaltySheet, PenaltySh
             new("3", null, []),
             new("4", null, [new("P", 1, 1, true), new("E", 1, 7, true)]),
         ]);
-        MockState<GameStageState>(new(Stage.Jam, 1, 9, 9, false));
+        MockState<GameStageState>(new(Stage.Jam, 1, 9, 9, false, false));
 
         var originalState = State;
 
@@ -110,7 +110,7 @@ public class PenaltySheetUnitTests : ReducerUnitTest<HomePenaltySheet, PenaltySh
             new("3", null, []),
             new("4", null, [new("P", 1, 1, true), new("E", 1, 7, true)]),
         ]);
-        MockState<GameStageState>(new(Stage.Jam, 1, 9, 9, false));
+        MockState<GameStageState>(new(Stage.Jam, 1, 9, 9, false, false));
 
         var originalState = State;
 
@@ -128,7 +128,7 @@ public class PenaltySheetUnitTests : ReducerUnitTest<HomePenaltySheet, PenaltySh
             new("3", null, []),
             new("4", null, [new("P", 1, 1, true), new("E", 1, 7, true)]),
         ]);
-        MockState<GameStageState>(new(Stage.Jam, 1, 9, 9, false));
+        MockState<GameStageState>(new(Stage.Jam, 1, 9, 9, false, false));
 
         await Subject.Handle(new PenaltyRescinded(0, new(TeamSide.Home, "2", "P", 1, 5)));
 
@@ -150,7 +150,7 @@ public class PenaltySheetUnitTests : ReducerUnitTest<HomePenaltySheet, PenaltySh
                 new("X", 1, 1, false),
             ])
         ]);
-        MockState<GameStageState>(new(Stage.Jam, 1, 9, 9, false));
+        MockState<GameStageState>(new(Stage.Jam, 1, 9, 9, false, false));
 
         await Subject.Handle(new PenaltyRescinded(0, new(TeamSide.Home, "123", "X", 1, 1)));
 
@@ -171,7 +171,7 @@ public class PenaltySheetUnitTests : ReducerUnitTest<HomePenaltySheet, PenaltySh
             new("3", null, []),
             new("4", null, [new("P", 1, 1, true), new("E", 1, 7, true)]),
         ]);
-        MockState<GameStageState>(new(Stage.Jam, 1, 9, 9, false));
+        MockState<GameStageState>(new(Stage.Jam, 1, 9, 9, false, false));
 
         var originalState = State;
 
@@ -189,7 +189,7 @@ public class PenaltySheetUnitTests : ReducerUnitTest<HomePenaltySheet, PenaltySh
             new("3", null, []),
             new("4", null, [new("P", 1, 1, true), new("E", 1, 7, true)]),
         ]);
-        MockState<GameStageState>(new(Stage.Jam, 1, 9, 9, false));
+        MockState<GameStageState>(new(Stage.Jam, 1, 9, 9, false, false));
 
         var originalState = State;
 
@@ -204,7 +204,7 @@ public class PenaltySheetUnitTests : ReducerUnitTest<HomePenaltySheet, PenaltySh
         State = new([
             new("123", new("X", 1, 5, false), [new("C", 1, 3, true), new("B", 1, 5, true), new("X", 1, 5, false)]),
         ]);
-        MockState<GameStageState>(new(Stage.Jam, 1, 5, 5, false));
+        MockState<GameStageState>(new(Stage.Jam, 1, 5, 5, false, false));
 
         await Subject.Handle(new PenaltyRescinded(0, new(TeamSide.Home, "123", "X", 1, 5)));
 
@@ -219,7 +219,7 @@ public class PenaltySheetUnitTests : ReducerUnitTest<HomePenaltySheet, PenaltySh
         State = new([
             new("123", new("X", 1, 5, false), [new("C", 1, 3, true), new("X", 1, 5, false), new("X", 1, 5, false)]),
         ]);
-        MockState<GameStageState>(new(Stage.Jam, 1, 5, 5, false));
+        MockState<GameStageState>(new(Stage.Jam, 1, 5, 5, false, false));
 
         await Subject.Handle(new PenaltyRescinded(0, new(TeamSide.Home, "123", "X", 1, 5)));
 

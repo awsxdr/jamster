@@ -11,7 +11,7 @@ public class JamLineupUnitTests : ReducerUnitTest<HomeTeamJamLineup, JamLineupSt
     [Test]
     public async Task SkaterOnTrack_WithJammer_ReturnsSkaterAddedToJamEvent()
     {
-        MockState<GameStageState>(new(Stage.Jam, 2, 6, 20, false));
+        MockState<GameStageState>(new(Stage.Jam, 2, 6, 20, false, false));
 
         var implicitEvents = await Subject.Handle(new SkaterOnTrack(0, new(TeamSide.Home, "123", SkaterPosition.Jammer)));
 
@@ -32,7 +32,7 @@ public class JamLineupUnitTests : ReducerUnitTest<HomeTeamJamLineup, JamLineupSt
     public async Task SkaterAddedToJam_WithJammer_WhenJamIsCurrent_AndInJam_SetsLineupCorrectly(JamLineupState initialState, string newSkaterNumber, JamLineupState expectedState)
     {
         State = initialState;
-        MockState<GameStageState>(new(Stage.Jam, 2, 6, 20, false));
+        MockState<GameStageState>(new(Stage.Jam, 2, 6, 20, false, false));
 
         await Subject.Handle(new SkaterAddedToJam(0, new(TeamSide.Home, 2, 6, newSkaterNumber, SkaterPosition.Jammer)));
 
@@ -43,7 +43,7 @@ public class JamLineupUnitTests : ReducerUnitTest<HomeTeamJamLineup, JamLineupSt
     public async Task SkaterAddedToJam_WithJammer_WhenJamIsUpcoming_AndNotInJam_SetsLineupCorrectly(JamLineupState initialState, string newSkaterNumber, JamLineupState expectedState)
     {
         State = initialState;
-        MockState<GameStageState>(new(Stage.Lineup, 2, 6, 20, false));
+        MockState<GameStageState>(new(Stage.Lineup, 2, 6, 20, false, false));
 
         await Subject.Handle(new SkaterAddedToJam(0, new(TeamSide.Home, 2, 7, newSkaterNumber, SkaterPosition.Jammer)));
 
@@ -54,7 +54,7 @@ public class JamLineupUnitTests : ReducerUnitTest<HomeTeamJamLineup, JamLineupSt
     public async Task SkaterAddedToJam_WithJammer_WhenJamIsPrevious_DoesNotChangeState()
     {
         var initialState = State = new("123", "321", ["1", "2", "3"]);
-        MockState<GameStageState>(new(Stage.Jam, 2, 6, 20, false));
+        MockState<GameStageState>(new(Stage.Jam, 2, 6, 20, false, false));
 
         await Subject.Handle(new SkaterAddedToJam(0, new(TeamSide.Home, 2, 5, "555", SkaterPosition.Jammer)));
 
@@ -65,7 +65,7 @@ public class JamLineupUnitTests : ReducerUnitTest<HomeTeamJamLineup, JamLineupSt
     public async Task SkaterAddedToJam_WithJammer_WhenJamIsUpcoming_AndInJam_DoesNotChangeState()
     {
         var initialState = State = new("123", "321", ["1", "2", "3"]);
-        MockState<GameStageState>(new(Stage.Jam, 2, 6, 20, false));
+        MockState<GameStageState>(new(Stage.Jam, 2, 6, 20, false, false));
 
         await Subject.Handle(new SkaterAddedToJam(0, new(TeamSide.Home, 2, 7, "555", SkaterPosition.Jammer)));
 
@@ -75,7 +75,7 @@ public class JamLineupUnitTests : ReducerUnitTest<HomeTeamJamLineup, JamLineupSt
     [Test]
     public async Task SkaterOnTrack_WithPivot_ReturnsSkaterAddedToJamEvent()
     {
-        MockState<GameStageState>(new(Stage.Jam, 2, 6, 20, false));
+        MockState<GameStageState>(new(Stage.Jam, 2, 6, 20, false, false));
 
         var implicitEvents = await Subject.Handle(new SkaterOnTrack(0, new(TeamSide.Home, "123", SkaterPosition.Pivot)));
 
@@ -99,7 +99,7 @@ public class JamLineupUnitTests : ReducerUnitTest<HomeTeamJamLineup, JamLineupSt
     public async Task SkaterOnTrack_SkaterAddedToJam_WithPivot_WhenJamIsCurrent_SetsLineupCorrectlyWithPivot_SetsLineupCorrectly(JamLineupState initialState, string newSkaterNumber, JamLineupState expectedState)
     {
         State = initialState;
-        MockState<GameStageState>(new(Stage.Jam, 2, 6, 20, false));
+        MockState<GameStageState>(new(Stage.Jam, 2, 6, 20, false, false));
 
         await Subject.Handle(new SkaterAddedToJam(0, new(TeamSide.Home, 2, 6, newSkaterNumber, SkaterPosition.Pivot)));
 
@@ -110,7 +110,7 @@ public class JamLineupUnitTests : ReducerUnitTest<HomeTeamJamLineup, JamLineupSt
     public async Task SkaterAddedToJam_WithPivot_WhenJamIsUpcoming_AndNotInJam_SetsLineupCorrectly(JamLineupState initialState, string newSkaterNumber, JamLineupState expectedState)
     {
         State = initialState;
-        MockState<GameStageState>(new(Stage.Lineup, 2, 6, 20, false));
+        MockState<GameStageState>(new(Stage.Lineup, 2, 6, 20, false, false));
 
         await Subject.Handle(new SkaterAddedToJam(0, new(TeamSide.Home, 2, 7, newSkaterNumber, SkaterPosition.Pivot)));
 
@@ -121,7 +121,7 @@ public class JamLineupUnitTests : ReducerUnitTest<HomeTeamJamLineup, JamLineupSt
     public async Task SkaterAddedToJam_WithPivot_WhenJamIsPrevious_DoesNotChangeState()
     {
         var initialState = State = new("123", "321", ["1", "2", "3"]);
-        MockState<GameStageState>(new(Stage.Jam, 2, 6, 20, false));
+        MockState<GameStageState>(new(Stage.Jam, 2, 6, 20, false, false));
 
         await Subject.Handle(new SkaterAddedToJam(0, new(TeamSide.Home, 2, 5, "555", SkaterPosition.Pivot)));
 
@@ -132,7 +132,7 @@ public class JamLineupUnitTests : ReducerUnitTest<HomeTeamJamLineup, JamLineupSt
     public async Task SkaterAddedToJam_WithPivot_WhenJamIsUpcoming_AndInJam_DoesNotChangeState()
     {
         var initialState = State = new("123", "321", ["1", "2", "3"]);
-        MockState<GameStageState>(new(Stage.Jam, 2, 6, 20, false));
+        MockState<GameStageState>(new(Stage.Jam, 2, 6, 20, false, false));
 
         await Subject.Handle(new SkaterAddedToJam(0, new(TeamSide.Home, 2, 7, "555", SkaterPosition.Pivot)));
 
@@ -142,7 +142,7 @@ public class JamLineupUnitTests : ReducerUnitTest<HomeTeamJamLineup, JamLineupSt
     [Test]
     public async Task SkaterOnTrack_WithBlocker_ReturnsSkaterAddedToJamEvent()
     {
-        MockState<GameStageState>(new(Stage.Jam, 2, 6, 20, false));
+        MockState<GameStageState>(new(Stage.Jam, 2, 6, 20, false, false));
 
         var implicitEvents = await Subject.Handle(new SkaterOnTrack(0, new(TeamSide.Home, "123", SkaterPosition.Blocker)));
 
@@ -166,7 +166,7 @@ public class JamLineupUnitTests : ReducerUnitTest<HomeTeamJamLineup, JamLineupSt
     public async Task SkaterAddedToJam_WithBlocker_WhenJamIsCurrent_SetsLineupCorrectly(JamLineupState initialState, string newSkaterNumber, JamLineupState expectedState)
     {
         State = initialState;
-        MockState<GameStageState>(new(Stage.Jam, 2, 6, 20, false));
+        MockState<GameStageState>(new(Stage.Jam, 2, 6, 20, false, false));
 
         await Subject.Handle(new SkaterAddedToJam(0, new(TeamSide.Home, 2, 6, newSkaterNumber, SkaterPosition.Blocker)));
 
@@ -177,7 +177,7 @@ public class JamLineupUnitTests : ReducerUnitTest<HomeTeamJamLineup, JamLineupSt
     public async Task SkaterAddedToJam_WithBlocker_WhenJamIsUpcoming_AndNotInJam_SetsLineupCorrectly(JamLineupState initialState, string newSkaterNumber, JamLineupState expectedState)
     {
         State = initialState;
-        MockState<GameStageState>(new(Stage.Lineup, 2, 6, 20, false));
+        MockState<GameStageState>(new(Stage.Lineup, 2, 6, 20, false, false));
 
         await Subject.Handle(new SkaterAddedToJam(0, new(TeamSide.Home, 2, 7, newSkaterNumber, SkaterPosition.Blocker)));
 
@@ -188,7 +188,7 @@ public class JamLineupUnitTests : ReducerUnitTest<HomeTeamJamLineup, JamLineupSt
     public async Task SkaterAddedToJam_WithBlocker_WhenJamIsPrevious_DoesNotChangeState()
     {
         var initialState = State = new("123", "321", ["1", "2", "3"]);
-        MockState<GameStageState>(new(Stage.Jam, 2, 6, 20, false));
+        MockState<GameStageState>(new(Stage.Jam, 2, 6, 20, false, false));
 
         await Subject.Handle(new SkaterAddedToJam(0, new(TeamSide.Home, 2, 5, "555", SkaterPosition.Blocker)));
 
@@ -199,7 +199,7 @@ public class JamLineupUnitTests : ReducerUnitTest<HomeTeamJamLineup, JamLineupSt
     public async Task SkaterAddedToJam_WithBlocker_WhenJamIsUpcoming_AndInJam_DoesNotChangeState()
     {
         var initialState = State = new("123", "321", ["1", "2", "3"]);
-        MockState<GameStageState>(new(Stage.Jam, 2, 6, 20, false));
+        MockState<GameStageState>(new(Stage.Jam, 2, 6, 20, false, false));
 
         await Subject.Handle(new SkaterAddedToJam(0, new(TeamSide.Home, 2, 7, "555", SkaterPosition.Blocker)));
 
@@ -210,7 +210,7 @@ public class JamLineupUnitTests : ReducerUnitTest<HomeTeamJamLineup, JamLineupSt
     public async Task SkaterOffTrack_WhenInJam_AndTeamMatches_RaisesSkaterRemovedFromJamEvent()
     {
         State = new("1", "2", ["3", "4", "5"]);
-        MockState<GameStageState>(new(Stage.Jam, 2, 6, 20, false));
+        MockState<GameStageState>(new(Stage.Jam, 2, 6, 20, false, false));
 
         var implicitEvents = await Subject.Handle(new SkaterOffTrack(0, new(TeamSide.Home, "4")));
 
@@ -222,7 +222,7 @@ public class JamLineupUnitTests : ReducerUnitTest<HomeTeamJamLineup, JamLineupSt
     public async Task SkaterOffTrack_WhenNotInJam_AndTeamMatches_RaisesSkaterRemovedFromJamEvent()
     {
         State = new("1", "2", ["3", "4", "5"]);
-        MockState<GameStageState>(new(Stage.Lineup, 2, 6, 20, false));
+        MockState<GameStageState>(new(Stage.Lineup, 2, 6, 20, false, false));
 
         var implicitEvents = await Subject.Handle(new SkaterOffTrack(0, new(TeamSide.Home, "4")));
 
@@ -234,7 +234,7 @@ public class JamLineupUnitTests : ReducerUnitTest<HomeTeamJamLineup, JamLineupSt
     public async Task SkaterOffTrack_WhenInJam_AndTeamDoesNotMatch_DoesNotRaiseSkaterRemovedFromJamEvent()
     {
         State = new("1", "2", ["3", "4", "5"]);
-        MockState<GameStageState>(new(Stage.Jam, 2, 6, 20, false));
+        MockState<GameStageState>(new(Stage.Jam, 2, 6, 20, false, false));
 
         var implicitEvents = await Subject.Handle(new SkaterOffTrack(0, new(TeamSide.Away, "4")));
 
@@ -255,7 +255,7 @@ public class JamLineupUnitTests : ReducerUnitTest<HomeTeamJamLineup, JamLineupSt
     public async Task SkaterRemovedFromJam_WhenJamIsCurrent_AndInJam_ClearsSkaterFromLineup(JamLineupState initialState, JamLineupState expectedState)
     {
         State = initialState;
-        MockState<GameStageState>(new(Stage.Jam, 2, 6, 20, false));
+        MockState<GameStageState>(new(Stage.Jam, 2, 6, 20, false, false));
 
         await Subject.Handle(new SkaterRemovedFromJam(0, new(TeamSide.Home, 2, 6, "123")));
 
@@ -266,7 +266,7 @@ public class JamLineupUnitTests : ReducerUnitTest<HomeTeamJamLineup, JamLineupSt
     public async Task SkaterRemovedFromJam_WhenJamIsUpcoming_AndNotInJam_ClearsSkaterFromLineup(JamLineupState initialState, JamLineupState expectedState)
     {
         State = initialState;
-        MockState<GameStageState>(new(Stage.Lineup, 2, 6, 20, false));
+        MockState<GameStageState>(new(Stage.Lineup, 2, 6, 20, false, false));
 
         await Subject.Handle(new SkaterRemovedFromJam(0, new(TeamSide.Home, 2, 7, "123")));
 
@@ -286,7 +286,7 @@ public class JamLineupUnitTests : ReducerUnitTest<HomeTeamJamLineup, JamLineupSt
     [Test]
     public async Task SkaterOffTrack_RaisesSkaterRemovedFromJamEvent()
     {
-        MockState<GameStageState>(new(Stage.Jam, 2, 6, 20, false));
+        MockState<GameStageState>(new(Stage.Jam, 2, 6, 20, false, false));
 
         var implicitEvents = await Subject.Handle(new SkaterOffTrack(0, new(TeamSide.Home, "666")));
 

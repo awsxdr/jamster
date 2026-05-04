@@ -175,7 +175,13 @@ public class GameSimulator(SimulatorGame game)
                 _gameState.Sheets.AwaySheets.ScoreSheet[^1].StarPassTrip != null,
                 _gameState.JamInfo.AwayTeam.CompletedInitial)
             ),
-            new GameStageState(_gameState.Stage, _gameState.Period + (_gameState.Stage == Stage.BeforeGame ? 1 : 0), _gameState.Jam, _gameState.TotalJam, _gameState.PeriodFinalized),
+            new GameStageState(
+                _gameState.Stage,
+                _gameState.Period + (_gameState.Stage == Stage.BeforeGame ? 1 : 0),
+                _gameState.Jam,
+                _gameState.TotalJam,
+                _gameState.IsInOvertime,
+                _gameState.PeriodFinalized),
         ]);
 
     private void TickBeforeGame()
@@ -803,6 +809,7 @@ public class GameSimulator(SimulatorGame game)
         public Lineups Lineups { get; set; } = new();
         public Clocks Clocks { get; set; } = new();
         public TeamsSheets Sheets { get; set; } = new();
+        public bool IsInOvertime { get; set; } = false;
         public bool PeriodFinalized { get; set; } = false;
     }
 

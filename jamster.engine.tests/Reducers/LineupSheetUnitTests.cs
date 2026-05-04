@@ -12,7 +12,7 @@ public class LineupSheetUnitTests : ReducerUnitTest<HomeLineupSheet, LineupSheet
     public async Task JamEnded_CreatesNewJamWithExpectedDefaults()
     {
         State = new([]);
-        MockState<GameStageState>(new(Stage.Jam, 2, 6, 20, false));
+        MockState<GameStageState>(new(Stage.Jam, 2, 6, 20, false, false));
 
         await Subject.Handle(new JamEnded(0));
 

@@ -13,7 +13,7 @@ public class BoxTripsUnitTests : ReducerUnitTest<HomeBoxTrips, BoxTripsState>
     public async Task SkaterSatInBox_WhenNotAlreadyInBox_AddsBoxTrip([Values] bool afterStarPass)
     {
         State = new([], afterStarPass);
-        MockState<GameStageState>(new(Stage.Jam, 2, 6, 20, false));
+        MockState<GameStageState>(new(Stage.Jam, 2, 6, 20, false, false));
         MockKeyedState<JamLineupState>(nameof(TeamSide.Home), new("123", "321", ["1", "2", "3"]));
 
         await Subject.Handle(new SkaterSatInBox(1234, new(TeamSide.Home, "123")));
@@ -26,7 +26,7 @@ public class BoxTripsUnitTests : ReducerUnitTest<HomeBoxTrips, BoxTripsState>
     public async Task SkaterSatInBox_WhenPreviouslyReleasedFromBox_AddsBoxTrip()
     {
         State = new([new(2, 5, 19, false, false, "123", SkaterPosition.Blocker, 0, false, [], 0, 0, 30000)], false);
-        MockState<GameStageState>(new(Stage.Jam, 20, 2, 6, false));
+        MockState<GameStageState>(new(Stage.Jam, 20, 2, 6, false, false));
         MockKeyedState<JamLineupState>(nameof(TeamSide.Home), new("123", "321", ["1", "2", "3"]));
 
         await Subject.Handle(new SkaterSatInBox(60000, new(TeamSide.Home, "123")));
@@ -39,7 +39,7 @@ public class BoxTripsUnitTests : ReducerUnitTest<HomeBoxTrips, BoxTripsState>
     {
         State = new([new(2, 6, 20, false, false, "123", SkaterPosition.Jammer, null, false, [], 0, 0, 0)], false);
         var originalState = State;
-        MockState<GameStageState>(new(Stage.Jam, 2, 6, 20, false));
+        MockState<GameStageState>(new(Stage.Jam, 2, 6, 20, false, false));
         MockKeyedState<JamLineupState>(nameof(TeamSide.Home), new("123", "321", ["1", "2", "3"]));
 
         await Subject.Handle(new SkaterSatInBox(1000, new(TeamSide.Home, "123")));
@@ -52,7 +52,7 @@ public class BoxTripsUnitTests : ReducerUnitTest<HomeBoxTrips, BoxTripsState>
     {
         State = new([new(2, 6, 20, false, false, "321", SkaterPosition.Pivot, null, false, [], 0, 0, 0)], false);
         var originalState = State;
-        MockState<GameStageState>(new(Stage.Jam, 2, 6, 20, false));
+        MockState<GameStageState>(new(Stage.Jam, 2, 6, 20, false, false));
         MockKeyedState<JamLineupState>(nameof(TeamSide.Home), new("123", "321", ["1", "2", "3"]));
 
         await Subject.Handle(new SkaterSatInBox(1000, new(TeamSide.Home, "123")));
@@ -66,7 +66,7 @@ public class BoxTripsUnitTests : ReducerUnitTest<HomeBoxTrips, BoxTripsState>
     {
         State = new([new(2, 6, 20, false, false, "321", SkaterPosition.Pivot, null, false, [], 0, 0, 0)], false);
         var originalState = State;
-        MockState<GameStageState>(new(Stage.Jam, 2, 6, 20, false));
+        MockState<GameStageState>(new(Stage.Jam, 2, 6, 20, false, false));
         MockKeyedState<JamLineupState>(nameof(TeamSide.Home), new("123", "321", ["1", "2", "3"]));
 
         await Subject.Handle(new SkaterSatInBox(1000, new(TeamSide.Away, "123")));
@@ -78,7 +78,7 @@ public class BoxTripsUnitTests : ReducerUnitTest<HomeBoxTrips, BoxTripsState>
     public async Task SkaterSatInBox_WhenNotInJam_MarksSatBetweenJams([Values(Stage.BeforeGame, Stage.Lineup, Stage.Timeout, Stage.AfterTimeout, Stage.Intermission, Stage.AfterGame)] Stage stage)
     {
         State = new([], false);
-        MockState<GameStageState>(new(stage, 1, 1, 1, false));
+        MockState<GameStageState>(new(stage, 1, 1, 1, false, false));
         MockKeyedState<JamLineupState>(nameof(TeamSide.Home), new("123", "321", ["1", "2", "3"]));
 
         await Subject.Handle(new SkaterSatInBox(0, new(TeamSide.Home, "1")));
@@ -92,7 +92,7 @@ public class BoxTripsUnitTests : ReducerUnitTest<HomeBoxTrips, BoxTripsState>
     public async Task SkaterSatInBox_CorrectlyRecordsSkaterPosition(string skaterNumber, SkaterPosition expectedPosition)
     {
         MockKeyedState<JamLineupState>(nameof(TeamSide.Home), new("123", "321", ["1", "2", "3"]));
-        MockState<GameStageState>(new(Stage.Jam, 1, 1, 1, false));
+        MockState<GameStageState>(new(Stage.Jam, 1, 1, 1, false, false));
 
         await Subject.Handle(new SkaterSatInBox(0, new(TeamSide.Home, skaterNumber)));
 
@@ -104,7 +104,7 @@ public class BoxTripsUnitTests : ReducerUnitTest<HomeBoxTrips, BoxTripsState>
     {
         State = new([new(2, 6, 20, false, false, "321", SkaterPosition.Pivot, null, false, [], 0, 0, 0)], false);
         var originalState = State;
-        MockState<GameStageState>(new(Stage.Jam, 2, 6, 20, false));
+        MockState<GameStageState>(new(Stage.Jam, 2, 6, 20, false, false));
         MockKeyedState<JamLineupState>(nameof(TeamSide.Home), new("123", "321", ["1", "2", "3"]));
 
         await Subject.Handle(new SkaterSatInBox(1000, new(TeamSide.Home, "4")));
@@ -116,7 +116,7 @@ public class BoxTripsUnitTests : ReducerUnitTest<HomeBoxTrips, BoxTripsState>
     public async Task SkaterReleasedFromBox_WhenSkaterInBox_MarksBoxTripAsCompleted([Values] bool afterStarPass)
     {
         State = new([new(2, 6, 20, false, false, "123", SkaterPosition.Jammer, null, false, [], 0, 0, 0)], afterStarPass);
-        MockState<GameStageState>(new(Stage.Jam, 2, 8, 22, false));
+        MockState<GameStageState>(new(Stage.Jam, 2, 8, 22, false, false));
         MockKeyedState<JamLineupState>(nameof(TeamSide.Home), new("123", "321", ["1", "2", "3"]));
 
         await Subject.Handle(new SkaterReleasedFromBox(1234, new(TeamSide.Home, "123")));
@@ -129,7 +129,7 @@ public class BoxTripsUnitTests : ReducerUnitTest<HomeBoxTrips, BoxTripsState>
     public async Task SkaterReleasedFromBox_AfterPeriodChange_MarksDurationCorrectly()
     {
         State = new([new(1, 14, 14, false, false, "123", SkaterPosition.Jammer, null, false, [], 0, 0, 0)], false);
-        MockState<GameStageState>(new(Stage.Jam, 2, 1, 15, false));
+        MockState<GameStageState>(new(Stage.Jam, 2, 1, 15, false, false));
         MockKeyedState<JamLineupState>(nameof(TeamSide.Home), new("123", "321", ["1", "2", "3"]));
 
         await Subject.Handle(new SkaterReleasedFromBox(0, new(TeamSide.Home, "123")));
@@ -143,7 +143,7 @@ public class BoxTripsUnitTests : ReducerUnitTest<HomeBoxTrips, BoxTripsState>
     {
         State = new([new(2, 6, 20, false, false, "321", SkaterPosition.Pivot, null, false, [], 0, 0, 0)], false);
         var originalState = State;
-        MockState<GameStageState>(new(Stage.Jam, 2, 6, 20, false));
+        MockState<GameStageState>(new(Stage.Jam, 2, 6, 20, false, false));
         MockKeyedState<JamLineupState>(nameof(TeamSide.Home), new("123", "321", ["1", "2", "3"]));
 
         await Subject.Handle(new SkaterReleasedFromBox(1234, new(TeamSide.Home, "123")));
@@ -156,7 +156,7 @@ public class BoxTripsUnitTests : ReducerUnitTest<HomeBoxTrips, BoxTripsState>
     {
         State = new([new(2, 6, 20, false, false, "123", SkaterPosition.Jammer, null, false, [], 0, 0, 0)], false);
         var originalState = State;
-        MockState<GameStageState>(new(Stage.Jam, 2, 8, 22, false));
+        MockState<GameStageState>(new(Stage.Jam, 2, 8, 22, false, false));
         MockKeyedState<JamLineupState>(nameof(TeamSide.Home), new("123", "321", ["1", "2", "3"]));
 
         await Subject.Handle(new SkaterReleasedFromBox(1234, new(TeamSide.Away, "123")));
@@ -223,7 +223,7 @@ public class BoxTripsUnitTests : ReducerUnitTest<HomeBoxTrips, BoxTripsState>
             ],
             false
         );
-        MockState<GameStageState>(new(Stage.Jam, 1, 1, 1, false));
+        MockState<GameStageState>(new(Stage.Jam, 1, 1, 1, false, false));
 
         await ((ITickReceiver)Subject).TickAsync(15000);
 
@@ -248,7 +248,7 @@ public class BoxTripsUnitTests : ReducerUnitTest<HomeBoxTrips, BoxTripsState>
             ],
             false
         );
-        MockState<GameStageState>(new(Stage.Lineup, 2, 6, 20, false));
+        MockState<GameStageState>(new(Stage.Lineup, 2, 6, 20, false, false));
 
         await Subject.Handle(new SkaterSubstitutedInBox(0, new(TeamSide.Home, "1", "3")));
 
