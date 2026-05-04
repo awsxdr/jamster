@@ -170,6 +170,14 @@ public sealed record GameSummaryState(
     PenaltySummary AwayPenalties,
     int[] PeriodJamCounts)
 {
+    public static GameSummaryState Default => new(
+        GameProgress.Upcoming,
+        ScoreSummary.Default,
+        ScoreSummary.Default,
+        PenaltySummary.Default,
+        PenaltySummary.Default,
+        [0, 0]);
+
     public bool Equals(GameSummaryState? other) =>
         other is not null
         && other.GameProgress.Equals(GameProgress)
@@ -191,6 +199,8 @@ public enum GameProgress
 
 public sealed record ScoreSummary(int[] PeriodTotals, int GrandTotal)
 {
+    public static ScoreSummary Default => new([0, 0], 0);
+
     public bool Equals(ScoreSummary? other) =>
         other is not null
         && other.PeriodTotals.SequenceEqual(PeriodTotals)
@@ -201,6 +211,8 @@ public sealed record ScoreSummary(int[] PeriodTotals, int GrandTotal)
 
 public sealed record PenaltySummary(int[] PeriodTotals, int GrandTotal)
 {
+    public static PenaltySummary Default => new([0, 0], 0);
+
     public bool Equals(PenaltySummary? other) =>
         other is not null
         && other.PeriodTotals.SequenceEqual(PeriodTotals)

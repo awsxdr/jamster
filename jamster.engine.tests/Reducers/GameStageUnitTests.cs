@@ -14,6 +14,7 @@ public class GameStageUnitTests : ReducerUnitTest<GameStage, GameStageState>
     [TestCase(Stage.Lineup, Stage.Lineup)]
     [TestCase(Stage.Jam, Stage.Jam)]
     [TestCase(Stage.Timeout, Stage.Timeout)]
+    [TestCase(Stage.AfterTimeout, Stage.AfterTimeout)]
     [TestCase(Stage.Intermission, Stage.Lineup)]
     [TestCase(Stage.AfterGame, Stage.AfterGame)]
     public async Task IntermissionEnded_SetsExpectedStage(Stage currentStage, Stage expectedStage)
@@ -29,6 +30,7 @@ public class GameStageUnitTests : ReducerUnitTest<GameStage, GameStageState>
     [TestCase(Stage.Lineup, Stage.Jam)]
     [TestCase(Stage.Jam, Stage.Jam)]
     [TestCase(Stage.Timeout, Stage.Jam)]
+    [TestCase(Stage.AfterTimeout, Stage.Jam)]
     [TestCase(Stage.Intermission, Stage.Jam)]
     [TestCase(Stage.AfterGame, Stage.Jam)]
     public async Task JamStarted_SetsExpectedStage(Stage currentStage, Stage expectedStage)
@@ -103,6 +105,7 @@ public class GameStageUnitTests : ReducerUnitTest<GameStage, GameStageState>
     [TestCase(Stage.Jam, Stage.Intermission, true, 1, 2)]
     [TestCase(Stage.Jam, Stage.AfterGame, true, 2, 2)]
     [TestCase(Stage.Timeout, Stage.Timeout, false, 1, 2)]
+    [TestCase(Stage.AfterTimeout, Stage.AfterTimeout, false, 1, 2)]
     [TestCase(Stage.Intermission, Stage.Intermission, false, 1, 2)]
     [TestCase(Stage.AfterGame, Stage.AfterGame, false, 1, 2)]
     [TestCase(Stage.Jam, Stage.Intermission, true, 3, 4)]
@@ -129,6 +132,7 @@ public class GameStageUnitTests : ReducerUnitTest<GameStage, GameStageState>
     [TestCase(Stage.Lineup, Stage.Timeout)]
     [TestCase(Stage.Jam, Stage.Timeout)]
     [TestCase(Stage.Timeout, Stage.Timeout)]
+    [TestCase(Stage.AfterTimeout, Stage.Timeout)]
     [TestCase(Stage.Intermission, Stage.Timeout)]
     [TestCase(Stage.AfterGame, Stage.Timeout)]
     public async Task TimeoutStarted_SetsExpectedStage(Stage currentStage, Stage expectedStage)
@@ -140,6 +144,22 @@ public class GameStageUnitTests : ReducerUnitTest<GameStage, GameStageState>
         State.Stage.Should().Be(expectedStage);
     }
 
+    [TestCase(Stage.BeforeGame, Stage.BeforeGame)]
+    [TestCase(Stage.Lineup, Stage.Lineup)]
+    [TestCase(Stage.Jam, Stage.Jam)]
+    [TestCase(Stage.Timeout, Stage.AfterTimeout)]
+    [TestCase(Stage.AfterTimeout, Stage.AfterTimeout)]
+    [TestCase(Stage.Intermission, Stage.Intermission)]
+    [TestCase(Stage.AfterGame, Stage.AfterGame)]
+    public async Task TimeoutEnded_SetsExpectedStage(Stage currentStage, Stage expectedStage)
+    {
+        State = GameStageState.Default with { Stage = currentStage };
+
+        await Subject.Handle(new TimeoutEnded(0));
+
+        State.Stage.Should().Be(expectedStage);
+    }
+
     [TestCase(Stage.BeforeGame, Stage.BeforeGame, 1, 2)]
     [TestCase(Stage.Lineup, Stage.Intermission, 1, 2)]
     [TestCase(Stage.Lineup, Stage.AfterGame, 2, 2)]
@@ -147,6 +167,8 @@ public class GameStageUnitTests : ReducerUnitTest<GameStage, GameStageState>
     [TestCase(Stage.Jam, Stage.AfterGame, 2, 2)]
     [TestCase(Stage.Timeout, Stage.Intermission, 1, 2)]
     [TestCase(Stage.Timeout, Stage.AfterGame, 2, 2)]
+    [TestCase(Stage.AfterTimeout, Stage.Intermission, 1, 2)]
+    [TestCase(Stage.AfterTimeout, Stage.AfterGame, 2, 2)]
     [TestCase(Stage.Intermission, Stage.Intermission, 1, 2)]
     [TestCase(Stage.AfterGame, Stage.AfterGame, 2, 2)]
     [TestCase(Stage.Lineup, Stage.Intermission, 2, 3)]
@@ -220,6 +242,7 @@ public class GameStageUnitTests : ReducerUnitTest<GameStage, GameStageState>
     [TestCase(Stage.Lineup, 1, 1, false)]
     [TestCase(Stage.Jam, 1,  1, false)]
     [TestCase(Stage.Timeout, 1, 1, false)]
+    [TestCase(Stage.AfterTimeout, 1, 1, false)]
     [TestCase(Stage.Intermission, 1, 2, true)]
     [TestCase(Stage.AfterGame, 2, 2, true)]
     public async Task PeriodFinalized_SetsExpectedPeriodNumber_AndSetsExpectedFinalizedState(Stage currentStage, int periodNumber, int expectedPeriodNumber, bool expectedFinalized)

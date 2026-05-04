@@ -115,7 +115,7 @@ public class GameSummaryUnitTests : ReducerUnitTest<GameSummary, GameSummaryStat
     }
 
     [Test]
-    public async Task PenaltyUpdated_UpdatesPenaltyCounts()
+    public async Task PenaltyUpdated_UpdatesPenaltyCounts([Values] TeamSide team)
     {
         State = new(
             GameProgress.InProgress,
@@ -125,14 +125,16 @@ public class GameSummaryUnitTests : ReducerUnitTest<GameSummary, GameSummaryStat
             new([0, 0], 0),
             [10, 10]
         );
-        MockKeyedState<PenaltySheetState>(nameof(TeamSide.Home), new([
+        MockKeyedState<PenaltySheetState>(team.ToString(), new([
             new("123", null, [new("X", 1, 3, true), new("X", 1, 6, true), new("X", 1, 9, true), new("X", 2, 3, true), new("X", 2, 6, true), new("X", 2, 9, true)])
         ]));
-        MockKeyedState<PenaltySheetState>(nameof(TeamSide.Away), new([]));
+        MockKeyedState<PenaltySheetState>(team == TeamSide.Home ? nameof(TeamSide.Away) : nameof(TeamSide.Home), new([]));
 
-        await Subject.Handle(new PenaltyUpdated(0, new(TeamSide.Home, "123", "?", 1, 1, "?", 1, 1)));
+        await Subject.Handle(new PenaltyUpdated(0, new(team, "123", "?", 1, 1, "?", 1, 1)));
 
-        State.HomePenalties.Should().Be(new PenaltySummary([3, 3], 6));
+        var penalties = team == TeamSide.Home ? State.HomePenalties : State.AwayPenalties;
+
+        penalties.Should().Be(new PenaltySummary([3, 3], 6));
     }
 
     [Test]
@@ -177,5 +179,16 @@ public class GameSummaryUnitTests : ReducerUnitTest<GameSummary, GameSummaryStat
         await Subject.Handle(new PeriodFinalized(1000));
 
         State.GameProgress.Should().Be(GameProgress.Finished);
+    }
+
+    [Test]
+    public async Task PeriodFinalized_WhenNotAfterGame_DoesNotSetGameToFinished()
+    {
+        State = GameSummaryState.Default with { GameProgress = GameProgress.InProgress };
+        MockState(GameStageState.Default with { Stage = Stage.Timeout });
+
+        await Subject.Handle(new PeriodFinalized(1000));
+
+        State.GameProgress.Should().Be(GameProgress.InProgress);
     }
 }

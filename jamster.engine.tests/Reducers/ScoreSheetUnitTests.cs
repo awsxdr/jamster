@@ -13,7 +13,7 @@ public class ScoreSheetUnitTests : ReducerUnitTest<HomeScoreSheet, ScoreSheetSta
     {
         State = new([]);
         MockKeyedState<JamLineupState>(nameof(TeamSide.Home), new("123", "321", [null, null, null]));
-        MockState<GameStageState>(new(Stage.Jam, 2, 6, 20, false));
+        MockState<GameStageState>(new(Stage.Jam, 2, 6, 20, false, false));
 
         await Subject.Handle(new JamStarted(0));
 
@@ -37,7 +37,7 @@ public class ScoreSheetUnitTests : ReducerUnitTest<HomeScoreSheet, ScoreSheetSta
     {
         State = new([new(1, 1, "123", "555", false, true, true, false, false, [new(4), new(4)], null, 8, 8)]);
         MockKeyedState<JamLineupState>(nameof(TeamSide.Home), new("123", "321", [null, null, null]));
-        MockState<GameStageState>(new(Stage.Jam, 1, 2, 2, false));
+        MockState<GameStageState>(new(Stage.Jam, 1, 2, 2, false, false));
 
         await Subject.Handle(new JamStarted(0));
 
@@ -50,7 +50,7 @@ public class ScoreSheetUnitTests : ReducerUnitTest<HomeScoreSheet, ScoreSheetSta
     {
         State = new([]);
         MockKeyedState<JamLineupState>(nameof(TeamSide.Home), new(null, "321", [null, null, null]));
-        MockState<GameStageState>(new(Stage.Jam, 2, 6, 20, false));
+        MockState<GameStageState>(new(Stage.Jam, 2, 6, 20, false, false));
 
         await Subject.Handle(new JamStarted(0));
 
@@ -316,7 +316,7 @@ public class ScoreSheetUnitTests : ReducerUnitTest<HomeScoreSheet, ScoreSheetSta
             new(1, 3, "?", "?", false, !isLost, false, false, false, [new(4), new(4), new(null)], null, 8, 21),
         ]);
 
-        await Subject.Handle(new LeadMarked(1000, new(TeamSide.Away, isLost)));
+        await Subject.Handle(new LostMarked(1000, new(TeamSide.Away, isLost)));
 
         State.Should().Be(originalState);
     }

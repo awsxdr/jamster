@@ -15,8 +15,10 @@ public class TeamJamStatsUnitTests : ReducerUnitTest<HomeTeamJamStats, TeamJamSt
     [TestCase(true, TeamSide.Away, false, true)]
     [TestCase(true, TeamSide.Away, true, false)]
     [TestCase(false, TeamSide.Home, false, false)]
-    public async Task LeadMarked_UpdatesStateAsExpected(bool initialLead, TeamSide side, bool lead, bool expectedLead)
+    public async Task LeadMarked_WhenNotInOvertime_UpdatesStateAsExpected(bool initialLead, TeamSide side, bool lead, bool expectedLead)
     {
+        MockState(GameStageState.Default);
+
         State = State with { Lead = initialLead };
 
         await Subject.Handle(new LeadMarked(0, new(side, lead)));
@@ -25,8 +27,10 @@ public class TeamJamStatsUnitTests : ReducerUnitTest<HomeTeamJamStats, TeamJamSt
     }
 
     [Test]
-    public async Task LeadMarked_MarksInitialTrip()
+    public async Task LeadMarked_WhenNotInOvertime_MarksInitialTrip()
     {
+        MockState(GameStageState.Default);
+
         var implicitEvents = await Subject.Handle(new LeadMarked(0, new LeadMarkedBody(TeamSide.Home, true)));
 
         implicitEvents
@@ -36,8 +40,10 @@ public class TeamJamStatsUnitTests : ReducerUnitTest<HomeTeamJamStats, TeamJamSt
     }
 
     [Test]
-    public async Task LeadMarked_WhenLeadFalse_DoesNotMarkInitialTrip()
+    public async Task LeadMarked_WhenLeadFalse_AndNotInOvertime_DoesNotMarkInitialTrip()
     {
+        MockState(GameStageState.Default);
+
         var implicitEvents = await Subject.Handle(new LeadMarked(0, new LeadMarkedBody(TeamSide.Home, false)));
 
         implicitEvents
