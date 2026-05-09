@@ -1,17 +1,22 @@
 import { Button, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuPortal, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger, Slider } from "@/components/ui"
-import { useI18n } from "@/hooks";
+import { useEvents, useI18n } from "@/hooks";
 import { cn } from "@/lib/utils";
+import { TeamSide } from "@/types";
+import { ScoreSheetLineDeleted, ScoreSheetStarPassTripSet } from "@/types/events";
 import { Check, EllipsisVertical, Star, Trash } from "lucide-react"
-import { MouseEvent, useEffect, useState } from "react";
+import React, { MouseEvent, useEffect, useState } from "react";
 
 type JamEditMenuProps = {
+    gameId: string;
+    teamSide: TeamSide;
+    lineNumber: number;
     starPassTrip: number | null;
     className?: string;
-    onJamDeleted?: () => void;
-    onStarPassTripChanged?: (starPassTrip: number | null) => void;
 }
 
-export const JamEditMenu = ({ starPassTrip, className, onJamDeleted, onStarPassTripChanged }: JamEditMenuProps) => {
+export const JamEditMenu = React.memo(function JamEditMenu({ gameId, teamSide, lineNumber, starPassTrip, className }: JamEditMenuProps) {
+
+    const { sendEvent } = useEvents();
 
     const [starPassValue, setStarPassValue] = useState(1);
     const [starPass, setStarPass] = useState(false);
@@ -26,11 +31,16 @@ export const JamEditMenu = ({ starPassTrip, className, onJamDeleted, onStarPassT
         event.preventDefault();
         const newStarPass = !starPass;
         setStarPass(newStarPass);
-        onStarPassTripChanged?.(newStarPass ? 0 : null);
+
+        sendEvent(gameId, new ScoreSheetStarPassTripSet(teamSide, lineNumber, newStarPass ? 0 : null));
     }
 
     const handleStarPassTripCommit = () => {
-        onStarPassTripChanged?.(starPassValue - 1);
+        sendEvent(gameId, new ScoreSheetStarPassTripSet(teamSide, lineNumber, starPassValue - 1));
+    }
+
+    const handleJamDeleted = () => {
+        sendEvent(gameId, new ScoreSheetLineDeleted(lineNumber));
     }
 
     return (
@@ -61,7 +71,7 @@ export const JamEditMenu = ({ starPassTrip, className, onJamDeleted, onStarPassT
                     </DropdownMenuSubTrigger>
                     <DropdownMenuPortal>
                         <DropdownMenuSubContent>
-                            <DropdownMenuItem className="bg-destructive text-destructive-foreground" onClick={onJamDeleted}>
+                            <DropdownMenuItem className="bg-destructive text-destructive-foreground" onClick={handleJamDeleted}>
                                 {translate("ConfirmDelete")}
                             </DropdownMenuItem>
                         </DropdownMenuSubContent>
@@ -70,4 +80,4 @@ export const JamEditMenu = ({ starPassTrip, className, onJamDeleted, onStarPassT
             </DropdownMenuContent>
         </DropdownMenu>
     )
-}
+});

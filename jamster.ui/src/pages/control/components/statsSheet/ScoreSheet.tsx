@@ -1,10 +1,9 @@
-import { useEvents, useI18n, useScoreSheetState, useTeamDetailsState, useTimeoutListState } from "@/hooks";
+import { useI18n, useScoreSheetState, useTeamDetailsState, useTimeoutListState } from "@/hooks";
 import { ScoreSheetJam, TeamSide, TimeoutListItem } from "@/types";
 import { ScoreSheetJamRow } from "./ScoreSheetJamRow";
 import { cn } from "@/lib/utils";
 import { Fragment, useMemo } from "react";
 import { ScoreSheetTimeoutRow } from "./ScoreSheetTimeoutRow";
-import { ScoreSheetCalledSet, ScoreSheetInjurySet, ScoreSheetJammerNumberSet, ScoreSheetLeadSet, ScoreSheetLineDeleted, ScoreSheetLostSet, ScoreSheetPivotNumberSet, ScoreSheetStarPassTripSet, ScoreSheetTripScoreSet } from "@/types/events";
 import { JamEditMenu } from "./JamEditMenu";
 import { ternary } from "@/utilities/switchex";
 
@@ -24,6 +23,8 @@ type ScoreSheetItem = {
     timeoutItem?: TimeoutListItem;
 }
 
+const typeOrder = ["jam", "preStarPass", "postStarPass", "timeout"];
+
 export const ScoreSheet = ({ gameId, teamSide, descending, showTimeouts, className }: ScoreSheetProps) => {
     const scoreSheet = useScoreSheetState(teamSide);
     const opponentScoreSheet = useScoreSheetState(teamSide === TeamSide.Home ? TeamSide.Away : TeamSide.Home);
@@ -31,7 +32,6 @@ export const ScoreSheet = ({ gameId, teamSide, descending, showTimeouts, classNa
     const { translate } = useI18n({ prefix: "ScoreboardControl.StatsSheet.ScoreSheet." })
 
     const team = useTeamDetailsState(teamSide);
-    const { sendEvent } = useEvents();
 
     const teamName = useMemo(() => {
         if(!team) {
@@ -43,11 +43,13 @@ export const ScoreSheet = ({ gameId, teamSide, descending, showTimeouts, classNa
 
     const { timeouts } = useTimeoutListState() ?? { timeouts: [] };
 
-    const timeoutItems: ScoreSheetItem[] = showTimeouts
-        ? timeouts.map((t, i) => ({ ...t, lineNumber: i, type: "timeout", timeoutItem: t }))
-        : [];
+    const timeoutItems: ScoreSheetItem[] = useMemo(() =>
+        showTimeouts
+            ? timeouts.map((t, i) => ({ ...t, lineNumber: i, type: "timeout", timeoutItem: t }))
+            : [],
+    [showTimeouts, timeouts]);
 
-    const jamItems: ScoreSheetItem[] = 
+    const jamItems: ScoreSheetItem[] = useMemo(() =>
         [...(scoreSheet?.jams ?? [])]
             .map((j, i) => ({ 
                 ...j,
@@ -72,17 +74,18 @@ export const ScoreSheet = ({ gameId, teamSide, descending, showTimeouts, classNa
                     }
                 }]
             }), { period: 0, index: 0, items: [] as ScoreSheetItem[] })
-            .items;
+            .items,
+    [scoreSheet?.jams, opponentScoreSheet?.jams]);
 
-    const typeOrder = ["jam", "preStarPass", "postStarPass", "timeout"];
-
-    const items = [...timeoutItems, ...jamItems]
-        .sort((a, b) => 
-            ternary()
-                .predicate(() => a.period < b.period).then(-1)
-                .predicate(() => a.period === b.period && a.jam < b.jam).then(-1)
-                .predicate(() => a.period === b.period && a.jam === b.jam).then(typeOrder.indexOf(a.type) - typeOrder.indexOf(b.type))
-                .default(1));
+    const items = useMemo(() =>
+        [...timeoutItems, ...jamItems]
+            .sort((a, b) => 
+                ternary()
+                    .predicate(() => a.period < b.period).then(-1)
+                    .predicate(() => a.period === b.period && a.jam < b.jam).then(-1)
+                    .predicate(() => a.period === b.period && a.jam === b.jam).then(typeOrder.indexOf(a.type) - typeOrder.indexOf(b.type))
+                    .default(1)),
+    [timeoutItems, jamItems]);
 
     const periodLines = useMemo(() => {
         return (
@@ -97,78 +100,6 @@ export const ScoreSheet = ({ gameId, teamSide, descending, showTimeouts, classNa
     }
 
     const periods = descending ? Object.values(periodLines).reverse() : Object.values(periodLines);
-
-    const handleJammerNumberSet = (lineNumber: number | undefined, value: string) => {
-        if(lineNumber === undefined) {
-            return;
-        }
-
-        sendEvent(gameId, new ScoreSheetJammerNumberSet(teamSide, lineNumber, value));
-    }
-
-    const handlePivotNumberSet = (lineNumber: number | undefined, value: string) => {
-        if(lineNumber === undefined) {
-            return;
-        }
-
-        sendEvent(gameId, new ScoreSheetPivotNumberSet(teamSide, lineNumber, value));
-    }
-
-    const handleTripScoreSet = (jamNumber: number | undefined, tripNumber: number, value: number | null) => {
-        if(jamNumber === undefined) {
-            return;
-        }
-
-        sendEvent(gameId, new ScoreSheetTripScoreSet(teamSide, jamNumber, tripNumber, value));
-    }
-
-    const handleLostSet = (lineNumber: number | undefined, value: boolean) => {
-        if(lineNumber === undefined) {
-            return;
-        }
-
-        sendEvent(gameId, new ScoreSheetLostSet(teamSide, lineNumber, value));
-    }
-
-    const handleLeadSet = (lineNumber: number | undefined, value: boolean) => {
-        if(lineNumber === undefined) {
-            return;
-        }
-
-        sendEvent(gameId, new ScoreSheetLeadSet(teamSide, lineNumber, value));
-    }
-
-    const handleCalledSet = (lineNumber: number | undefined, value: boolean) => {
-        if(lineNumber === undefined) {
-            return;
-        }
-
-        sendEvent(gameId, new ScoreSheetCalledSet(teamSide, lineNumber, value));
-    }
-
-    const handleInjurySet = (lineNumber: number | undefined, value: boolean) => {
-        if(lineNumber === undefined) {
-            return;
-        }
-
-        sendEvent(gameId, new ScoreSheetInjurySet(lineNumber, value));
-    }
-
-    const handleJamDeleted = (lineNumber?: number) => {
-        if(lineNumber === undefined) {
-            return;
-        }
-
-        sendEvent(gameId, new ScoreSheetLineDeleted(lineNumber));
-    }
-
-    const handleStarPassTripChanged = (jamNumber: number | undefined, starPassTrip: number | null) => {
-        if(jamNumber === undefined) {
-            return;
-        }
-
-        sendEvent(gameId, new ScoreSheetStarPassTripSet(teamSide, jamNumber, starPassTrip));
-    }
 
     return (
         <div className="flex flex-col gap-2">
@@ -189,22 +120,19 @@ export const ScoreSheet = ({ gameId, teamSide, descending, showTimeouts, classNa
                                 <Fragment key={`jam-${i}`}>
                                     <JamEditMenu 
                                         key={`jamEdit-${lineNumber}-column-${i}`} 
+                                        gameId={gameId}
+                                        teamSide={teamSide}
+                                        lineNumber={line.jamItem.totalJamNumber}
                                         starPassTrip={null} 
-                                        onJamDeleted={() => handleJamDeleted(line.jamItem?.totalJamNumber)}
-                                        onStarPassTripChanged={passTrip => handleStarPassTripChanged(line.jamItem?.totalJamNumber, passTrip)} 
                                     />
                                     <ScoreSheetJamRow 
                                         key={`jamLine-${lineNumber}-column-${i}`} 
+                                        gameId={gameId}
+                                        teamSide={teamSide}
+                                        lineNumber={line.jamItem.totalJamNumber}
                                         line={line.jamItem} 
                                         even={line.jamItem.even}
                                         className={cn(i === 0 && "border-t-2", i === lines.length - 1 && "border-b-2")}
-                                        onJammerNumberSet={v => handleJammerNumberSet(line.jamItem?.totalJamNumber, v)}
-                                        onPivotNumberSet={v => handlePivotNumberSet(line.jamItem?.totalJamNumber, v)}
-                                        onTripScoreSet={(t, v) => handleTripScoreSet(line.jamItem?.totalJamNumber, t, v)}
-                                        onLostSet={v => handleLostSet(line.jamItem?.totalJamNumber, v)}
-                                        onLeadSet={v => handleLeadSet(line.jamItem?.totalJamNumber, v)}
-                                        onCalledSet={v => handleCalledSet(line.jamItem?.totalJamNumber, v)}
-                                        onInjurySet={v => handleInjurySet(line.jamItem?.totalJamNumber, v)}
                                     />
                                 </Fragment>
                             ) : line.type === "timeout" && line.timeoutItem ? (
@@ -218,39 +146,32 @@ export const ScoreSheet = ({ gameId, teamSide, descending, showTimeouts, classNa
                                 <ScoreSheetJamRow 
                                     preStarPass
                                     key={`jam-${i}`}
+                                    gameId={gameId}
+                                    teamSide={teamSide}
+                                    lineNumber={line.jamItem.totalJamNumber}
                                     line={line.jamItem} 
                                     even={line.jamItem.even}
                                     className={cn(i === 0 && "border-t-2", i === lines.length - 1 && "border-b-2")}
-                                    onJammerNumberSet={v => handleJammerNumberSet(line.jamItem?.totalJamNumber, v)}
-                                    onPivotNumberSet={v => handlePivotNumberSet(line.jamItem?.totalJamNumber, v)}
-                                    onTripScoreSet={(t, v) => handleTripScoreSet(line.jamItem?.totalJamNumber, t, v)}
-                                    onLostSet={v => handleLostSet(line.jamItem?.totalJamNumber, v)}
-                                    onLeadSet={v => handleLeadSet(line.jamItem?.totalJamNumber, v)}
-                                    onCalledSet={v => handleCalledSet(line.jamItem?.totalJamNumber, v)}
-                                    onInjurySet={v => handleInjurySet(line.jamItem?.totalJamNumber, v)}
                                 />
                             ) : line.type === "postStarPass" && line.jamItem ? (
                                 <Fragment key={`jam-${i}`}>
                                     <JamEditMenu 
                                         key={`jamEdit-${lineNumber}-column-${i}`} 
+                                        gameId={gameId}
+                                        teamSide={teamSide}
+                                        lineNumber={line.jamItem.totalJamNumber}
                                         starPassTrip={line.jamItem.starPassTrip} 
                                         className="row-span-2 self-stretch" 
-                                        onJamDeleted={() => handleJamDeleted(line.jamItem?.totalJamNumber)}
-                                        onStarPassTripChanged={passTrip => handleStarPassTripChanged(line.jamItem?.totalJamNumber, passTrip)}
                                     />
                                     <ScoreSheetJamRow 
                                         postStarPass
+                                        gameId={gameId}
+                                        teamSide={teamSide}
+                                        lineNumber={line.jamItem.totalJamNumber}
                                         key={`jamLine-${lineNumber}-column-${i}`} 
                                         line={line.jamItem} 
                                         even={line.jamItem.even}
                                         className={cn(i === 0 && "border-t-2", i === lines.length - 1 && "border-b-2")}
-                                        onJammerNumberSet={v => handleJammerNumberSet(line.jamItem?.totalJamNumber, v)}
-                                        onPivotNumberSet={v => handlePivotNumberSet(line.jamItem?.totalJamNumber, v)}
-                                        onTripScoreSet={(t, v) => handleTripScoreSet(line.jamItem?.totalJamNumber, t, v)}
-                                        onLostSet={v => handleLostSet(line.jamItem?.totalJamNumber, v)}
-                                        onLeadSet={v => handleLeadSet(line.jamItem?.totalJamNumber, v)}
-                                        onCalledSet={v => handleCalledSet(line.jamItem?.totalJamNumber, v)}
-                                        onInjurySet={v => handleInjurySet(line.jamItem?.totalJamNumber, v)}
                                     />
                                 </Fragment>
                             ) : (<></>)

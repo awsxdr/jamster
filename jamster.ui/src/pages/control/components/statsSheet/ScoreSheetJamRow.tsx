@@ -1,25 +1,46 @@
 import { cn } from "@/lib/utils";
-import { ScoreSheetJam } from "@/types"
+import { JamLineTrip, ScoreSheetJam, TeamSide } from "@/types"
 import { EditableCell } from "./EditableCell";
 import { CheckCell } from "./CheckCell";
 import { ternary } from "@/utilities/switchex";
+import { useEvents } from "@/hooks";
+import { ScoreSheetCalledSet, ScoreSheetInjurySet, ScoreSheetJammerNumberSet, ScoreSheetLeadSet, ScoreSheetLostSet, ScoreSheetPivotNumberSet, ScoreSheetTripScoreSet } from "@/types/events";
+import React from "react";
+
+type RowData = Omit<ScoreSheetJam, "period" | "deleted">;
 
 type ScoreSheetJamRowProps = {
-    line: ScoreSheetJam;
+    gameId: string;
+    teamSide: TeamSide;
+    lineNumber: number;
+    line: RowData;
     even: boolean;
     preStarPass?: boolean;
     postStarPass?: boolean;
     className?: string;
-    onJammerNumberSet?: (jammerNumber: string) => void;
-    onPivotNumberSet?: (pivotNumber: string) => void;
-    onTripScoreSet?: (trip: number, value: number | null) => void;
-    onLostSet?: (value: boolean) => void;
-    onLeadSet?: (value: boolean) => void;
-    onCalledSet?: (value: boolean) => void;
-    onInjurySet?: (value: boolean) => void;
 }
 
-export const ScoreSheetJamRow = ({ line, even, preStarPass, postStarPass, className, onJammerNumberSet, onPivotNumberSet, onTripScoreSet, onLostSet, onLeadSet, onCalledSet, onInjurySet }: ScoreSheetJamRowProps) => {
+const tripsEqual = (prev: JamLineTrip, next: JamLineTrip) =>
+    prev.score === next.score;
+
+const linesEqual = (prev: RowData, next: RowData) =>
+    prev.called === next.called
+    && prev.gameTotal === next.gameTotal
+    && prev.injury === next.injury
+    && prev.jam === next.jam
+    && prev.jamTotal === next.jamTotal
+    && prev.jammerNumber === next.jammerNumber
+    && prev.lead === next.lead
+    && prev.lost === next.lost
+    && prev.noInitial === next.noInitial
+    && prev.pivotNumber === next.pivotNumber
+    && prev.starPassTrip === next.starPassTrip
+    && prev.trips.length === next.trips.length
+    && prev.trips.every((t, i) => tripsEqual(t, next.trips[i]));
+
+export const ScoreSheetJamRow = React.memo(function ScoreSheetJamRow({ gameId, teamSide, lineNumber, line, even, preStarPass, postStarPass, className }: ScoreSheetJamRowProps) {
+
+    const { sendEvent } = useEvents();
 
     const rowColorClass = even ? "bg-white dark:bg-gray-900" : "bg-green-100 dark:bg-green-900";
     const rowEmphasisColorClass = even ? "bg-green-100 dark:bg-green-900" : "bg-green-200 dark:bg-green-700";
@@ -66,26 +87,34 @@ export const ScoreSheetJamRow = ({ line, even, preStarPass, postStarPass, classN
 
     const nonNullTripCount = line.trips.filter(t => t.score !== null).length;
 
+    const handleJammerNumberSet = (value: string) => {
+        if (postStarPass) {
+            sendEvent(gameId, new ScoreSheetPivotNumberSet(teamSide, lineNumber, value));
+        } else {
+            sendEvent(gameId, new ScoreSheetJammerNumberSet(teamSide, lineNumber, value));
+        }
+    }
+
     const handleLostSet = (value: boolean) => {
         if(!postStarPass) {
-            onLostSet?.(value);
+            sendEvent(gameId, new ScoreSheetLostSet(teamSide, lineNumber, value));
         }
     }
 
     const handleLeadSet = (value: boolean) => {
         if (!postStarPass) {
-            onLeadSet?.(value);
+            sendEvent(gameId, new ScoreSheetLeadSet(teamSide, lineNumber, value));
         }
     }
 
     const handleCalledSet = (value: boolean) => {
         if(!postStarPass) {
-            onCalledSet?.(value);
+            sendEvent(gameId, new ScoreSheetCalledSet(teamSide, lineNumber, value));
         }
     }
 
     const handleInjurySet = (value: boolean) => {
-        onInjurySet?.(value);
+        sendEvent(gameId, new ScoreSheetInjurySet(lineNumber, value));
     }
 
     const handleTripScoreChanged = (trip: number, value: string) => {
@@ -96,7 +125,7 @@ export const ScoreSheetJamRow = ({ line, even, preStarPass, postStarPass, classN
                 .predicate(() => Number.isNaN(parsedValue)).then(0)
                 .default(parsedValue);
         
-        onTripScoreSet?.(trip, newValue);
+        sendEvent(gameId, new ScoreSheetTripScoreSet(teamSide, lineNumber, trip, newValue));
     }
 
     return (
@@ -107,7 +136,7 @@ export const ScoreSheetJamRow = ({ line, even, preStarPass, postStarPass, classN
             <EditableCell 
                 value={lineLabel} 
                 disabled={isPostOtherTeamStarPass}
-                onValueChanged={postStarPass ? onPivotNumberSet : onJammerNumberSet} 
+                onValueChanged={handleJammerNumberSet} 
                 className={cn("col-start-3", numberCellClass, rowColorClass, className)} 
             />
             <CheckCell checked={lineLost} disabled={postStarPass} onCheckedChanged={handleLostSet} className={cn("col-start-4", checkCellClass, "border-l-2", rowEmphasisColorClass, className)} />
@@ -162,4 +191,14 @@ export const ScoreSheetJamRow = ({ line, even, preStarPass, postStarPass, classN
             <div className={cn("col-start-19", numberCellClass, "border-l-2", rowFixedEmphasisColorClass, className)}>{lineGameTotal}</div>
         </>
     )
-}
+},
+(prev, next) =>
+    prev.lineNumber === next.lineNumber
+    && prev.even === next.even
+    && prev.gameId === next.gameId
+    && prev.teamSide === next.teamSide
+    && prev.preStarPass === next.preStarPass
+    && prev.postStarPass === next.postStarPass
+    && prev.className === next.className
+    && linesEqual(prev.line, next.line)
+);
