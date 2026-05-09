@@ -7,6 +7,7 @@ import { CurrentTimeoutTypeState } from "@/types/CurrentTimeoutTypeState";
 import { TeamJamStatsState } from "@/types/TeamJamStatsState";
 import { v4 as uuidv4 } from 'uuid';
 import { IntermissionClockState } from "@/types/IntermissionClockState";
+import { PostGameClockState } from "@/types/PostGameClockState";
 
 type StateChanged<TState> = (state: TState) => void;
 type StateWatch = <TState,>(stateName: string, onStateChange: StateChanged<TState>) => CallbackHandle;
@@ -48,6 +49,7 @@ export const useJamClockState = () => useGameState<JamClockState>("JamClockState
 export const useLineupClockState = () => useGameState<LineupClockState>("LineupClockState");
 export const useTimeoutClockState = () => useGameState<TimeoutClockState>("TimeoutClockState");
 export const useIntermissionClockState = () => useGameState<IntermissionClockState>("IntermissionClockState");
+export const usePostGameClockState = () => useGameState<PostGameClockState>("PostGameClockState");
 export const useInjuriesState = (side: TeamSide) => useGameState<InjuriesState>(`InjuriesState_${TeamSide[side]}`);
 export const useClocks = () => ({
     periodClock: usePeriodClockState(),
