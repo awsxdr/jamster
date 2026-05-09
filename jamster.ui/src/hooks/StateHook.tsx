@@ -94,21 +94,49 @@ export const GameStateContextProvider = ({ gameId, children }: PropsWithChildren
     const [states, setStates] = useState<StringMap<object>>({});
     const gameApi = useGameApi();
 
+    const statesRef = useRef(states);
+    statesRef.current = states;
+
+    const stateNotifiersRef = useRef(stateNotifiers);
+    stateNotifiersRef.current = stateNotifiers;
+
+    const pendingFetchesRef = useRef<Set<string>>(new Set());
+
+    const currentlyWatchedStatesRef = useRef<Set<string>>(new Set());
+
+    useEffect(() => pendingFetchesRef.current.clear(), [gameId]);
+
     const getInitialState = useCallback(async <TState,>(stateName: string) => {
         if(!gameId) {
             return undefined;
         }
 
-        const value: TState = await gameApi.getGameState<TState>(gameId, stateName);
-
-        if(!value) {
+        if(pendingFetchesRef.current.has(stateName)) {
+            // Prevent repeated initial state fetches
             return undefined;
         }
 
-        setStates(s => ({ ...s, [stateName]: value }));
-        notify(stateName, value);
+        pendingFetchesRef.current.add(stateName);
 
-        return value;
+        try {
+            const value: TState = await gameApi.getGameState<TState>(gameId, stateName);
+
+            if(!value) {
+                return undefined;
+            }
+
+            setStates(s => ({ ...s, [stateName]: value }));
+
+            const notifiers = stateNotifiersRef.current[stateName];
+
+            if (notifiers) {
+                Object.values(notifiers).forEach(n => n(value));
+            }
+
+            return value;
+        } finally {
+            pendingFetchesRef.current.delete(stateName);
+        }
     }, [gameId, stateNotifiers]);
 
     useEffect(() => {
@@ -129,9 +157,6 @@ export const GameStateContextProvider = ({ gameId, children }: PropsWithChildren
     }
 
     const { connection, isConnected } = useHubConnection(gameId && `game/${gameId}`, handleConnectionDisconnect);
-
-    const statesRef = useRef(states);
-    statesRef.current = states;
 
     const watchState = useCallback(<TState,>(stateName: string, onStateChange: StateChanged<TState>): CallbackHandle => {
         
@@ -175,16 +200,16 @@ export const GameStateContextProvider = ({ gameId, children }: PropsWithChildren
 
     useEffect(() => {
         if(!connection) {
+            currentlyWatchedStatesRef.current.clear();
             return;
         }
 
-        Object.keys(stateNotifiers).forEach(stateName => {
+        const newStates = Object.keys(stateNotifiers).filter(s => !currentlyWatchedStatesRef.current.has(s));
+        newStates.forEach(stateName => {
             connection.invoke("WatchState", stateName);
+            currentlyWatchedStatesRef.current.add(stateName);
         });
     }, [connection, stateNotifiers]);
-
-    const stateNotifiersRef = useRef(stateNotifiers);
-    stateNotifiersRef.current = stateNotifiers;
 
     useEffect(() => {
         if(!connection) return;
