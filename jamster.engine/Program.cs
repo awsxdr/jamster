@@ -167,11 +167,21 @@ public class Program
         {
             Console.WriteLine("Jamster started. Use a web browser to go to one of these addresses:");
 
-            // TODO: Handle this case
+            Console.WriteLine($"\t{GetHostUrl(commandLineOptions)}");
         }
 
         if (!jamster.engine.Program.SkipFirstRunSetup)
             await app.Services.GetService<IFirstRunConfigurator>()!.PerformFirstRunTasksIfRequired();
+
+#if DEBUG
+        if (commandLineOptions.InitTestGame != null)
+        {
+            var result = await app.Services.GetService<ITestGameLoader>()!.ConfigureTestGame(commandLineOptions.InitTestGame);
+            
+            if(result is Failure<TestGameLoader.TestGameNotFoundError>)
+                Console.WriteLine("WARNING: Specified test game not found");
+        }
+#endif
 
         try
         {
@@ -378,5 +388,10 @@ public sealed class CommandLineOptions
 
     [Option("root-path", Required = false, Hidden = true, HelpText = "Set the path to the folder to use as the root folder.")]
     public string? RootPath { get; set; }
+
+#if DEBUG
+    [Option("init-test-game", Required = false, Hidden = true)]
+    public string? InitTestGame { get; set; }
+#endif
 }
 // ReSharper restore UnusedAutoPropertyAccessor.Global

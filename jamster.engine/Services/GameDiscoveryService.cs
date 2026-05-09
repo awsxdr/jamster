@@ -11,7 +11,7 @@ public interface IGameDiscoveryService
     bool GameExists(Guid gameId);
     Task<Result> ArchiveGame(Guid gameId);
 
-    public static string GetGameFileName(GameInfo game) =>
+    static string GetGameFileName(GameInfo game) =>
         $"{CleanFileName(game.Name)}_{game.Id}";
 
     private static string CleanFileName(string value) =>
@@ -27,8 +27,8 @@ public class GameDiscoveryService(IGameDataStoreFactory gameStoreFactory) : IGam
 {
     public Task<GameInfo[]> GetGames() =>
         Task.WhenAll(
-        Directory.GetFiles(GameDataStore.GamesFolder, "*.db")
-            .Select(GetGameInfo));
+            Directory.GetFiles(GameDataStore.GamesFolder, "*.db")
+                .Select(GetGameInfo));
 
     public async Task<GameInfo> GetGame(GameInfo gameInfo)
     {
@@ -56,7 +56,7 @@ public class GameDiscoveryService(IGameDataStoreFactory gameStoreFactory) : IGam
 
                 var gameFileNameWithExtension = gameFileName + ".db";
 
-                File.Move(Path.Combine(GameDataStore.GamesFolder, gameFileNameWithExtension), Path.Combine(GameDataStore.ArchiveFolder, gameFileNameWithExtension));
+                File.Move(Path.Combine(GameDataStore.GamesFolder, gameFileNameWithExtension), Path.Combine(GameDataStore.ArchiveFolder, gameFileNameWithExtension), overwrite: true);
 
                 return Result.Succeed();
             });
