@@ -57,6 +57,36 @@ public class GameStageUnitTests : ReducerUnitTest<GameStage, GameStageState>
     }
 
     [Test]
+    public async Task JamStarted_WhenPeriodFinalized_AndSetToResetJamNumber_ResetsJamNumber()
+    {
+        State = GameStageState.Default with
+        {
+            Stage = Stage.Intermission, 
+            PeriodIsFinalized = true, 
+            PeriodNumber = 1, 
+            JamNumber = 15
+        };
+
+        MockState<RulesState>(new(Rules.DefaultRules));
+
+        await Subject.Handle(new JamStarted(0));
+
+        State.JamNumber.Should().Be(1);
+    }
+
+    [Test]
+    public async Task JamStarted_WhenPeriodNotFinalized_DoesNotResetJamNumber()
+    {
+        State = GameStageState.Default with { Stage = Stage.Intermission, PeriodNumber = 1, JamNumber = 15 };
+
+        MockState<RulesState>(new(Rules.DefaultRules));
+
+        await Subject.Handle(new JamStarted(0));
+
+        State.JamNumber.Should().Be(16);
+    }
+
+    [Test]
     public async Task JamStarted_WhenSetToNotResetJamNumber_DoesNotReset()
     {
         State = GameStageState.Default with

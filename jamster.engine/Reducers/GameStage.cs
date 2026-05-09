@@ -53,7 +53,7 @@ public class GameStage(ReducerGameContext context, ILogger<GameStage> logger)
                 TotalJamNumber = 1,
                 PeriodNumber = 1, 
             },
-            Stage.Intermission => state with
+            Stage.Intermission when state.PeriodIsFinalized => state with
             {
                 Stage = Stage.Jam, 
                 JamNumber = rules.JamRules.ResetJamNumbersBetweenPeriods ? 1 : state.JamNumber + 1,

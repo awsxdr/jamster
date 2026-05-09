@@ -95,6 +95,17 @@ public class TimeoutClockUnitTests : ReducerUnitTest<TimeoutClock, TimeoutClockS
         await Subject.Handle(new PeriodEnded(10000));
 
         State.IsRunning.Should().BeFalse();
+        State.EndTick.Should().Be(10000);
+    }
+
+    [Test]
+    public async Task PeriodEnded_WhenTimeoutNotRunning_DoesNotChangeState()
+    {
+        State = TimeoutClockState.Default;
+
+        await Subject.Handle(new PeriodEnded(10000));
+
+        State.Should().Be(TimeoutClockState.Default);
     }
 
     [Test]

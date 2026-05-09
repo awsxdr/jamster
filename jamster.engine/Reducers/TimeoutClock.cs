@@ -89,7 +89,7 @@ public class TimeoutClock(ReducerGameContext context, ILogger<TimeoutClock> logg
     {
         var state = GetState();
 
-        if (state is { IsRunning: false, EndTick: > 0 }) return [];
+        if (!state.IsRunning && state.EndTick >= state.StartTick) return [];
 
         logger.LogDebug("Stopping timeout clock due to period end");
 
@@ -219,6 +219,8 @@ public record TimeoutClockState(
     [property: IgnoreChange] Tick TicksPassed)
 {
     public int SecondsPassed => TicksPassed.Seconds;
+
+    public static TimeoutClockState Default => new(false, 0, 0, TimeoutClockStopReason.None, 0);
 }
 
 public enum TimeoutClockStopReason
