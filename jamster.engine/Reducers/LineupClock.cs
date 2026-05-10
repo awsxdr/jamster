@@ -11,6 +11,8 @@ public sealed class LineupClock(ReducerGameContext gameContext, ILogger<LineupCl
     , IHandlesEvent<PeriodEnded>
     , IHandlesEvent<LineupClockSet>
     , IHandlesEvent<IntermissionEnded>
+    , IHandlesEvent<OvertimeStarted>
+    , IHandlesEvent<OvertimeEnded>
     , IDependsOnState<JamClockState>
     , IDependsOnState<TimeoutClockState>
     , ITickReceiver
@@ -76,6 +78,26 @@ public sealed class LineupClock(ReducerGameContext gameContext, ILogger<LineupCl
     {
         if(!GetState<JamClockState>().IsRunning)
             SetState(new LineupClockState(true, @event.Tick, 0));
+
+        return [];
+    }
+
+    public IEnumerable<Event> Handle(OvertimeStarted @event)
+    {
+        if (GetState().IsRunning) return [];
+
+        logger.LogDebug("Starting lineup clock due to overtime beginning");
+        SetState(new(true, @event.Tick, 0));
+
+        return [];
+    }
+
+    public IEnumerable<Event> Handle(OvertimeEnded @event)
+    {
+        if (!GetState().IsRunning) return [];
+
+        logger.LogDebug("Stopping lineup clock due to overtime ending");
+        SetState(GetState() with { IsRunning = false });
 
         return [];
     }

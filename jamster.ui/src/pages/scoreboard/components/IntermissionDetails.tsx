@@ -48,7 +48,7 @@ const AfterGameBar = ({ gameStage, visible }: IntermissionDetailsProps) => {
                 <ScaledText 
                     text={gameStage.periodIsFinalized ? translate("Scoreboard.IntermissionDetails.FinalScore") : translate("Scoreboard.IntermissionDetails.UnofficialScore")} 
                     className="flex justify-center items-center grow overflow-hidden leading-none"
-                    scale={1.4}
+                    scale={1}
                 />
             </ScoreboardComponent>
         } />

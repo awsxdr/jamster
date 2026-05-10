@@ -17,6 +17,7 @@ public class GameStage(ReducerGameContext context, ILogger<GameStage> logger)
     , IHandlesEvent<JamNumberOffset>
     , IHandlesEvent<OvertimeStarted>
     , IHandlesEvent<OvertimeEnded>
+    , IDependsOnState<OvertimeState>
     , IDependsOnState<PeriodClockState>
     , IDependsOnState<RulesState>
     , IDependsOnState<TimeoutTypeState>
@@ -85,8 +86,9 @@ public class GameStage(ReducerGameContext context, ILogger<GameStage> logger)
 
         var rules = GetState<RulesState>().Rules;
         var periodClock = GetState<PeriodClockState>();
+        var overtime = GetState<OvertimeState>();
 
-        if (periodClock.HasExpired)
+        if (periodClock.HasExpired && !overtime.IsInOvertime)
         {
             if (state.PeriodNumber >= rules.PeriodRules.PeriodCount)
             {
@@ -204,13 +206,13 @@ public class GameStage(ReducerGameContext context, ILogger<GameStage> logger)
 
         var newState = state switch
         {
-            (Stage.Intermission, _, _, _, _, false) => state with
+            (Stage.Intermission, _, _, _, false) => state with
             {
                 JamNumber = rules.JamRules.ResetJamNumbersBetweenPeriods ? 0 : state.JamNumber,
                 PeriodNumber = state.PeriodNumber + 1,
                 PeriodIsFinalized = true,
             },
-            (Stage.AfterGame, _, _, _, _, false) => state with {PeriodIsFinalized = true},
+            (Stage.AfterGame, _, _, _, false) => state with {PeriodIsFinalized = true},
             _ => state
         };
 
@@ -239,7 +241,7 @@ public class GameStage(ReducerGameContext context, ILogger<GameStage> logger)
         if (state.Stage is not Stage.AfterGame)
             return [];
 
-        SetState(state with { IsInOvertime = true });
+        SetState(state with { Stage = Stage.Lineup });
 
         return [];
     }
@@ -248,7 +250,12 @@ public class GameStage(ReducerGameContext context, ILogger<GameStage> logger)
     {
         var state = GetState();
 
-        SetState(state with { IsInOvertime = false });
+        if (state.Stage is Stage.BeforeGame or Stage.Intermission)
+            return [];
+
+        logger.LogDebug("Changing game stage to after game due to end of overtime");
+
+        SetState(state with { Stage = Stage.AfterGame });
 
         return [];
     }
@@ -259,10 +266,9 @@ public record GameStageState(
     int PeriodNumber,
     int JamNumber,
     int TotalJamNumber,
-    bool IsInOvertime,
     bool PeriodIsFinalized)
 {
-    public static GameStageState Default => new(Stage.BeforeGame, 1, 0, 0, false, false);
+    public static GameStageState Default => new(Stage.BeforeGame, 1, 0, 0, false);
 }
 
 public enum Stage

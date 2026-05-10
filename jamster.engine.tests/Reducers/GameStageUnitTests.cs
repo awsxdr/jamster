@@ -151,11 +151,28 @@ public class GameStageUnitTests : ReducerUnitTest<GameStage, GameStageState>
             }
         }));
 
+        MockState<OvertimeState>(new(false));
+
         MockState<PeriodClockState>(new (!periodClockExpired, periodClockExpired, true, 0, 0, DomainTick.FromSeconds(Rules.DefaultRules.PeriodRules.DurationInSeconds + (periodClockExpired ? 10 : -10))));
 
         await Subject.Handle(new JamEnded(0));
 
         State.Stage.Should().Be(expectedStage);
+    }
+
+    [Test]
+    public async Task JamEnded_WhenInOvertime_AndPeriodClockExpired_SetsStageToLineup()
+    {
+        State = GameStageState.Default with { Stage = Stage.Jam, PeriodNumber = 2 };
+
+        MockState<OvertimeState>(new(true));
+        MockState<RulesState>(new(Rules.DefaultRules));
+        MockState<PeriodClockState>(new(false, true, true, 0, 0,
+            DomainTick.FromSeconds(Rules.DefaultRules.PeriodRules.DurationInSeconds + 10)));
+
+        await Subject.Handle(new JamEnded(0));
+
+        State.Stage.Should().Be(Stage.Lineup);
     }
 
     [TestCase(Stage.BeforeGame, Stage.BeforeGame)]
@@ -318,7 +335,7 @@ public class GameStageUnitTests : ReducerUnitTest<GameStage, GameStageState>
     [TestCase(1, 10, 2, 5, 10)]
     public async Task JamNumberOffset_AdjustsJamNumberAccordingly(int currentPeriod, int currentJam, int offsetPeriod, int offset, int expectedJam)
     {
-        State = new(Stage.Lineup, currentPeriod, currentJam, currentJam + (currentPeriod - 1) * 20, false, false);
+        State = new(Stage.Lineup, currentPeriod, currentJam, currentJam + (currentPeriod - 1) * 20, false);
 
         await Subject.Handle(new JamNumberOffset(0, new(offsetPeriod, offset)));
 
@@ -326,22 +343,28 @@ public class GameStageUnitTests : ReducerUnitTest<GameStage, GameStageState>
     }
 
     [Test]
-    public async Task OvertimeStarted_SetsIsInOvertimeAsExpected([Values] Stage stage)
+    public async Task OvertimeStarted_SetsStageToLineup()
     {
-        State = GameStageState.Default with { Stage = stage };
+        State = GameStageState.Default with { Stage = Stage.AfterGame };
 
         await Subject.Handle(new OvertimeStarted(0));
 
-        State.IsInOvertime.Should().Be(stage == Stage.AfterGame);
+        State.Stage.Should().Be(Stage.Lineup);
     }
 
-    [Test]
-    public async Task OvertimeEnded_SetsIsInOvertimeToFalse()
+    [TestCase(Stage.BeforeGame, Stage.BeforeGame)]
+    [TestCase(Stage.Lineup, Stage.AfterGame)]
+    [TestCase(Stage.Jam, Stage.AfterGame)]
+    [TestCase(Stage.Timeout, Stage.AfterGame)]
+    [TestCase(Stage.AfterTimeout, Stage.AfterGame)]
+    [TestCase(Stage.Intermission, Stage.Intermission)]
+    [TestCase(Stage.AfterGame, Stage.AfterGame)]
+    public async Task OvertimeEnded_SetsExpectedStage(Stage currentStage, Stage expectedStage)
     {
-        State = GameStageState.Default with { IsInOvertime = true };
+        State = GameStageState.Default with { Stage = currentStage };
 
         await Subject.Handle(new OvertimeEnded(0));
 
-        State.IsInOvertime.Should().BeFalse();
+        State.Stage.Should().Be(expectedStage);
     }
 }

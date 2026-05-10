@@ -141,6 +141,7 @@ public class TeamJamStatsUnitTests : ReducerUnitTest<HomeTeamJamStats, TeamJamSt
         State = new(true, false, false, false, false);
         MockState<TimeoutClockState>(new(false, 0, 0, TimeoutClockStopReason.None, 0));
         MockState<JamClockState>(new(false, 0, engine.Domain.Tick.FromSeconds(Rules.DefaultRules.JamRules.DurationInSeconds / 2), true, false));
+        MockState<OvertimeState>(new(false));
 
         var implicitEvents = await Subject.Handle(new JamEnded(0));
 
@@ -156,6 +157,7 @@ public class TeamJamStatsUnitTests : ReducerUnitTest<HomeTeamJamStats, TeamJamSt
         State = new(true, false, false, false, false);
         MockState<TimeoutClockState>(new(false, 0, 0, TimeoutClockStopReason.None, 0));
         MockState<JamClockState>(new(false, 0, engine.Domain.Tick.FromSeconds(Rules.DefaultRules.JamRules.DurationInSeconds), true, true));
+        MockState<OvertimeState>(new(false));
 
         var implicitEvents = await Subject.Handle(new JamEnded(0));
 
@@ -168,6 +170,7 @@ public class TeamJamStatsUnitTests : ReducerUnitTest<HomeTeamJamStats, TeamJamSt
     {
         State = new(false, false, false, false, false);
         MockState<TimeoutClockState>(new(false, 0, 0, TimeoutClockStopReason.None, 0));
+        MockState<OvertimeState>(new(false));
 
         var implicitEvents = await Subject.Handle(new JamEnded(0));
 
@@ -181,6 +184,7 @@ public class TeamJamStatsUnitTests : ReducerUnitTest<HomeTeamJamStats, TeamJamSt
     {
         State = new(true, false, false, false, true);
         MockState<TimeoutClockState>(new(true, 0, 0, TimeoutClockStopReason.None, 10));
+        MockState<OvertimeState>(new(false));
 
         var implicitEvents = await Subject.Handle(new JamEnded(10));
 
@@ -190,13 +194,60 @@ public class TeamJamStatsUnitTests : ReducerUnitTest<HomeTeamJamStats, TeamJamSt
     }
 
     [Test]
+    public async Task JamEnded_WhenLead_AndJamClockNotExpired_AndInOvertime_DoesNotMarkJammerAsCall()
+    {
+        State = new(true, false, false, false, false);
+        MockState<TimeoutClockState>(new(false, 0, 0, TimeoutClockStopReason.None, 0));
+        MockState<JamClockState>(new(false, 0, engine.Domain.Tick.FromSeconds(Rules.DefaultRules.JamRules.DurationInSeconds / 2), true, false));
+        MockState(new OvertimeState(true));
+
+        var implicitEvents = await Subject.Handle(new JamEnded(0));
+
+        implicitEvents.OfType<CallMarked>().Should().BeEmpty();
+    }
+
+    [Test]
     public async Task ScoreModifiedRelative_WhenTeamMatches_MarksInitialCompleted()
     {
+        MockState(new OvertimeState(false));
+
         var implicitEvents = await Subject.Handle(new ScoreModifiedRelative(0, new(TeamSide.Home, 4)));
 
         implicitEvents
             .OfType<InitialTripCompleted>()
             .Should().HaveCount(1)
             .And.ContainSingle(e => e.Body == new InitialTripCompletedBody(TeamSide.Home, true));
+    }
+
+    [Test]
+    public async Task ScoreModifiedRelative_WhenInOvertime_DoesNotMarkInitialCompleted()
+    {
+        MockState(new OvertimeState(true));
+
+        var implicitEvents = await Subject.Handle(new ScoreModifiedRelative(0, new(TeamSide.Home, 4)));
+
+        implicitEvents
+            .OfType<InitialTripCompleted>()
+            .Should().BeEmpty();
+    }
+
+    [Test]
+    public async Task TripCompleted_WhenTeamMatches_RaisesInitialTripCompleted()
+    {
+        var implicitEvents = await Subject.Handle(new TripCompleted(0, new(TeamSide.Home)));
+
+        implicitEvents
+            .OfType<InitialTripCompleted>()
+            .Should().ContainSingle(e => e.Body == new InitialTripCompletedBody(TeamSide.Home, true));
+    }
+
+    [Test]
+    public async Task TripCompleted_WhenTeamDoesNotMatch_DoesNotRaiseInitialTripCompleted()
+    {
+        var implicitEvents = await Subject.Handle(new TripCompleted(0, new(TeamSide.Away)));
+
+        implicitEvents
+            .OfType<InitialTripCompleted>()
+            .Should().BeEmpty();
     }
 }

@@ -1,7 +1,7 @@
 import { ShortcutButton } from "@/components";
 import { TooltipProvider } from "@/components/ui";
 import { Card, CardContent } from "@/components/ui/card";
-import { useGameStageState, useLineupClockState, useRulesState, useUndoListState } from "@/hooks";
+import { useGameStageState, useLineupClockState, useOvertimeState, useRulesState, useUndoListState } from "@/hooks";
 import { Event, useEvents } from "@/hooks/EventsApiHook";
 import { useI18n } from "@/hooks/I18nHook";
 import { Stage } from "@/types";
@@ -17,6 +17,7 @@ type MainControlsProps = {
 export const MainControls = ({ gameId, disabled }: MainControlsProps) => {
 
     const gameStage = useGameStageState();
+    const overtime = useOvertimeState();
     const {translate, language} = useI18n({ prefix: "ScoreboardControl.MainControls." });
     const { sendEvent, deleteEvent } = useEvents();
     const undoList = useUndoListState() ?? { };
@@ -40,9 +41,7 @@ export const MainControls = ({ gameId, disabled }: MainControlsProps) => {
             case Stage.BeforeGame:
                 return [translate("StartLineup"), translate("StartLineup.Description"), true];
             case Stage.Intermission: 
-                return gameStage.periodIsFinalized ? [translate("StartLineup"), translate("StartLineup.Description"), true] : [translate("FinalizePeriod"), translate("FinalizePeriod.Description"), true];
-            case Stage.AfterGame: 
-                return gameStage.periodIsFinalized ? ["---", "", false] : [translate("FinalizeGame"), translate("FinalizeGame.Description"), true];
+                return gameStage.periodIsFinalized ? [translate("StartLineup"), translate("StartLineup.Description"), true] : ["---", "", true];
             default: 
                 return ["---", "", false];
         }
@@ -104,8 +103,9 @@ export const MainControls = ({ gameId, disabled }: MainControlsProps) => {
 
     const buttonClass = "w-full py-6 md:w-auto md:px-4 md:py-2";
 
-    const shouldStartJam = gameStage?.stage === Stage.Lineup && (lineupClock?.secondsPassed ?? 0) > (rules?.lineupRules.durationInSeconds ?? 0);
-    const shouldFinalizePeriod = gameStage && [Stage.Intermission, Stage.AfterGame].includes(gameStage.stage) && !gameStage.periodIsFinalized;
+    const shouldStartJam =
+        gameStage?.stage === Stage.Lineup && !overtime?.isInOvertime && (lineupClock?.secondsPassed ?? 0) > (rules?.lineupRules.durationInSeconds ?? 0)
+        || gameStage?.stage === Stage.Lineup && overtime?.isInOvertime && (lineupClock?.secondsPassed ?? 0) > (rules?.lineupRules.overtimeDurationInSeconds ?? 0);
 
     return (
         <Card className="grow py-2">
@@ -129,7 +129,6 @@ export const MainControls = ({ gameId, disabled }: MainControlsProps) => {
                         id="ScoreboardControl.MainControls.StopButton"
                         shortcutGroup="clocks"
                         shortcutKey="stop"
-                        notify={shouldFinalizePeriod}
                         description={endDescription}
                         className={buttonClass}
                         variant={endButtonEnabled ? "default" : "secondary"}

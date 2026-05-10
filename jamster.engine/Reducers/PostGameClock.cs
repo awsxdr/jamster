@@ -8,9 +8,12 @@ public class PostGameClock(ReducerGameContext context, ILogger<PostGameClock> lo
     : Reducer<PostGameClockState>(context)
     , IHandlesEvent<PeriodEnded>
     , IHandlesEvent<PeriodFinalized>
-    , ITickReceiver
+    , IHandlesEvent<OvertimeStarted>
+    , IHandlesEvent<OvertimeEnded>
     , IDependsOnState<GameStageState>
+    , IDependsOnState<OvertimeState>
     , IDependsOnState<RulesState>
+    , ITickReceiver
 {
     protected override PostGameClockState DefaultState => PostGameClockState.Default;
 
@@ -19,12 +22,12 @@ public class PostGameClock(ReducerGameContext context, ILogger<PostGameClock> lo
         var gameStage = GetState<GameStageState>();
         var rules = GetState<RulesState>().Rules;
 
-        var isLastPeriod = gameStage.IsInOvertime || gameStage.PeriodNumber >= rules.PeriodRules.PeriodCount;
+        var isLastPeriod = GetState<OvertimeState>().IsInOvertime || gameStage.PeriodNumber >= rules.PeriodRules.PeriodCount;
 
         if (!isLastPeriod)
             return [];
 
-        logger.LogDebug("Last period ended at {tick}, starting post-game clock", @event.Tick);
+        logger.LogDebug("Starting post-game clock due to last period ending at {tick}", @event.Tick);
 
         SetState(GetState() with
         {
@@ -42,13 +45,46 @@ public class PostGameClock(ReducerGameContext context, ILogger<PostGameClock> lo
 
         if (!state.IsRunning) return [];
 
-        logger.LogDebug("Period finalized at {tick}, stopping post-game clock", @event.Tick);
+        logger.LogDebug("Stopping post-game clock due to period finalized at {tick}", @event.Tick);
 
         SetState(state with
         {
             IsRunning = false,
             EndTick = @event.Tick,
             TicksPassed = @event.Tick - state.StartTick,
+        });
+
+        return [];
+    }
+
+    public IEnumerable<Event> Handle(OvertimeStarted @event)
+    {
+        var state = GetState();
+
+        if (!state.IsRunning) return [];
+
+        logger.LogDebug("Stopping post-game clock due to overtime starting at {tick}", @event.Tick);
+
+        SetState(state with
+        {
+            IsRunning = false,
+            EndTick = @event.Tick,
+            TicksPassed = @event.Tick - state.StartTick,
+        });
+
+        return [];
+    }
+
+    public IEnumerable<Event> Handle(OvertimeEnded @event)
+    {
+        logger.LogDebug("Starting post-game clock due to overtime ending at {tick}", @event.Tick);
+
+        SetState(GetState() with
+        {
+            IsRunning = true,
+            StartTick = @event.Tick,
+            EndTick = 0,
+            TicksPassed = 0,
         });
 
         return [];

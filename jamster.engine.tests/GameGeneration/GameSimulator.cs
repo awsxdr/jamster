@@ -180,8 +180,8 @@ public class GameSimulator(SimulatorGame game)
                 _gameState.Period + (_gameState.Stage == Stage.BeforeGame ? 1 : 0),
                 _gameState.Jam,
                 _gameState.TotalJam,
-                _gameState.IsInOvertime,
                 _gameState.PeriodFinalized),
+            new OvertimeState(_gameState.IsInOvertime),
         ]);
 
     private void TickBeforeGame()

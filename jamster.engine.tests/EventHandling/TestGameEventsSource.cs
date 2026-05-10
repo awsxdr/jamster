@@ -21,12 +21,12 @@ public static class TestGameEventsSource
         .Wait(30)
         .Validate(tick => [
             new JamClockState(true, jamStartTick, tick - jamStartTick, false, false),
-            new GameStageState(Stage.Jam, 1, 2, 2, false, false)
+            new GameStageState(Stage.Jam, 1, 2, 2, false)
         ])
         .Event<JamEnded>(10).GetTick(out var jamEndTick)
         .Validate([
             new JamClockState(false, jamStartTick, jamEndTick - jamStartTick, true, false),
-            new GameStageState(Stage.Lineup, 1, 2, 2, false, false)
+            new GameStageState(Stage.Lineup, 1, 2, 2, false)
         ])
         .Build();
 
@@ -36,7 +36,7 @@ public static class TestGameEventsSource
         .Wait(15)
         .Event<IntermissionEnded>(15)
         .Validate([
-            new GameStageState(Stage.Lineup, 1, 0, 0, false, false),
+            new GameStageState(Stage.Lineup, 1, 0, 0, false),
             new PeriodClockState(false, true, false, 0, 0, 0),
             new LineupClockState(true, Tick.FromSeconds(15), Tick.FromSeconds(15)),
             new TimeoutClockState(false, 0, 0, TimeoutClockStopReason.None, 0),
@@ -44,7 +44,7 @@ public static class TestGameEventsSource
         ])
         .Event<TimeoutStarted>(10)
         .Validate([
-            new GameStageState(Stage.Timeout, 1, 0, 0, false, false),
+            new GameStageState(Stage.Timeout, 1, 0, 0, false),
             new PeriodClockState(false, true, false, 0, 0, 0),
             new LineupClockState(false, Tick.FromSeconds(15), Tick.FromSeconds(15)),
             new TimeoutClockState(true, Tick.FromSeconds(30), 0, TimeoutClockStopReason.None, Tick.FromSeconds(10)),
@@ -52,7 +52,7 @@ public static class TestGameEventsSource
         ])
         .Event<TimeoutEnded>(10)
         .Validate([
-            new GameStageState(Stage.AfterTimeout, 1, 0, 0, false, false),
+            new GameStageState(Stage.AfterTimeout, 1, 0, 0, false),
             new PeriodClockState(false, true, false, 0, 0, 0),
             new LineupClockState(false, Tick.FromSeconds(15), Tick.FromSeconds(15)),
             new TimeoutClockState(true, Tick.FromSeconds(30), Tick.FromSeconds(40), TimeoutClockStopReason.Other, Tick.FromSeconds(20)),
@@ -256,7 +256,7 @@ public static class TestGameEventsSource
         .Event<TeamSet>(0).WithBody(new TeamSetBody(TeamSide.Home, new GameTeam(HomeTeam.Names, HomeTeam.Color, HomeTeam.Roster)))
         .Event<TeamSet>(0).WithBody(new TeamSetBody(TeamSide.Away, new GameTeam(AwayTeam.Names, AwayTeam.Color, AwayTeam.Roster)))
         .Validate(
-            new GameStageState(Stage.BeforeGame, 1, 0, 0, false, false),
+            new GameStageState(Stage.BeforeGame, 1, 0, 0, false),
             ("Home", new TeamDetailsState(new GameTeam(HomeTeam.Names, HomeTeam.Color, HomeTeam.Roster))),
             ("Away", new TeamDetailsState(new GameTeam(AwayTeam.Names, AwayTeam.Color, AwayTeam.Roster)))
         )
@@ -267,7 +267,7 @@ public static class TestGameEventsSource
         .Event<SkaterOnTrack>(1).WithBody(new SkaterOnTrackBody(TeamSide.Away, AwayTeam.Roster[1].Number, SkaterPosition.Pivot))
         .Event<IntermissionEnded>(30)
         .Validate(
-            new GameStageState(Stage.Lineup, 1, 0, 0, false, false),
+            new GameStageState(Stage.Lineup, 1, 0, 0, false),
             ("Home", new ScoreSheetState([])),
             ("Away", new ScoreSheetState([]))
         )
@@ -279,8 +279,8 @@ public static class TestGameEventsSource
             ("Away", new TripScoreState(null, 0, 0)),
             ("Home", new TeamJamStatsState(false, false, false, false, false)),
             ("Away", new TeamJamStatsState(false, false, false, false, false)),
-            ("Home", new ScoreSheetState([new(1, 1, HomeTeam.Roster[0].Number, HomeTeam.Roster[1].Number, false, false, false, false, true, [], null, 0, 0)])),
-            ("Away", new ScoreSheetState([new(1, 1, AwayTeam.Roster[0].Number, AwayTeam.Roster[1].Number, false, false, false, false, true, [], null, 0, 0)]))
+            ("Home", new ScoreSheetState([new(1, 1, HomeTeam.Roster[0].Number, HomeTeam.Roster[1].Number, false, false, false, false, true, [], null, 0, 0, false)])),
+            ("Away", new ScoreSheetState([new(1, 1, AwayTeam.Roster[0].Number, AwayTeam.Roster[1].Number, false, false, false, false, true, [], null, 0, 0, false)]))
         )
         .Event<LeadMarked>(2).WithBody(new LeadMarkedBody(TeamSide.Home, true))
         .Event<InitialTripCompleted>(10).WithBody(new InitialTripCompletedBody(TeamSide.Away, true))
@@ -292,8 +292,8 @@ public static class TestGameEventsSource
             ("Away", new TripScoreState(null, 1, 0)),
             ("Home", new TeamJamStatsState(true, false, false, false, true)),
             ("Away", new TeamJamStatsState(false, false, false, false, true)),
-            ("Home", new ScoreSheetState([new(1, 1, HomeTeam.Roster[0].Number, HomeTeam.Roster[1].Number, false, true, false, false, false, [new JamLineTrip(4)], null, 4, 4)])),
-            ("Away", new ScoreSheetState([new(1, 1, AwayTeam.Roster[0].Number, AwayTeam.Roster[1].Number, false, false, false, false, false, [new JamLineTrip(null)], null, 0, 0)]))
+            ("Home", new ScoreSheetState([new(1, 1, HomeTeam.Roster[0].Number, HomeTeam.Roster[1].Number, false, true, false, false, false, [new JamLineTrip(4)], null, 4, 4, false)])),
+            ("Away", new ScoreSheetState([new(1, 1, AwayTeam.Roster[0].Number, AwayTeam.Roster[1].Number, false, false, false, false, false, [new JamLineTrip(null)], null, 0, 0, false)]))
         )
         .Wait(2)
         .Event<ScoreModifiedRelative>(0).GetTick(out var awayScoreTick).WithBody(new ScoreModifiedRelativeBody(TeamSide.Away, 4))
@@ -304,8 +304,8 @@ public static class TestGameEventsSource
             ("Away", new TripScoreState(4, 1, awayScoreTick)),
             ("Home", new TeamJamStatsState(true, false, false, false, true)),
             ("Away", new TeamJamStatsState(false, false, false, false, true)),
-            ("Home", new ScoreSheetState([new(1, 1, HomeTeam.Roster[0].Number, HomeTeam.Roster[1].Number, false, true, false, false, false, [new JamLineTrip(4)], null, 4, 4)])),
-            ("Away", new ScoreSheetState([new(1, 1, AwayTeam.Roster[0].Number, AwayTeam.Roster[1].Number, false, false, false, false, false, [new JamLineTrip(4)], null, 4, 4)]))
+            ("Home", new ScoreSheetState([new(1, 1, HomeTeam.Roster[0].Number, HomeTeam.Roster[1].Number, false, true, false, false, false, [new JamLineTrip(4)], null, 4, 4, false)])),
+            ("Away", new ScoreSheetState([new(1, 1, AwayTeam.Roster[0].Number, AwayTeam.Roster[1].Number, false, false, false, false, false, [new JamLineTrip(4)], null, 4, 4, false)]))
         )
         .Wait(2)
         .Validate(tick => [
@@ -315,8 +315,8 @@ public static class TestGameEventsSource
             ("Away", new TripScoreState(4, 1, awayScoreTick)),
             ("Home", new TeamJamStatsState(true, false, false, false, true)),
             ("Away", new TeamJamStatsState(false, false, false, false, true)),
-            ("Home", new ScoreSheetState([new(1, 1, HomeTeam.Roster[0].Number, HomeTeam.Roster[1].Number, false, true, false, false, false, [new JamLineTrip(4), new JamLineTrip(null)], null, 4, 4)])),
-            ("Away", new ScoreSheetState([new(1, 1, AwayTeam.Roster[0].Number, AwayTeam.Roster[1].Number, false, false, false, false, false, [new JamLineTrip(4)], null, 4,  4)]))
+            ("Home", new ScoreSheetState([new(1, 1, HomeTeam.Roster[0].Number, HomeTeam.Roster[1].Number, false, true, false, false, false, [new JamLineTrip(4), new JamLineTrip(null)], null, 4, 4, false)])),
+            ("Away", new ScoreSheetState([new(1, 1, AwayTeam.Roster[0].Number, AwayTeam.Roster[1].Number, false, false, false, false, false, [new JamLineTrip(4)], null, 4,  4, false)]))
         ])
         .Wait(2)
         .Validate(tick => [
@@ -326,8 +326,8 @@ public static class TestGameEventsSource
             ("Away", new TripScoreState(null, 2, tick - 1000)),
             ("Home", new TeamJamStatsState(true, false, false, false, true)),
             ("Away", new TeamJamStatsState(false, false, false, false, true)),
-            ("Home", new ScoreSheetState([new(1, 1, HomeTeam.Roster[0].Number, HomeTeam.Roster[1].Number, false, true, false, false, false, [new JamLineTrip(4), new JamLineTrip(null)], null, 4, 4)])),
-            ("Away", new ScoreSheetState([new(1, 1, AwayTeam.Roster[0].Number, AwayTeam.Roster[1].Number, false, false, false, false, false, [new JamLineTrip(4), new JamLineTrip(null)], null, 4,  4)]))
+            ("Home", new ScoreSheetState([new(1, 1, HomeTeam.Roster[0].Number, HomeTeam.Roster[1].Number, false, true, false, false, false, [new JamLineTrip(4), new JamLineTrip(null)], null, 4, 4, false)])),
+            ("Away", new ScoreSheetState([new(1, 1, AwayTeam.Roster[0].Number, AwayTeam.Roster[1].Number, false, false, false, false, false, [new JamLineTrip(4), new JamLineTrip(null)], null, 4,  4, false)]))
         ])
         .Wait(15)
         .Event<JamEnded>(2)
@@ -338,8 +338,8 @@ public static class TestGameEventsSource
             ("Away", new TeamScoreState(5, 5)),
             ("Home", new TeamJamStatsState(true, false, true, false, true)),
             ("Away", new TeamJamStatsState(false, false, false, false, true)),
-            ("Home", new ScoreSheetState([new(1, 1, HomeTeam.Roster[0].Number, HomeTeam.Roster[1].Number, false, true, true, false, false, [new JamLineTrip(4), new JamLineTrip(3)], null, 7, 7)])),
-            ("Away", new ScoreSheetState([new(1, 1, AwayTeam.Roster[0].Number, AwayTeam.Roster[1].Number, false, false, false, false, false, [new JamLineTrip(4), new JamLineTrip(1)], null, 5, 5)]))
+            ("Home", new ScoreSheetState([new(1, 1, HomeTeam.Roster[0].Number, HomeTeam.Roster[1].Number, false, true, true, false, false, [new JamLineTrip(4), new JamLineTrip(3)], null, 7, 7, false)])),
+            ("Away", new ScoreSheetState([new(1, 1, AwayTeam.Roster[0].Number, AwayTeam.Roster[1].Number, false, false, false, false, false, [new JamLineTrip(4), new JamLineTrip(1)], null, 5, 5, false)]))
         )
         .Wait(20)
         .Event<SkaterOnTrack>(1).WithBody(new SkaterOnTrackBody(TeamSide.Home, HomeTeam.Roster[1].Number, SkaterPosition.Jammer))
@@ -350,12 +350,12 @@ public static class TestGameEventsSource
             ("Home", new TeamScoreState(7, 0)),
             ("Away", new TeamScoreState(5, 0)),
             ("Home", new ScoreSheetState([
-                new(1, 1, HomeTeam.Roster[0].Number, HomeTeam.Roster[1].Number, false, true, true, false, false, [new JamLineTrip(4), new JamLineTrip(3)], null, 7, 7),
-                new(1, 2, HomeTeam.Roster[1].Number, "?", false, false, false, false, true, [], null, 0, 7),
+                new(1, 1, HomeTeam.Roster[0].Number, HomeTeam.Roster[1].Number, false, true, true, false, false, [new JamLineTrip(4), new JamLineTrip(3)], null, 7, 7, false),
+                new(1, 2, HomeTeam.Roster[1].Number, "?", false, false, false, false, true, [], null, 0, 7, false),
             ])),
             ("Away", new ScoreSheetState([
-                new(1, 1, AwayTeam.Roster[0].Number, AwayTeam.Roster[1].Number, false, false, false, false, false, [new JamLineTrip(4), new JamLineTrip(1)], null, 5, 5),
-                new(1, 2, "?", AwayTeam.Roster[3].Number, false, false, false, false, true, [], null, 0, 5),
+                new(1, 1, AwayTeam.Roster[0].Number, AwayTeam.Roster[1].Number, false, false, false, false, false, [new JamLineTrip(4), new JamLineTrip(1)], null, 5, 5, false),
+                new(1, 2, "?", AwayTeam.Roster[3].Number, false, false, false, false, true, [], null, 0, 5, false),
             ]))
         )
         .Event<SkaterOnTrack>(1).WithBody(new SkaterOnTrackBody(TeamSide.Home, HomeTeam.Roster[3].Number, SkaterPosition.Pivot))
@@ -363,12 +363,12 @@ public static class TestGameEventsSource
         .Event<LeadMarked>(1).WithBody(new LeadMarkedBody(TeamSide.Away, true))
         .Validate(
             ("Home", new ScoreSheetState([
-                new(1, 1, HomeTeam.Roster[0].Number, HomeTeam.Roster[1].Number, false, true, true, false, false, [new JamLineTrip(4), new JamLineTrip(3)], null, 7, 7),
-                new(1, 2, HomeTeam.Roster[1].Number, HomeTeam.Roster[3].Number, false, false, false, false, true, [], null, 0, 7),
+                new(1, 1, HomeTeam.Roster[0].Number, HomeTeam.Roster[1].Number, false, true, true, false, false, [new JamLineTrip(4), new JamLineTrip(3)], null, 7, 7, false),
+                new(1, 2, HomeTeam.Roster[1].Number, HomeTeam.Roster[3].Number, false, false, false, false, true, [], null, 0, 7, false),
             ])),
             ("Away", new ScoreSheetState([
-                new(1, 1, AwayTeam.Roster[0].Number, AwayTeam.Roster[1].Number, false, false, false, false, false, [new JamLineTrip(4), new JamLineTrip(1)], null, 5, 5),
-                new(1, 2, AwayTeam.Roster[1].Number, AwayTeam.Roster[3].Number, false, true, false, false, false, [new JamLineTrip(null)], null, 0, 5),
+                new(1, 1, AwayTeam.Roster[0].Number, AwayTeam.Roster[1].Number, false, false, false, false, false, [new JamLineTrip(4), new JamLineTrip(1)], null, 5, 5, false),
+                new(1, 2, AwayTeam.Roster[1].Number, AwayTeam.Roster[3].Number, false, true, false, false, false, [new JamLineTrip(null)], null, 0, 5, false),
             ]))
         )
         .Event<ScoreModifiedRelative>(0).WithBody(new ScoreModifiedRelativeBody(TeamSide.Away, 4))
@@ -376,24 +376,24 @@ public static class TestGameEventsSource
             ("Home", new TeamScoreState(7, 0)),
             ("Away", new TeamScoreState(9, 4)),
             ("Home", new ScoreSheetState([
-                new(1, 1, HomeTeam.Roster[0].Number, HomeTeam.Roster[1].Number, false, true, true, false, false, [new JamLineTrip(4), new JamLineTrip(3)], null, 7, 7),
-                new(1, 2, HomeTeam.Roster[1].Number, HomeTeam.Roster[3].Number, false, false, false, false, true, [], null, 0, 7),
+                new(1, 1, HomeTeam.Roster[0].Number, HomeTeam.Roster[1].Number, false, true, true, false, false, [new JamLineTrip(4), new JamLineTrip(3)], null, 7, 7, false),
+                new(1, 2, HomeTeam.Roster[1].Number, HomeTeam.Roster[3].Number, false, false, false, false, true, [], null, 0, 7, false),
             ])),
             ("Away", new ScoreSheetState([
-                new(1, 1, AwayTeam.Roster[0].Number, AwayTeam.Roster[1].Number, false, false, false, false, false, [new JamLineTrip(4), new JamLineTrip(1)], null, 5, 5),
-                new(1, 2, AwayTeam.Roster[1].Number, AwayTeam.Roster[3].Number, false, true, false, false, false, [new JamLineTrip(4)], null, 4, 9),
+                new(1, 1, AwayTeam.Roster[0].Number, AwayTeam.Roster[1].Number, false, false, false, false, false, [new JamLineTrip(4), new JamLineTrip(1)], null, 5, 5, false),
+                new(1, 2, AwayTeam.Roster[1].Number, AwayTeam.Roster[3].Number, false, true, false, false, false, [new JamLineTrip(4)], null, 4, 9, false),
             ]))
         )
         .Wait(4)
         .Event<CallMarked>(2).WithBody(new CallMarkedBody(TeamSide.Away, true))
         .Validate(
             ("Home", new ScoreSheetState([
-                new(1, 1, HomeTeam.Roster[0].Number, HomeTeam.Roster[1].Number, false, true, true, false, false, [new JamLineTrip(4), new JamLineTrip(3)], null, 7, 7),
-                new(1, 2, HomeTeam.Roster[1].Number, HomeTeam.Roster[3].Number, false, false, false, false, true, [], null, 0, 7),
+                new(1, 1, HomeTeam.Roster[0].Number, HomeTeam.Roster[1].Number, false, true, true, false, false, [new JamLineTrip(4), new JamLineTrip(3)], null, 7, 7, false),
+                new(1, 2, HomeTeam.Roster[1].Number, HomeTeam.Roster[3].Number, false, false, false, false, true, [], null, 0, 7, false),
             ])),
             ("Away", new ScoreSheetState([
-                new(1, 1, AwayTeam.Roster[0].Number, AwayTeam.Roster[1].Number, false, false, false, false, false, [new JamLineTrip(4), new JamLineTrip(1)], null, 5, 5),
-                new(1, 2, AwayTeam.Roster[1].Number, AwayTeam.Roster[3].Number, false, true, true, false, false, [new JamLineTrip(4), new JamLineTrip(0)], null, 4, 9),
+                new(1, 1, AwayTeam.Roster[0].Number, AwayTeam.Roster[1].Number, false, false, false, false, false, [new JamLineTrip(4), new JamLineTrip(1)], null, 5, 5, false),
+                new(1, 2, AwayTeam.Roster[1].Number, AwayTeam.Roster[3].Number, false, true, true, false, false, [new JamLineTrip(4), new JamLineTrip(0)], null, 4, 9, false),
             ]))
         )
         .Wait(24)
@@ -408,12 +408,31 @@ public static class TestGameEventsSource
             ("Home", new TeamJamStatsState(true, false, false, false, true)),
             ("Away", new TeamJamStatsState(false, false, false, false, false)),
         ])
+        .Event<CallMarked>(2).WithBody(new CallMarkedBody(TeamSide.Home, true))
+        .Wait(24)
+        .Event<SkaterOnTrack>(1).WithBody(new SkaterOnTrackBody(TeamSide.Home, HomeTeam.Roster[0].Number, SkaterPosition.Jammer))
+        .Event<SkaterOnTrack>(1).WithBody(new SkaterOnTrackBody(TeamSide.Home, HomeTeam.Roster[1].Number, SkaterPosition.Pivot))
+        .Event<SkaterOnTrack>(1).WithBody(new SkaterOnTrackBody(TeamSide.Away, AwayTeam.Roster[0].Number, SkaterPosition.Jammer))
+        .Event<SkaterOnTrack>(1).WithBody(new SkaterOnTrackBody(TeamSide.Away, AwayTeam.Roster[1].Number, SkaterPosition.Pivot))
+        .Event<JamStarted>(30)
+        .Event<ScoreModifiedRelative>(1).WithBody(new ScoreModifiedRelativeBody(TeamSide.Home, 1))
+        .Event<ScoreModifiedRelative>(1).WithBody(new ScoreModifiedRelativeBody(TeamSide.Home, 1))
+        .Event<ScoreModifiedRelative>(1).WithBody(new ScoreModifiedRelativeBody(TeamSide.Home, 1))
+        .Event<ScoreModifiedRelative>(1).WithBody(new ScoreModifiedRelativeBody(TeamSide.Home, 1))
+        .Validate([
+            ("Home", new ScoreSheetState([
+                new(1, 1, HomeTeam.Roster[0].Number, HomeTeam.Roster[1].Number, false, true, true, false, false, [new JamLineTrip(4), new JamLineTrip(3)], null, 7, 7, false),
+                new(1, 2, HomeTeam.Roster[1].Number, HomeTeam.Roster[3].Number, false, false, false, false, true, [], null, 0, 7, false),
+                new(1, 3, HomeTeam.Roster[0].Number, HomeTeam.Roster[1].Number, false, true, true, false, false, [new JamLineTrip(0)], null, 0, 7, false),
+                new(1, 4, HomeTeam.Roster[0].Number, HomeTeam.Roster[1].Number, false, false, false, false, false, [new JamLineTrip(4)], null, 4, 11, false),
+            ]))
+        ])
         .Build();
 
     public static Event[] SingleJamStartedWithoutEndingIntermission => new EventsBuilder(0, [])
-        .Validate(new GameStageState(Stage.BeforeGame, 1, 0, 0, false, false))
+        .Validate(new GameStageState(Stage.BeforeGame, 1, 0, 0, false))
         .Event<JamStarted>(30)
-        .Validate(new GameStageState(Stage.Jam, 1, 1, 1, false, false))
+        .Validate(new GameStageState(Stage.Jam, 1, 1, 1, false))
         .Build();
 
     public static Event[] OfficialReviewDuringIntermission => new EventsBuilder(0, [])
@@ -451,7 +470,7 @@ public static class TestGameEventsSource
         .Event<JamStarted>(150)
         .Wait(0)
         .Validate(
-            new GameStageState(Stage.Intermission, 1, 15, 15, false, false),
+            new GameStageState(Stage.Intermission, 1, 15, 15, false),
             new IntermissionClockState(
                 true, 
                 false,
@@ -462,13 +481,13 @@ public static class TestGameEventsSource
         .Event<TimeoutStarted>(1)
         .Event<TimeoutTypeSet>(90).WithBody(new TimeoutTypeSetBody(TimeoutType.Review, TeamSide.Home))
         .Validate(tick => [
-            new GameStageState(Stage.Timeout, 1, 15, 15, false, false),
+            new GameStageState(Stage.Timeout, 1, 15, 15, false),
             new TimeoutClockState(true, tick - Tick.FromSeconds(91), 0, TimeoutClockStopReason.None, Tick.FromSeconds(91)),
             new IntermissionClockState(false, false, Tick.FromSeconds(120), Tick.FromSeconds(120 * 14 + 150) + Tick.FromSeconds(120), 90)
         ])
         .Event<TimeoutEnded>(15)
         .Validate(tick => [
-            new GameStageState(Stage.Intermission, 1, 15, 15, false, false),
+            new GameStageState(Stage.Intermission, 1, 15, 15, false),
             new TimeoutClockState(true, tick - Tick.FromSeconds(106), tick - Tick.FromSeconds(15), TimeoutClockStopReason.Other, Tick.FromSeconds(106)),
             new IntermissionClockState(true, false, Tick.FromSeconds(120), tick + Tick.FromSeconds(105), 120 - 15)
         ])
@@ -506,7 +525,7 @@ public static class TestGameEventsSource
         .Wait(30)
         .Event<JamStarted>(0).GetTick(out var periodStartTick)
         .Validate(tick => [
-            new GameStageState(Stage.Jam, 1, 1, 1, false, false),
+            new GameStageState(Stage.Jam, 1, 1, 1, false),
             new JamClockState(true, tick, 0, true, false),
             new PeriodClockState(true, false, true, tick, 0, 0),
             ("Home", new TeamTimeoutsState(0, ReviewStatus.Unused, TimeoutInUse.None)),
@@ -514,45 +533,45 @@ public static class TestGameEventsSource
         ])
         .Wait(61)
         .Validate(tick => [
-            new GameStageState(Stage.Lineup, 1, 1, 1, false, false),
+            new GameStageState(Stage.Lineup, 1, 1, 1, false),
             new LineupClockState(true, tick - 1000, 1000),
         ])
         .Event<TimeoutStarted>(1).GetTick(out var timeoutStartTick)
         .Validate(tick => [
-            new GameStageState(Stage.Timeout, 1, 1, 1, false, false),
+            new GameStageState(Stage.Timeout, 1, 1, 1, false),
             new TimeoutClockState(true, timeoutStartTick, 0, TimeoutClockStopReason.None, tick - timeoutStartTick),
             new PeriodClockState(true, false, true, periodStartTick, 0, tick - periodStartTick),
         ])
         .Event<TimeoutTypeSet>(1).WithBody(new TimeoutTypeSetBody(TimeoutType.Official, null))
         .Validate(tick => [
-            new GameStageState(Stage.Timeout, 1, 1, 1, false, false),
+            new GameStageState(Stage.Timeout, 1, 1, 1, false),
             new TimeoutClockState(true, timeoutStartTick, 0, TimeoutClockStopReason.None, tick - timeoutStartTick),
             new PeriodClockState(false, false, true, periodStartTick, 0, timeoutStartTick - periodStartTick),
         ])
         .Wait(10)
         .Event<TimeoutTypeSet>(1).WithBody(new TimeoutTypeSetBody(TimeoutType.Team, TeamSide.Home))
         .Validate(tick => [
-            new GameStageState(Stage.Timeout, 1, 1, 1, false, false),
+            new GameStageState(Stage.Timeout, 1, 1, 1, false),
             new TimeoutClockState(true, timeoutStartTick, 0, TimeoutClockStopReason.None, tick - timeoutStartTick),
             new PeriodClockState(true, false, true, periodStartTick, 0, tick - periodStartTick)
         ])
         .Wait(539) // Need to force a couple of Ticks
         .Wait(1)
         .Validate([
-            new GameStageState(Stage.Intermission, 1, 1, 1, false, false),
+            new GameStageState(Stage.Intermission, 1, 1, 1, false),
             new TimeoutClockState(false, timeoutStartTick, periodStartTick + Tick.FromSeconds(60 * 10), TimeoutClockStopReason.PeriodExpired, Tick.FromSeconds(60 * 10) - (timeoutStartTick - periodStartTick)),
             new PeriodClockState(false, true, true, periodStartTick, 0, Tick.FromSeconds(60 * 10)),
             new IntermissionClockState(true, false, Tick.FromSeconds(5 * 60), periodStartTick + Tick.FromSeconds(10 * 60) + Tick.FromSeconds(5 * 60), 5 * 60 - 14)
         ])
         .Event<TimeoutTypeSet>(1).WithBody(new TimeoutTypeSetBody(TimeoutType.Official, null))
         .Validate(tick => [
-            new GameStageState(Stage.Timeout, 1, 1, 1, false, false),
+            new GameStageState(Stage.Timeout, 1, 1, 1, false),
             new TimeoutClockState(true, timeoutStartTick, 0, TimeoutClockStopReason.None, tick - timeoutStartTick),
             new PeriodClockState(false, false, true, periodStartTick, 0, timeoutStartTick - periodStartTick),
         ])
         .Event<TimeoutTypeSet>(1).WithBody(new TimeoutTypeSetBody(TimeoutType.Team, TeamSide.Home))
         .Validate([
-            new GameStageState(Stage.Intermission, 1, 1, 1, false, false),
+            new GameStageState(Stage.Intermission, 1, 1, 1, false),
             new TimeoutClockState(false, timeoutStartTick, periodStartTick + Tick.FromSeconds(60 * 10), TimeoutClockStopReason.PeriodExpired, Tick.FromSeconds(60 * 10) - (timeoutStartTick - periodStartTick)),
             new PeriodClockState(false, true, true, periodStartTick, 0, Tick.FromSeconds(60 * 10)),
             ("Home", new TeamTimeoutsState(1, ReviewStatus.Unused, TimeoutInUse.Timeout))
@@ -561,17 +580,17 @@ public static class TestGameEventsSource
         .Event<PeriodFinalized>(1)
         .Event<JamStarted>(30)
         .Validate(
-            new GameStageState(Stage.Jam, 2, 2, 2, false, false),
+            new GameStageState(Stage.Jam, 2, 2, 2, false),
             ("Home", new TeamTimeoutsState(0, ReviewStatus.Unused, TimeoutInUse.None))
         )
         .Event<JamEnded>(30)
         .Event<JamStarted>(30)
         .Validate(
-            new GameStageState(Stage.Jam, 2, 3, 3, false, false)
+            new GameStageState(Stage.Jam, 2, 3, 3, false)
         )
         .Wait(550)
         .Validate(
-            new GameStageState(Stage.Intermission, 2, 3, 3, false, false)
+            new GameStageState(Stage.Intermission, 2, 3, 3, false)
         )
         .Event<PeriodFinalized>(1)
         .Event<JamStarted>(30)
@@ -579,7 +598,7 @@ public static class TestGameEventsSource
         .Wait(520)
         .Event<JamStarted>(30)
         .Validate(
-            new GameStageState(Stage.Intermission, 3, 5, 5, false, false)
+            new GameStageState(Stage.Intermission, 3, 5, 5, false)
         )
         .Event<RulesetSet>(0).WithBody(new RulesetSetBody(
             CustomRuleset with
@@ -598,16 +617,16 @@ public static class TestGameEventsSource
         .Event<JamStarted>(30).GetTick(out var periodStartTick2)
         .Event<JamEnded>(30)
         .Validate(
-            new GameStageState(Stage.Lineup, 4, 1, 6, false, false)
+            new GameStageState(Stage.Lineup, 4, 1, 6, false)
         )
         .Wait(550)
         .Validate(tick => [
-            new GameStageState(Stage.Lineup, 4, 1, 6, false, false),
+            new GameStageState(Stage.Lineup, 4, 1, 6, false),
             new PeriodClockState(true, true, true, periodStartTick2, 0, tick - periodStartTick2),
         ])
         .Event<PeriodEnded>(1).GetTick(out var periodEndTick)
         .Validate(
-            new GameStageState(Stage.Intermission, 4, 1, 6, false, false),
+            new GameStageState(Stage.Intermission, 4, 1, 6, false),
             new PeriodClockState(false, true, true, periodStartTick2, 0, periodEndTick - periodStartTick2)
         )
         .Event<RulesetSet>(0).WithBody(new RulesetSetBody(
@@ -624,30 +643,30 @@ public static class TestGameEventsSource
         .Event<JamStarted>(30).GetTick(out var periodStartTick3)
         .Event<JamEnded>(30)
         .Validate(
-            new GameStageState(Stage.Lineup, 5, 2, 7, false, false)
+            new GameStageState(Stage.Lineup, 5, 2, 7, false)
         )
         .Wait(7 * 60 - 50)
         .Validate(tick => [
-            new GameStageState(Stage.Lineup, 5, 2, 7, false, false),
+            new GameStageState(Stage.Lineup, 5, 2, 7, false),
             new PeriodClockState(true, true, true, periodStartTick3, 0, Tick.FromSeconds(7 * 60)),
         ])
         .Event<JamStarted>(30)
         .Validate(
-            new GameStageState(Stage.Jam, 5, 3, 8, false, false)
+            new GameStageState(Stage.Jam, 5, 3, 8, false)
         )
         .Event<JamEnded>(1)
         .Validate(
-            new GameStageState(Stage.AfterGame, 5, 3, 8, false, false),
+            new GameStageState(Stage.AfterGame, 5, 3, 8, false),
             new PeriodClockState(false, true, true, periodStartTick3, 0, Tick.FromSeconds(7 * 60))
         )
         .Build();
 
     public static Event[] FullGame => new EventsBuilder(0, [])
-        .Validate(new GameStageState(Stage.BeforeGame, 1, 0, 0, false, false))
+        .Validate(new GameStageState(Stage.BeforeGame, 1, 0, 0, false))
         .Event<TeamSet>(0).WithBody(new TeamSetBody(TeamSide.Home, new GameTeam(HomeTeam.Names, HomeTeam.Color, HomeTeam.Roster)))
         .Event<TeamSet>(0).WithBody(new TeamSetBody(TeamSide.Away, new GameTeam(AwayTeam.Names, AwayTeam.Color, AwayTeam.Roster)))
         .Validate(
-            new GameStageState(Stage.BeforeGame, 1, 0, 0, false, false),
+            new GameStageState(Stage.BeforeGame, 1, 0, 0, false),
             ("Home", new TeamDetailsState(new GameTeam(HomeTeam.Names, HomeTeam.Color, HomeTeam.Roster))),
             ("Away", new TeamDetailsState(new GameTeam(AwayTeam.Names, AwayTeam.Color, AwayTeam.Roster)))
         )
@@ -674,7 +693,7 @@ public static class TestGameEventsSource
         .Wait(0)
         // Jam 2
         .Event<JamStarted>(57) // Jam that is called
-        .Validate(new GameStageState(Stage.Jam, 1, 2, 2, false, false))
+        .Validate(new GameStageState(Stage.Jam, 1, 2, 2, false))
         .Event<JamEnded>(30)
         // Jam 3
         .Event<JamStarted>(95)
@@ -700,7 +719,7 @@ public static class TestGameEventsSource
         // Jam 6
         .Event<JamStarted>(145).GetTick(out var jamStartTick)
         .Validate([
-            new GameStageState(Stage.Lineup, 1, 6, 6, false, false),
+            new GameStageState(Stage.Lineup, 1, 6, 6, false),
             new JamClockState(false, jamStartTick, Rules.DefaultRules.JamRules.DurationInSeconds * Tick.TicksPerSecond, true, true),
         ])
         .Event<TimeoutStarted>(1) // Official timeout
@@ -719,7 +738,7 @@ public static class TestGameEventsSource
         // Jam 9
         .Event<JamStarted>(120 + 15)
         .Wait(1)
-        .Validate(new GameStageState(Stage.Lineup, 1, 9, 9, false, false))
+        .Validate(new GameStageState(Stage.Lineup, 1, 9, 9, false))
         .Event<TimeoutStarted>(90) // Timeout not ended
         // Jam 10
         .Event<JamStarted>(76)
@@ -753,18 +772,18 @@ public static class TestGameEventsSource
         // Jam 16
         .Event<JamStarted>(112)
         .Event<JamEnded>(1)
-        .Validate(new GameStageState(Stage.Intermission, 1, 16, 16, false, false))
+        .Validate(new GameStageState(Stage.Intermission, 1, 16, 16, false))
         .Event<PeriodFinalized>(10 * 60)
-        .Validate(new GameStageState(Stage.Intermission, 2, 0, 16, false, true))
+        .Validate(new GameStageState(Stage.Intermission, 2, 0, 16, true))
         .Validate(tick => [new IntermissionClockState(true, false, Tick.FromSeconds(Rules.DefaultRules.IntermissionRules.DurationInSeconds), tick + (5 * 60 - 1) * 1000, 5 * 60 - 1)])
         .Wait(5 * 60)
         .Validate(tick => [new IntermissionClockState(true, true, Tick.FromSeconds(Rules.DefaultRules.IntermissionRules.DurationInSeconds), tick - 1000, 0)])
         .Event<IntermissionEnded>(25)
         .Event<JamStarted>(94)
-        .Validate(new GameStageState(Stage.Jam, 2, 1, 17, false, false))
+        .Validate(new GameStageState(Stage.Jam, 2, 1, 17, false))
         .Event<JamEnded>(30)
         .Event<JamStarted>(120 + 15)
-        .Validate(new GameStageState(Stage.Lineup, 2, 2, 18, false, false))
+        .Validate(new GameStageState(Stage.Lineup, 2, 2, 18, false))
         .Event<TimeoutStarted>(1) // Multiple timeouts
         .Event<TimeoutTypeSet>(160).WithBody(new TimeoutTypeSetBody(TimeoutType.Official, null))
         .Validate(
@@ -785,7 +804,7 @@ public static class TestGameEventsSource
         .Event<TimeoutStarted>(7)
         .Event<TimeoutTypeSet>(0).WithBody(new TimeoutTypeSetBody(TimeoutType.Review, TeamSide.Home))
         .Validate(tick => [
-            new GameStageState(Stage.Timeout, 2, 2, 18, false, false),
+            new GameStageState(Stage.Timeout, 2, 2, 18, false),
             new TimeoutClockState(true, tick - 7000, 0, TimeoutClockStopReason.None, 7000),
             new PeriodClockState(
                 false,
@@ -802,14 +821,14 @@ public static class TestGameEventsSource
         .Validate(
             ("Home", new TeamTimeoutsState(3, ReviewStatus.Used, TimeoutInUse.None)),
             ("Away", new TeamTimeoutsState(0, ReviewStatus.Unused, TimeoutInUse.None)),
-            new GameStageState(Stage.Jam, 2, 3, 19, false, false)
+            new GameStageState(Stage.Jam, 2, 3, 19, false)
         )
         .Event<JamEnded>(30)
         .Event<JamStarted>(35)
         .Event<TimeoutStarted>(612) // Timeout started mid-jam (injury, for example)
         .Event<JamStarted>(10)
         .Validate(tick => [
-            new GameStageState(Stage.Jam, 2, 5, 21, false, false),
+            new GameStageState(Stage.Jam, 2, 5, 21, false),
             new JamClockState(true, tick - 10000, 10000, true, false),
             new PeriodClockState(
                 true, 
@@ -823,7 +842,7 @@ public static class TestGameEventsSource
         .Event<JamEnded>(30)
         .Event<JamStarted>(42)
         .Validate(
-            new GameStageState(Stage.Jam, 2, 6, 22, false, false)
+            new GameStageState(Stage.Jam, 2, 6, 22, false)
         )
         .Event<JamEnded>(30)
         .Event<JamStarted>(59)
@@ -845,7 +864,7 @@ public static class TestGameEventsSource
         .Event<JamStarted>(52)
         .Event<JamEnded>(15)
         .Validate(tick => [
-            new GameStageState(Stage.Lineup, 2, 9, 25, false, false),
+            new GameStageState(Stage.Lineup, 2, 9, 25, false),
             new LineupClockState(true, tick - 15000, 15000),
         ])
         .Wait(15)
@@ -869,11 +888,90 @@ public static class TestGameEventsSource
         .Event<JamEnded>(30)
         .Event<JamStarted>(30)
         .Event<JamEnded>(22)
-        .Validate(new GameStageState(Stage.AfterGame, 2, 19, 35, false, false))
+        .Validate(new GameStageState(Stage.AfterGame, 2, 19, 35, false))
         .Wait(10)
         .Event<PeriodFinalized>(1)
-        .Validate(new GameStageState(Stage.AfterGame, 2, 19, 35, false, true))
+        .Validate(new GameStageState(Stage.AfterGame, 2, 19, 35, true))
         .Build();
+
+    public static Event[] OvertimeJam =>
+        new EventsBuilder(0, [])
+            .Event<TeamSet>(0)
+            .WithBody(new TeamSetBody(TeamSide.Home, new(HomeTeam.Names, HomeTeam.Color, HomeTeam.Roster)))
+            .Event<TeamSet>(0)
+            .WithBody(new TeamSetBody(TeamSide.Away, new(AwayTeam.Names, AwayTeam.Color, AwayTeam.Roster)))
+            .Event<JamStarted>(90).Event<JamEnded>(30)
+            .Event<JamStarted>(90).Event<JamEnded>(30)
+            .Event<JamStarted>(90).Event<JamEnded>(30)
+            .Event<JamStarted>(90).Event<JamEnded>(30)
+            .Event<JamStarted>(90).Event<JamEnded>(30)
+            .Event<JamStarted>(90).Event<JamEnded>(30)
+            .Event<JamStarted>(90).Event<JamEnded>(30)
+            .Event<JamStarted>(90).Event<JamEnded>(30)
+            .Event<JamStarted>(90).Event<JamEnded>(30)
+            .Event<JamStarted>(90).Event<JamEnded>(30)
+            .Event<JamStarted>(90).Event<JamEnded>(30)
+            .Event<JamStarted>(90).Event<JamEnded>(30)
+            .Event<JamStarted>(90).Event<JamEnded>(30)
+            .Event<JamStarted>(90).Event<JamEnded>(30)
+            .Event<JamStarted>(120).Event<JamEnded>(0)
+            .Validate([
+                new GameStageState(Stage.Intermission, 1, 15, 15, false),
+                new OvertimeState(false),
+            ])
+            .Event<PeriodFinalized>(0)
+            .Validate(new GameStageState(Stage.Intermission, 2, 0, 15, true))
+            .Event<JamStarted>(90).Event<JamEnded>(30)
+            .Event<JamStarted>(90).Event<JamEnded>(30)
+            .Event<JamStarted>(90).Event<JamEnded>(30)
+            .Event<JamStarted>(90).Event<JamEnded>(30)
+            .Event<JamStarted>(90).Event<JamEnded>(30)
+            .Event<JamStarted>(90).Event<JamEnded>(30)
+            .Event<JamStarted>(90).Event<JamEnded>(30)
+            .Event<JamStarted>(90).Event<JamEnded>(30)
+            .Event<JamStarted>(90).Event<JamEnded>(30)
+            .Event<JamStarted>(90).Event<JamEnded>(30)
+            .Event<JamStarted>(90).Event<JamEnded>(30)
+            .Event<JamStarted>(90).Event<JamEnded>(30)
+            .Event<JamStarted>(90).Event<JamEnded>(30)
+            .Event<JamStarted>(90).Event<JamEnded>(30)
+            .Event<JamStarted>(120).Event<JamEnded>(0).GetTick(out var periodEndedTick)
+            .Validate([
+                new GameStageState(Stage.AfterGame, 2, 15, 30, false),
+                new OvertimeState(false),
+                new PeriodClockState(false, true, true, Tick.FromSeconds(1800), 0, Tick.FromSeconds(1800)),
+                ("Home", new TeamScoreState(0, 0)),
+                ("Away", new TeamScoreState(0, 0)),
+                new PeriodClockState(false, true, true, Tick.FromSeconds(1800), 0, Tick.FromSeconds(1800)),
+            ])
+            .Event<OvertimeStarted>(100).GetTick(out var overtimeStartedTick)
+            .Validate([
+                new GameStageState(Stage.Lineup, 2, 15, 30, false),
+                new OvertimeState(true),
+                new PostGameClockState(false, periodEndedTick, overtimeStartedTick, overtimeStartedTick - periodEndedTick),
+            ])
+            // Overtime jam
+            .Event<JamStarted>(30)
+            .Validate([
+                new GameStageState(Stage.Jam, 2, 16, 31, false),
+                new OvertimeState(true),
+                new PeriodClockState(false, true, true, Tick.FromSeconds(1800), 0, Tick.FromSeconds(1800)),
+                new PostGameClockState(false, periodEndedTick, overtimeStartedTick, overtimeStartedTick - periodEndedTick),
+            ])
+            .Event<JamEnded>(0)
+            .Validate([
+                new GameStageState(Stage.Lineup, 2, 16, 31, false),
+                new OvertimeState(true),
+                new PeriodClockState(false, true, true, Tick.FromSeconds(1800), 0, Tick.FromSeconds(1800)),
+            ])
+            .Event<OvertimeEnded>(0).GetTick(out var overtimeEndedTick)
+            .Validate([
+                new GameStageState(Stage.AfterGame, 2, 16, 31, false),
+                new PeriodClockState(false, true, true, Tick.FromSeconds(1800), 0, Tick.FromSeconds(1800)),
+                new OvertimeState(false),
+                new PostGameClockState(true, overtimeEndedTick, 0, 0),
+            ])
+            .Build();
 
     public static readonly GameTeam HomeTeam = new(
         new() { ["team"] =  "Test Home Team" },

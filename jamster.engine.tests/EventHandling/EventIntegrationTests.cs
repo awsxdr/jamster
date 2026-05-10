@@ -12,14 +12,15 @@ namespace jamster.engine.tests.EventHandling;
 
 public class EventIntegrationTests : EventBusIntegrationTest
 {
-    [TestCase(typeof(TestGameEventsSource), nameof(TestGameEventsSource.FullGame))]
-    [TestCase(typeof(TestGameEventsSource), nameof(TestGameEventsSource.JamsWithScoresAndStats))]
-    [TestCase(typeof(TestGameEventsSource), nameof(TestGameEventsSource.SingleJamStartedWithoutEndingIntermission))]
-    [TestCase(typeof(TestGameEventsSource), nameof(TestGameEventsSource.OfficialReviewDuringIntermission))]
-    [TestCase(typeof(TestGameEventsSource), nameof(TestGameEventsSource.CustomRules))]
-    [TestCase(typeof(TestGameEventsSource), nameof(TestGameEventsSource.JamsWithLineupsAndPenalties))]
-    [TestCase(typeof(TestGameEventsSource), nameof(TestGameEventsSource.JamsWithOverrunningJam))]
-    [TestCase(typeof(TestGameEventsSource), nameof(TestGameEventsSource.TimeoutBeforeFirstJam))]
+    [TestCase(typeof(TestGameEventsSource), nameof(TestGameEventsSource.FullGame), TestName = "Full game")]
+    [TestCase(typeof(TestGameEventsSource), nameof(TestGameEventsSource.JamsWithScoresAndStats), TestName = "Jams with scores and stats")]
+    [TestCase(typeof(TestGameEventsSource), nameof(TestGameEventsSource.SingleJamStartedWithoutEndingIntermission), TestName = "Single jam started without ending intermission")]
+    [TestCase(typeof(TestGameEventsSource), nameof(TestGameEventsSource.OfficialReviewDuringIntermission), TestName = "Official review during intermission")]
+    [TestCase(typeof(TestGameEventsSource), nameof(TestGameEventsSource.CustomRules), TestName = "Custom rules")]
+    [TestCase(typeof(TestGameEventsSource), nameof(TestGameEventsSource.JamsWithLineupsAndPenalties), TestName = "Jams with lineups and penalties")]
+    [TestCase(typeof(TestGameEventsSource), nameof(TestGameEventsSource.JamsWithOverrunningJam), TestName = "Jams with overrunning jam")]
+    [TestCase(typeof(TestGameEventsSource), nameof(TestGameEventsSource.TimeoutBeforeFirstJam), TestName = "Timeout before first jam")]
+    [TestCase(typeof(TestGameEventsSource), nameof(TestGameEventsSource.OvertimeJam), TestName = "Overtime jam")]
     public async Task EventSources_UpdateStatesAsExpected(Type eventSourceType, string eventSourceName)
     {
         var events = GetEvents(eventSourceType, eventSourceName);

@@ -7,6 +7,7 @@ import { useGameStageState, useHasServerConnection } from "@/hooks";
 import { TimeoutList } from "./TimeoutList";
 import { ScoreSheetContainer } from "./statsSheet/ScoreSheetContainer";
 import { ConnectionLostAlert } from "@/components/ConnectionLostAlert";
+import { PeriodEndControlPanel } from "./PeriodEndControlPanel";
 
 type ControlPanelProps = {
     gameId?: string;
@@ -32,6 +33,7 @@ export const ControlPanel = ({ gameId, disabled, viewConfiguration }: ControlPan
             <ConnectionLostAlert />
             { viewConfiguration.showClockControls && <MainControls gameId={gameId} disabled={disabled} /> }
             { viewConfiguration.showClockControls && <TimeoutTypePanel gameId={gameId} disabled={disabled} /> }
+            { viewConfiguration.showClockControls && <PeriodEndControlPanel gameId={gameId} />}
             { (viewConfiguration.showLineupControls || viewConfiguration.showScoreControls || viewConfiguration.showStatsControls) && (
                 <div className="w-full flex flex-wrap xl:flex-nowrap gap-2">
                     { viewConfiguration.displaySide !== DisplaySide.Away && 

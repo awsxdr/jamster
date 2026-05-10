@@ -12,7 +12,8 @@ public class PostGameClockUnitTests : ReducerUnitTest<PostGameClock, PostGameClo
     public async Task PeriodEnded_WhenLastPeriod_StartsTheClock()
     {
         State = PostGameClockState.Default;
-        MockState(new GameStageState(Stage.Jam, 2, 5, 10, false, false));
+        MockState(new GameStageState(Stage.Jam, 2, 5, 10, false));
+        MockState(new OvertimeState(false));
         MockState(new RulesState(Rules.DefaultRules));
 
         await Subject.Handle(new PeriodEnded(50000));
@@ -26,7 +27,8 @@ public class PostGameClockUnitTests : ReducerUnitTest<PostGameClock, PostGameClo
     public async Task PeriodEnded_WhenNotLastPeriod_DoesNotStartTheClock()
     {
         State = PostGameClockState.Default;
-        MockState(new GameStageState(Stage.Jam, 1, 5, 5, false, false));
+        MockState(new GameStageState(Stage.Jam, 1, 5, 5, false));
+        MockState(new OvertimeState(false));
         MockState(new RulesState(Rules.DefaultRules));
 
         await Subject.Handle(new PeriodEnded(50000));
@@ -38,7 +40,8 @@ public class PostGameClockUnitTests : ReducerUnitTest<PostGameClock, PostGameClo
     public async Task PeriodEnded_WhenInOvertime_StartsTheClock()
     {
         State = PostGameClockState.Default;
-        MockState(new GameStageState(Stage.Jam, 2, 1, 11, true, false));
+        MockState(new GameStageState(Stage.Jam, 2, 1, 11, false));
+        MockState(new OvertimeState(true));
         MockState(new RulesState(Rules.DefaultRules));
 
         await Subject.Handle(new PeriodEnded(60000));
@@ -105,5 +108,40 @@ public class PostGameClockUnitTests : ReducerUnitTest<PostGameClock, PostGameClo
         deserialized["endTick"]!.AsValue().GetValue<int>().Should().Be(80000);
         deserialized["ticksPassed"]!.AsValue().GetValue<int>().Should().Be(30000);
         deserialized["secondsPassed"]!.AsValue().GetValue<int>().Should().Be(30);
+    }
+
+    [Test]
+    public async Task OvertimeStarted_WhenClockRunning_StopsClock()
+    {
+        State = new PostGameClockState(true, 50000, 0, 0);
+
+        await Subject.Handle(new OvertimeStarted(80000));
+
+        State.IsRunning.Should().BeFalse();
+    }
+
+    [Test]
+    public async Task OvertimeStarted_WhenClockNotRunning_DoesNotChangeState()
+    {
+        State = PostGameClockState.Default;
+
+        var originalState = State;
+
+        await Subject.Handle(new OvertimeStarted(80000));
+
+        State.Should().Be(originalState);
+    }
+
+    [Test]
+    public async Task OvertimeEnded_StartsClockFromZero()
+    {
+        State = new(false, 1000, 3000, 2000);
+
+        await Subject.Handle(new OvertimeEnded(80000));
+
+        State.IsRunning.Should().BeTrue();
+        State.StartTick.Should().Be(80000);
+        State.EndTick.Should().Be(0);
+        State.TicksPassed.Should().Be(0);
     }
 }

@@ -19,6 +19,7 @@ public abstract class JamLineup(TeamSide teamSide, ReducerGameContext context, I
     , IDependsOnState<PenaltyBoxState>
     , IDependsOnState<PenaltySheetState>
     , IDependsOnState<TeamJamStatsState>
+    , IDependsOnState<OvertimeState>
 {
     protected override JamLineupState DefaultState => new(null, null, [null, null, null]);
 
@@ -164,6 +165,10 @@ public abstract class JamLineup(TeamSide teamSide, ReducerGameContext context, I
             return [new PreviousJamSkaterOnTrack(@event.Tick, new(teamSide, @event.Body.SkaterNumber))];
         }
 
+        var overtime = GetState<OvertimeState>();
+        if (overtime.IsInOvertime)
+            return [];
+
         if (@event.Body.SkaterNumber != state.JammerNumber)
             return [];
 
@@ -185,6 +190,10 @@ public abstract class JamLineup(TeamSide teamSide, ReducerGameContext context, I
             logger.LogDebug("Box entry when skater {number} on {team} team not in current lineup. Adding to lineup.", @event.Body.SkaterNumber, teamSide);
             return [new PreviousJamSkaterOnTrack(@event.Tick, new(teamSide, @event.Body.SkaterNumber))];
         }
+
+        var overtime = GetState<OvertimeState>();
+        if (overtime.IsInOvertime)
+            return [];
 
         if (@event.Body.SkaterNumber != state.JammerNumber)
             return [];

@@ -17,6 +17,7 @@ public class PeriodClock(ReducerGameContext context, ILogger<PeriodClock> logger
     , IDependsOnState<JamClockState>
     , IDependsOnState<TimeoutTypeState>
     , IDependsOnState<RulesState>
+    , IDependsOnState<OvertimeState>
     , ITickReceiver
 {
     protected override PeriodClockState DefaultState => new(false, true, false, 0, 0, 0);
@@ -25,6 +26,9 @@ public class PeriodClock(ReducerGameContext context, ILogger<PeriodClock> logger
     {
         var state = GetState();
         if (state.IsRunning) return [];
+
+        var overtime = GetState<OvertimeState>();
+        if (overtime.IsInOvertime) return [];
 
         logger.LogDebug("Starting period clock due to jam start");
 
@@ -61,6 +65,14 @@ public class PeriodClock(ReducerGameContext context, ILogger<PeriodClock> logger
         var rules = GetState<RulesState>().Rules;
 
         if (ticksPassed < Domain.Tick.FromSeconds(rules.PeriodRules.DurationInSeconds)) return [];
+
+        var overtime = GetState<OvertimeState>();
+
+        if (overtime.IsInOvertime)
+        {
+            logger.LogInformation("Ignoring period clock expiry at jam end due to overtime");
+            return [];
+        }
 
         logger.LogInformation("Period clock expired following jam end");
 
@@ -109,6 +121,14 @@ public class PeriodClock(ReducerGameContext context, ILogger<PeriodClock> logger
         var state = GetState();
 
         if (!state.HasExpired || !state.HasStarted) return [];
+
+        var overtime = GetState<OvertimeState>();
+
+        if (overtime.IsInOvertime)
+        {
+            logger.LogInformation("Ignoring period clock expiry at timeout end due to overtime");
+            return [];
+        }
 
         logger.LogDebug("Ending period as timeout ended with no time on the period clock");
 
@@ -172,6 +192,14 @@ public class PeriodClock(ReducerGameContext context, ILogger<PeriodClock> logger
         }
 
         state = GetState();
+        var overtime = GetState<OvertimeState>();
+
+        if (overtime.IsInOvertime)
+        {
+            logger.LogInformation("Ignoring period clock expiry at timeout type change due to overtime");
+            return [];
+        }
+
         if (state.HasExpired)
             return [new PeriodEnded(state.LastStartTick + Domain.Tick.FromSeconds(rules.PeriodRules.DurationInSeconds) - state.TicksPassedAtLastStart)];
 

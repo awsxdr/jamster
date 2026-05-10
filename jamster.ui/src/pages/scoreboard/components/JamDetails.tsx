@@ -2,7 +2,7 @@ import { JamClock, PeriodClock } from "@/components/clocks"
 import { ScoreboardComponent } from "./ScoreboardComponent"
 import { GameSkater, GameStageState, TeamSide } from "@/types"
 import { ClocksBar } from "./ClocksBar";
-import { useI18n, useJamLineupState, useJamStatsState, useTeamDetailsState } from "@/hooks";
+import { useI18n, useJamLineupState, useJamStatsState, useOvertimeState, useTeamDetailsState } from "@/hooks";
 import { useMemo } from "react";
 import { ScaledText } from "@/components/ScaledText";
 import { cn } from "@/lib/utils";
@@ -28,6 +28,8 @@ export const JamDetails = ({ gameStage, visible }: JamDetailsProps) => {
 
     const homeStats = useJamStatsState(TeamSide.Home);
     const awayStats = useJamStatsState(TeamSide.Away);
+
+    const { isInOvertime } = useOvertimeState() ?? { isInOvertime: false };
 
     const getJammerText = (jammerNumber: string | undefined, pivotNumber: string | undefined, starPass: boolean, roster?: GameSkater[]) => {
         const skaterNumber = starPass ? pivotNumber : jammerNumber;
@@ -65,10 +67,14 @@ export const JamDetails = ({ gameStage, visible }: JamDetailsProps) => {
             bottomPanel={
                 <div className={cn("flex w-full h-full", SCOREBOARD_GAP_CLASS_NAME)}>
                     <ScoreboardComponent className="w-1/2 h-full" header={`${translate("Scoreboard.JamDetails.Period")} ${gameStage.periodNumber}`}>
-                        <PeriodClock 
-                            textClassName="flex justify-center items-center grow overflow-hidden leading-none" 
-                            autoScale={1.4}
-                        />
+                        { isInOvertime ? (
+                            <ScaledText text="Overtime" className="flex justify-center items-center grow overflow-hidden leading-none w-full" />
+                        ) : (
+                            <PeriodClock 
+                                textClassName="flex justify-center items-center grow overflow-hidden leading-none" 
+                                autoScale={1.4}
+                            />
+                        ) }
                     </ScoreboardComponent>
                     <ScoreboardComponent className="w-1/2 h-full" header={`${translate("Scoreboard.JamDetails.Jam")} ${gameStage.jamNumber}`}>
                         <JamClock 

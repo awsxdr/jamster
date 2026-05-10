@@ -13,19 +13,19 @@ public class ScoreSheetSerializerUnitTests : UnitTest<ScoreSheetSerializer>
     public void Serialize_CorrectlyStoresJamNumbers()
     {
         var homeScoreSheetState = new ScoreSheetState([
-            new(1, 1, "", "", false, false, false, false, false, [], null, 0, 0),
-            new(1, 2, "", "", false, false, false, false, false, [], null, 0, 0),
-            new(1, 3, "", "", false, false, false, false, false, [new(4), new(4)], 1, 0, 0),
-            new(1, 4, "", "", false, false, false, false, false, [], null, 0, 0),
-            new(1, 5, "", "", false, false, false, false, false, [new(4), new(4)], 1, 0, 0),
+            ScoreSheetJam.Default with { Jam = 1, NoInitial = true },
+            ScoreSheetJam.Default with { Jam = 2, NoInitial = true },
+            ScoreSheetJam.Default with { Jam = 3, NoInitial = false, Trips = [4, 4], JamTotal = 8, GameTotal = 8, StarPassTrip = 1 },
+            ScoreSheetJam.Default with { Jam = 4, NoInitial = true, GameTotal = 8 },
+            ScoreSheetJam.Default with { Jam = 5, NoInitial = false, Trips = [4, 4], JamTotal = 8, GameTotal = 16, StarPassTrip = 1 },
         ]);
 
         var awayScoreSheetState = new ScoreSheetState([
-            new(1, 1, "", "", false, false, false, false, false, [], null, 0, 0),
-            new(1, 2, "", "", false, false, false, false, false, [], null, 0, 0),
-            new(1, 3, "", "", false, false, false, false, false, [], null, 0, 0),
-            new(1, 4, "", "", false, false, false, false, false, [new(4), new(4)], 1, 0, 0),
-            new(1, 5, "", "", false, false, false, false, false, [new(4), new(4)], 1, 0, 0),
+            ScoreSheetJam.Default with { Jam = 1, NoInitial = true },
+            ScoreSheetJam.Default with { Jam = 2, NoInitial = true },
+            ScoreSheetJam.Default with { Jam = 3, NoInitial = true },
+            ScoreSheetJam.Default with { Jam = 4, NoInitial = false, Trips = [4, 4], JamTotal = 8, GameTotal = 8, StarPassTrip = 1 },
+            ScoreSheetJam.Default with { Jam = 5, NoInitial = false, Trips = [4, 4], JamTotal = 8, GameTotal = 16, StarPassTrip = 1 },
         ]);
 
         MockKeyedState(TeamSide.Home, homeScoreSheetState);
@@ -48,19 +48,19 @@ public class ScoreSheetSerializerUnitTests : UnitTest<ScoreSheetSerializer>
     public void Serialize_CorrectlyStoresJammerNumbers()
     {
         var homeScoreSheetState = new ScoreSheetState([
-            new(1, 1, "123", "321", false, false, false, false, false, [], null, 0, 0),
-            new(1, 2, "456", "654", false, false, false, false, false, [], null, 0, 0),
-            new(1, 3, "123", "321", false, false, false, false, false, [new(4), new(4)], 1, 0, 0),
-            new(1, 4, "456", "654", false, false, false, false, false, [], null, 0, 0),
-            new(1, 5, "123", "321", false, false, false, false, false, [new(4), new(4)], 1, 0, 0),
+            ScoreSheetJam.Default with { Jam = 1, JammerNumber = "123", PivotNumber = "321", NoInitial = true },
+            ScoreSheetJam.Default with { Jam = 2, JammerNumber = "456", PivotNumber = "654", NoInitial = true },
+            ScoreSheetJam.Default with { Jam = 3, JammerNumber = "123", PivotNumber = "321", NoInitial = false, Trips = [4, 4], JamTotal = 8, GameTotal = 8, StarPassTrip = 1 },
+            ScoreSheetJam.Default with { Jam = 4, JammerNumber = "456", PivotNumber = "654", NoInitial = true, GameTotal = 8 },
+            ScoreSheetJam.Default with { Jam = 5, JammerNumber = "123", PivotNumber = "321", NoInitial = false, Trips = [4, 4], JamTotal = 8, GameTotal = 16, StarPassTrip = 1 },
         ]);
 
         var awayScoreSheetState = new ScoreSheetState([
-            new(1, 1, "", "", false, false, false, false, false, [], null, 0, 0),
-            new(1, 2, "", "", false, false, false, false, false, [], null, 0, 0),
-            new(1, 3, "", "", false, false, false, false, false, [], null, 0, 0),
-            new(1, 4, "", "", false, false, false, false, false, [new(4), new(4)], 1, 0, 0),
-            new(1, 5, "", "", false, false, false, false, false, [new(4), new(4)], 1, 0, 0),
+            ScoreSheetJam.Default with { Jam = 1, NoInitial = true },
+            ScoreSheetJam.Default with { Jam = 2, NoInitial = true },
+            ScoreSheetJam.Default with { Jam = 3, NoInitial = true },
+            ScoreSheetJam.Default with { Jam = 4, NoInitial = false, Trips = [4, 4], JamTotal = 8, GameTotal = 8, StarPassTrip = 1 },
+            ScoreSheetJam.Default with { Jam = 5, NoInitial = false, Trips = [4, 4], JamTotal = 8, GameTotal = 16, StarPassTrip = 1 },
         ]);
 
         MockKeyedState(TeamSide.Home, homeScoreSheetState);
@@ -84,7 +84,15 @@ public class ScoreSheetSerializerUnitTests : UnitTest<ScoreSheetSerializer>
     {
         var scoreSheetState = new ScoreSheetState(
             Enumerable.Range(0, 0b11111)
-                .Select(i => new ScoreSheetJam(1, i + 1, "", "", (i & 0b10000) > 0, (i & 0b01000) > 0, (i & 0b00100) > 0, (i & 0b00010) > 0, (i & 0b00001) > 0, [], null, 0, 0))
+                .Select(i => ScoreSheetJam.Default with
+                {
+                    Jam = i + 1, 
+                    Lost = (i & 0b10000) > 0,
+                    Lead = (i & 0b01000) > 0,
+                    Called = (i & 0b00100) > 0,
+                    Injury = (i & 0b00010) > 0,
+                    NoInitial = (i & 0b00001) > 0,
+                })
                 .ToArray()
             );
 
@@ -94,7 +102,16 @@ public class ScoreSheetSerializerUnitTests : UnitTest<ScoreSheetSerializer>
         var result = Subject.Serialize(GetMock<IGameStateStore>().Object);
 
         var expectedLines = Enumerable.Range(0, 0b11111)
-            .Select(i => new ScoreSheetLine(i + 1, "", (i & 0b10000) > 0, (i & 0b01000) > 0, (i & 0b00100) > 0, (i & 0b00010) > 0, (i & 0b00001) > 0, Enumerable.Repeat(new ScoreSheetTrip(null), 9).ToArray()))
+            .Select(i => ScoreSheetLine.Default with
+            {
+                Jam = i + 1,
+                Lost = (i & 0b10000) > 0,
+                Lead = (i & 0b01000) > 0,
+                Call = (i & 0b00100) > 0,
+                Injury = (i & 0b00010) > 0,
+                NoInitial = (i & 0b00001) > 0,
+                Trips = Enumerable.Repeat(new ScoreSheetTrip(null), 9).ToArray(),
+            })
             .ToArray();
 
         result.HomePeriod1.Lines.Should().BeEquivalentTo(expectedLines);
@@ -104,19 +121,31 @@ public class ScoreSheetSerializerUnitTests : UnitTest<ScoreSheetSerializer>
     public void Serialize_CorrectlyStoresScores()
     {
         var homeScoreSheetState = new ScoreSheetState([
-            new(1, 1, "", "", false, false, false, false, false, [new(4), new(3)], null, 7, 7),
-            new(1, 2, "", "", false, false, false, false, false, [], null, 0, 7),
-            new(1, 3, "", "", false, false, false, false, false, [new(4), new(4)], 1, 8, 15),
-            new(1, 4, "", "", false, false, false, false, false, [new(4), new(4)], null, 8, 23),
-            new(1, 5, "", "", false, false, false, false, false, [new(4), new(4)], 0, 8, 31),
+            ScoreSheetJam.Default with { Jam = 1, NoInitial = false, Trips = [4, 3], JamTotal = 7, GameTotal = 7 },
+            ScoreSheetJam.Default with { Jam = 2, NoInitial = true,  Trips = [], JamTotal = 0, GameTotal = 7 },
+            ScoreSheetJam.Default with { Jam = 3, NoInitial = false, Trips = [4, 4], JamTotal = 8, GameTotal = 15, StarPassTrip = 1 },
+            ScoreSheetJam.Default with { Jam = 4, NoInitial = false, Trips = [4, 4], JamTotal = 8, GameTotal = 23 },
+            ScoreSheetJam.Default with { Jam = 5, NoInitial = false, Trips = [4, 4], JamTotal = 8, GameTotal = 31, StarPassTrip = 0 },
+            ScoreSheetJam.Default with { Jam = 6, NoInitial = false, Trips = [4, 3], JamTotal = 7, GameTotal = 38, IsOvertimeJam = true },
+            ScoreSheetJam.Default with { Jam = 7, NoInitial = false, Trips = [4, 4, 4, 4, 4, 4, 4, 4, 3, 2], JamTotal = 37, GameTotal = 75 },
+            ScoreSheetJam.Default with { Jam = 8, NoInitial = false, Trips = [1, 2, 3, 4, 4, 4, 4, 4, 3, 2, 1], JamTotal = 32, GameTotal = 107, IsOvertimeJam = true },
+            ScoreSheetJam.Default with { Jam = 9, NoInitial = false, Trips = [3, 4, 4, 4, 4, 4, 4, 4, 4, 3, 2], JamTotal = 40, GameTotal = 147, IsOvertimeJam = true, StarPassTrip = 2 },
+            ScoreSheetJam.Default with { Jam = 10, NoInitial = false, Trips = [3, 4, 4, 4, 4, 4, 4, 4, 4, 3, 2], JamTotal = 40, GameTotal = 147, IsOvertimeJam = true, StarPassTrip = 1 },
+            ScoreSheetJam.Default with { Jam = 11, NoInitial = false, Trips = [3, 4, 4, 4, 4, 4, 4, 4, 4, 3, 2], JamTotal = 40, GameTotal = 147, IsOvertimeJam = true, StarPassTrip = 0 },
         ]);
 
         var awayScoreSheetState = new ScoreSheetState([
-            new(1, 1, "", "", false, false, false, false, false, [], null, 0, 0),
-            new(1, 2, "", "", false, false, false, false, false, [], null, 0, 0),
-            new(1, 3, "", "", false, false, false, false, false, [], null, 0, 0),
-            new(1, 4, "", "", false, false, false, false, false, [new(4), new(4)], 1, 0, 0),
-            new(1, 5, "", "", false, false, false, false, false, [new(4), new(4)], 1, 0, 0),
+            ScoreSheetJam.Default with { Jam = 1, NoInitial = true },
+            ScoreSheetJam.Default with { Jam = 2, NoInitial = true },
+            ScoreSheetJam.Default with { Jam = 3, NoInitial = true },
+            ScoreSheetJam.Default with { Jam = 4, NoInitial = false, Trips = [4, 4], JamTotal = 8, GameTotal = 8, StarPassTrip = 1 },
+            ScoreSheetJam.Default with { Jam = 5, NoInitial = false, Trips = [4, 4], JamTotal = 8, GameTotal = 16, StarPassTrip = 1 },
+            ScoreSheetJam.Default with { Jam = 6, NoInitial = true, GameTotal = 16 },
+            ScoreSheetJam.Default with { Jam = 7, NoInitial = true, GameTotal = 16 },
+            ScoreSheetJam.Default with { Jam = 8, NoInitial = true, GameTotal = 16 },
+            ScoreSheetJam.Default with { Jam = 9, NoInitial = true, GameTotal = 16 },
+            ScoreSheetJam.Default with { Jam = 10, NoInitial = true, GameTotal = 16 },
+            ScoreSheetJam.Default with { Jam = 11, NoInitial = true, GameTotal = 16 },
         ]);
 
         MockKeyedState(TeamSide.Home, homeScoreSheetState);
@@ -124,15 +153,24 @@ public class ScoreSheetSerializerUnitTests : UnitTest<ScoreSheetSerializer>
 
         var result = Subject.Serialize(GetMock<IGameStateStore>().Object);
 
-        result.HomePeriod1.Lines.Should().HaveCount(8);
-        result.HomePeriod1.Lines[0].Should().Be(new ScoreSheetLine(1, "", false, false, false, false, false, [new(4), new(3), new(null), new(null), new(null), new(null), new(null), new(null), new(null)]));
-        result.HomePeriod1.Lines[1].Should().Be(new ScoreSheetLine(2, "", false, false, false, false, false, [new(null), new(null), new(null), new(null), new(null), new(null), new(null), new(null), new(null)]));
-        result.HomePeriod1.Lines[2].Should().Be(new ScoreSheetLine(3, "", false, false, false, false, false, [new(4), new(null), new(null), new(null), new(null), new(null), new(null), new(null), new(null)]));
-        result.HomePeriod1.Lines[3].Should().Be(new ScoreSheetLine("SP", "", false, false, false, false, false, [new(null), new(4), new(null), new(null), new(null), new(null), new(null), new(null), new(null)]));
-        result.HomePeriod1.Lines[4].Should().Be(new ScoreSheetLine(4, "", false, false, false, false, false, [new(4), new(4), new(null), new(null), new(null), new(null), new(null), new(null), new(null)]));
-        result.HomePeriod1.Lines[5].Should().Be(new ScoreSheetLine("SP*", "", false, false, false, false, false, [new(null), new(null), new(null), new(null), new(null), new(null), new(null), new(null), new(null)]));
-        result.HomePeriod1.Lines[6].Should().Be(new ScoreSheetLine(5, "", false, false, false, false, true, [new(null), new(null), new(null), new(null), new(null), new(null), new(null), new(null), new(null)]));
-        result.HomePeriod1.Lines[7].Should().Be(new ScoreSheetLine("SP", "", false, false, false, false, false, [new(4), new(4), new(null), new(null), new(null), new(null), new(null), new(null), new(null)]));
+        result.HomePeriod1.Lines.Should().HaveCount(17);
+        result.HomePeriod1.Lines[0].Should().Be(ScoreSheetLine.Default with { Jam = 1, NoInitial = false, Trips = [4, 3, new(null), new(null), new(null), new(null), new(null), new(null), new(null)] });
+        result.HomePeriod1.Lines[1].Should().Be(ScoreSheetLine.Default with { Jam = 2, NoInitial = true, Trips = [new(null), new(null), new(null), new(null), new(null), new(null), new(null), new(null), new(null)] });
+        result.HomePeriod1.Lines[2].Should().Be(ScoreSheetLine.Default with { Jam = 3, NoInitial = false, Trips = [4, new(null), new(null), new(null), new(null), new(null), new(null), new(null), new(null)] });
+        result.HomePeriod1.Lines[3].Should().Be(ScoreSheetLine.Default with { Jam = "SP", NoInitial = false, Trips = [new(null), 4, new(null), new(null), new(null), new(null), new(null), new(null), new(null)] });
+        result.HomePeriod1.Lines[4].Should().Be(ScoreSheetLine.Default with { Jam = 4, NoInitial = false, Trips = [4, 4, new(null), new(null), new(null), new(null), new(null), new(null), new(null)] });
+        result.HomePeriod1.Lines[5].Should().Be(ScoreSheetLine.Default with { Jam = "SP*", NoInitial = false, Trips = [new(null), new(null), new(null), new(null), new(null), new(null), new(null), new(null), new(null)] });
+        result.HomePeriod1.Lines[6].Should().Be(ScoreSheetLine.Default with { Jam = 5, NoInitial = true, Trips = [new(null), new(null), new(null), new(null), new(null), new(null), new(null), new(null), new(null)] });
+        result.HomePeriod1.Lines[7].Should().Be(ScoreSheetLine.Default with { Jam = "SP", NoInitial = false, Trips = [4, 4, new(null), new(null), new(null), new(null), new(null), new(null), new(null)] });
+        result.HomePeriod1.Lines[8].Should().Be(ScoreSheetLine.Default with { Jam = 6, NoInitial = false, Trips = ["4+3", new(null), new(null), new(null), new(null), new(null), new(null), new(null), new(null)] });
+        result.HomePeriod1.Lines[9].Should().Be(ScoreSheetLine.Default with { Jam = 7, NoInitial = false, Trips = [4, 4, 4, 4, 4, 4, 4, 4, "3+2"] });
+        result.HomePeriod1.Lines[10].Should().Be(ScoreSheetLine.Default with { Jam = 8, NoInitial = false, Trips = ["1+2", 3, 4, 4, 4, 4, 4, 3, "2+1"] });
+        result.HomePeriod1.Lines[11].Should().Be(ScoreSheetLine.Default with { Jam = 9, NoInitial = false, Trips = ["3+4", new(null), new(null), new(null), new(null), new(null), new(null), new(null), new(null)] });
+        result.HomePeriod1.Lines[12].Should().Be(ScoreSheetLine.Default with { Jam = "SP", NoInitial = false, Trips = [new(null), 4, 4, 4, 4, 4, 4, 4, "3+2"] });
+        result.HomePeriod1.Lines[13].Should().Be(ScoreSheetLine.Default with { Jam = 10, NoInitial = false, Trips = ["3", new(null), new(null), new(null), new(null), new(null), new(null), new(null), new(null)] });
+        result.HomePeriod1.Lines[14].Should().Be(ScoreSheetLine.Default with { Jam = "SP", NoInitial = false, Trips = [4, 4, 4, 4, 4, 4, 4, 4, "3+2"] });
+        result.HomePeriod1.Lines[15].Should().Be(ScoreSheetLine.Default with { Jam = 11, NoInitial = true, Trips = [new(null), new(null), new(null), new(null), new(null), new(null), new(null), new(null), new(null)] });
+        result.HomePeriod1.Lines[16].Should().Be(ScoreSheetLine.Default with { Jam = "SP", NoInitial = false, Trips = ["3+4", 4, 4, 4, 4, 4, 4, 4, "3+2"] });
     }
 
     private void MockState<TState>(TState state) where TState : class =>

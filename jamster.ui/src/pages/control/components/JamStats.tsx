@@ -1,5 +1,5 @@
 import { ShortcutButton, ShortcutButtonProps } from "@/components";
-import { useI18n, useJamStatsState } from "@/hooks";
+import { useI18n, useJamStatsState, useOvertimeState } from "@/hooks";
 import { cn } from "@/lib/utils";
 import { InputControls, TeamSide } from "@/types";
 import { PropsWithChildren } from "react";
@@ -37,6 +37,8 @@ export const JamStats = ({ side, disabled, onLeadChanged, onLostChanged, onCallC
     const jamStats = useJamStatsState(side);
     const { translate } = useI18n({ prefix: "ScoreboardControl.JamStats." });
 
+    const { isInOvertime } = useOvertimeState() ?? { isInOvertime: false };
+
     const handleLead = () => onLeadChanged?.(side, !jamStats?.lead);
     const handleLost = () => onLostChanged?.(side, !jamStats?.lost);
     const handleCall = () => onCallChanged?.(side, !jamStats?.called);
@@ -52,7 +54,7 @@ export const JamStats = ({ side, disabled, onLeadChanged, onLostChanged, onCallC
                     id={`ScoreboardControl.JamStats.${side}.LeadButton`}
                     description={translate("Lead.Tooltip")} 
                     active={jamStats?.lead} 
-                    disabled={disabled}
+                    disabled={disabled || isInOvertime}
                     shortcutGroup={shortcutGroup}
                     shortcutKey="lead"
                     onClick={handleLead}
@@ -63,7 +65,7 @@ export const JamStats = ({ side, disabled, onLeadChanged, onLostChanged, onCallC
                     id={`ScoreboardControl.JamStats.${side}.LostButton`}
                     description={translate("Lost.Tooltip")} 
                     active={jamStats?.lost} 
-                    disabled={disabled}
+                    disabled={disabled || isInOvertime}
                     shortcutGroup={shortcutGroup}
                     shortcutKey="lost"
                     onClick={handleLost}
@@ -74,7 +76,7 @@ export const JamStats = ({ side, disabled, onLeadChanged, onLostChanged, onCallC
                     id={`ScoreboardControl.JamStats.${side}.CallButton`}
                     description={translate("Call.Tooltip")} 
                     active={jamStats?.called} 
-                    disabled={disabled} 
+                    disabled={disabled || isInOvertime} 
                     shortcutGroup={shortcutGroup}
                     shortcutKey="called"
                     onClick={handleCall}
@@ -96,7 +98,7 @@ export const JamStats = ({ side, disabled, onLeadChanged, onLostChanged, onCallC
                     id={`ScoreboardControl.JamStats.${side}.InitialButton`}
                     description={translate("InitialComplete.Tooltip")} 
                     active={jamStats?.hasCompletedInitial} 
-                    disabled={disabled} 
+                    disabled={disabled || isInOvertime} 
                     shortcutGroup={shortcutGroup}
                     shortcutKey="initialTrip"
                     onClick={handleInitialTrip}

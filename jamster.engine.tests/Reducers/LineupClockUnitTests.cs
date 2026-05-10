@@ -76,6 +76,33 @@ public class LineupClockUnitTests : ReducerUnitTest<LineupClock, LineupClockStat
     }
 
     [Test]
+    public async Task PeriodEnded_WhenClockRunning_StopsLineupClock()
+    {
+        var randomTick = Random.Shared.Next(0, 100000);
+        State = new(true, randomTick, randomTick);
+
+        var secondRandomTick = randomTick + Random.Shared.Next(1, 100000);
+        await Subject.Handle(new PeriodEnded(secondRandomTick));
+
+        State.IsRunning.Should().BeFalse();
+        State.StartTick.Should().Be(randomTick);
+    }
+
+    [Test]
+    public async Task PeriodEnded_WhenClockStopped_DoesNotChangeState()
+    {
+        var randomTick = Random.Shared.Next(0, 100000);
+        State = new(false, randomTick, randomTick);
+
+        var originalState = State;
+
+        var secondRandomTick = randomTick + Random.Shared.Next(1, 100000);
+        await Subject.Handle(new PeriodEnded(secondRandomTick));
+
+        State.Should().Be(originalState);
+    }
+
+    [Test]
     public async Task LineupClockSet_SetsLineupClock()
     {
         State = new LineupClockState(true, 0, 10000);
@@ -123,6 +150,20 @@ public class LineupClockUnitTests : ReducerUnitTest<LineupClock, LineupClockStat
     }
 
     [Test]
+    public async Task TimeoutStarted_WhenClockStopped_DoesNotChangeState()
+    {
+        var randomTick = Random.Shared.Next(0, 100000);
+        State = new(false, randomTick, randomTick);
+
+        var originalState = State;
+
+        var secondRandomTick = randomTick + Random.Shared.Next(1, 100000);
+        await Subject.Handle(new TimeoutStarted(secondRandomTick));
+
+        State.Should().Be(originalState);
+    }
+
+    [Test]
     public async Task JamEnded_WhenTimeoutClockRunning_DoesNotStartLineup()
     {
         var randomTick = Random.Shared.Next(0, 100000);
@@ -151,6 +192,18 @@ public class LineupClockUnitTests : ReducerUnitTest<LineupClock, LineupClockStat
     }
 
     [Test]
+    public async Task IntermissionEnded_WhenJamClockRunning_DoesNotStartLineupClock()
+    {
+        MockState<JamClockState>(new(true, 0, 0, false, false));
+
+        var originalState = State;
+
+        await Subject.Handle(new IntermissionEnded(10000));
+
+        State.Should().Be(originalState);
+    }
+
+    [Test]
     public void State_ShouldSerializeCorrectly()
     {
         var state = new LineupClockState(true, 1234, 4321);
@@ -163,5 +216,59 @@ public class LineupClockUnitTests : ReducerUnitTest<LineupClock, LineupClockStat
         deserialized["startTick"]!.AsValue().GetValue<int>().Should().Be(1234);
         deserialized["ticksPassed"]!.AsValue().GetValue<int>().Should().Be(4321);
         deserialized["secondsPassed"]!.AsValue().GetValue<int>().Should().Be(4);
+    }
+
+    [Test]
+    public async Task OvertimeStarted_WhenClockStopped_StartsLineupClock()
+    {
+        var tick = GetRandomTick();
+        State = new LineupClockState(false, 0, 0);
+
+        await Subject.Handle(new OvertimeStarted(tick));
+
+        State.IsRunning.Should().BeTrue();
+        State.StartTick.Should().Be(tick);
+        State.TicksPassed.Should().Be(0);
+    }
+
+    [Test]
+    public async Task OvertimeStarted_WhenClockAlreadyRunning_DoesNotChangeState()
+    {
+        var tick = GetRandomTick();
+        State = new LineupClockState(true, tick, tick / 2);
+
+        var originalState = State;
+
+        var overtimeTick = GetRandomTickFollowing(tick);
+        await Subject.Handle(new OvertimeStarted(overtimeTick));
+
+        State.Should().Be(originalState);
+    }
+
+    [Test]
+    public async Task OvertimeEnded_WhenClockRunning_StopsLineupClock()
+    {
+        var tick = GetRandomTick();
+        State = new LineupClockState(true, tick, tick / 2);
+
+        var overtimeEndTick = GetRandomTickFollowing(tick);
+        await Subject.Handle(new OvertimeEnded(overtimeEndTick));
+
+        State.IsRunning.Should().BeFalse();
+        State.StartTick.Should().Be(tick);
+    }
+
+    [Test]
+    public async Task OvertimeEnded_WhenClockStopped_DoesNotChangeState()
+    {
+        var tick = GetRandomTick();
+        State = new LineupClockState(false, tick, tick / 2);
+
+        var originalState = State;
+
+        var overtimeEndTick = GetRandomTickFollowing(tick);
+        await Subject.Handle(new OvertimeEnded(overtimeEndTick));
+
+        State.Should().Be(originalState);
     }
 }

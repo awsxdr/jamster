@@ -17,6 +17,7 @@ public class PeriodClockUnitTests : ReducerUnitTest<PeriodClock, PeriodClockStat
     public async Task JamStart_WhenPeriodClockStopped_StartsPeriod()
     {
         MockState<RulesState>(new(Rules.DefaultRules));
+        MockState<OvertimeState>(new(false));
 
         var randomTick = GetRandomTick();
 
@@ -34,6 +35,7 @@ public class PeriodClockUnitTests : ReducerUnitTest<PeriodClock, PeriodClockStat
     {
         State = new(false, false, true, 0, 1234, 1234);
         MockState<RulesState>(new(Rules.DefaultRules));
+        MockState<OvertimeState>(new(false));
 
         await Subject.Handle(new JamStarted(10789));
 
@@ -54,6 +56,22 @@ public class PeriodClockUnitTests : ReducerUnitTest<PeriodClock, PeriodClockStat
         var originalState = State;
 
         await Subject.Handle(new JamStarted(ticksPassed));
+
+        State.Should().Be(originalState);
+    }
+
+    [Test]
+    public async Task JamStart_WhenInOvertime_DoesNotStartPeriodClock()
+    {
+        var periodDuration = DomainTick.FromSeconds(Rules.DefaultRules.PeriodRules.DurationInSeconds);
+        State = new(false, true, true, 0, 0, periodDuration);
+
+        MockState<RulesState>(new(Rules.DefaultRules));
+        MockState<OvertimeState>(new(true));
+
+        var originalState = State;
+
+        await Subject.Handle(new JamStarted(periodDuration + 10000));
 
         State.Should().Be(originalState);
     }
@@ -83,6 +101,8 @@ public class PeriodClockUnitTests : ReducerUnitTest<PeriodClock, PeriodClockStat
         );
 
         MockState(new JamClockState(true, 0, 10000, true, false));
+
+        MockState<OvertimeState>(new(false));
 
         await Subject.Handle(new JamEnded(lastStartTick + 12100));
 
@@ -118,9 +138,43 @@ public class PeriodClockUnitTests : ReducerUnitTest<PeriodClock, PeriodClockStat
 
         MockState(new JamClockState(false, 0, 0, true, false));
 
+        MockState<OvertimeState>(new(false));
+
         var result = await Subject.Handle(new JamEnded(12100));
 
         result.Should().ContainSingle().Which.Should().BeOfType<PeriodEnded>().Which.Tick.Should().Be(12100);
+    }
+
+    [Test]
+    public async Task JamEnded_WhenPeriodClockRunning_AndPeriodClockExpired_AndInOvertime_DoesNotSendPeriodEndedEvent()
+    {
+        var periodLength = DomainTick.FromSeconds(1234);
+        MockState<RulesState>(new(Rules.DefaultRules with
+        {
+            PeriodRules = Rules.DefaultRules.PeriodRules with
+            {
+                DurationInSeconds = periodLength.Seconds,
+            }
+        }));
+
+        var ticksPassedAtLastStart = periodLength - 10000;
+
+        State = new(
+            true,
+            false,
+            true,
+            0,
+            ticksPassedAtLastStart,
+            ticksPassedAtLastStart + 12000
+        );
+
+        MockState(new JamClockState(false, 0, 0, true, false));
+
+        MockState<OvertimeState>(new(true));
+
+        var result = await Subject.Handle(new JamEnded(12100));
+
+        result.Should().BeEmpty();
     }
 
     [Test]
@@ -261,6 +315,7 @@ public class PeriodClockUnitTests : ReducerUnitTest<PeriodClock, PeriodClockStat
             }
         }));
         MockState<TimeoutTypeState>(new(CompoundTimeoutType.Untyped, 7000));
+        MockState<OvertimeState>(new(false));
 
         await Subject.Handle(new TimeoutTypeSet(12000, new(TimeoutType.Official, TeamSide.Home)));
 
@@ -279,6 +334,7 @@ public class PeriodClockUnitTests : ReducerUnitTest<PeriodClock, PeriodClockStat
             }
         }));
         MockState<TimeoutTypeState>(new(CompoundTimeoutType.Untyped, 7000));
+        MockState<OvertimeState>(new(false));
 
         await Subject.Handle(new TimeoutTypeSet(12000, new(TimeoutType.Official, TeamSide.Home)));
 
@@ -286,13 +342,55 @@ public class PeriodClockUnitTests : ReducerUnitTest<PeriodClock, PeriodClockStat
     }
 
     [Test]
+    public async Task TimeoutTypeSet_WhenPeriodExpires_AndInOvertime_DoesNotSendPeriodEnded()
+    {
+        var periodLength = DomainTick.FromSeconds(1234);
+        MockState<RulesState>(new(Rules.DefaultRules with
+        {
+            TimeoutRules = Rules.DefaultRules.TimeoutRules with
+            {
+                PeriodClockBehavior = TimeoutPeriodClockStopBehavior.OfficialTimeout
+            },
+            PeriodRules = Rules.DefaultRules.PeriodRules with
+            {
+                DurationInSeconds = periodLength.Seconds,
+            }
+        }));
+
+        var ticksPassedAtLastStart = periodLength - 10000;
+        State = new(true, false, true, 0, ticksPassedAtLastStart, ticksPassedAtLastStart);
+
+        MockState<TimeoutTypeState>(new(CompoundTimeoutType.Untyped, 11000));
+        MockState<OvertimeState>(new(true));
+
+        var result = await Subject.Handle(new TimeoutTypeSet(12000, new(TimeoutType.Official, null)));
+
+        result.Should().BeEmpty();
+    }
+
+    [Test]
     public async Task TimeoutEnded_WhenPeriodExpired_SendsPeriodEnded()
     {
         State = State with { HasExpired = true, IsRunning = false, HasStarted = true };
 
+        MockState<OvertimeState>(new(false));
+
         var implicitEvents = await Subject.Handle(new TimeoutEnded(DomainTick.FromSeconds(Rules.DefaultRules.PeriodRules.DurationInSeconds + 10)));
 
         implicitEvents.OfType<PeriodEnded>().Should().ContainSingle();
+    }
+
+    [Test]
+    public async Task TimeoutEnded_WhenPeriodExpired_AndInOvertime_DoesNotSendPeriodEnded()
+    {
+        State = State with { HasExpired = true, IsRunning = false, HasStarted = true };
+
+        MockState<OvertimeState>(new(true));
+
+        var result = await Subject.Handle(new
+            TimeoutEnded(DomainTick.FromSeconds(Rules.DefaultRules.PeriodRules.DurationInSeconds + 10)));
+
+        result.Should().BeEmpty();
     }
 
     [Test]

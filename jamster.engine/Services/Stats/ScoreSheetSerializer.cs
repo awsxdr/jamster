@@ -90,7 +90,7 @@ public class ScoreSheetSerializer(ILogger<ScoreSheetSerializer> logger) : StatsS
     private static ScoreSheetTrip[] ReadTrips(int column, int row, Worksheet worksheet) =>
         Enumerable.Range(0, 9)
             .Select(i => int.TryParse(GetCellValue(worksheet, column + i, row), out var score) ? score : (int?)null)
-            .Select(s => new ScoreSheetTrip(s))
+            .Select(s => new ScoreSheetTrip(s.ToString()))
             .ToArray();
 
     private static Result<Worksheet> WriteTrips(int column, int row, ScoreSheetTrip[] trips, Worksheet worksheet) =>

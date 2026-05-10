@@ -45,6 +45,8 @@ public sealed record ScoreSheetLine(
     bool NoInitial,
     ScoreSheetTrip[] Trips)
 {
+    public static ScoreSheetLine Default => new("", "", false, false, false, false, true, []);
+
     public bool Equals(ScoreSheetLine? other) =>
         other is not null
         && other.Jam.Value.Equals(Jam.Value)
@@ -56,9 +58,27 @@ public sealed record ScoreSheetLine(
         && other.NoInitial.Equals(NoInitial)
         && other.Trips.SequenceEqual(Trips);
 
-    public override int GetHashCode() => HashCode.Combine(Jam, JammerNumber, Lost, Lead, Call, Injury, NoInitial, Trips);
+    public override int GetHashCode()
+    {
+        var hash = new HashCode();
+        hash.Add(Jam);
+        hash.Add(JammerNumber);
+        hash.Add(Lost);
+        hash.Add(Lead);
+        hash.Add(Call);
+        hash.Add(Injury);
+        hash.Add(NoInitial);
+        hash.Add(Trips);
+
+        return hash.ToHashCode();
+    }
 }
-public sealed record ScoreSheetTrip(int? Score);
+
+public sealed record ScoreSheetTrip(string? Score)
+{
+    public static implicit operator ScoreSheetTrip(string? value) => new(value);
+    public static implicit operator ScoreSheetTrip(int value) => new(value.ToString());
+}
 
 public sealed record PenaltySheetCollection(
     PenaltySheet Period1,

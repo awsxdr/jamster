@@ -5,6 +5,5 @@ export type GameStageState = {
     periodNumber: number,
     jamNumber: number,
     totalJamNumber: number,
-    isInOvertime: boolean,
     periodIsFinalized: boolean,
 };

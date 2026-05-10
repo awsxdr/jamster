@@ -15,9 +15,9 @@ public sealed class PeriodFinalized(Guid7 id) : Event(id), IShownInUndo;
 /// <summary>
 /// Overtime has started and the period should be prevented from ending
 /// </summary>
-public sealed class OvertimeStarted(Guid7 id) : Event(id), IShownInUndo, IPeriodClockAligned;
+public sealed class OvertimeStarted(Guid7 id) : Event(id), IPeriodClockAligned;
 
 /// <summary>
 /// Overtime has ended
 /// </summary>
-public sealed class OvertimeEnded(Guid7 id) : Event(id), IShownInUndo, IPeriodClockAligned;
+public sealed class OvertimeEnded(Guid7 id) : Event(id), IPeriodClockAligned;

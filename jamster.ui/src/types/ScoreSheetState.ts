@@ -17,6 +17,7 @@ export type ScoreSheetJam = {
     jamTotal: number;
     gameTotal: number;
     deleted: boolean;
+    isOvertimeJam: boolean;
 }
 
 export type JamLineTrip = {

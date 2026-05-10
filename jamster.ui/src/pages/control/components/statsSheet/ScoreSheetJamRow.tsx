@@ -36,7 +36,8 @@ const linesEqual = (prev: RowData, next: RowData) =>
     && prev.pivotNumber === next.pivotNumber
     && prev.starPassTrip === next.starPassTrip
     && prev.trips.length === next.trips.length
-    && prev.trips.every((t, i) => tripsEqual(t, next.trips[i]));
+    && prev.trips.every((t, i) => tripsEqual(t, next.trips[i]))
+    && prev.isOvertimeJam === next.isOvertimeJam;
 
 export const ScoreSheetJamRow = React.memo(function ScoreSheetJamRow({ gameId, teamSide, lineNumber, line, even, preStarPass, postStarPass, className }: ScoreSheetJamRowProps) {
 
@@ -128,6 +129,200 @@ export const ScoreSheetJamRow = React.memo(function ScoreSheetJamRow({ gameId, t
         sendEvent(gameId, new ScoreSheetTripScoreSet(teamSide, lineNumber, trip, newValue));
     }
 
+    const PreStarPassTripList = () => (
+        <>
+            {Array.from(new Array(starPassSwitchTrip)).map((_, i) => (
+                <EditableCell 
+                    value={line.trips[i]?.score?.toString() ?? ""}
+                    key={`trip-${i+2}`} 
+                    className={cn(`col-start-${i + 9}`, numberCellClass, rowColorClass, className)}
+                    onValueChanged={v => handleTripScoreChanged(i, v)}
+                />
+            ))}
+            {Array.from(new Array(9 - starPassSwitchTrip)).map((_, i) => (
+                <div key={`trip-${i+2}`} className={cn(`col-start-${i + 9 + starPassSwitchTrip}`, numberCellClass, rowColorClass, rowDisabledColorClass, className)}></div>
+            ))}
+        </>
+    );
+
+    const PostStarPassTripList = () => (
+        <>
+            {Array.from(new Array(starPassSwitchTrip)).map((_, i) => (
+                <div key={`trip-${i+2}`} className={cn(`col-start-${i + 9}`, numberCellClass, rowColorClass, rowDisabledColorClass, className)}></div>
+            ))}
+            {Array.from(new Array(8 - starPassSwitchTrip)).map((_, i) => (
+                <EditableCell 
+                    value={line.trips[i + starPassSwitchTrip]?.score?.toString() ?? ""}
+                    disabled={i + starPassSwitchTrip > nonNullTripCount}
+                    key={`trip-${i+2}`} 
+                    className={cn(`col-start-${i + 9 + starPassSwitchTrip}`, numberCellClass, rowColorClass, className)}
+                    onValueChanged={v => handleTripScoreChanged(i + starPassSwitchTrip, v)}
+                />
+            ))}
+            <FinalTrip />
+        </>
+    );
+
+    const NoStarPassTripList = () => (
+        <>
+            { Array.from(new Array(8)).map((_, i) => (
+                <EditableCell 
+                    value={line.trips[i]?.score?.toString() ?? ""}
+                    disabled={i > nonNullTripCount}
+                    key={`trip-${i+2}`} 
+                    className={cn(`col-start-${i + 9}`, numberCellClass, rowColorClass, className)}
+                    onValueChanged={v => handleTripScoreChanged(i, v)}
+                />
+            )) }
+            <FinalTrip />
+        </>
+    );
+
+    const OvertimePreStarPassTripList = () => (
+        <>
+            { starPassSwitchTrip > 0 && (
+                <div className={cn("col-start-9 flex flex-row relative", numberCellClass, rowColorClass, className)}>
+                    { starPassSwitchTrip > 0 ? (
+                        <EditableCell
+                            value={line.trips[0]?.score?.toString() ?? ""}
+                            key={`trip-1`} 
+                            className="w-1/2 h-full"
+                            onValueChanged={v => handleTripScoreChanged(0, v)}
+                        />
+                    ) : (
+                        <div key="trip-2" className="w-1/2 h-full"></div>
+                    )}
+                    { starPassSwitchTrip > 1 ? (
+                        <EditableCell
+                            value={line.trips[1]?.score?.toString() ?? ""}
+                            disabled={1 > nonNullTripCount}
+                            key={`trip-2`} 
+                            className={cn("w-1/2 h-full")}
+                            onValueChanged={v => handleTripScoreChanged(1, v)}
+                        />
+                    ) : (
+                        <div key="trip-2" className="w-1/2 h-full"></div>
+                    )}
+                    { (1 < nonNullTripCount) && (starPassSwitchTrip > 1) && (<span className="absolute w-full h-full pointer-events-none">+</span>)}
+                </div>
+            )}
+            {(starPassSwitchTrip > 0) && Array.from(new Array(starPassSwitchTrip-1)).map((_, i) => (
+                <EditableCell 
+                    value={line.trips[i+2]?.score?.toString() ?? ""}
+                    key={`trip-${i+4}`} 
+                    className={cn(`col-start-${i + 10}`, numberCellClass, rowColorClass, className)}
+                    onValueChanged={v => handleTripScoreChanged(i+2, v)}
+                />
+            ))}
+            {Array.from(new Array(9 - starPassSwitchTrip)).map((_, i) => (
+                <div key={`trip-${i+3}`} className={cn(`col-start-${i + 9 + starPassSwitchTrip}`, numberCellClass, rowColorClass, rowDisabledColorClass, className)}></div>
+            ))}
+        </>
+    );
+
+    const OvertimePostStarPassTripList = () => (
+        <>
+            <div className={cn("col-start-9 flex flex-row relative", numberCellClass, rowColorClass, className)}>
+                { starPassSwitchTrip < 1 ? (
+                    <EditableCell
+                        value={line.trips[0]?.score?.toString() ?? ""}
+                        key={`trip-1`} 
+                        className="w-1/2 h-full"
+                        onValueChanged={v => handleTripScoreChanged(0, v)}
+                    />
+                ) : (
+                    <div key="trip-2" className="w-1/2 h-full"></div>
+                )}
+                { starPassSwitchTrip < 2 ? (
+                    <EditableCell
+                        value={line.trips[1]?.score?.toString() ?? ""}
+                        disabled={1 > nonNullTripCount}
+                        key={`trip-2`} 
+                        className={cn("w-1/2 h-full")}
+                        onValueChanged={v => handleTripScoreChanged(1, v)}
+                    />
+                ) : (
+                    <div key="trip-2" className="w-1/2 h-full"></div>
+                )}
+                { (1 < nonNullTripCount) && (starPassSwitchTrip < 1) && (<span className="absolute w-full h-full pointer-events-none">+</span>)}
+            </div>
+            {(starPassSwitchTrip > 0) && Array.from(new Array(starPassSwitchTrip - 1)).map((_, i) => (
+                <div key={`trip-${i+3}`} className={cn(`col-start-${i + 10}`, numberCellClass, rowColorClass, rowDisabledColorClass, className)}></div>
+            ))}
+            {Array.from(new Array(7 - Math.max(0, starPassSwitchTrip - 1))).map((_, i) => (
+                <EditableCell 
+                    value={line.trips[i + starPassSwitchTrip + 2]?.score?.toString() ?? ""}
+                    disabled={i + starPassSwitchTrip + 1 > nonNullTripCount}
+                    key={`trip-${i+3}`} 
+                    className={cn(`col-start-${i + 10 + Math.max(0, starPassSwitchTrip - 1)}`, numberCellClass, rowColorClass, className)}
+                    onValueChanged={v => handleTripScoreChanged(i + starPassSwitchTrip + 2, v)}
+                />
+            ))}
+            <FinalTrip />
+        </>
+    )
+
+    const FinalTrip = () => 
+        line.trips.length > 9 ? (
+            <div className={cn("col-start-19 flex flex-row relative", numberCellClass, rowColorClass, className)}>
+                <EditableCell
+                    value={line.trips[9]?.score?.toString() ?? ""}
+                    key={`trip-13`} 
+                    className={cn("w-1/2 h-full")}
+                    onValueChanged={v => handleTripScoreChanged(0, v)}
+                />
+                <EditableCell
+                    value={line.trips.slice(10).reduce((total, value) => total + (value.score ?? 0), 0).toString()}
+                    disabled={1 > nonNullTripCount}
+                    key={`trip-14`} 
+                    className={cn("w-1/2 h-full")}
+                    onValueChanged={v => handleTripScoreChanged(1, v)}
+                />
+                { (1 < nonNullTripCount) && (<span className="absolute w-full h-full pointer-events-none">+</span>)}
+            </div>
+        ) : (
+            <EditableCell 
+                value={line.trips[11]?.score?.toString() ?? ""}
+                disabled={11 > nonNullTripCount}
+                key={`trip-13`} 
+                className={cn(`col-start-${19}`, numberCellClass, rowColorClass, className)}
+                onValueChanged={v => handleTripScoreChanged(11, v)}
+            />
+        );
+
+    const OvertimeNoStarPassTripList = () => (
+        <>
+            <div className={cn("col-start-9 flex flex-row relative", numberCellClass, rowColorClass, className)}>
+                <EditableCell
+                    value={line.trips[0]?.score?.toString() ?? ""}
+                    key={`trip-1`} 
+                    className={cn("w-1/2 h-full")}
+                    onValueChanged={v => handleTripScoreChanged(0, v)}
+                />
+                <EditableCell
+                    value={line.trips[1]?.score?.toString() ?? ""}
+                    disabled={1 > nonNullTripCount}
+                    key={`trip-2`} 
+                    className={cn("w-1/2 h-full")}
+                    onValueChanged={v => handleTripScoreChanged(1, v)}
+                />
+                { (1 < nonNullTripCount) && (<span className="absolute w-full h-full pointer-events-none">+</span>)}
+            </div>
+            {
+                Array.from(new Array(7)).map((_, i) => (
+                    <EditableCell 
+                        value={line.trips[i+2]?.score?.toString() ?? ""}
+                        disabled={i+2 > nonNullTripCount}
+                        key={`trip-${i+4}`} 
+                        className={cn(`col-start-${i + 10}`, numberCellClass, rowColorClass, className)}
+                        onValueChanged={v => handleTripScoreChanged(i+2, v)}
+                    />
+                ))
+            }
+            <FinalTrip />
+        </>
+    )
+
     return (
         <>
             <div className={cn("col-start-2 relative", numberCellClass, rowEmphasisColorClass, "border-l-2", className)}>
@@ -144,49 +339,15 @@ export const ScoreSheetJamRow = React.memo(function ScoreSheetJamRow({ gameId, t
             <CheckCell checked={lineCalled} disabled={postStarPass} onCheckedChanged={handleCalledSet} className={cn("col-start-6", checkCellClass, "border-black", rowEmphasisColorClass, className)} />
             <CheckCell checked={lineInjury} disabled={isPreThisTeamStarPass || isPostOtherTeamStarPass} onCheckedChanged={handleInjurySet} className={cn("col-start-7", checkCellClass, "border-black", rowEmphasisColorClass, className)} />
             <CheckCell checked={lineNoInitial} className={cn("col-start-8", checkCellClass, "border-black", "border-r border-black", rowEmphasisColorClass, className)} />
-            { isPreThisTeamStarPass && (
-                <>
-                    {Array.from(new Array(starPassSwitchTrip)).map((_, i) => (
-                        <EditableCell 
-                            value={line.trips[i]?.score?.toString() ?? ""}
-                            key={`trip-${i+2}`} 
-                            className={cn(`col-start-${i + 9}`, numberCellClass, rowColorClass, className)}
-                            onValueChanged={v => handleTripScoreChanged(i, v)}
-                        />
-                    ))}
-                    {Array.from(new Array(9 - starPassSwitchTrip)).map((_, i) => (
-                        <div key={`trip-${i+2}`} className={cn(`col-start-${i + 9 + starPassSwitchTrip}`, numberCellClass, rowColorClass, rowDisabledColorClass, className)}></div>
-                    ))}
-                </>
-            )}
-            { isPostThisTeamStarPass && (
-                <>
-                    {Array.from(new Array(starPassSwitchTrip)).map((_, i) => (
-                        <div key={`trip-${i+2}`} className={cn(`col-start-${i + 9}`, numberCellClass, rowColorClass, rowDisabledColorClass, className)}></div>
-                    ))}
-                    {Array.from(new Array(9 - starPassSwitchTrip)).map((_, i) => (
-                        <EditableCell 
-                            value={line.trips[i + starPassSwitchTrip]?.score?.toString() ?? ""}
-                            disabled={i + starPassSwitchTrip > nonNullTripCount}
-                            key={`trip-${i+2}`} 
-                            className={cn(`col-start-${i + 9 + starPassSwitchTrip}`, numberCellClass, rowColorClass, className)}
-                            onValueChanged={v => handleTripScoreChanged(i + starPassSwitchTrip, v)}
-                        />
-                    ))}
-                </>
-            )}
+            { isPreThisTeamStarPass && !line.isOvertimeJam && <PreStarPassTripList /> }
+            { isPreThisTeamStarPass && line.isOvertimeJam && <OvertimePreStarPassTripList /> }
+            { isPostThisTeamStarPass && !line.isOvertimeJam && <PostStarPassTripList /> }
+            { isPostThisTeamStarPass && line.isOvertimeJam && <OvertimePostStarPassTripList /> }
             { isPostOtherTeamStarPass && Array.from(new Array(9)).map((_, i) => (
                 <div key={`trip-${i+2}`} className={cn(`col-start-${i + 9}`, numberCellClass, rowColorClass, rowDisabledColorClass, className)}></div>
             ))}
-            { (!isStarPass || isPreOtherTeamStarPass) && Array.from(new Array(9)).map((_, i) => (
-                <EditableCell 
-                    value={line.trips[i]?.score?.toString() ?? ""}
-                    disabled={i > nonNullTripCount}
-                    key={`trip-${i+2}`} 
-                    className={cn(`col-start-${i + 9}`, numberCellClass, rowColorClass, className)}
-                    onValueChanged={v => handleTripScoreChanged(i, v)}
-                />
-            ))}
+            { (!isStarPass || isPreOtherTeamStarPass) && !line.isOvertimeJam && <NoStarPassTripList /> }
+            { (!isStarPass || isPreOtherTeamStarPass) && line.isOvertimeJam && <OvertimeNoStarPassTripList />}
             <div className={cn("col-start-18", numberCellClass, "border-l-2", rowColorClass, className)}>{lineTotal}</div>
             <div className={cn("col-start-19", numberCellClass, "border-l-2", rowFixedEmphasisColorClass, className)}>{lineGameTotal}</div>
         </>

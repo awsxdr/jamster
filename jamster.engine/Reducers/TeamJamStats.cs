@@ -15,9 +15,11 @@ public abstract class TeamJamStats(TeamSide teamSide, ReducerGameContext gameCon
     , IHandlesEvent<JamStarted>
     , IHandlesEvent<JamEnded>
     , IHandlesEvent<ScoreModifiedRelative>
+    , IHandlesEvent<TripCompleted>
     , IDependsOnState<TimeoutClockState>
     , IDependsOnState<JamClockState>
     , IDependsOnState<TeamScoreState>
+    , IDependsOnState<OvertimeState>
 {
     protected override TeamJamStatsState DefaultState => new(false, false, false, false, false);
 
@@ -100,6 +102,10 @@ public abstract class TeamJamStats(TeamSide teamSide, ReducerGameContext gameCon
         var timeoutClock = GetState<TimeoutClockState>();
         var jamClock = GetState<JamClockState>();
 
+        var overtime = GetState<OvertimeState>();
+        if (overtime.IsInOvertime)
+            return [];
+
         if (state is { Lead: true, Lost: false, Called: false } && timeoutClock is { IsRunning: false } && jamClock is { Expired: false })
             return [new CallMarked(@event.Tick, new(teamSide, true))];
 
@@ -112,7 +118,22 @@ public abstract class TeamJamStats(TeamSide teamSide, ReducerGameContext gameCon
 
         if (state.HasCompletedInitial) return [];
 
+        var overtime = GetState<OvertimeState>();
+
+        if (overtime.IsInOvertime) return [];
+
         logger.LogDebug("Marking initial trip completed for {teamSide} due to score modified", teamSide);
+
+        return [new InitialTripCompleted(@event.Tick, new(teamSide, true))];
+    });
+
+    public IEnumerable<Event> Handle(TripCompleted @event) => @event.HandleIfTeam(teamSide, () =>
+    {
+        var state = GetState();
+
+        if (state.HasCompletedInitial) return [];
+
+        logger.LogDebug("Marking initial trip completed for {teamSide} due to trip completed", teamSide);
 
         return [new InitialTripCompleted(@event.Tick, new(teamSide, true))];
     });

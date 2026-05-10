@@ -1,6 +1,5 @@
 ﻿using jamster.engine.Domain;
 using jamster.engine.Events;
-using jamster.engine.Extensions;
 using jamster.engine.Services;
 
 namespace jamster.engine.Reducers;
@@ -30,8 +29,9 @@ public abstract class ScoreSheet(TeamSide teamSide, ReducerGameContext context, 
     , IDependsOnState<JamLineupState>
     , IDependsOnState<GameStageState>
     , IDependsOnState<TeamJamStatsState>
+    , IDependsOnState<OvertimeState>
 {
-    protected override ScoreSheetState DefaultState => new([]);
+    protected override ScoreSheetState DefaultState => ScoreSheetState.Default;
 
     public override Option<string> GetStateKey() =>
         Option.Some(teamSide.ToString());
@@ -41,24 +41,19 @@ public abstract class ScoreSheet(TeamSide teamSide, ReducerGameContext context, 
         var state = GetState();
         var lineup = GetKeyedState<JamLineupState>(teamSide.ToString());
         var gameStage = GetState<GameStageState>();
+        var overtime = GetState<OvertimeState>();
 
         logger.LogDebug("Adding row to {teamSide} score sheet due to jam start", teamSide);
 
-        SetState(new(state.Jams.Append(new ScoreSheetJam(
-            gameStage.PeriodNumber,
-            gameStage.JamNumber,
-            lineup.JammerNumber ?? "?",
-            lineup.PivotNumber ?? "?",
-            false,
-            false,
-            false,
-            false,
-            true,
-            [],
-            null,
-            0,
-            state.Jams.Any() ? state.Jams[^1].GameTotal : 0
-        )).ToArray()));
+        SetState(new(state.Jams.Append(ScoreSheetJam.Default with
+        {
+            Period = gameStage.PeriodNumber,
+            Jam = gameStage.JamNumber,
+            JammerNumber = lineup.JammerNumber ?? "?",
+            PivotNumber = lineup.PivotNumber ?? "?",
+            GameTotal = state.Jams.Any() ? state.Jams[^1].GameTotal : 0,
+            IsOvertimeJam = overtime.IsInOvertime,
+        }).ToArray()));
 
         return [];
     }
@@ -97,7 +92,9 @@ public abstract class ScoreSheet(TeamSide teamSide, ReducerGameContext context, 
         ModifyLatestJam(jam => jam with
         {
             NoInitial = !jamStatsState.HasCompletedInitial,
-            Trips = jamStatsState.HasCompletedInitial ? [new JamLineTrip(null)] : [],
+            Trips = jamStatsState.HasCompletedInitial 
+                ? jam.Trips.Any() ? jam.Trips : [new JamLineTrip(null)]
+                : [],
         });
 
         return [];
@@ -298,10 +295,12 @@ public abstract class ScoreSheet(TeamSide teamSide, ReducerGameContext context, 
         if (!state.Jams.Any())
             return;
 
-        SetState(new(
+        var newState = new ScoreSheetState(
             state.Jams.Take(state.Jams.Length - 1)
                 .Append(mapper(state.Jams[^1]))
-                .ToArray()));
+                .ToArray());
+
+        SetState(newState);
     }
 
     private void ModifyJam(int period, int jam, Func<ScoreSheetJam, ScoreSheetJam> mapper)
@@ -333,6 +332,8 @@ public abstract class ScoreSheet(TeamSide teamSide, ReducerGameContext context, 
 
 public sealed record ScoreSheetState(ScoreSheetJam[] Jams)
 {
+    public static ScoreSheetState Default => new([]);
+
     public bool Equals(ScoreSheetState? other) =>
         other is not null
         && other.Jams.SequenceEqual(Jams);
@@ -353,10 +354,13 @@ public record ScoreSheetJam(
     JamLineTrip[] Trips,
     int? StarPassTrip,
     int JamTotal,
-    int GameTotal
+    int GameTotal,
+    bool IsOvertimeJam
 )
 {
     public virtual bool Deleted => false;
+
+    public static ScoreSheetJam Default => new(1, 1, "", "", false, false, false, false, true, [], null, 0, 0, false);
 
     public virtual bool Equals(ScoreSheetJam? other) =>
         other is not null
@@ -372,7 +376,8 @@ public record ScoreSheetJam(
         && other.Trips.SequenceEqual(Trips)
         && other.StarPassTrip.Equals(StarPassTrip)
         && other.JamTotal.Equals(JamTotal)
-        && other.GameTotal.Equals(GameTotal);
+        && other.GameTotal.Equals(GameTotal)
+        && other.IsOvertimeJam.Equals(IsOvertimeJam);
 
     public override int GetHashCode()
     {
@@ -390,6 +395,7 @@ public record ScoreSheetJam(
         hashCode.Add(StarPassTrip);
         hashCode.Add(JamTotal);
         hashCode.Add(GameTotal);
+        hashCode.Add(IsOvertimeJam);
         return hashCode.ToHashCode();
     }
 }
@@ -399,7 +405,12 @@ public sealed record DeletedScoreSheetJam(ScoreSheetJam DeletedJam) : ScoreSheet
     public override bool Deleted => true;
 }
 
-public record JamLineTrip(int? Score);
+public record JamLineTrip(int? Score)
+{
+    public static JamLineTrip Default => new(null);
+
+    public static implicit operator JamLineTrip(int? value) => new(value);
+}
 
 public sealed class HomeScoreSheet(ReducerGameContext gameContext, ILogger<HomeScoreSheet> logger)
     : ScoreSheet(TeamSide.Home, gameContext, logger);

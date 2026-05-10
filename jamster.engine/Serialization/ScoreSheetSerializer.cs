@@ -46,6 +46,31 @@ public class ScoreSheetSerializer : IScoreSheetSerializer
             : [GetNonStarPassJamLine(jam.Jam)];
     }
 
+    private static ScoreSheetTrip[] GetScoreSheetTrips(IEnumerable<JamLineTrip> scores, bool isOvertimeJam)
+    {
+        scores = scores.ToArray();
+        var indexOffest = isOvertimeJam ? 1 : 0;
+
+        return Enumerable.Range(0, 9)
+            .Select(i => 
+                !scores.Any() ? null
+                : isOvertimeJam && i == 0 ? GetOvertimeFirstTrip()
+                : i == 8 && scores.Count() > 9 + indexOffest ? string.Join('+', scores.Skip(8 + indexOffest).Select(x => x.Score))
+                : i + indexOffest < scores.Count() ? scores.ElementAt(i + indexOffest).Score?.ToString() : null)
+            .Select(x => new ScoreSheetTrip(x))
+            .ToArray();
+
+        string? GetOvertimeFirstTrip()
+        {
+            // ReSharper disable once PossibleMultipleEnumeration
+            var nonNullScores = scores.Take(2).Where(x => x.Score != null).ToArray();
+            if (nonNullScores.Length == 0)
+                return null;
+
+            return string.Join('+', nonNullScores.Select(s => s.Score));
+        }
+    }
+
     private static ScoreSheetLine GetNonStarPassJamLine(ScoreSheetJam jam) =>
         new(
             jam.Jam,
@@ -55,10 +80,7 @@ public class ScoreSheetSerializer : IScoreSheetSerializer
             jam.Called,
             jam.Injury,
             jam.NoInitial,
-            Enumerable.Range(0, 9)
-                .Select(i => i < jam.Trips.Length ? jam.Trips[i].Score : null)
-                .Select(s => new ScoreSheetTrip(s))
-                .ToArray()
+            GetScoreSheetTrips(jam.Trips, jam.IsOvertimeJam)
         );
 
     private static ScoreSheetLine GetPreStarPassJamLine(ScoreSheetJam jam) =>
@@ -70,10 +92,7 @@ public class ScoreSheetSerializer : IScoreSheetSerializer
             jam.Lead,
             jam.StarPassTrip == null && jam.Injury,
             jam.StarPassTrip == 0 || jam.StarPassTrip == null && jam.NoInitial,
-            Enumerable.Range(0, 9)
-                .Select(i => i < (jam.StarPassTrip ?? 10) && i < jam.Trips.Length ? jam.Trips[i].Score : null)
-                .Select(s => new ScoreSheetTrip(s))
-                .ToArray()
+            GetScoreSheetTrips(jam.Trips.Take(jam.StarPassTrip ?? 10), jam.IsOvertimeJam)
         );
 
     private static ScoreSheetLine GetPostStarPassJamLine(ScoreSheetJam jam) =>
@@ -85,10 +104,9 @@ public class ScoreSheetSerializer : IScoreSheetSerializer
             false,
             jam is { StarPassTrip: not null, Injury: true },
             jam is { StarPassTrip: not null, NoInitial: true },
-            Enumerable.Range(0, 9)
-                .Select(i => i >= jam.StarPassTrip && i < jam.Trips.Length ? jam.Trips[i].Score : null)
-                .Select(s => new ScoreSheetTrip(s))
-                .ToArray()
+            GetScoreSheetTrips(
+                Enumerable.Repeat(new JamLineTrip(null), jam.StarPassTrip ?? 9).Concat(jam.Trips.Skip(jam.StarPassTrip ?? 10)),
+                jam.IsOvertimeJam)
         );
     private record JamWithOpponentJam(int PeriodNumber, ScoreSheetJam Jam, ScoreSheetJam OpponentJam);
 

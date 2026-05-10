@@ -85,7 +85,28 @@ public class TestGameLoader(
             .Add<ScoreModifiedRelative>().WithBody(new ScoreModifiedRelativeBody(TeamSide.Away, 4)).Wait(5)
             .Add<CallMarked>().WithBody(new CallMarkedBody(TeamSide.Away, true)).Wait(2)
             .Add<ScoreModifiedRelative>().WithBody(new ScoreModifiedRelativeBody(TeamSide.Home, 2)).Wait(28)
+            .EndRepeat(),
+
+        ["Intermission"] = new EventListBuilder(systemTime.GetTick() - Tick.FromSeconds(34 * 60), [])
+            .Add<TeamSet>().WithBody(new TeamSetBody(TeamSide.Home, HomeTeam))
+            .Add<TeamSet>().WithBody(new TeamSetBody(TeamSide.Away, AwayTeam))
+            .Add<IntermissionClockSet>().WithBody(new IntermissionClockSetBody(120)).Wait(120)
+            .Repeat(8)
+            .Add<JamStarted>().Wait(10)
+            .Add<LeadMarked>().WithBody(new LeadMarkedBody(TeamSide.Home, true)).Wait(5)
+            .Add<InitialTripCompleted>().WithBody(new InitialTripCompletedBody(TeamSide.Away, true)).Wait(70)
+            .Add<ScoreModifiedRelative>().WithBody(new ScoreModifiedRelativeBody(TeamSide.Home, 4)).Wait(5)
+            .Add<CallMarked>().WithBody(new CallMarkedBody(TeamSide.Home, true)).Wait(2)
+            .Add<ScoreModifiedRelative>().WithBody(new ScoreModifiedRelativeBody(TeamSide.Away, 2)).Wait(28)
+            .Add<JamStarted>().Wait(10)
+            .Add<LeadMarked>().WithBody(new LeadMarkedBody(TeamSide.Away, true)).Wait(5)
+            .Add<InitialTripCompleted>().WithBody(new InitialTripCompletedBody(TeamSide.Home, true)).Wait(70)
+            .Add<ScoreModifiedRelative>().WithBody(new ScoreModifiedRelativeBody(TeamSide.Away, 4)).Wait(5)
+            .Add<CallMarked>().WithBody(new CallMarkedBody(TeamSide.Away, true)).Wait(2)
+            .Add<ScoreModifiedRelative>().WithBody(new ScoreModifiedRelativeBody(TeamSide.Home, 2)).Wait(28)
             .EndRepeat()
+            .Wait(30),
+
     };
 
     public async Task<Result> ConfigureTestGame(string testGameName)

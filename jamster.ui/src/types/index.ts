@@ -9,6 +9,7 @@ export * from './DisplaySide';
 export * from './GameInfo';
 export * from './GameSkater';
 export * from './GameStageState';
+export * from './OvertimeState';
 export * from './GameSummaryState';
 export * from './GameTeam';
 export * from './InjuriesState';
