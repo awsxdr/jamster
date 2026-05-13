@@ -1,6 +1,5 @@
 ﻿using jamster.engine.Domain;
 using jamster.engine.Events;
-using jamster.engine.Extensions;
 using jamster.engine.Services;
 
 namespace jamster.engine.Reducers;
@@ -24,10 +23,10 @@ public abstract class PenaltySheet(TeamSide teamSide, ReducerGameContext context
     {
         var state = GetState();
 
-        SetState(new(state.Lines.Where(l => @event.Body.Team.Roster.Any(s => s.Number == l.SkaterNumber))
+        SetState(new(state.Lines.Where(l => @event.Body.Team.Roster.Any(s => s.Id == l.SkaterId))
             .Concat(@event.Body.Team.Roster
-                .Where(s => state.Lines.All(l => l.SkaterNumber != s.Number))
-                .Select(s => new PenaltySheetLine(s.Number, null, [])))
+                .Where(s => state.Lines.All(l => l.SkaterId != s.Id))
+                .Select(s => new PenaltySheetLine(s.Id, s.Number, null, [])))
             .OrderBy(l => l.SkaterNumber)
             .ToArray()));
 
@@ -39,17 +38,17 @@ public abstract class PenaltySheet(TeamSide teamSide, ReducerGameContext context
         var state = GetState();
         var gameStage = GetState<GameStageState>();
 
-        var skaterPenalties = state.Lines.SingleOrDefault(l => l.SkaterNumber == @event.Body.SkaterNumber);
+        var skaterPenalties = state.Lines.SingleOrDefault(l => l.SkaterId == @event.Body.SkaterId);
 
         if (skaterPenalties == null)
         {
-            logger.LogWarning("Attempting to assess penalty but skater {skater} on {team} team was not found", @event.Body.SkaterNumber, teamSide);
+            logger.LogWarning("Attempting to assess penalty but skater {skater} on {team} team was not found", @event.Body.SkaterId, teamSide);
             return [];
         }
 
         var newPenalties = skaterPenalties.Penalties.Append(new(@event.Body.PenaltyCode, gameStage.PeriodNumber, Math.Max(1, gameStage.JamNumber), false)).ToArray();
 
-        SetState(new(state.Lines.Select(l => l.SkaterNumber == @event.Body.SkaterNumber ? l with { Penalties =  newPenalties } : l).ToArray()));
+        SetState(new(state.Lines.Select(l => l.SkaterId == @event.Body.SkaterId ? l with { Penalties =  newPenalties } : l).ToArray()));
 
         return [];
     });
@@ -58,11 +57,11 @@ public abstract class PenaltySheet(TeamSide teamSide, ReducerGameContext context
     {
         var state = GetState();
 
-        var skaterPenalties = state.Lines.SingleOrDefault(l => l.SkaterNumber == @event.Body.SkaterNumber)?.Penalties;
+        var skaterPenalties = state.Lines.SingleOrDefault(l => l.SkaterId == @event.Body.SkaterId)?.Penalties;
 
         if (skaterPenalties == null)
         {
-            logger.LogWarning("Attempting to rescind penalty but skater {skater} on {team} team was not found", @event.Body.SkaterNumber, teamSide);
+            logger.LogWarning("Attempting to rescind penalty but skater {skater} on {team} team was not found", @event.Body.SkaterId, teamSide);
             return [];
         }
 
@@ -77,7 +76,7 @@ public abstract class PenaltySheet(TeamSide teamSide, ReducerGameContext context
             .ThenBy(p => p.Jam)
             .ToArray();
 
-        SetState(new(state.Lines.Select(l => l.SkaterNumber == @event.Body.SkaterNumber ? l with
+        SetState(new(state.Lines.Select(l => l.SkaterId == @event.Body.SkaterId ? l with
         {
             Penalties = newPenalties,
             ExpulsionPenalty = 
@@ -93,11 +92,11 @@ public abstract class PenaltySheet(TeamSide teamSide, ReducerGameContext context
     {
         var state = GetState();
 
-        var skaterPenalties = state.Lines.SingleOrDefault(l => l.SkaterNumber == @event.Body.SkaterNumber)?.Penalties;
+        var skaterPenalties = state.Lines.SingleOrDefault(l => l.SkaterId == @event.Body.SkaterId)?.Penalties;
 
         if (skaterPenalties == null)
         {
-            logger.LogWarning("Attempting to update penalty but skater {skater} on {team} team was not found", @event.Body.SkaterNumber, teamSide);
+            logger.LogWarning("Attempting to update penalty but skater {skater} on {team} team was not found", @event.Body.SkaterId, teamSide);
             return [];
         }
 
@@ -108,7 +107,7 @@ public abstract class PenaltySheet(TeamSide teamSide, ReducerGameContext context
 
         if (targetPenalty == null)
         {
-            logger.LogWarning("Attempting to update penalty but penalty with code {code} in period {period} jam {jam} for skater {skater} on {team} team was not found", @event.Body.OriginalPenaltyCode, @event.Body.OriginalPeriod, @event.Body.OriginalJam, @event.Body.SkaterNumber, teamSide);
+            logger.LogWarning("Attempting to update penalty but penalty with code {code} in period {period} jam {jam} for skater {skater} on {team} team was not found", @event.Body.OriginalPenaltyCode, @event.Body.OriginalPeriod, @event.Body.OriginalJam, @event.Body.SkaterId, teamSide);
             return [];
         }
 
@@ -119,7 +118,7 @@ public abstract class PenaltySheet(TeamSide teamSide, ReducerGameContext context
             Jam = @event.Body.NewJam,
         };
 
-        logger.LogDebug("Changing penalty for skater {skaterNumber} from {originalCode} in period {originalPeriod} jam {originalJam} to {newCode} in period {newPeriod} jam {newJam}", @event.Body.SkaterNumber, @event.Body.OriginalPenaltyCode, @event.Body.OriginalPeriod, @event.Body.OriginalJam, @event.Body.NewPenaltyCode, @event.Body.NewPeriod, @event.Body.NewJam);
+        logger.LogDebug("Changing penalty for skater {SkaterId} from {originalCode} in period {originalPeriod} jam {originalJam} to {newCode} in period {newPeriod} jam {newJam}", @event.Body.SkaterId, @event.Body.OriginalPenaltyCode, @event.Body.OriginalPeriod, @event.Body.OriginalJam, @event.Body.NewPenaltyCode, @event.Body.NewPeriod, @event.Body.NewJam);
 
         var newPenalties = skaterPenalties
             .GroupBy(p => (p.Period, p.Jam, p.Code))
@@ -133,7 +132,7 @@ public abstract class PenaltySheet(TeamSide teamSide, ReducerGameContext context
             .ThenBy(p => p.Jam)
             .ToArray();
 
-        SetState(new(state.Lines.Select(l => l.SkaterNumber == @event.Body.SkaterNumber ? l with
+        SetState(new(state.Lines.Select(l => l.SkaterId == @event.Body.SkaterId ? l with
         {
             Penalties = newPenalties,
             ExpulsionPenalty =
@@ -150,18 +149,18 @@ public abstract class PenaltySheet(TeamSide teamSide, ReducerGameContext context
         var state = GetState();
 
         var existingPenalty = state.Lines
-            .SingleOrDefault(l => l.SkaterNumber == @event.Body.SkaterNumber)
+            .SingleOrDefault(l => l.SkaterId == @event.Body.SkaterId)
             ?.Penalties
             .FirstOrDefault(p => p.Period == @event.Body.Period && p.Jam == @event.Body.Jam && p.Code == @event.Body.PenaltyCode);
 
         if (existingPenalty is null)
             return [];
 
-        logger.LogDebug("Skater {skaterNumber} from {team} team expelled", @event.Body.SkaterNumber, teamSide);
+        logger.LogDebug("Skater {SkaterId} from {team} team expelled", @event.Body.SkaterId, teamSide);
 
         SetState(new(state.Lines
             .Select(l =>
-                l.SkaterNumber == @event.Body.SkaterNumber
+                l.SkaterId == @event.Body.SkaterId
                 ? l with { ExpulsionPenalty = existingPenalty }
                 : l
             )
@@ -174,14 +173,14 @@ public abstract class PenaltySheet(TeamSide teamSide, ReducerGameContext context
     {
         var state = GetState();
 
-        if (state.Lines.All(l => l.SkaterNumber != @event.Body.SkaterNumber))
+        if (state.Lines.All(l => l.SkaterId != @event.Body.SkaterId))
             return [];
 
-        logger.LogDebug("Expulsion removed for skater {skater} on {team} team", @event.Body.SkaterNumber, teamSide);
+        logger.LogDebug("Expulsion removed for skater {skater} on {team} team", @event.Body.SkaterId, teamSide);
 
         SetState(new(state.Lines
             .Select(l =>
-                l.SkaterNumber == @event.Body.SkaterNumber
+                l.SkaterId == @event.Body.SkaterId
                 ? l with { ExpulsionPenalty = null }
                 : l
             )
@@ -194,14 +193,14 @@ public abstract class PenaltySheet(TeamSide teamSide, ReducerGameContext context
     {
         var state = GetState();
 
-        var skaterPenalties = state.Lines.SingleOrDefault(l => l.SkaterNumber == @event.Body.SkaterNumber);
+        var skaterPenalties = state.Lines.SingleOrDefault(l => l.SkaterId == @event.Body.SkaterId);
 
         if (skaterPenalties == null)
             return [];
 
         var newPenalties = skaterPenalties.Penalties.Select(p => p with { Served = true }).ToArray();
 
-        SetState(new(state.Lines.Select(l => l.SkaterNumber == @event.Body.SkaterNumber ? l with
+        SetState(new(state.Lines.Select(l => l.SkaterId == @event.Body.SkaterId ? l with
         {
             Penalties = newPenalties,
             ExpulsionPenalty = l.ExpulsionPenalty is null ? null : l.ExpulsionPenalty with { Served = true },
@@ -214,11 +213,11 @@ public abstract class PenaltySheet(TeamSide teamSide, ReducerGameContext context
     {
         var state = GetState();
 
-        var skaterPenalties = state.Lines.SingleOrDefault(l => l.SkaterNumber == @event.Body.SkaterNumber)?.Penalties;
+        var skaterPenalties = state.Lines.SingleOrDefault(l => l.SkaterId == @event.Body.SkaterId)?.Penalties;
 
         if (skaterPenalties == null)
         {
-            logger.LogWarning("Attempting to update penalty served status but skater {skater} on {team} team was not found", @event.Body.SkaterNumber, teamSide);
+            logger.LogWarning("Attempting to update penalty served status but skater {skater} on {team} team was not found", @event.Body.SkaterId, teamSide);
             return [];
         }
 
@@ -229,11 +228,11 @@ public abstract class PenaltySheet(TeamSide teamSide, ReducerGameContext context
 
         if (targetPenalty == null)
         {
-            logger.LogWarning("Attempting to update penalty served status but penalty with code {code} in period {period} jam {jam} for skater {skater} on {team} team was not found", @event.Body.PenaltyCode, @event.Body.Period, @event.Body.Jam, @event.Body.SkaterNumber, teamSide);
+            logger.LogWarning("Attempting to update penalty served status but penalty with code {code} in period {period} jam {jam} for skater {skater} on {team} team was not found", @event.Body.PenaltyCode, @event.Body.Period, @event.Body.Jam, @event.Body.SkaterId, teamSide);
             return [];
         }
 
-        logger.LogDebug("Setting penalty served status for skater {skaterNumber} on {team} team for penalty {code} in period {period} jam {jam} to {served}", @event.Body.SkaterNumber, teamSide, @event.Body.PenaltyCode, @event.Body.Period, @event.Body.Jam, @event.Body.Served);
+        logger.LogDebug("Setting penalty served status for skater {SkaterId} on {team} team for penalty {code} in period {period} jam {jam} to {served}", @event.Body.SkaterId, teamSide, @event.Body.PenaltyCode, @event.Body.Period, @event.Body.Jam, @event.Body.Served);
 
         var modifiedPenalty = targetPenalty with { Served = @event.Body.Served };
 
@@ -249,7 +248,7 @@ public abstract class PenaltySheet(TeamSide teamSide, ReducerGameContext context
             .ThenBy(p => p.Jam)
             .ToArray();
 
-        SetState(new(state.Lines.Select(l => l.SkaterNumber == @event.Body.SkaterNumber ? l with
+        SetState(new(state.Lines.Select(l => l.SkaterId == @event.Body.SkaterId ? l with
         {
             Penalties = newPenalties,
             ExpulsionPenalty =
@@ -271,15 +270,16 @@ public sealed record PenaltySheetState(PenaltySheetLine[] Lines)
     public override int GetHashCode() => Lines.GetHashCode();
 }
 
-public sealed record PenaltySheetLine(string SkaterNumber, Penalty? ExpulsionPenalty, Penalty[] Penalties)
+public sealed record PenaltySheetLine(Guid SkaterId, string SkaterNumber, Penalty? ExpulsionPenalty, Penalty[] Penalties)
 {
     public bool Equals(PenaltySheetLine? other) =>
         other is not null
+        && other.SkaterId.Equals(SkaterId)
         && other.SkaterNumber.Equals(SkaterNumber)
         && (other.ExpulsionPenalty?.Equals(ExpulsionPenalty) ?? ExpulsionPenalty is null)
         && other.Penalties.SequenceEqual(Penalties);
 
-    public override int GetHashCode() => HashCode.Combine(SkaterNumber, Penalties);
+    public override int GetHashCode() => HashCode.Combine(SkaterId, SkaterNumber, Penalties);
 }
 public sealed record Penalty(string Code, int Period, int Jam, bool Served);
 

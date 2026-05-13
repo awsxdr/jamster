@@ -2,40 +2,40 @@ import { EventWithBody } from "@/hooks";
 import { TeamSide } from "@/types";
 
 export class SkaterSatInBox extends EventWithBody {
-    constructor(teamSide: TeamSide, skaterNumber: string) {
-        super("SkaterSatInBox", { teamSide, skaterNumber });
+    constructor(teamSide: TeamSide, skaterId: string) {
+        super("SkaterSatInBox", { teamSide, skaterId });
     }
 }
 
 export class SkaterReleasedFromBox extends EventWithBody {
-    constructor(teamSide: TeamSide, skaterNumber: string) {
-        super("SkaterReleasedFromBox", { teamSide, skaterNumber });
+    constructor(teamSide: TeamSide, skaterId: string) {
+        super("SkaterReleasedFromBox", { teamSide, skaterId });
     }
 }
 
 export class SkaterSubstitutedInBox extends EventWithBody {
-    constructor(teamSide: TeamSide, originalSkaterNumber: string, newSkaterNumber: string) {
-        super("SkaterSubstitutedInBox", { teamSide, originalSkaterNumber, newSkaterNumber });
+    constructor(teamSide: TeamSide, originalSkaterId: string, newSkaterId: string) {
+        super("SkaterSubstitutedInBox", { teamSide, originalSkaterId, newSkaterId });
     }
 }
 
 export class PenaltyAssessed extends EventWithBody {
-    constructor(teamSide: TeamSide, skaterNumber: string, penaltyCode: string) {
-        super("PenaltyAssessed", { teamSide, skaterNumber, penaltyCode });
+    constructor(teamSide: TeamSide, skaterId: string, penaltyCode: string) {
+        super("PenaltyAssessed", { teamSide, skaterId, penaltyCode });
     }
 }
 
 export class PenaltyRescinded extends EventWithBody {
-    constructor(teamSide: TeamSide, skaterNumber: string, penaltyCode: string, period: number, jam: number) {
-        super("PenaltyRescinded", { teamSide, skaterNumber, penaltyCode, period, jam });
+    constructor(teamSide: TeamSide, skaterId: string, penaltyCode: string, period: number, jam: number) {
+        super("PenaltyRescinded", { teamSide, skaterId, penaltyCode, period, jam });
     }
 }
 
 export class PenaltyUpdated extends EventWithBody {
-    constructor(teamSide: TeamSide, skaterNumber: string, originalPenaltyCode: string, originalPeriod: number, originalJam: number, newPenaltyCode: string, newPeriod: number, newJam: number) {
+    constructor(teamSide: TeamSide, skaterId: string, originalPenaltyCode: string, originalPeriod: number, originalJam: number, newPenaltyCode: string, newPeriod: number, newJam: number) {
         super("PenaltyUpdated", {
             teamSide,
-            skaterNumber,
+            skaterId,
             originalPenaltyCode,
             originalPeriod,
             originalJam,
@@ -47,19 +47,19 @@ export class PenaltyUpdated extends EventWithBody {
 }
 
 export class SkaterExpelled extends EventWithBody {
-    constructor(teamSide: TeamSide, skaterNumber: string, penaltyCode: string, period: number, jam: number) {
-        super("SkaterExpelled", { teamSide, skaterNumber, penaltyCode, period, jam });
+    constructor(teamSide: TeamSide, skaterId: string, penaltyCode: string, period: number, jam: number) {
+        super("SkaterExpelled", { teamSide, skaterId, penaltyCode, period, jam });
     }
 }
 
 export class ExpulsionCleared extends EventWithBody {
-    constructor(teamSide: TeamSide, skaterNumber: string) {
-        super("ExpulsionCleared", { teamSide, skaterNumber });
+    constructor(teamSide: TeamSide, skaterId: string) {
+        super("ExpulsionCleared", { teamSide, skaterId });
     }
 }
 
 export class PenaltyServedSet extends EventWithBody {
-    constructor(teamSide: TeamSide, skaterNumber: string, penaltyCode: string, period: number, jam: number, served: boolean) {
-        super("PenaltyServedSet", { teamSide, skaterNumber, penaltyCode, period, jam, served });
+    constructor(teamSide: TeamSide, skaterId: string, penaltyCode: string, period: number, jam: number, served: boolean) {
+        super("PenaltyServedSet", { teamSide, skaterId, penaltyCode, period, jam, served });
     }
 }

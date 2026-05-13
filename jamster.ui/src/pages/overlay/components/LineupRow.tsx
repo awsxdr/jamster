@@ -29,23 +29,24 @@ export const LineupRow = ({ side }: LineupRowProps) => {
     const jammerNameClassName = cn(sharedRowItemClassName, "justify-end w-[--lineup-jammer-name-width] pr-[2%]");
     const skaterNumberClassName = cn(sharedRowItemClassName, "justify-center w-[--lineup-skater-width] border-[#ddd] border-l-[1px]");
 
-    const [jammerNumber, pivotNumber] = starPass ? [lineup?.pivotNumber, lineup?.jammerNumber] : [lineup?.jammerNumber, lineup?.pivotNumber];
-    const jammerName = team?.roster.find(s => s.number === jammerNumber)?.name;
+    const [jammerId, pivotId] = starPass ? [lineup?.pivotId, lineup?.jammerId] : [lineup?.jammerId, lineup?.pivotId];
+    const jammer = team?.roster.find(s => s.id === jammerId) ?? { number: '-', name: undefined };
+    const pivot = team?.roster.find(s => s.id === pivotId) ?? { number: '-' };
 
     const jammerText =
-        jammerName
-            ? `${jammerName} (${jammerNumber})`
-            : jammerNumber ?? '-';
+        jammer.name
+            ? `${jammer.name} (${jammer.number})`
+            : jammer.number;
 
-    const blockerNumbers = [...(lineup?.blockerNumbers ?? [])].sort();
+    const blockers = [...(lineup?.blockerIds ?? [])].map(id => team?.roster.find(s => s.id === id) ?? { number: '-' }).sort();
 
     return (
         <div className={cn(side === TeamSide.Home ? homeRowClassName : awayRowClassName, visible && 'w-[--lineup-row-width]')}>
             <div className={jammerNameClassName}>{jammerText}</div>
-            <div className={skaterNumberClassName}>{pivotNumber ?? '-'}{starPass && translate("Overlay.LineupRow.StarPassMarker")}</div>
-            <div className={skaterNumberClassName}>{blockerNumbers?.[0] ?? '-'}</div>
-            <div className={skaterNumberClassName}>{blockerNumbers?.[1] ?? '-'}</div>
-            <div className={skaterNumberClassName}>{blockerNumbers?.[2] ?? '-'}</div>
+            <div className={skaterNumberClassName}>{pivot.number ?? '-'}{starPass && translate("Overlay.LineupRow.StarPassMarker")}</div>
+            <div className={skaterNumberClassName}>{blockers[0].number}</div>
+            <div className={skaterNumberClassName}>{blockers[1].number}</div>
+            <div className={skaterNumberClassName}>{blockers[2].number}</div>
         </div>
     )
 }

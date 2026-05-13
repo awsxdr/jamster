@@ -12,8 +12,10 @@ public class ScoreSheetUnitTests : ReducerUnitTest<HomeScoreSheet, ScoreSheetSta
     public async Task JamStarted_WhenNoPreviousJam_CreatesNewJamWithExpectedDefaults()
     {
         State = new([]);
-        MockKeyedState<JamLineupState>(nameof(TeamSide.Home), new("123", "321", [null, null, null]));
-        MockState<GameStageState>(new(Stage.Jam, 2, 6, 20, false));
+        var roster = Enumerable.Range(0, 2).Select(i => new GameSkater(Guid.NewGuid(), $"{i + 1}", $"Skater {i + 1}", true)).ToList();
+        MockKeyedState<TeamDetailsState>(nameof(TeamSide.Home), new(new([], new(Color.White, Color.Black), roster)));
+        MockKeyedState<JamLineupState>(nameof(TeamSide.Home), new(roster[0].Id, roster[1].Id, [null, null, null]));
+        MockState<GameStageState>(new(Stage.Jam, 2, 6, 20, false, false));
         MockState<OvertimeState>(new(false));
 
         await Subject.Handle(new JamStarted(0));
@@ -29,16 +31,18 @@ public class ScoreSheetUnitTests : ReducerUnitTest<HomeScoreSheet, ScoreSheetSta
         jam.Period.Should().Be(2);
         jam.Jam.Should().Be(6);
         jam.JamTotal.Should().Be(0);
-        jam.JammerNumber.Should().Be("123");
-        jam.PivotNumber.Should().Be("321");
+        jam.JammerNumber.Should().Be("1");
+        jam.PivotNumber.Should().Be("2");
     }
 
     [Test]
     public async Task JamStarted_WhenPreviousJam_AddsJamWithExpectedGameTotal()
     {
-        State = new([new(1, 1, "123", "555", false, true, true, false, false, [4, 4], null, 8, 8, false)]);
-        MockKeyedState<JamLineupState>(nameof(TeamSide.Home), new("123", "321", [null, null, null]));
-        MockState<GameStageState>(new(Stage.Jam, 1, 2, 2, false));
+        State = new([new(1, 1, "1", "3", false, true, true, false, false, [4, 4], null, 8, 8, false)]);
+        var roster = Enumerable.Range(0, 3).Select(i => new GameSkater(Guid.NewGuid(), $"{i + 1}", $"Skater {i + 1}", true)).ToList();
+        MockKeyedState<TeamDetailsState>(nameof(TeamSide.Home), new(new([], new(Color.White, Color.Black), roster)));
+        MockKeyedState<JamLineupState>(nameof(TeamSide.Home), new(roster[0].Id, roster[1].Id, [null, null, null]));
+        MockState<GameStageState>(new(Stage.Jam, 1, 2, 2, false, false));
         MockState<OvertimeState>(new(false));
 
         await Subject.Handle(new JamStarted(0));
@@ -51,8 +55,10 @@ public class ScoreSheetUnitTests : ReducerUnitTest<HomeScoreSheet, ScoreSheetSta
     public async Task JamStarted_WhenJammerNumberNotSetAtJamStart_SetsJammerNumberAsQuestionMark()
     {
         State = new([]);
-        MockKeyedState<JamLineupState>(nameof(TeamSide.Home), new(null, "321", [null, null, null]));
-        MockState<GameStageState>(new(Stage.Jam, 2, 6, 20, false));
+        var roster = Enumerable.Range(0, 3).Select(i => new GameSkater(Guid.NewGuid(), $"{i + 1}", $"Skater {i + 1}", true)).ToList();
+        MockKeyedState<TeamDetailsState>(nameof(TeamSide.Home), new(new([], new(Color.White, Color.Black), roster)));
+        MockKeyedState<JamLineupState>(nameof(TeamSide.Home), new(null, roster[1].Id, [null, null, null]));
+        MockState<GameStageState>(new(Stage.Jam, 2, 6, 20, false, false));
         MockState<OvertimeState>(new(false));
 
         await Subject.Handle(new JamStarted(0));
@@ -66,8 +72,10 @@ public class ScoreSheetUnitTests : ReducerUnitTest<HomeScoreSheet, ScoreSheetSta
     public async Task JamStarted_WhenInOvertime_FlagsJamAsOvertimeJam()
     {
         State = new([]);
+        var roster = Enumerable.Range(0, 3).Select(i => new GameSkater(Guid.NewGuid(), $"{i + 1}", $"Skater {i + 1}", true)).ToList();
+        MockKeyedState<TeamDetailsState>(nameof(TeamSide.Home), new(new([], new(Color.White, Color.Black), roster)));
         MockKeyedState<JamLineupState>(nameof(TeamSide.Home), new(null, null, []));
-        MockState<GameStageState>(new(Stage.Jam, 1, 1, 1, false));
+        MockState<GameStageState>(new(Stage.Jam, 1, 1, 1, false, false));
         MockState<OvertimeState>(new(true));
 
         await Subject.Handle(new JamStarted(0));
@@ -80,8 +88,10 @@ public class ScoreSheetUnitTests : ReducerUnitTest<HomeScoreSheet, ScoreSheetSta
     public async Task JamStarted_WhenNotInOvertime_DoesNotFlagJamAsOvertimeJam()
     {
         State = new([]);
+        var roster = Enumerable.Range(0, 3).Select(i => new GameSkater(Guid.NewGuid(), $"{i + 1}", $"Skater {i + 1}", true)).ToList();
+        MockKeyedState<TeamDetailsState>(nameof(TeamSide.Home), new(new([], new(Color.White, Color.Black), roster)));
         MockKeyedState<JamLineupState>(nameof(TeamSide.Home), new(null, null, []));
-        MockState<GameStageState>(new(Stage.Jam, 1, 1, 1, false));
+        MockState<GameStageState>(new(Stage.Jam, 1, 1, 1, false, false));
         MockState<OvertimeState>(new(false));
 
         await Subject.Handle(new JamStarted(0));
@@ -95,10 +105,13 @@ public class ScoreSheetUnitTests : ReducerUnitTest<HomeScoreSheet, ScoreSheetSta
     {
         if (gameStage == Stage.Jam) return;
 
-        var jam = new ScoreSheetJam(1, 1, "321", "555", false, false, false, false, false, [], null, 0, 0, false);
+        var roster = Enumerable.Range(0, 3).Select(i => new GameSkater(Guid.NewGuid(), $"{i + 1}", $"Skater {i + 1}", true)).ToList();
+        MockKeyedState<TeamDetailsState>(nameof(TeamSide.Home), new(new([], new(Color.White, Color.Black), roster)));
+
+        var jam = new ScoreSheetJam(1, 1, roster[1].Number, roster[2].Number, false, false, false, false, false, [], null, 0, 0, false);
         State = new([jam]);
 
-        await Subject.Handle(new SkaterAddedToJam(1000, new(TeamSide.Home, 1, 2, "123", SkaterPosition.Jammer)));
+        await Subject.Handle(new SkaterAddedToJam(1000, new(TeamSide.Home, 1, 2, roster[0].Id, SkaterPosition.Jammer)));
 
         State.Jams.Should().ContainSingle().Which.Should().Be(jam);
     }
@@ -106,30 +119,36 @@ public class ScoreSheetUnitTests : ReducerUnitTest<HomeScoreSheet, ScoreSheetSta
     [Test]
     public async Task SkaterAddedToJam_WhenJamExistsInSheet_AndSkaterIsJammer_AndTeamMatches_SetsJammerNumber()
     {
-        State = new([new(1, 1, "321", "555", false, false, false, false, false, [], null, 0, 0, false)]);
+        var roster = Enumerable.Range(0, 3).Select(i => new GameSkater(Guid.NewGuid(), $"{i + 1}", $"Skater {i + 1}", true)).ToList();
+        MockKeyedState<TeamDetailsState>(nameof(TeamSide.Home), new(new([], new(Color.White, Color.Black), roster)));
+        State = new([new(1, 1, roster[1].Number, roster[2].Number, false, false, false, false, false, [], null, 0, 0, false)]);
 
-        await Subject.Handle(new SkaterAddedToJam(1000, new(TeamSide.Home, 1, 1, "123", SkaterPosition.Jammer)));
+        await Subject.Handle(new SkaterAddedToJam(1000, new(TeamSide.Home, 1, 1, roster[0].Id, SkaterPosition.Jammer)));
 
-        State.Jams.Should().ContainSingle().Which.JammerNumber.Should().Be("123");
+        State.Jams.Should().ContainSingle().Which.JammerNumber.Should().Be(roster[0].Number);
     }
 
     [Test]
     public async Task SkaterAddedToJam_WhenJamExistsInSheet_AndSkaterIsPivot_AndTeamMatches_SetsPivotNumber()
     {
-        State = new([new(1, 1, "321", "555", false, false, false, false, false, [], null, 0, 0, false)]);
+        var roster = Enumerable.Range(0, 3).Select(i => new GameSkater(Guid.NewGuid(), $"{i + 1}", $"Skater {i + 1}", true)).ToList();
+        MockKeyedState<TeamDetailsState>(nameof(TeamSide.Home), new(new([], new(Color.White, Color.Black), roster)));
+        State = new([new(1, 1, roster[1].Number, roster[2].Number, false, false, false, false, false, [], null, 0, 0, false)]);
 
-        await Subject.Handle(new SkaterAddedToJam(1000, new(TeamSide.Home, 1, 1, "123", SkaterPosition.Pivot)));
+        await Subject.Handle(new SkaterAddedToJam(1000, new(TeamSide.Home, 1, 1, roster[0].Id, SkaterPosition.Pivot)));
 
-        State.Jams.Should().ContainSingle().Which.PivotNumber.Should().Be("123");
+        State.Jams.Should().ContainSingle().Which.PivotNumber.Should().Be(roster[0].Number);
     }
 
     [Test]
     public async Task SkaterAddedToJam_WhenJamExistsInSheet_AndSkaterIsJammer_AndTeamDoesNotMatch_DoesNotChangeState()
     {
-        var jam = new ScoreSheetJam(1, 1, "321", "555", false, false, false, false, false, [], null, 0, 0, false);
+        var roster = Enumerable.Range(0, 3).Select(i => new GameSkater(Guid.NewGuid(), $"{i + 1}", $"Skater {i + 1}", true)).ToList();
+        MockKeyedState<TeamDetailsState>(nameof(TeamSide.Home), new(new([], new(Color.White, Color.Black), roster)));
+        var jam = new ScoreSheetJam(1, 1, roster[1].Number, roster[2].Number, false, false, false, false, false, [], null, 0, 0, false);
         State = new([jam]);
 
-        await Subject.Handle(new SkaterAddedToJam(1000, new(TeamSide.Away, 1, 1, "123", SkaterPosition.Jammer)));
+        await Subject.Handle(new SkaterAddedToJam(1000, new(TeamSide.Away, 1, 1, roster[0].Id, SkaterPosition.Jammer)));
 
         State.Jams.Should().ContainSingle().Which.Should().Be(jam);
     }
@@ -137,10 +156,12 @@ public class ScoreSheetUnitTests : ReducerUnitTest<HomeScoreSheet, ScoreSheetSta
     [Test]
     public async Task SkaterRemovedFromJam_WhenJamExistsInSheet_AndSkaterNumberIsJammer_RemovesJammerFromJam()
     {
-        var jam = new ScoreSheetJam(1, 1, "321", "123", false, false, false, false, false, [], null, 0, 0, false);
+        var roster = Enumerable.Range(0, 3).Select(i => new GameSkater(Guid.NewGuid(), $"{i + 1}", $"Skater {i + 1}", true)).ToList();
+        MockKeyedState<TeamDetailsState>(nameof(TeamSide.Home), new(new([], new(Color.White, Color.Black), roster)));
+        var jam = new ScoreSheetJam(1, 1, roster[1].Number, roster[2].Number, false, false, false, false, false, [], null, 0, 0, false);
         State = new([jam]);
 
-        await Subject.Handle(new SkaterRemovedFromJam(1000, new(TeamSide.Home, 1, 1, "321")));
+        await Subject.Handle(new SkaterRemovedFromJam(1000, new(TeamSide.Home, 1, 1, roster[1].Id)));
 
         State.Jams.Should().ContainSingle().Which.JammerNumber.Should().Be(string.Empty);
     }
@@ -148,10 +169,12 @@ public class ScoreSheetUnitTests : ReducerUnitTest<HomeScoreSheet, ScoreSheetSta
     [Test]
     public async Task SkaterRemovedFromJam_WhenJamExistsInSheet_AndSkaterNumberIsPivot_RemovesPivotFromJam()
     {
-        var jam = new ScoreSheetJam(1, 1, "321", "123", false, false, false, false, false, [], null, 0, 0, false);
+        var roster = Enumerable.Range(0, 3).Select(i => new GameSkater(Guid.NewGuid(), $"{i + 1}", $"Skater {i + 1}", true)).ToList();
+        MockKeyedState<TeamDetailsState>(nameof(TeamSide.Home), new(new([], new(Color.White, Color.Black), roster)));
+        var jam = new ScoreSheetJam(1, 1, roster[1].Number, roster[2].Number, false, false, false, false, false, [], null, 0, 0, false);
         State = new([jam]);
 
-        await Subject.Handle(new SkaterRemovedFromJam(1000, new(TeamSide.Home, 1, 1, "123")));
+        await Subject.Handle(new SkaterRemovedFromJam(1000, new(TeamSide.Home, 1, 1, roster[2].Id)));
 
         State.Jams.Should().ContainSingle().Which.PivotNumber.Should().Be(string.Empty);
     }
@@ -159,10 +182,12 @@ public class ScoreSheetUnitTests : ReducerUnitTest<HomeScoreSheet, ScoreSheetSta
     [Test]
     public async Task SkaterRemovedFromJam_WhenJamExistsInSheet_AndSkaterNumberIsNeitherJammerNorPivot_DoesNotChangeState()
     {
-        var jam = new ScoreSheetJam(1, 1, "321", "123", false, false, false, false, false, [], null, 0, 0, false);
+        var roster = Enumerable.Range(0, 3).Select(i => new GameSkater(Guid.NewGuid(), $"{i + 1}", $"Skater {i + 1}", true)).ToList();
+        MockKeyedState<TeamDetailsState>(nameof(TeamSide.Home), new(new([], new(Color.White, Color.Black), roster)));
+        var jam = new ScoreSheetJam(1, 1, roster[1].Number, roster[2].Number, false, false, false, false, false, [], null, 0, 0, false);
         State = new([jam]);
 
-        await Subject.Handle(new SkaterRemovedFromJam(1000, new(TeamSide.Home, 1, 1, "555")));
+        await Subject.Handle(new SkaterRemovedFromJam(1000, new(TeamSide.Home, 1, 1, roster[0].Id)));
 
         State.Jams.Should().ContainSingle().Which.Should().Be(jam);
     }
@@ -170,10 +195,12 @@ public class ScoreSheetUnitTests : ReducerUnitTest<HomeScoreSheet, ScoreSheetSta
     [Test]
     public async Task SkaterRemovedFromJam_WhenJamExistsInSheet_AndTeamDoesNotMatch_DoesNotChangeState()
     {
-        var jam = new ScoreSheetJam(1, 1, "321", "123", false, false, false, false, false, [], null, 0, 0, false);
+        var roster = Enumerable.Range(0, 3).Select(i => new GameSkater(Guid.NewGuid(), $"{i + 1}", $"Skater {i + 1}", true)).ToList();
+        MockKeyedState<TeamDetailsState>(nameof(TeamSide.Home), new(new([], new(Color.White, Color.Black), roster)));
+        var jam = new ScoreSheetJam(1, 1, roster[1].Number, roster[2].Number, false, false, false, false, false, [], null, 0, 0, false);
         State = new([jam]);
 
-        await Subject.Handle(new SkaterRemovedFromJam(1000, new(TeamSide.Away, 1, 1, "123")));
+        await Subject.Handle(new SkaterRemovedFromJam(1000, new(TeamSide.Away, 1, 1, roster[1].Id)));
 
         State.Jams.Should().ContainSingle().Which.Should().Be(jam);
     }

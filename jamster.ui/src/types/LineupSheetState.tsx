@@ -5,7 +5,7 @@ export type LineupSheetState = {
 export type LineupSheetJam = {
     period: number;
     jam: number;
-    jammerNumber: string | null;
-    pivotNumber: string | null;
-    blockerNumbers: (string | null)[];
+    jammerId: string | null;
+    pivotId: string | null;
+    blockerIds: (string | null)[];
 }

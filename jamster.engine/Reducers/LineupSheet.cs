@@ -1,6 +1,5 @@
 ﻿using jamster.engine.Domain;
 using jamster.engine.Events;
-using jamster.engine.Extensions;
 using jamster.engine.Services;
 
 namespace jamster.engine.Reducers;
@@ -33,13 +32,13 @@ public abstract class LineupSheet(TeamSide teamSide, ReducerGameContext context)
     {
         ModifyJam(@event.Body.Period, @event.Body.Jam, jam => jam with
         {
-            JammerNumber = @event.Body.Position == SkaterPosition.Jammer ? @event.Body.SkaterNumber : jam.JammerNumber == @event.Body.SkaterNumber ? null : jam.JammerNumber,
-            PivotNumber = @event.Body.Position == SkaterPosition.Pivot ? @event.Body.SkaterNumber : jam.PivotNumber == @event.Body.SkaterNumber ? null : jam.PivotNumber,
-            BlockerNumbers = jam.BlockerNumbers
+            JammerId = @event.Body.Position == SkaterPosition.Jammer ? @event.Body.SkaterId : jam.JammerId == @event.Body.SkaterId ? null : jam.JammerId,
+            PivotId = @event.Body.Position == SkaterPosition.Pivot ? @event.Body.SkaterId : jam.PivotId == @event.Body.SkaterId ? null : jam.PivotId,
+            BlockerIds = jam.BlockerIds
                     .Where(n => n != null)
-                    .Except([@event.Body.SkaterNumber])
-                    .Map(x => @event.Body.Position == SkaterPosition.Blocker ? x.Append(@event.Body.SkaterNumber) : x)
-                    .TakeLast(jam.PivotNumber is not null && jam.PivotNumber != @event.Body.SkaterNumber || @event.Body.Position == SkaterPosition.Pivot ? 3 : 4)
+                    .Except([@event.Body.SkaterId])
+                    .Map(x => @event.Body.Position == SkaterPosition.Blocker ? x.Append(@event.Body.SkaterId) : x)
+                    .TakeLast(jam.PivotId is not null && jam.PivotId != @event.Body.SkaterId || @event.Body.Position == SkaterPosition.Pivot ? 3 : 4)
                     .Pad(3, null)
                     .ToArray()
         });
@@ -51,11 +50,11 @@ public abstract class LineupSheet(TeamSide teamSide, ReducerGameContext context)
     {
         ModifyJam(@event.Body.Period, @event.Body.Jam, jam => jam with
         {
-            JammerNumber = jam.JammerNumber == @event.Body.SkaterNumber ? null : jam.JammerNumber,
-            PivotNumber = jam.PivotNumber == @event.Body.SkaterNumber ? null : jam.PivotNumber,
-            BlockerNumbers = jam.BlockerNumbers
+            JammerId = jam.JammerId == @event.Body.SkaterId ? null : jam.JammerId,
+            PivotId = jam.PivotId == @event.Body.SkaterId ? null : jam.PivotId,
+            BlockerIds = jam.BlockerIds
                 .Where(n => n != null)
-                .Except([@event.Body.SkaterNumber])
+                .Except([@event.Body.SkaterId])
                 .Pad(3, null)
                 .ToArray()
         });
@@ -140,20 +139,20 @@ public record LineupSheetJam(
     int Period,
     int Jam,
     bool HasStarPass,
-    string? JammerNumber,
-    string? PivotNumber,
-    string?[] BlockerNumbers)
+    Guid? JammerId,
+    Guid? PivotId,
+    Guid?[] BlockerIds)
 {
     public virtual bool Equals(LineupSheetJam? other) =>
         other != null
         && other.Period.Equals(Period)
         && other.Jam.Equals(Jam)
         && other.HasStarPass.Equals(HasStarPass)
-        && (other.JammerNumber?.Equals(JammerNumber) ?? JammerNumber == null)
-        && (other.PivotNumber?.Equals(PivotNumber) ?? PivotNumber == null)
-        && other.BlockerNumbers.SequenceEqual(BlockerNumbers);
+        && (other.JammerId?.Equals(JammerId) ?? JammerId == null)
+        && (other.PivotId?.Equals(PivotId) ?? PivotId == null)
+        && other.BlockerIds.SequenceEqual(BlockerIds);
 
-    public override int GetHashCode() => HashCode.Combine(Period, Jam, JammerNumber, PivotNumber, BlockerNumbers);
+    public override int GetHashCode() => HashCode.Combine(Period, Jam, JammerId, PivotId, BlockerIds);
 
-    public string[] SkaterNumbers => ((string?[])[JammerNumber, PivotNumber, ..BlockerNumbers]).Where(b => b != null).Cast<string>().ToArray();
+    public Guid[] SkaterIds => ((Guid?[])[JammerId, PivotId, .. BlockerIds]).Where(b => b != null).Cast<Guid>().ToArray();
 }

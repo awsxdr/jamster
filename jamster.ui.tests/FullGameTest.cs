@@ -130,7 +130,7 @@ public class FullGameTest : FullEngineTest
                     break;
 
                 case SkaterOnTrack { Body.Position: SkaterPosition.Jammer or SkaterPosition.Pivot } skaterOnTrack when jamNumber % 2 == 1:
-                    interactor.LineupSkater(skaterOnTrack.Body.TeamSide, skaterOnTrack.Body.Position, skaterOnTrack.Body.SkaterNumber);
+                    interactor.LineupSkater(skaterOnTrack.Body.TeamSide, skaterOnTrack.Body.Position, skaterOnTrack.Body.SkaterId);
                     break;
 
                 case ScoreModifiedRelative { Body.Value: >= 0 } scoreModifiedRelative:

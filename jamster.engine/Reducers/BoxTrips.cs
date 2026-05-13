@@ -1,6 +1,5 @@
 ﻿using jamster.engine.Domain;
 using jamster.engine.Events;
-using jamster.engine.Extensions;
 using jamster.engine.Services;
 
 // ReSharper disable WithExpressionModifiesAllMembers
@@ -28,25 +27,25 @@ public abstract class BoxTrips(TeamSide teamSide, ReducerGameContext context, IL
         var state = GetState();
         var gameStage = GetState<GameStageState>();
 
-        var alreadyRunning = state.BoxTrips.Any(t => t.DurationInJams == null && t.SkaterNumber == @event.Body.SkaterNumber);
+        var alreadyRunning = state.BoxTrips.Any(t => t.DurationInJams == null && t.SkaterId == @event.Body.SkaterId);
 
         if (alreadyRunning)
             return [];
 
         var jamLineup = GetKeyedState<JamLineupState>(@event.Body.TeamSide.ToString());
 
-        if (!jamLineup.Contains(@event.Body.SkaterNumber))
+        if (!jamLineup.Contains(@event.Body.SkaterId))
         {
-            logger.LogWarning("Attempt to add skater {skaterNumber} on {team} team to box when skater not on track", @event.Body.SkaterNumber, @event.Body.TeamSide);
+            logger.LogWarning("Attempt to add skater {SkaterId} on {team} team to box when skater not on track", @event.Body.SkaterId, @event.Body.TeamSide);
             return [];
         }
 
         var skaterPosition =
-            jamLineup.JammerNumber == @event.Body.SkaterNumber ? SkaterPosition.Jammer
-            : jamLineup.PivotNumber == @event.Body.SkaterNumber ? SkaterPosition.Pivot
+            jamLineup.JammerId == @event.Body.SkaterId ? SkaterPosition.Jammer
+            : jamLineup.PivotId == @event.Body.SkaterId ? SkaterPosition.Pivot
             : SkaterPosition.Blocker;
 
-        logger.LogDebug("Skater {skaterNumber} from {team} team sitting in box", @event.Body.SkaterNumber, teamSide);
+        logger.LogDebug("Skater {SkaterId} from {team} team sitting in box", @event.Body.SkaterId, teamSide);
 
         SetState(state with 
         { 
@@ -56,7 +55,7 @@ public abstract class BoxTrips(TeamSide teamSide, ReducerGameContext context, IL
                     gameStage.Stage == Stage.Jam ? gameStage.TotalJamNumber : gameStage.TotalJamNumber + 1,
                     state.HasStarPassInJam,
                     gameStage.Stage != Stage.Jam,
-                    @event.Body.SkaterNumber,
+                    @event.Body.SkaterId,
                     skaterPosition,
                     null,
                     false,
@@ -72,7 +71,7 @@ public abstract class BoxTrips(TeamSide teamSide, ReducerGameContext context, IL
 
     public IEnumerable<Event> Handle(SkaterReleasedFromBox @event) => @event.HandleIfTeam(teamSide, () =>
     {
-        logger.LogDebug("Skater {skaterNumber} from {team} team released from box", @event.Body.SkaterNumber, teamSide);
+        logger.LogDebug("Skater {SkaterId} from {team} team released from box", @event.Body.SkaterId, teamSide);
 
         var state = GetState();
         var gameStage = GetState<GameStageState>();
@@ -80,7 +79,7 @@ public abstract class BoxTrips(TeamSide teamSide, ReducerGameContext context, IL
         SetState(state with 
             {
                 BoxTrips = state.BoxTrips
-                    .Select(t => t.DurationInJams is null && t.SkaterNumber == @event.Body.SkaterNumber
+                    .Select(t => t.DurationInJams is null && t.SkaterId == @event.Body.SkaterId
                         ? t with
                         {
                             DurationInJams = gameStage.TotalJamNumber - t.TotalJamStart,
@@ -103,8 +102,8 @@ public abstract class BoxTrips(TeamSide teamSide, ReducerGameContext context, IL
         SetState(state with
         {
             BoxTrips = state.BoxTrips.Select(t => 
-                t.DurationInJams is null && (t.Substitutions.LastOrDefault()?.NewNumber ?? t.SkaterNumber) == @event.Body.OriginalSkaterNumber
-                    ? t with { Substitutions = t.Substitutions.Append(new(@event.Body.NewSkaterNumber, totalJamNumber)).ToArray() }
+                t.DurationInJams is null && (t.Substitutions.LastOrDefault()?.NewId ?? t.SkaterId) == @event.Body.OriginalSkaterId
+                    ? t with { Substitutions = t.Substitutions.Append(new(@event.Body.NewSkaterId, totalJamNumber)).ToArray() }
                     : t
                 ).ToArray(),
         });
@@ -202,7 +201,7 @@ public sealed record BoxTrip(
     int TotalJamStart,
     bool StartAfterStarPass,
     bool StartBetweenJams,
-    string SkaterNumber,
+    Guid SkaterId,
     SkaterPosition SkaterPosition,
     int? DurationInJams,
     bool EndAfterStarPass,
@@ -218,7 +217,7 @@ public sealed record BoxTrip(
         && other.Period.Equals(Period)
         && other.Jam.Equals(Jam)
         && other.TotalJamStart.Equals(TotalJamStart)
-        && other.SkaterNumber.Equals(SkaterNumber)
+        && other.SkaterId.Equals(SkaterId)
         && (other.DurationInJams?.Equals(DurationInJams) ?? DurationInJams is null)
         && other.Substitutions.SequenceEqual(Substitutions)
         && other.LastStartTick.Equals(LastStartTick)
@@ -231,7 +230,7 @@ public sealed record BoxTrip(
         hashCode.Add(Period);
         hashCode.Add(Jam);
         hashCode.Add(TotalJamStart);
-        hashCode.Add(SkaterNumber);
+        hashCode.Add(SkaterId);
         hashCode.Add(DurationInJams);
         hashCode.Add(Substitutions);
         hashCode.Add(LastStartTick);
@@ -241,4 +240,4 @@ public sealed record BoxTrip(
     }
 }
 
-public sealed record Substitution(string NewNumber, int TotalJamNumber);
+public sealed record Substitution(Guid NewId, int TotalJamNumber);

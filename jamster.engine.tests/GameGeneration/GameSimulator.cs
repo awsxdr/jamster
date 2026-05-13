@@ -86,6 +86,9 @@ public class GameSimulator(SimulatorGame game)
         return _events.ToArray();
     }
 
+    private Func<string?, Guid?> GetSkaterId(Func<Teams, GameTeam> teamSelector) => number =>
+        teamSelector(_gameState.Teams).Roster.SingleOrDefault(s => s.Number == number)?.Id;
+
     private Event GenerateValidationEvent() =>
         new ValidateStateFakeEvent(_tick, [
             new PeriodClockState(
@@ -132,32 +135,32 @@ public class GameSimulator(SimulatorGame game)
             ("Home", new PenaltyBoxState(
                 _gameState.Lineups.HomeTeamLineup.Skaters
                     .Where(s => s?.Penalty is { EntryTick: not null })
-                    .Select(s => s!.Number)
+                    .Select(s => s!.Id)
                     .ToArray(),
                 _gameState.Lineups.HomeTeamLineup.Skaters
                     .Where(s => s?.Penalty is { EntryTick: null })
-                    .Select(s => s!.Number)
+                    .Select(s => s!.Id)
                     .ToArray()
                 )),
             ("Away", new PenaltyBoxState(
                 _gameState.Lineups.AwayTeamLineup.Skaters
                     .Where(s => s?.Penalty is { EntryTick: not null })
-                    .Select(s => s!.Number)
+                    .Select(s => s!.Id)
                     .ToArray(),
                 _gameState.Lineups.AwayTeamLineup.Skaters
                     .Where(s => s?.Penalty is { EntryTick: null })
-                    .Select(s => s!.Number)
+                    .Select(s => s!.Id)
                     .ToArray()
             )),
             ("Home", new JamLineupState(
-                _gameState.Sheets.HomeSheets.LineupSheet[^1].JammerNumber,
-                _gameState.Sheets.HomeSheets.LineupSheet[^1].PivotNumber,
-                [.._gameState.Sheets.HomeSheets.LineupSheet[^1].BlockerNumbers]
+                GetSkaterId(t => t.HomeTeam)(_gameState.Sheets.HomeSheets.LineupSheet[^1].JammerNumber),
+                GetSkaterId(t => t.HomeTeam)(_gameState.Sheets.HomeSheets.LineupSheet[^1].PivotNumber),
+                _gameState.Sheets.HomeSheets.LineupSheet[^1].BlockerNumbers.Select(GetSkaterId(t => t.HomeTeam)).OrderBy(x => x).ToArray()
             )),
             ("Away", new JamLineupState(
-                _gameState.Sheets.AwaySheets.LineupSheet[^1].JammerNumber,
-                _gameState.Sheets.AwaySheets.LineupSheet[^1].PivotNumber,
-                [.._gameState.Sheets.AwaySheets.LineupSheet[^1].BlockerNumbers]
+                GetSkaterId(t => t.AwayTeam)(_gameState.Sheets.AwaySheets.LineupSheet[^1].JammerNumber),
+                GetSkaterId(t => t.AwayTeam)(_gameState.Sheets.AwaySheets.LineupSheet[^1].PivotNumber),
+                _gameState.Sheets.AwaySheets.LineupSheet[^1].BlockerNumbers.Select(GetSkaterId(t => t.AwayTeam)).OrderBy(x => x).ToArray()
             )),
             ("Home", new TeamScoreState(_gameState.Scores.HomeScore.GameTotal, _gameState.Scores.HomeScore.JamTotal)),
             ("Away", new TeamScoreState(_gameState.Scores.AwayScore.GameTotal, _gameState.Scores.AwayScore.JamTotal)),
@@ -180,7 +183,9 @@ public class GameSimulator(SimulatorGame game)
                 _gameState.Period + (_gameState.Stage == Stage.BeforeGame ? 1 : 0),
                 _gameState.Jam,
                 _gameState.TotalJam,
-                _gameState.PeriodFinalized),
+                _gameState.PeriodFinalized,
+                _gameState.NextJamShouldStart
+            ),
             new OvertimeState(_gameState.IsInOvertime),
         ]);
 
@@ -230,6 +235,8 @@ public class GameSimulator(SimulatorGame game)
 
         if (_gameState.Clocks.PeriodClock.PassedTicks >= Tick.FromSeconds(Rules.DefaultRules.PeriodRules.DurationInSeconds))
         {
+            _gameState.NextJamShouldStart = false;
+
             if (_gameState.Period == 1)
             {
                 LogDebug("Period expired, entering intermission");
@@ -398,7 +405,7 @@ public class GameSimulator(SimulatorGame game)
 
                 if (penaltyComplete)
                 {
-                    _events.Add(new SkaterReleasedFromBox(_tick, new(teamSide, skater.Number)));
+                    _events.Add(new SkaterReleasedFromBox(_tick, new(teamSide, skater.Id)));
                     skater.Penalty = null;
                     LogDebug($"Skater {skater.Number} on {teamSide} released from box");
                     return;
@@ -419,7 +426,7 @@ public class GameSimulator(SimulatorGame game)
                 return;
 
             LogDebug($"Skater {skater.Number} on {teamSide} sat in box");
-            _events.Add(new SkaterSatInBox(_tick, new(teamSide, skater.Number)));
+            _events.Add(new SkaterSatInBox(_tick, new(teamSide, skater.Id)));
             skater.Penalty.EntryTick = _tick;
         }
 
@@ -462,6 +469,7 @@ public class GameSimulator(SimulatorGame game)
                 StartClock(c => c.LineupClock, reset: true, align: true);
                 StopClock(c => c.LineupClock);
                 _gameState.Clocks.LineupClock.PassedTicks = 0;
+                _gameState.NextJamShouldStart = false;
 
                 if (_gameState.Period == 1)
                 {
@@ -480,6 +488,9 @@ public class GameSimulator(SimulatorGame game)
                 AddJam();
                 return;
             }
+
+            if (_gameState.Clocks.PeriodClock.PassedTicks >= Tick.FromSeconds(1770))
+                _gameState.NextJamShouldStart = false;
 
             LogDebug($"Jam {endReason}, starting lineup");
             _gameState.Stage = Stage.Lineup;
@@ -534,7 +545,7 @@ public class GameSimulator(SimulatorGame game)
             if (penaltySkaterIndex < 2)
             {
                 // No good way of validating skaters auto-added as blockers when they should be jammers or pivots. Just add them to the jam
-                _events.Add(new SkaterOnTrack(_tick, new(penaltySide, skater.Number, penaltySkaterIndex == 0 ? SkaterPosition.Jammer : SkaterPosition.Pivot)));
+                _events.Add(new SkaterOnTrack(_tick, new(penaltySide, skater.Id, penaltySkaterIndex == 0 ? SkaterPosition.Jammer : SkaterPosition.Pivot)));
                 if (penaltySkaterIndex == 0)
                     lineupJam.JammerNumber = skater.Number;
                 else
@@ -549,7 +560,7 @@ public class GameSimulator(SimulatorGame game)
 
         LogDebug($"Skater {skater.Number} on {penaltySide} team penalized");
 
-        _events.Add(new PenaltyAssessed(_tick, new(penaltySide, skater.Number, penaltyCodes.Random()!)));
+        _events.Add(new PenaltyAssessed(_tick, new(penaltySide, skater.Id, penaltyCodes.Random()!)));
         skater.Penalty = new();
     }
 
@@ -660,6 +671,7 @@ public class GameSimulator(SimulatorGame game)
                 return;
             }
 
+            _gameState.NextJamShouldStart = true;
             _gameState.Jam = 0;
             _gameState.Period++;
         }
@@ -736,7 +748,7 @@ public class GameSimulator(SimulatorGame game)
             LogDebug($"Lining up \"{skater}\" as {position switch { 0 => "jammer", 1 => "pivot", _ => "blocker" }} for {teamSide} team in jam {jams.Count}. Lineup: {jamLine.SkaterNumbers.Map(string.Join, ", ")}");
             _events.Add(new SkaterOnTrack(_tick, new(
                 teamSide,
-                skater,
+                GetSkaterId(t => teamSide == TeamSide.Home ? t.HomeTeam : t.AwayTeam)(skater) ?? throw new Exception("Skater not found"),
                 position switch
                 {
                     0 => SkaterPosition.Jammer,
@@ -778,8 +790,8 @@ public class GameSimulator(SimulatorGame game)
             if (lineup[i] is not null)
                 continue;
 
-            var skaterNumber = sortedRoster.Where(s => lineup.All(l => l?.Number != s.Number)).ToArray().RandomFavorStart()!.Number;
-            lineup[i] = new() { Number = skaterNumber };
+            var skaterToAdd = sortedRoster.Where(s => lineup.All(l => l?.Number != s.Number)).ToArray().RandomFavorStart()!;
+            lineup[i] = new() { Id = skaterToAdd.Id, Number = skaterToAdd.Number };
         }
 
         return new() { Skaters = lineup };
@@ -791,7 +803,7 @@ public class GameSimulator(SimulatorGame game)
     private static GameTeam ToGameTeam(Team team) => new(
         team.Names,
         team.Colors.Values.First(),
-        team.Roster.Select(s => new GameSkater(s.Number, s.Name, true)).ToList());
+        team.Roster.Select(s => new GameSkater(s.Id, s.Number, s.Name, true)).ToList());
 
     private void LogDebug(string message) =>
         Console.WriteLine($"{_tick}: {message}");
@@ -811,6 +823,7 @@ public class GameSimulator(SimulatorGame game)
         public TeamsSheets Sheets { get; set; } = new();
         public bool IsInOvertime { get; set; } = false;
         public bool PeriodFinalized { get; set; } = false;
+        public bool NextJamShouldStart { get; set; } = true;
     }
 
     private class TeamJamInfo
@@ -874,6 +887,7 @@ public class GameSimulator(SimulatorGame game)
 
     private class LineupSkater
     {
+        public Guid Id { get; set; } = Guid.NewGuid();
         public string Number { get; set; } = string.Empty;
         public Penalty? Penalty { get; set; } = null;
     }
@@ -1037,7 +1051,7 @@ public class GameSimulator(SimulatorGame game)
             if (penalizedSkater!.Penalty!.EntryTick == null)
             {
                 penalizedSkater.Penalty!.EntryTick = _tick;
-                _events.Add(new SkaterSatInBox(_tick, new(teamSide, penalizedSkater.Number)));
+                _events.Add(new SkaterSatInBox(_tick, new(teamSide, penalizedSkater.Id)));
             }
 
             var lastJam = lineupSheet[^2];

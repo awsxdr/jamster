@@ -1,5 +1,5 @@
 import { useRulesState } from "@/hooks";
-import { LineupPosition, Penalty, StringMap } from "@/types";
+import { GameSkater, LineupPosition, Penalty, StringMap } from "@/types";
 import { Bandage, OctagonX } from "lucide-react";
 import { RowMenu } from ".";
 import { Button } from "@/components/ui";
@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import { CSSProperties, Fragment } from "react";
 
 type SkaterNumberColumnProps = {
-    skaterNumbers: string[];
+    skaters: GameSkater[];
     skaterPositions: StringMap<LineupPosition>;
     skaterPenalties: StringMap<Penalty[]>;
     offTrackSkaters: string[];
@@ -17,7 +17,7 @@ type SkaterNumberColumnProps = {
     onInjuryRemoved?: (skaterNumber: string) => void;
 }
 
-export const SkaterNumberColumn = ({ skaterNumbers, skaterPositions, skaterPenalties, offTrackSkaters, injuredSkaters, compact, onInjuryAdded, onInjuryRemoved }: SkaterNumberColumnProps) => {
+export const SkaterNumberColumn = ({ skaters, skaterPositions, skaterPenalties, offTrackSkaters, injuredSkaters, compact, onInjuryAdded, onInjuryRemoved }: SkaterNumberColumnProps) => {
 
     const { rules } = useRulesState() ?? { };
 
@@ -27,25 +27,25 @@ export const SkaterNumberColumn = ({ skaterNumbers, skaterPositions, skaterPenal
 
     return (
         <>
-            { skaterNumbers.map((skaterNumber, row) => {
-                const position = skaterPositions[skaterNumber];
-                const penalties = skaterPenalties[skaterNumber];
-                const injured = injuredSkaters.includes(skaterNumber);
+            { skaters.map(({ id, number }, row) => {
+                const position = skaterPositions[id];
+                const penalties = skaterPenalties[id];
+                const injured = injuredSkaters.includes(id);
 
                 if (!penalties) {
-                    return (<Fragment key={skaterNumber}></Fragment>);
+                    return (<Fragment key={id}></Fragment>);
                 }
 
                 const content = (
                     <>
-                        { offTrackSkaters.includes(skaterNumber) && <OctagonX className="text-red-600 dark:text-red-400" /> }
+                        { offTrackSkaters.includes(id) && <OctagonX className="text-red-600 dark:text-red-400" /> }
                         { injured && <Bandage className="text-yellow-600 dark:text-yellow-300" /> }
-                        <span>{skaterNumber}</span>
+                        <span>{number}</span>
                     </>);
 
                 return (
                     <div 
-                        key={skaterNumber} 
+                        key={id} 
                         className={cn(
                             "col-start-2 row-start-[--row]",
                             "border-l-2 border-b border-r border-black",
@@ -58,9 +58,9 @@ export const SkaterNumberColumn = ({ skaterNumbers, skaterPositions, skaterPenal
                     >
                         <RowMenu 
                             disableNotes={position === LineupPosition.Bench} 
-                            injuryActive={injuredSkaters.includes(skaterNumber)}
-                            onInjuryAdded={() => onInjuryAdded?.(skaterNumber)}
-                            onInjuryRemoved={() => onInjuryRemoved?.(skaterNumber)}
+                            injuryActive={injuredSkaters.includes(id)}
+                            onInjuryAdded={() => onInjuryAdded?.(id)}
+                            onInjuryRemoved={() => onInjuryRemoved?.(id)}
                         >
                             <Button variant="ghost" className={cn("w-full h-full text-sm sm:text-base md:text-lg p-0 font-normal flex-col justify-center items-center gap-0", !compact && "lg:hidden")}>
                                 {content}

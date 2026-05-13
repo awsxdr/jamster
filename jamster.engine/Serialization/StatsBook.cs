@@ -84,7 +84,7 @@ public sealed record PenaltySheetCollection(
     PenaltySheet Period1,
     PenaltySheet Period2);
 public sealed record PenaltySheet(string PenaltyTracker, PenaltySheetLine[] HomePenalties, PenaltySheetLine[] AwayPenalties);
-public sealed record PenaltySheetLine(int Offset, string SkaterNumber, Penalty[] Penalties, Penalty? Expulsion);
+public sealed record PenaltySheetLine(int Offset, Guid SkaterId, Penalty[] Penalties, Penalty? Expulsion);
 public sealed record Penalty(int JamNumber, string Code);
 
 public sealed record LineupSheetCollection(

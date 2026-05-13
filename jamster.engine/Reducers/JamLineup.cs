@@ -1,6 +1,5 @@
 ﻿using jamster.engine.Domain;
 using jamster.engine.Events;
-using jamster.engine.Extensions;
 using jamster.engine.Services;
 
 namespace jamster.engine.Reducers;
@@ -30,7 +29,7 @@ public abstract class JamLineup(TeamSide teamSide, ReducerGameContext context, I
     {
         var gameStage = GetState<GameStageState>();
 
-        return [new SkaterAddedToJam(@event.Tick, new(teamSide, gameStage.PeriodNumber, gameStage.JamNumber + (gameStage.Stage == Stage.Jam ? 0 : 1), @event.Body.SkaterNumber, @event.Body.Position))];
+        return [new SkaterAddedToJam(@event.Tick, new(teamSide, gameStage.PeriodNumber, gameStage.JamNumber + (gameStage.Stage == Stage.Jam ? 0 : 1), @event.Body.SkaterId, @event.Body.Position))];
     });
 
     public IEnumerable<Event> Handle(SkaterAddedToJam @event) => @event.HandleIfTeam(teamSide, () =>
@@ -46,33 +45,35 @@ public abstract class JamLineup(TeamSide teamSide, ReducerGameContext context, I
             return [];
         }
 
-        logger.LogDebug("Setting {position} for {team} team to {skaterId}", @event.Body.Position, teamSide, @event.Body.SkaterNumber);
+        logger.LogDebug("Setting {position} for {team} team to {skaterId}", @event.Body.Position, teamSide, @event.Body.SkaterId);
 
         var state = GetState();
 
         var stateWithSkaterRemoved = new JamLineupState(
-            state.JammerNumber == @event.Body.SkaterNumber ? null : state.JammerNumber,
-            state.PivotNumber == @event.Body.SkaterNumber ? null : state.PivotNumber,
-            state.BlockerNumbers.Except([@event.Body.SkaterNumber]).Pad(3, null).ToArray());
+            state.JammerId == @event.Body.SkaterId ? null : state.JammerId,
+            state.PivotId == @event.Body.SkaterId ? null : state.PivotId,
+            state.BlockerIds.Except([@event.Body.SkaterId]).Pad(3, null).ToArray());
 
         SetState(@event.Body.Position switch
         {
-            SkaterPosition.Jammer => stateWithSkaterRemoved with { JammerNumber = @event.Body.SkaterNumber },
+            SkaterPosition.Jammer => stateWithSkaterRemoved with { JammerId = @event.Body.SkaterId },
             SkaterPosition.Pivot => stateWithSkaterRemoved with
             {
-                PivotNumber = @event.Body.SkaterNumber,
-                BlockerNumbers = stateWithSkaterRemoved.BlockerNumbers
+                PivotId = @event.Body.SkaterId,
+                BlockerIds = stateWithSkaterRemoved.BlockerIds
                     .Where(s => s != null)
-                    .TakeLast(stateWithSkaterRemoved.PivotNumber is not null || @event.Body.Position == SkaterPosition.Pivot ? 3 : 4)
+                    .TakeLast(stateWithSkaterRemoved.PivotId is not null || @event.Body.Position == SkaterPosition.Pivot ? 3 : 4)
+                    .OrderBy(x => x)
                     .Pad(3, null)
                     .ToArray(),
             },
             SkaterPosition.Blocker => stateWithSkaterRemoved with
             {
-                BlockerNumbers = stateWithSkaterRemoved.BlockerNumbers
+                BlockerIds = stateWithSkaterRemoved.BlockerIds
                     .Where(s => s != null)
-                    .Append(@event.Body.SkaterNumber)
-                    .TakeLast(stateWithSkaterRemoved.PivotNumber is not null || @event.Body.Position == SkaterPosition.Pivot ? 3 : 4)
+                    .Append(@event.Body.SkaterId)
+                    .TakeLast(stateWithSkaterRemoved.PivotId is not null || @event.Body.Position == SkaterPosition.Pivot ? 3 : 4)
+                    .OrderBy(x => x)
                     .Pad(3, null)
                     .ToArray()
             },
@@ -86,7 +87,7 @@ public abstract class JamLineup(TeamSide teamSide, ReducerGameContext context, I
     {
         var gameStage = GetState<GameStageState>();
 
-        return [new SkaterRemovedFromJam(@event.Tick, new(teamSide, gameStage.PeriodNumber, gameStage.JamNumber + (gameStage.Stage == Stage.Jam ? 0 : 1), @event.Body.SkaterNumber))];
+        return [new SkaterRemovedFromJam(@event.Tick, new(teamSide, gameStage.PeriodNumber, gameStage.JamNumber + (gameStage.Stage == Stage.Jam ? 0 : 1), @event.Body.SkaterId))];
     });
 
     public IEnumerable<Event> Handle(SkaterRemovedFromJam @event) => @event.HandleIfTeam(teamSide, () =>
@@ -102,14 +103,14 @@ public abstract class JamLineup(TeamSide teamSide, ReducerGameContext context, I
             return [];
         }
 
-        logger.LogDebug("Removing skater {skaterNumber} from track for {team} team", @event.Body.SkaterNumber, teamSide);
+        logger.LogDebug("Removing skater {SkaterId} from track for {team} team", @event.Body.SkaterId, teamSide);
 
         var state = GetState();
 
         SetState(new(
-            state.JammerNumber == @event.Body.SkaterNumber ? null : state.JammerNumber,
-            state.PivotNumber == @event.Body.SkaterNumber ? null : state.PivotNumber,
-            state.BlockerNumbers.Except([@event.Body.SkaterNumber]).Pad(3, null).ToArray()
+            state.JammerId == @event.Body.SkaterId ? null : state.JammerId,
+            state.PivotId == @event.Body.SkaterId ? null : state.PivotId,
+            state.BlockerIds.Except([@event.Body.SkaterId]).Pad(3, null).ToArray()
         ));
 
         return [];
@@ -127,8 +128,8 @@ public abstract class JamLineup(TeamSide teamSide, ReducerGameContext context, I
         return penaltyBox.QueuedSkaters.Concat(penaltyBox.Skaters).Select(s => new SkaterOnTrack(@event.Tick, new(
             teamSide, 
             s,
-            state.JammerNumber == s ? SkaterPosition.Jammer
-                : state.PivotNumber == s ? SkaterPosition.Pivot
+            state.JammerId == s ? SkaterPosition.Jammer
+                : state.PivotId == s ? SkaterPosition.Pivot
                 : SkaterPosition.Blocker)))
             .ToArray();
     }
@@ -138,20 +139,20 @@ public abstract class JamLineup(TeamSide teamSide, ReducerGameContext context, I
         var state = GetState();
 
         var position =
-            state.JammerNumber == @event.Body.OriginalSkaterNumber ? SkaterPosition.Jammer
-            : state.PivotNumber == @event.Body.OriginalSkaterNumber ? SkaterPosition.Pivot
-            : state.BlockerNumbers.Contains(@event.Body.OriginalSkaterNumber) ? SkaterPosition.Blocker
+            state.JammerId == @event.Body.OriginalSkaterId ? SkaterPosition.Jammer
+            : state.PivotId == @event.Body.OriginalSkaterId ? SkaterPosition.Pivot
+            : state.BlockerIds.Contains(@event.Body.OriginalSkaterId) ? SkaterPosition.Blocker
             : (SkaterPosition?)null;
 
         if (position is null)
             return [];
 
-        logger.LogDebug("Skater {oldNumber} substituted in box by {newNumber}", @event.Body.OriginalSkaterNumber, @event.Body.NewSkaterNumber);
+        logger.LogDebug("Skater {oldNumber} substituted in box by {newNumber}", @event.Body.OriginalSkaterId, @event.Body.NewSkaterId);
 
         return
         [
-            new SkaterOffTrack(@event.Tick, new(teamSide, @event.Body.OriginalSkaterNumber)),
-            new SkaterOnTrack(@event.Tick, new(teamSide, @event.Body.NewSkaterNumber, (SkaterPosition)position)),
+            new SkaterOffTrack(@event.Tick, new(teamSide, @event.Body.OriginalSkaterId)),
+            new SkaterOnTrack(@event.Tick, new(teamSide, @event.Body.NewSkaterId, (SkaterPosition)position)),
         ];
     });
 
@@ -159,17 +160,17 @@ public abstract class JamLineup(TeamSide teamSide, ReducerGameContext context, I
     {
         var state = GetState();
 
-        if (!state.SkaterNumbers.Contains(@event.Body.SkaterNumber))
+        if (!state.SkaterIds.Contains(@event.Body.SkaterId))
         {
-            logger.LogDebug("Penalty assessed when skater {number} on {team} team not in current lineup. Adding to lineup.", @event.Body.SkaterNumber, teamSide);
-            return [new PreviousJamSkaterOnTrack(@event.Tick, new(teamSide, @event.Body.SkaterNumber))];
+            logger.LogDebug("Penalty assessed when skater {number} on {team} team not in current lineup. Adding to lineup.", @event.Body.SkaterId, teamSide);
+            return [new PreviousJamSkaterOnTrack(@event.Tick, new(teamSide, @event.Body.SkaterId))];
         }
 
         var overtime = GetState<OvertimeState>();
         if (overtime.IsInOvertime)
             return [];
 
-        if (@event.Body.SkaterNumber != state.JammerNumber)
+        if (@event.Body.SkaterId != state.JammerId)
             return [];
 
         var opponentStats = GetKeyedState<TeamJamStatsState>(teamSide == TeamSide.Home ? nameof(TeamSide.Away) : nameof(TeamSide.Home));
@@ -185,17 +186,17 @@ public abstract class JamLineup(TeamSide teamSide, ReducerGameContext context, I
     {
         var state = GetState();
 
-        if (!state.SkaterNumbers.Contains(@event.Body.SkaterNumber))
+        if (!state.SkaterIds.Contains(@event.Body.SkaterId))
         {
-            logger.LogDebug("Box entry when skater {number} on {team} team not in current lineup. Adding to lineup.", @event.Body.SkaterNumber, teamSide);
-            return [new PreviousJamSkaterOnTrack(@event.Tick, new(teamSide, @event.Body.SkaterNumber))];
+            logger.LogDebug("Box entry when skater {number} on {team} team not in current lineup. Adding to lineup.", @event.Body.SkaterId, teamSide);
+            return [new PreviousJamSkaterOnTrack(@event.Tick, new(teamSide, @event.Body.SkaterId))];
         }
 
         var overtime = GetState<OvertimeState>();
         if (overtime.IsInOvertime)
             return [];
 
-        if (@event.Body.SkaterNumber != state.JammerNumber)
+        if (@event.Body.SkaterId != state.JammerId)
             return [];
 
         var opponentStats = GetKeyedState<TeamJamStatsState>(teamSide == TeamSide.Home ? nameof(TeamSide.Away) : nameof(TeamSide.Home));
@@ -208,23 +209,23 @@ public abstract class JamLineup(TeamSide teamSide, ReducerGameContext context, I
     });
 }
 
-public sealed record JamLineupState(string? JammerNumber, string? PivotNumber, string?[] BlockerNumbers)
+public sealed record JamLineupState(Guid? JammerId, Guid? PivotId, Guid?[] BlockerIds)
 {
-    public bool Contains(string number) =>
-        JammerNumber == number
-        || PivotNumber == number
-        || BlockerNumbers.Contains(number);
+    public bool Contains(Guid id) =>
+        JammerId == id
+        || PivotId == id
+        || BlockerIds.Contains(id);
 
-    public string?[] SkaterNumbers => [JammerNumber, PivotNumber, ..BlockerNumbers];
+    public Guid?[] SkaterIds => [JammerId, PivotId, .. BlockerIds];
 
     public bool Equals(JamLineupState? other) =>
         other is not null
-        && (other.JammerNumber?.Equals(JammerNumber) ?? JammerNumber is null)
-        && (other.PivotNumber?.Equals(PivotNumber) ?? PivotNumber is null)
-        && other.BlockerNumbers.OrderBy(n => n).SequenceEqual(BlockerNumbers.OrderBy(n => n));
+        && (other.JammerId?.Equals(JammerId) ?? JammerId is null)
+        && (other.PivotId?.Equals(PivotId) ?? PivotId is null)
+        && other.BlockerIds.OrderBy(n => n).SequenceEqual(BlockerIds.OrderBy(n => n));
 
     public override int GetHashCode() => 
-        HashCode.Combine(JammerNumber, PivotNumber, BlockerNumbers);
+        HashCode.Combine(JammerId, PivotId, BlockerIds);
 }
 
 public sealed class HomeTeamJamLineup(ReducerGameContext context, ILogger<HomeTeamJamLineup> logger) : JamLineup(TeamSide.Home, context, logger);

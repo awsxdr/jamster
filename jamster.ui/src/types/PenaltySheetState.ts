@@ -3,6 +3,7 @@ export type PenaltySheetState = {
 }
 
 export type PenaltySheetLine = {
+    skaterId: string;
     skaterNumber: string;
     expulsionPenalty: Penalty | null,
     penalties: Penalty[];

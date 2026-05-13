@@ -41,7 +41,7 @@ export const BoxTripItem = ({ trip, teamSide }: BoxTripItemProps) => {
                     </SelectContent>
                 </Select> */}
                 <div>
-                    #{trip.skaterNumber}
+                    #{trip.skaterId}
                 </div>
                 <Clock 
                     state={trip}

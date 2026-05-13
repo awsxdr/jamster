@@ -70,7 +70,7 @@ public class GameSummary(ReducerGameContext context)
     {
         var state = GetState();
         var penaltySheet = GetKeyedState<PenaltySheetState>(@event.Body.TeamSide.ToString());
-        var skaterPenalties = penaltySheet.Lines.SingleOrDefault(l => l.SkaterNumber == @event.Body.SkaterNumber)?.Penalties;
+        var skaterPenalties = penaltySheet.Lines.SingleOrDefault(l => l.SkaterId == @event.Body.SkaterId)?.Penalties;
 
         if (skaterPenalties == null)
             return [];
@@ -92,7 +92,7 @@ public class GameSummary(ReducerGameContext context)
     {
         var state = GetState();
         var penaltySheet = GetKeyedState<PenaltySheetState>(@event.Body.TeamSide.ToString());
-        var skaterPenalties = penaltySheet.Lines.SingleOrDefault(l => l.SkaterNumber == @event.Body.SkaterNumber)?.Penalties;
+        var skaterPenalties = penaltySheet.Lines.SingleOrDefault(l => l.SkaterId == @event.Body.SkaterId)?.Penalties;
 
         if (skaterPenalties == null)
             return [];
@@ -114,7 +114,7 @@ public class GameSummary(ReducerGameContext context)
     {
         var state = GetState();
         var penaltySheet = GetKeyedState<PenaltySheetState>(@event.Body.TeamSide.ToString());
-        var skaterPenalties = penaltySheet.Lines.SingleOrDefault(l => l.SkaterNumber == @event.Body.SkaterNumber)?.Penalties;
+        var skaterPenalties = penaltySheet.Lines.SingleOrDefault(l => l.SkaterId == @event.Body.SkaterId)?.Penalties;
 
         if (skaterPenalties == null)
             return [];

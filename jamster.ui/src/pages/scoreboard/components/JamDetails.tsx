@@ -17,8 +17,8 @@ export const JamDetails = ({ gameStage, visible }: JamDetailsProps) => {
 
     const { translate } = useI18n();
 
-    const { jammerNumber: homeJammerNumber, pivotNumber: homePivotNumber } = useJamLineupState(TeamSide.Home) ?? {};
-    const { jammerNumber: awayJammerNumber, pivotNumber: awayPivotNumber } = useJamLineupState(TeamSide.Away) ?? {};
+    const { jammerId: homeJammerId, pivotId: homePivotId } = useJamLineupState(TeamSide.Home) ?? {};
+    const { jammerId: awayJammerId, pivotId: awayPivotId } = useJamLineupState(TeamSide.Away) ?? {};
 
     const { team: homeTeam } = useTeamDetailsState(TeamSide.Home) ?? {};
     const { team: awayTeam } = useTeamDetailsState(TeamSide.Away) ?? {};
@@ -31,19 +31,20 @@ export const JamDetails = ({ gameStage, visible }: JamDetailsProps) => {
 
     const { isInOvertime } = useOvertimeState() ?? { isInOvertime: false };
 
-    const getJammerText = (jammerNumber: string | undefined, pivotNumber: string | undefined, starPass: boolean, roster?: GameSkater[]) => {
-        const skaterNumber = starPass ? pivotNumber : jammerNumber;
+    const getJammerText = (jammerId: string | undefined, pivotId: string | undefined, starPass: boolean, roster?: GameSkater[]) => {
+        const skaterId = starPass ? pivotId : jammerId;
+        const skater = roster?.find(s => s.id === skaterId);
 
-        return roster?.find(s => s.number === skaterNumber)?.name || skaterNumber?.toString() || "";
+        return skater?.name || skater?.number || "";
     }
 
     const homeJammerText = useMemo(
-        () => getJammerText(homeJammerNumber, homePivotNumber, homeTeamStarPass, homeTeam?.roster),
-        [homeTeam, homeJammerNumber, homePivotNumber, homeTeamStarPass]);
+        () => getJammerText(homeJammerId, homePivotId, homeTeamStarPass, homeTeam?.roster),
+        [homeTeam, homeJammerId, homePivotId, homeTeamStarPass]);
 
     const awayJammerText = useMemo(
-        () => getJammerText(awayJammerNumber, awayPivotNumber, awayTeamStarPass, awayTeam?.roster),
-        [awayTeam, awayJammerNumber, awayPivotNumber, awayTeamStarPass]);
+        () => getJammerText(awayJammerId, awayPivotId, awayTeamStarPass, awayTeam?.roster),
+        [awayTeam, awayJammerId, awayPivotId, awayTeamStarPass]);
 
     const homeIsLead = useMemo(() => homeStats?.lead && !homeStats?.lost, [homeStats]);
     const awayIsLead = useMemo(() => awayStats?.lead && !awayStats?.lost, [awayStats]);

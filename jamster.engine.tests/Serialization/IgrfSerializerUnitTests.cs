@@ -46,7 +46,7 @@ public class IgrfSerializerUnitTests : UnitTest<IgrfSerializer>
         GameTeam ToGameTeam(Team team) => new(
             team.Names,
             team.Colors.Values.First(),
-            team.Roster.Select(s => new GameSkater(s.Number, s.Name, true)).ToList());
+            team.Roster.Select(s => new GameSkater(s.Id, s.Number, s.Name, true)).ToList());
     }
 
     [Test]

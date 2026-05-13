@@ -58,7 +58,7 @@ public class GameDeserializer(IGameDiscoveryService gameDiscoveryService, IEvent
                     ["color"] = team.ColorName,
                 },
                 ParseColor(team.ColorName),
-                team.Skaters.Select(skater => new GameSkater(skater.Number, skater.Name, skater.IsSkating)).ToList()
+                team.Skaters.Select(skater => new GameSkater(Guid.NewGuid(), skater.Number, skater.Name, skater.IsSkating)).ToList()
             );
 
         TeamColor ParseColor(string colorName)

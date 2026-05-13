@@ -12,24 +12,28 @@ public class BoxTripsUnitTests : ReducerUnitTest<HomeBoxTrips, BoxTripsState>
     [Test]
     public async Task SkaterSatInBox_WhenNotAlreadyInBox_AddsBoxTrip([Values] bool afterStarPass)
     {
-        State = new([], afterStarPass);
-        MockState<GameStageState>(new(Stage.Jam, 2, 6, 20, false));
-        MockKeyedState<JamLineupState>(nameof(TeamSide.Home), new("123", "321", ["1", "2", "3"]));
+        var skaterId = Guid.NewGuid();
 
-        await Subject.Handle(new SkaterSatInBox(1234, new(TeamSide.Home, "123")));
+        State = new([], afterStarPass);
+        MockState<GameStageState>(new(Stage.Jam, 2, 6, 20, false, false));
+        MockKeyedState<JamLineupState>(nameof(TeamSide.Home), new(skaterId, Guid.NewGuid(), [Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid()]));
+
+        await Subject.Handle(new SkaterSatInBox(1234, new(TeamSide.Home, skaterId)));
 
         State.BoxTrips.Should().ContainSingle()
-            .Which.Should().Be(new BoxTrip(2, 6, 20, afterStarPass, false, "123", SkaterPosition.Jammer, null, false, [], 1234, 0, 0));
+            .Which.Should().Be(new BoxTrip(2, 6, 20, afterStarPass, false, skaterId, SkaterPosition.Jammer, null, false, [], 1234, 0, 0));
     }
 
     [Test]
     public async Task SkaterSatInBox_WhenPreviouslyReleasedFromBox_AddsBoxTrip()
     {
-        State = new([new(2, 5, 19, false, false, "123", SkaterPosition.Blocker, 0, false, [], 0, 0, 30000)], false);
-        MockState<GameStageState>(new(Stage.Jam, 20, 2, 6, false));
-        MockKeyedState<JamLineupState>(nameof(TeamSide.Home), new("123", "321", ["1", "2", "3"]));
+        var skaterId = Guid.NewGuid();
 
-        await Subject.Handle(new SkaterSatInBox(60000, new(TeamSide.Home, "123")));
+        State = new([new(2, 5, 19, false, false, skaterId, SkaterPosition.Blocker, 0, false, [], 0, 0, 30000)], false);
+        MockState<GameStageState>(new(Stage.Jam, 20, 2, 6, false, false));
+        MockKeyedState<JamLineupState>(nameof(TeamSide.Home), new(skaterId, Guid.NewGuid(), [Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid()]));
+
+        await Subject.Handle(new SkaterSatInBox(60000, new(TeamSide.Home, skaterId)));
 
         State.BoxTrips.Should().HaveCount(2);
     }
@@ -37,12 +41,14 @@ public class BoxTripsUnitTests : ReducerUnitTest<HomeBoxTrips, BoxTripsState>
     [Test]
     public async Task SkaterSatInBox_WhenAlreadyInBox_DoesNotChangeState()
     {
-        State = new([new(2, 6, 20, false, false, "123", SkaterPosition.Jammer, null, false, [], 0, 0, 0)], false);
-        var originalState = State;
-        MockState<GameStageState>(new(Stage.Jam, 2, 6, 20, false));
-        MockKeyedState<JamLineupState>(nameof(TeamSide.Home), new("123", "321", ["1", "2", "3"]));
+        var skaterId = Guid.NewGuid();
 
-        await Subject.Handle(new SkaterSatInBox(1000, new(TeamSide.Home, "123")));
+        State = new([new(2, 6, 20, false, false, skaterId, SkaterPosition.Jammer, null, false, [], 0, 0, 0)], false);
+        var originalState = State;
+        MockState<GameStageState>(new(Stage.Jam, 2, 6, 20, false, false));
+        MockKeyedState<JamLineupState>(nameof(TeamSide.Home), new(skaterId, Guid.NewGuid(), [Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid()]));
+
+        await Subject.Handle(new SkaterSatInBox(1000, new(TeamSide.Home, skaterId)));
 
         State.Should().Be(originalState);
     }
@@ -50,12 +56,15 @@ public class BoxTripsUnitTests : ReducerUnitTest<HomeBoxTrips, BoxTripsState>
     [Test]
     public async Task SkaterSatInBox_WhenAnotherSkaterInBox_DoesNotImpactExistingSkater()
     {
-        State = new([new(2, 6, 20, false, false, "321", SkaterPosition.Pivot, null, false, [], 0, 0, 0)], false);
-        var originalState = State;
-        MockState<GameStageState>(new(Stage.Jam, 2, 6, 20, false));
-        MockKeyedState<JamLineupState>(nameof(TeamSide.Home), new("123", "321", ["1", "2", "3"]));
+        var skaterId = Guid.NewGuid();
+        var otherSkaterId = Guid.NewGuid();
 
-        await Subject.Handle(new SkaterSatInBox(1000, new(TeamSide.Home, "123")));
+        State = new([new(2, 6, 20, false, false, otherSkaterId, SkaterPosition.Pivot, null, false, [], 0, 0, 0)], false);
+        var originalState = State;
+        MockState<GameStageState>(new(Stage.Jam, 2, 6, 20, false, false));
+        MockKeyedState<JamLineupState>(nameof(TeamSide.Home), new(skaterId, otherSkaterId, [Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid()]));
+
+        await Subject.Handle(new SkaterSatInBox(1000, new(TeamSide.Home, skaterId)));
 
         State.BoxTrips[0].Should().Be(originalState.BoxTrips[0]);
         State.BoxTrips.Should().HaveCount(2);
@@ -64,12 +73,15 @@ public class BoxTripsUnitTests : ReducerUnitTest<HomeBoxTrips, BoxTripsState>
     [Test]
     public async Task SkaterSatInBox_WhenTeamDoesNotMatch_DoesNotChangeState()
     {
-        State = new([new(2, 6, 20, false, false, "321", SkaterPosition.Pivot, null, false, [], 0, 0, 0)], false);
-        var originalState = State;
-        MockState<GameStageState>(new(Stage.Jam, 2, 6, 20, false));
-        MockKeyedState<JamLineupState>(nameof(TeamSide.Home), new("123", "321", ["1", "2", "3"]));
+        var skaterId = Guid.NewGuid();
+        var otherSkaterId = Guid.NewGuid();
 
-        await Subject.Handle(new SkaterSatInBox(1000, new(TeamSide.Away, "123")));
+        State = new([new(2, 6, 20, false, false, otherSkaterId, SkaterPosition.Pivot, null, false, [], 0, 0, 0)], false);
+        var originalState = State;
+        MockState<GameStageState>(new(Stage.Jam, 2, 6, 20, false, false));
+        MockKeyedState<JamLineupState>(nameof(TeamSide.Home), new(skaterId, otherSkaterId, [Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid()]));
+
+        await Subject.Handle(new SkaterSatInBox(1000, new(TeamSide.Away, skaterId)));
 
         State.Should().Be(originalState);
     }
@@ -77,37 +89,65 @@ public class BoxTripsUnitTests : ReducerUnitTest<HomeBoxTrips, BoxTripsState>
     [Test]
     public async Task SkaterSatInBox_WhenNotInJam_MarksSatBetweenJams([Values(Stage.BeforeGame, Stage.Lineup, Stage.Timeout, Stage.AfterTimeout, Stage.Intermission, Stage.AfterGame)] Stage stage)
     {
-        State = new([], false);
-        MockState<GameStageState>(new(stage, 1, 1, 1, false));
-        MockKeyedState<JamLineupState>(nameof(TeamSide.Home), new("123", "321", ["1", "2", "3"]));
+        var skaterId = Guid.NewGuid();
 
-        await Subject.Handle(new SkaterSatInBox(0, new(TeamSide.Home, "1")));
+        State = new([], false);
+        MockState<GameStageState>(new(stage, 1, 1, 1, false, false));
+        MockKeyedState<JamLineupState>(nameof(TeamSide.Home), new(Guid.NewGuid(), Guid.NewGuid(), [skaterId, Guid.NewGuid(), Guid.NewGuid()]));
+
+        await Subject.Handle(new SkaterSatInBox(0, new(TeamSide.Home, skaterId)));
 
         State.BoxTrips[0].StartBetweenJams.Should().BeTrue();
     }
 
-    [TestCase("123", SkaterPosition.Jammer)]
-    [TestCase("321", SkaterPosition.Pivot)]
-    [TestCase("1", SkaterPosition.Blocker)]
-    public async Task SkaterSatInBox_CorrectlyRecordsSkaterPosition(string skaterNumber, SkaterPosition expectedPosition)
+    [Test]
+    public async Task SkaterSatInBox_WhenSkaterIsJammer_RecordsJammerPosition()
     {
-        MockKeyedState<JamLineupState>(nameof(TeamSide.Home), new("123", "321", ["1", "2", "3"]));
-        MockState<GameStageState>(new(Stage.Jam, 1, 1, 1, false));
+        var jammer = Guid.NewGuid();
+        MockKeyedState<JamLineupState>(nameof(TeamSide.Home), new(jammer, Guid.NewGuid(), [Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid()]));
+        MockState<GameStageState>(new(Stage.Jam, 1, 1, 1, false, false));
 
-        await Subject.Handle(new SkaterSatInBox(0, new(TeamSide.Home, skaterNumber)));
+        await Subject.Handle(new SkaterSatInBox(0, new(TeamSide.Home, jammer)));
 
-        State.BoxTrips.Single().SkaterPosition.Should().Be(expectedPosition);
+        State.BoxTrips.Single().SkaterPosition.Should().Be(SkaterPosition.Jammer);
+    }
+
+    [Test]
+    public async Task SkaterSatInBox_WhenSkaterIsPivot_RecordsPivotPosition()
+    {
+        var pivot = Guid.NewGuid();
+        MockKeyedState<JamLineupState>(nameof(TeamSide.Home), new(Guid.NewGuid(), pivot, [Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid()]));
+        MockState<GameStageState>(new(Stage.Jam, 1, 1, 1, false, false));
+
+        await Subject.Handle(new SkaterSatInBox(0, new(TeamSide.Home, pivot)));
+
+        State.BoxTrips.Single().SkaterPosition.Should().Be(SkaterPosition.Pivot);
+    }
+
+    [Test]
+    public async Task SkaterSatInBox_WhenSkaterIsBlocker_RecordsBlockerPosition()
+    {
+        var blocker = Guid.NewGuid();
+        MockKeyedState<JamLineupState>(nameof(TeamSide.Home), new(Guid.NewGuid(), Guid.NewGuid(), [blocker, Guid.NewGuid(), Guid.NewGuid()]));
+        MockState<GameStageState>(new(Stage.Jam, 1, 1, 1, false, false));
+
+        await Subject.Handle(new SkaterSatInBox(0, new(TeamSide.Home, blocker)));
+
+        State.BoxTrips.Single().SkaterPosition.Should().Be(SkaterPosition.Blocker);
     }
 
     [Test]
     public async Task SkaterSatInBox_WhenSkaterNotOnTrack_DoesNotChangeState()
     {
-        State = new([new(2, 6, 20, false, false, "321", SkaterPosition.Pivot, null, false, [], 0, 0, 0)], false);
-        var originalState = State;
-        MockState<GameStageState>(new(Stage.Jam, 2, 6, 20, false));
-        MockKeyedState<JamLineupState>(nameof(TeamSide.Home), new("123", "321", ["1", "2", "3"]));
+        var inBoxId = Guid.NewGuid();
+        var notOnTrackId = Guid.NewGuid();
 
-        await Subject.Handle(new SkaterSatInBox(1000, new(TeamSide.Home, "4")));
+        State = new([new(2, 6, 20, false, false, inBoxId, SkaterPosition.Pivot, null, false, [], 0, 0, 0)], false);
+        var originalState = State;
+        MockState<GameStageState>(new(Stage.Jam, 2, 6, 20, false, false));
+        MockKeyedState<JamLineupState>(nameof(TeamSide.Home), new(Guid.NewGuid(), inBoxId, [Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid()]));
+
+        await Subject.Handle(new SkaterSatInBox(1000, new(TeamSide.Home, notOnTrackId)));
 
         State.Should().Be(originalState);
     }
@@ -115,24 +155,26 @@ public class BoxTripsUnitTests : ReducerUnitTest<HomeBoxTrips, BoxTripsState>
     [Test]
     public async Task SkaterReleasedFromBox_WhenSkaterInBox_MarksBoxTripAsCompleted([Values] bool afterStarPass)
     {
-        State = new([new(2, 6, 20, false, false, "123", SkaterPosition.Jammer, null, false, [], 0, 0, 0)], afterStarPass);
-        MockState<GameStageState>(new(Stage.Jam, 2, 8, 22, false));
-        MockKeyedState<JamLineupState>(nameof(TeamSide.Home), new("123", "321", ["1", "2", "3"]));
+        var skaterId = Guid.NewGuid();
 
-        await Subject.Handle(new SkaterReleasedFromBox(1234, new(TeamSide.Home, "123")));
+        State = new([new(2, 6, 20, false, false, skaterId, SkaterPosition.Jammer, null, false, [], 0, 0, 0)], afterStarPass);
+        MockState<GameStageState>(new(Stage.Jam, 2, 8, 22, false, false));
+
+        await Subject.Handle(new SkaterReleasedFromBox(1234, new(TeamSide.Home, skaterId)));
 
         State.BoxTrips.Should().ContainSingle()
-            .Which.Should().Be(new BoxTrip(2, 6, 20, false, false, "123", SkaterPosition.Jammer, 2, afterStarPass, [], 0, 0, 1234));
+            .Which.Should().Be(new BoxTrip(2, 6, 20, false, false, skaterId, SkaterPosition.Jammer, 2, afterStarPass, [], 0, 0, 1234));
     }
 
     [Test]
     public async Task SkaterReleasedFromBox_AfterPeriodChange_MarksDurationCorrectly()
     {
-        State = new([new(1, 14, 14, false, false, "123", SkaterPosition.Jammer, null, false, [], 0, 0, 0)], false);
-        MockState<GameStageState>(new(Stage.Jam, 2, 1, 15, false));
-        MockKeyedState<JamLineupState>(nameof(TeamSide.Home), new("123", "321", ["1", "2", "3"]));
+        var skaterId = Guid.NewGuid();
 
-        await Subject.Handle(new SkaterReleasedFromBox(0, new(TeamSide.Home, "123")));
+        State = new([new(1, 14, 14, false, false, skaterId, SkaterPosition.Jammer, null, false, [], 0, 0, 0)], false);
+        MockState<GameStageState>(new(Stage.Jam, 2, 1, 15, false, false));
+
+        await Subject.Handle(new SkaterReleasedFromBox(0, new(TeamSide.Home, skaterId)));
 
         State.BoxTrips.Should().ContainSingle()
             .Which.DurationInJams.Should().Be(1);
@@ -141,12 +183,14 @@ public class BoxTripsUnitTests : ReducerUnitTest<HomeBoxTrips, BoxTripsState>
     [Test]
     public async Task SkaterReleasedFromBox_WhenSkaterNotInBox_DoesNotChangeState()
     {
-        State = new([new(2, 6, 20, false, false, "321", SkaterPosition.Pivot, null, false, [], 0, 0, 0)], false);
-        var originalState = State;
-        MockState<GameStageState>(new(Stage.Jam, 2, 6, 20, false));
-        MockKeyedState<JamLineupState>(nameof(TeamSide.Home), new("123", "321", ["1", "2", "3"]));
+        var inBoxId = Guid.NewGuid();
+        var notInBoxId = Guid.NewGuid();
 
-        await Subject.Handle(new SkaterReleasedFromBox(1234, new(TeamSide.Home, "123")));
+        State = new([new(2, 6, 20, false, false, inBoxId, SkaterPosition.Pivot, null, false, [], 0, 0, 0)], false);
+        var originalState = State;
+        MockState<GameStageState>(new(Stage.Jam, 2, 6, 20, false, false));
+
+        await Subject.Handle(new SkaterReleasedFromBox(1234, new(TeamSide.Home, notInBoxId)));
 
         State.Should().Be(originalState);
     }
@@ -154,12 +198,13 @@ public class BoxTripsUnitTests : ReducerUnitTest<HomeBoxTrips, BoxTripsState>
     [Test]
     public async Task SkaterReleasedFromBox_WhenTeamDoesNotMatch_DoesNotChangeState()
     {
-        State = new([new(2, 6, 20, false, false, "123", SkaterPosition.Jammer, null, false, [], 0, 0, 0)], false);
-        var originalState = State;
-        MockState<GameStageState>(new(Stage.Jam, 2, 8, 22, false));
-        MockKeyedState<JamLineupState>(nameof(TeamSide.Home), new("123", "321", ["1", "2", "3"]));
+        var skaterId = Guid.NewGuid();
 
-        await Subject.Handle(new SkaterReleasedFromBox(1234, new(TeamSide.Away, "123")));
+        State = new([new(2, 6, 20, false, false, skaterId, SkaterPosition.Jammer, null, false, [], 0, 0, 0)], false);
+        var originalState = State;
+        MockState<GameStageState>(new(Stage.Jam, 2, 8, 22, false, false));
+
+        await Subject.Handle(new SkaterReleasedFromBox(1234, new(TeamSide.Away, skaterId)));
 
         State.Should().Be(originalState);
     }
@@ -167,11 +212,15 @@ public class BoxTripsUnitTests : ReducerUnitTest<HomeBoxTrips, BoxTripsState>
     [Test]
     public async Task JamStarted_SetsLastStartTick_AndSetsTicksPassedAtLastStart_ForAllRunningTrips()
     {
+        var skater1 = Guid.NewGuid();
+        var skater2 = Guid.NewGuid();
+        var skater3 = Guid.NewGuid();
+
         State = new(
             [
-                new(1, 1, 1, false, false, "1", SkaterPosition.Blocker, null, false, [], 0, 0, 10000),
-                new(1, 1, 1, false, false, "2", SkaterPosition.Blocker, null, false, [], 5000, 3000, 8000),
-                new(1, 1, 1, false, false, "3", SkaterPosition.Blocker, 0, false, [], 0, 0, 5000),
+                new(1, 1, 1, false, false, skater1, SkaterPosition.Blocker, null, false, [], 0, 0, 10000),
+                new(1, 1, 1, false, false, skater2, SkaterPosition.Blocker, null, false, [], 5000, 3000, 8000),
+                new(1, 1, 1, false, false, skater3, SkaterPosition.Blocker, 0, false, [], 0, 0, 5000),
             ],
             false
         );
@@ -180,9 +229,9 @@ public class BoxTripsUnitTests : ReducerUnitTest<HomeBoxTrips, BoxTripsState>
 
         State.Should().Be(new BoxTripsState(
             [
-                new(1, 1, 1, false, false, "1", SkaterPosition.Blocker, null, false, [], 12345, 10000, 10000),
-                new(1, 1, 1, false, false, "2", SkaterPosition.Blocker, null, false, [], 12345, 8000, 8000),
-                new(1, 1, 1, false, false, "3", SkaterPosition.Blocker, 0, false, [], 0, 0, 5000),
+                new(1, 1, 1, false, false, skater1, SkaterPosition.Blocker, null, false, [], 12345, 10000, 10000),
+                new(1, 1, 1, false, false, skater2, SkaterPosition.Blocker, null, false, [], 12345, 8000, 8000),
+                new(1, 1, 1, false, false, skater3, SkaterPosition.Blocker, 0, false, [], 0, 0, 5000),
             ],
             false
         ));
@@ -191,11 +240,15 @@ public class BoxTripsUnitTests : ReducerUnitTest<HomeBoxTrips, BoxTripsState>
     [Test]
     public async Task JamEnded_UpdatesTicksPassed()
     {
+        var skater1 = Guid.NewGuid();
+        var skater2 = Guid.NewGuid();
+        var skater3 = Guid.NewGuid();
+
         State = new(
             [
-                new(1, 1, 1, false, false, "1", SkaterPosition.Blocker, null, false, [], 0, 0, 10000),
-                new(1, 1, 1, false, false, "2", SkaterPosition.Blocker, null, false, [], 5000, 3000, 8000),
-                new(1, 1, 1, false, false, "3", SkaterPosition.Blocker, 0, false, [], 0, 0, 5000),
+                new(1, 1, 1, false, false, skater1, SkaterPosition.Blocker, null, false, [], 0, 0, 10000),
+                new(1, 1, 1, false, false, skater2, SkaterPosition.Blocker, null, false, [], 5000, 3000, 8000),
+                new(1, 1, 1, false, false, skater3, SkaterPosition.Blocker, 0, false, [], 0, 0, 5000),
             ],
             false
         );
@@ -204,9 +257,9 @@ public class BoxTripsUnitTests : ReducerUnitTest<HomeBoxTrips, BoxTripsState>
 
         State.Should().Be(new BoxTripsState(
             [
-                new(1, 1, 1, false, false, "1", SkaterPosition.Blocker, null, false, [], 0, 0, 15000),
-                new(1, 1, 1, false, false, "2", SkaterPosition.Blocker, null, false, [], 5000, 3000, 13000),
-                new(1, 1, 1, false, false, "3", SkaterPosition.Blocker, 0, false, [], 0, 0, 5000),
+                new(1, 1, 1, false, false, skater1, SkaterPosition.Blocker, null, false, [], 0, 0, 15000),
+                new(1, 1, 1, false, false, skater2, SkaterPosition.Blocker, null, false, [], 5000, 3000, 13000),
+                new(1, 1, 1, false, false, skater3, SkaterPosition.Blocker, 0, false, [], 0, 0, 5000),
             ],
             false
         ));
@@ -215,23 +268,27 @@ public class BoxTripsUnitTests : ReducerUnitTest<HomeBoxTrips, BoxTripsState>
     [Test]
     public async Task Tick_WhenInJam_UpdatesTicksPassedOnAllRunningTrips()
     {
+        var skater1 = Guid.NewGuid();
+        var skater2 = Guid.NewGuid();
+        var skater3 = Guid.NewGuid();
+
         State = new(
             [
-                new(1, 1, 1, false, false, "1", SkaterPosition.Blocker, null, false, [], 0, 0, 10000),
-                new(1, 1, 1, false, false, "2", SkaterPosition.Blocker, null, false, [], 5000, 3000, 8000),
-                new(1, 1, 1, false, false, "3", SkaterPosition.Blocker, 0, false, [], 0, 0, 5000),
+                new(1, 1, 1, false, false, skater1, SkaterPosition.Blocker, null, false, [], 0, 0, 10000),
+                new(1, 1, 1, false, false, skater2, SkaterPosition.Blocker, null, false, [], 5000, 3000, 8000),
+                new(1, 1, 1, false, false, skater3, SkaterPosition.Blocker, 0, false, [], 0, 0, 5000),
             ],
             false
         );
-        MockState<GameStageState>(new(Stage.Jam, 1, 1, 1, false));
+        MockState<GameStageState>(new(Stage.Jam, 1, 1, 1, false, false));
 
         await ((ITickReceiver)Subject).TickAsync(15000);
 
         State.Should().Be(new BoxTripsState(
             [
-                new(1, 1, 1, false, false, "1", SkaterPosition.Blocker, null, false, [], 0, 0, 15000),
-                new(1, 1, 1, false, false, "2", SkaterPosition.Blocker, null, false, [], 5000, 3000, 13000),
-                new(1, 1, 1, false, false, "3", SkaterPosition.Blocker, 0, false, [], 0, 0, 5000),
+                new(1, 1, 1, false, false, skater1, SkaterPosition.Blocker, null, false, [], 0, 0, 15000),
+                new(1, 1, 1, false, false, skater2, SkaterPosition.Blocker, null, false, [], 5000, 3000, 13000),
+                new(1, 1, 1, false, false, skater3, SkaterPosition.Blocker, 0, false, [], 0, 0, 5000),
             ],
             false
         ));
@@ -240,23 +297,27 @@ public class BoxTripsUnitTests : ReducerUnitTest<HomeBoxTrips, BoxTripsState>
     [Test]
     public async Task SkaterSubstitutedInBox_AddsSubstitutionToTrip()
     {
+        var skater1 = Guid.NewGuid();
+        var skater2 = Guid.NewGuid();
+        var skater3 = Guid.NewGuid();
+
         State = new(
             [
-                new(1, 5, 5, false, false, "1", SkaterPosition.Blocker, 1, false, [], 0, 0, 0),
-                new(2, 6, 20, false, false, "1", SkaterPosition.Blocker, null, false, [], 0, 0, 10000),
-                new(2, 6, 20, false, false, "2", SkaterPosition.Blocker, null, false, [], 0, 0, 10000),
+                new(1, 5, 5, false, false, skater1, SkaterPosition.Blocker, 1, false, [], 0, 0, 0),
+                new(2, 6, 20, false, false, skater1, SkaterPosition.Blocker, null, false, [], 0, 0, 10000),
+                new(2, 6, 20, false, false, skater2, SkaterPosition.Blocker, null, false, [], 0, 0, 10000),
             ],
             false
         );
-        MockState<GameStageState>(new(Stage.Lineup, 2, 6, 20, false));
+        MockState<GameStageState>(new(Stage.Lineup, 2, 6, 20, false, false));
 
-        await Subject.Handle(new SkaterSubstitutedInBox(0, new(TeamSide.Home, "1", "3")));
+        await Subject.Handle(new SkaterSubstitutedInBox(0, new(TeamSide.Home, skater1, skater3)));
 
         State.Should().Be(new BoxTripsState(
             [
-                new(1, 5, 5, false, false, "1", SkaterPosition.Blocker, 1, false, [], 0, 0, 0),
-                new(2, 6, 20, false, false, "1", SkaterPosition.Blocker, null, false, [new("3", 21)], 0, 0, 10000),
-                new(2, 6, 20, false, false, "2", SkaterPosition.Blocker, null, false, [], 0, 0, 10000),
+                new(1, 5, 5, false, false, skater1, SkaterPosition.Blocker, 1, false, [], 0, 0, 0),
+                new(2, 6, 20, false, false, skater1, SkaterPosition.Blocker, null, false, [new(skater3, 21)], 0, 0, 10000),
+                new(2, 6, 20, false, false, skater2, SkaterPosition.Blocker, null, false, [], 0, 0, 10000),
             ],
             false
         ));
@@ -295,8 +356,11 @@ public class BoxTripsUnitTests : ReducerUnitTest<HomeBoxTrips, BoxTripsState>
     [Test]
     public void State_ShouldSerializeCorrectly()
     {
+        var skaterId = Guid.NewGuid();
+        var substitutionId = Guid.NewGuid();
+
         var state = new BoxTripsState(
-            [new(1, 2, 3, true, false, "123", SkaterPosition.Blocker, 3, true, [new("321", 4)], 1234, 4321, 5678)],
+            [new(1, 2, 3, true, false, skaterId, SkaterPosition.Blocker, 3, true, [new(substitutionId, 4)], 1234, 4321, 5678)],
             true);
 
         var serialized = System.Text.Json.JsonSerializer.Serialize(state, Program.JsonSerializerOptions);
@@ -309,13 +373,13 @@ public class BoxTripsUnitTests : ReducerUnitTest<HomeBoxTrips, BoxTripsState>
         boxTrip["totalJamStart"]!.AsValue().GetValue<int>().Should().Be(3);
         boxTrip["startAfterStarPass"]!.AsValue().GetValue<bool>().Should().BeTrue();
         boxTrip["startBetweenJams"]!.AsValue().GetValue<bool>().Should().BeFalse();
-        boxTrip["skaterNumber"]!.AsValue().GetValue<string>().Should().Be("123");
+        boxTrip["skaterId"]!.AsValue().GetValue<Guid>().Should().Be(skaterId);
         boxTrip["skaterPosition"]!.AsValue().GetValue<string>().Should().Be("Blocker");
         boxTrip["durationInJams"]!.AsValue().GetValue<int>().Should().Be(3);
         boxTrip["endAfterStarPass"]!.AsValue().GetValue<bool>().Should().BeTrue();
 
         var substitution = boxTrip["substitutions"]!.AsArray()[0]!;
-        substitution["newNumber"]!.AsValue().GetValue<string>().Should().Be("321");
+        substitution["newId"]!.AsValue().GetValue<Guid>().Should().Be(substitutionId);
         substitution["totalJamNumber"]!.AsValue().GetValue<int>().Should().Be(4);
 
         boxTrip["lastStartTick"]!.AsValue().GetValue<int>().Should().Be(1234);

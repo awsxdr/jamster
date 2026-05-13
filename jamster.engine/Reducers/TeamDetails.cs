@@ -1,6 +1,5 @@
 ﻿using jamster.engine.Domain;
 using jamster.engine.Events;
-using jamster.engine.Extensions;
 using jamster.engine.Services;
 
 namespace jamster.engine.Reducers;
@@ -32,7 +31,10 @@ public abstract class TeamDetails(TeamSide teamSide, ReducerGameContext context,
     });
 }
 
-public sealed record TeamDetailsState(GameTeam Team);
+public sealed record TeamDetailsState(GameTeam Team)
+{
+    public static TeamDetailsState Default => new(GameTeam.Default);
+}
 
 public sealed class HomeTeamDetails(ReducerGameContext context, ILogger<HomeTeamDetails> logger) : TeamDetails(TeamSide.Home, context, logger);
 public sealed class AwayTeamDetails(ReducerGameContext context, ILogger<AwayTeamDetails> logger) : TeamDetails(TeamSide.Away, context, logger);

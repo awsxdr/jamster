@@ -8,7 +8,7 @@ export type BoxTrip = {
     period: number;
     jam: number;
     totalJamStart: number;
-    skaterNumber: string;
+    skaterId: string;
     skaterPosition: SkaterPosition;
     durationInJams: number | null;
     substitutions: Substitution[];
@@ -19,6 +19,6 @@ export type BoxTrip = {
 }
 
 type Substitution = {
-    newNumber: string;
+    newId: string;
     totalJamNumber: number;
 }

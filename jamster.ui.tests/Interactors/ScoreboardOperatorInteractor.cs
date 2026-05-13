@@ -108,7 +108,7 @@ public class ScoreboardOperatorInteractor(IWebDriver driver) : Interactor(driver
             },
             initialTripButton => initialTripButton.Click());
 
-    public void LineupSkater(TeamSide side, SkaterPosition position, string number) =>
+    public void LineupSkater(TeamSide side, SkaterPosition position, Guid skaterId) =>
         Wait.Until(driver =>
             {
                 var lineupButton = driver.FindElement(By.Id($"ScoreboardControl.TeamLineup.{side}.{position}.{number}"));

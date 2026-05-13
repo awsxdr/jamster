@@ -10,7 +10,7 @@ public static class SkaterGenerator
     private const float PenaltyChance = 1.0f / 1200.0f;
 
     public static SimulatorSkater GenerateRandom() => new(
-        new(GetRandomNumber(), NameGenerator.GetRandomName()),
+        new(Guid.NewGuid(), GetRandomNumber(), NameGenerator.GetRandomName()),
         GetRandomPosition(),
         GetRandomSpeed(),
         GetRandomPenaltyChance()

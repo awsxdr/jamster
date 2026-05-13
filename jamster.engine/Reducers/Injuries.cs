@@ -24,17 +24,17 @@ public abstract class Injuries(TeamSide teamSide, ReducerGameContext context, IL
         var state = GetState();
 
         var isDuplicate = state.Injuries.Any(i =>
-            i.SkaterNumber == @event.Body.SkaterNumber
+            i.SkaterId == @event.Body.SkaterId
             && i.Period == gameStage.PeriodNumber
             && i.Jam == gameStage.JamNumber);
 
         if (isDuplicate)
             return [];
 
-        logger.LogDebug("Adding injury to skater {skater} on {team} team in period {period} jam {jam}", @event.Body.SkaterNumber, teamSide, gameStage.PeriodNumber, gameStage.JamNumber);
+        logger.LogDebug("Adding injury to skater {skater} on {team} team in period {period} jam {jam}", @event.Body.SkaterId, teamSide, gameStage.PeriodNumber, gameStage.JamNumber);
 
         SetState(new(GetState().Injuries
-            .Append(new(@event.Body.SkaterNumber, gameStage.PeriodNumber, gameStage.JamNumber, gameStage.TotalJamNumber, false))
+            .Append(new(@event.Body.SkaterId, gameStage.PeriodNumber, gameStage.JamNumber, gameStage.TotalJamNumber, false))
             .ToArray()));
 
         return [];
@@ -44,12 +44,12 @@ public abstract class Injuries(TeamSide teamSide, ReducerGameContext context, IL
     {
         var state = GetState();
 
-        if (state.Injuries.All(i => i.SkaterNumber != @event.Body.SkaterNumber || i.TotalJamNumberStart != @event.Body.TotalJamNumberStart))
+        if (state.Injuries.All(i => i.SkaterId != @event.Body.SkaterId || i.TotalJamNumberStart != @event.Body.TotalJamNumberStart))
             return [];
 
-        logger.LogDebug("Removing injury for skater {skater} on {team} team in total jam number {jam}", @event.Body.SkaterNumber, teamSide, @event.Body.TotalJamNumberStart);
+        logger.LogDebug("Removing injury for skater {skater} on {team} team in total jam number {jam}", @event.Body.SkaterId, teamSide, @event.Body.TotalJamNumberStart);
 
-        SetState(new(state.Injuries.Where(i => i.SkaterNumber != @event.Body.SkaterNumber || i.TotalJamNumberStart != @event.Body.TotalJamNumberStart).ToArray()));
+        SetState(new(state.Injuries.Where(i => i.SkaterId != @event.Body.SkaterId || i.TotalJamNumberStart != @event.Body.TotalJamNumberStart).ToArray()));
 
         return [];
     });
@@ -66,7 +66,7 @@ public abstract class Injuries(TeamSide teamSide, ReducerGameContext context, IL
                 if (i.Expired)
                     return i;
 
-                var injuriesThisPeriod = state.Injuries.Count(i2 => i2.SkaterNumber == i.SkaterNumber && i2.Period == gameStage.PeriodNumber);
+                var injuriesThisPeriod = state.Injuries.Count(i2 => i2.SkaterId == i.SkaterId && i2.Period == gameStage.PeriodNumber);
                 var maximumInjuriesPerPeriodReached = injuriesThisPeriod >= rules.InjuryRules.NumberOfAllowableInjuriesPerPeriod;
 
                 if (maximumInjuriesPerPeriodReached)
@@ -75,7 +75,7 @@ public abstract class Injuries(TeamSide teamSide, ReducerGameContext context, IL
                 if (gameStage.TotalJamNumber < i.TotalJamNumberStart + rules.InjuryRules.JamsToSitOutFollowingInjury)
                     return i;
 
-                logger.LogDebug("Injury expired for {skater} on {team} team", i.SkaterNumber, teamSide);
+                logger.LogDebug("Injury expired for {skater} on {team} team", i.SkaterId, teamSide);
                 return i with { Expired = true };
             })
             .ToArray()));
@@ -113,7 +113,7 @@ public sealed record InjuriesState(Injury[] Injuries)
     public override int GetHashCode() => Injuries.GetHashCode();
 }
 
-public sealed record Injury(string SkaterNumber, int Period, int Jam, int TotalJamNumberStart, bool Expired);
+public sealed record Injury(Guid SkaterId, int Period, int Jam, int TotalJamNumberStart, bool Expired);
 
 public sealed class HomeInjuries(ReducerGameContext context, ILogger<HomeInjuries> logger) : Injuries(TeamSide.Home, context, logger);
 public sealed class AwayInjuries(ReducerGameContext context, ILogger<AwayInjuries> logger) : Injuries(TeamSide.Away, context, logger);

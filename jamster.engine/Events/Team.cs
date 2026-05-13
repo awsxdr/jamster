@@ -8,6 +8,8 @@ public sealed record TeamSetBody(TeamSide TeamSide, GameTeam Team) : TeamEventBo
 
 public sealed record GameTeam(Dictionary<string, string> Names, TeamColor Color, List<GameSkater> Roster)
 {
+    public static GameTeam Default => new([], new TeamColor(Domain.Color.Black, Domain.Color.White), []);
+
     public bool Equals(GameTeam? other) =>
         other is not null
         && other.Names.SequenceEqual(Names)
@@ -18,4 +20,4 @@ public sealed record GameTeam(Dictionary<string, string> Names, TeamColor Color,
         HashCode.Combine(Names, Color, Roster);
 }
 
-public sealed record GameSkater(string Number, string Name, bool IsSkating);
+public sealed record GameSkater(Guid Id, string Number, string Name, bool IsSkating);

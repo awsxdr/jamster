@@ -26,7 +26,7 @@ public class PenaltySheetSerializer : IPenaltySheetSerializer
     private static PenaltySheetLine[] GetPenaltySheetLines(PenaltySheetState penaltySheet, int period) =>
         penaltySheet.Lines.Select(line => new PenaltySheetLine(
                 line.Penalties.Count(p => p.Period < period),
-                line.SkaterNumber,
+                line.SkaterId,
                 line.Penalties.Where(p => p.Period == period).Select(p => new Penalty(p.Jam, p.Code)).ToArray(),
                 line.ExpulsionPenalty?.Map(p => new Penalty(p.Jam, p.Code))))
             .ToArray();

@@ -54,7 +54,7 @@ public class GameSummaryUnitTests : ReducerUnitTest<GameSummary, GameSummaryStat
             new([0, 0], 0),
             [10, 10]
         );
-        MockState<GameStageState>(new(Stage.Jam, period, 10, 10, false));
+        MockState<GameStageState>(new(Stage.Jam, period, 10, 10, false, false));
 
         await Subject.Handle(new ScoreModifiedRelative(0, new(team, scoreChange)));
 
@@ -67,6 +67,8 @@ public class GameSummaryUnitTests : ReducerUnitTest<GameSummary, GameSummaryStat
     [Test]
     public async Task PenaltyAssessed_UpdatesPenaltyCounts([Values] TeamSide team, [Values(1, 2)] int period)
     {
+        var skaterId = Guid.NewGuid();
+
         State = new(
             GameProgress.InProgress,
             new([0, 0], 0),
@@ -75,13 +77,13 @@ public class GameSummaryUnitTests : ReducerUnitTest<GameSummary, GameSummaryStat
             new([0, 0], 0),
             [10, 10]
         );
-        MockState<GameStageState>(new(Stage.Jam, period, 10, 10, false));
+        MockState<GameStageState>(new(Stage.Jam, period, 10, 10, false, false));
         MockKeyedState<PenaltySheetState>(team.ToString(), new([
-            new("123", null, [new("X", 1, 3, true), new("X", 1, 6, true), new("X", 1, 9, true), new("X", 2, 3, true), new("X", 2, 6, true), new("X", 2, 9, true)])
+            new(skaterId, "", null, [new("X", 1, 3, true), new("X", 1, 6, true), new("X", 1, 9, true), new("X", 2, 3, true), new("X", 2, 6, true), new("X", 2, 9, true)])
         ]));
         MockKeyedState<PenaltySheetState>(team == TeamSide.Home ? nameof(TeamSide.Away) : nameof(TeamSide.Home), new([]));
 
-        await Subject.Handle(new PenaltyAssessed(0, new(team, "123", "X")));
+        await Subject.Handle(new PenaltyAssessed(0, new(team, skaterId, "X")));
 
         var penaltySummary = team == TeamSide.Home ? State.HomePenalties : State.AwayPenalties;
 
@@ -92,6 +94,8 @@ public class GameSummaryUnitTests : ReducerUnitTest<GameSummary, GameSummaryStat
     [Test]
     public async Task PenaltyRescinded_UpdatesPenaltyCounts([Values] TeamSide team, [Values(1, 2)] int period)
     {
+        var skaterId = Guid.NewGuid();
+
         State = new(
             GameProgress.InProgress,
             new([0, 0], 0),
@@ -100,13 +104,13 @@ public class GameSummaryUnitTests : ReducerUnitTest<GameSummary, GameSummaryStat
             new([0, 0], 0),
             [10, 10]
         );
-        MockState<GameStageState>(new(Stage.Jam, period, 10, 10, false));
+        MockState<GameStageState>(new(Stage.Jam, period, 10, 10, false, false));
         MockKeyedState<PenaltySheetState>(team.ToString(), new([
-            new("123", null, [new("X", 1, 3, true), new("X", 1, 6, true), new("X", 1, 9, true), new("X", 2, 3, true), new("X", 2, 6, true), new("X", 2, 9, true)])
+            new(skaterId, "", null, [new("X", 1, 3, true), new("X", 1, 6, true), new("X", 1, 9, true), new("X", 2, 3, true), new("X", 2, 6, true), new("X", 2, 9, true)])
         ]));
         MockKeyedState<PenaltySheetState>(team == TeamSide.Home ? nameof(TeamSide.Away) : nameof(TeamSide.Home), new([]));
 
-        await Subject.Handle(new PenaltyRescinded(0, new(team, "123", "X", 2, 6)));
+        await Subject.Handle(new PenaltyRescinded(0, new(team, skaterId, "X", 2, 6)));
 
         var penaltySummary = team == TeamSide.Home ? State.HomePenalties : State.AwayPenalties;
 
@@ -117,6 +121,8 @@ public class GameSummaryUnitTests : ReducerUnitTest<GameSummary, GameSummaryStat
     [Test]
     public async Task PenaltyUpdated_UpdatesPenaltyCounts([Values] TeamSide team)
     {
+        var skaterId = Guid.NewGuid();
+
         State = new(
             GameProgress.InProgress,
             new([0, 0], 0),
@@ -126,11 +132,11 @@ public class GameSummaryUnitTests : ReducerUnitTest<GameSummary, GameSummaryStat
             [10, 10]
         );
         MockKeyedState<PenaltySheetState>(team.ToString(), new([
-            new("123", null, [new("X", 1, 3, true), new("X", 1, 6, true), new("X", 1, 9, true), new("X", 2, 3, true), new("X", 2, 6, true), new("X", 2, 9, true)])
+            new(skaterId, "", null, [new("X", 1, 3, true), new("X", 1, 6, true), new("X", 1, 9, true), new("X", 2, 3, true), new("X", 2, 6, true), new("X", 2, 9, true)])
         ]));
         MockKeyedState<PenaltySheetState>(team == TeamSide.Home ? nameof(TeamSide.Away) : nameof(TeamSide.Home), new([]));
 
-        await Subject.Handle(new PenaltyUpdated(0, new(team, "123", "?", 1, 1, "?", 1, 1)));
+        await Subject.Handle(new PenaltyUpdated(0, new(team, skaterId, "?", 1, 1, "?", 1, 1)));
 
         var penalties = team == TeamSide.Home ? State.HomePenalties : State.AwayPenalties;
 
@@ -163,7 +169,7 @@ public class GameSummaryUnitTests : ReducerUnitTest<GameSummary, GameSummaryStat
     public async Task JamStarted_UpdatesJamCounts([Values(1, 2)] int period)
     {
         State = new(GameProgress.InProgress, new([0, 0], 0), new([0, 0], 0), new([0, 0], 0), new([0, 0], 0), [0, 0]);
-        MockState<GameStageState>(new(Stage.Jam, period, 10, 20, false));
+        MockState<GameStageState>(new(Stage.Jam, period, 10, 20, false, false));
 
         await Subject.Handle(new JamStarted(1000));
 
@@ -174,7 +180,7 @@ public class GameSummaryUnitTests : ReducerUnitTest<GameSummary, GameSummaryStat
     public async Task PeriodFinalized_WhenAfterGame_SetsGameToFinished()
     {
         State = new(GameProgress.InProgress, new([0, 0], 0), new([0, 0], 0), new([0, 0], 0), new([0, 0], 0), [0, 0]);
-        MockState<GameStageState>(new(Stage.AfterGame, 2, 20, 40, true));
+        MockState<GameStageState>(new(Stage.AfterGame, 2, 20, 40, true, false));
 
         await Subject.Handle(new PeriodFinalized(1000));
 

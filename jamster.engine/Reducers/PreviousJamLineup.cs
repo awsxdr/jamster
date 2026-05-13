@@ -1,6 +1,5 @@
 ﻿using jamster.engine.Domain;
 using jamster.engine.Events;
-using jamster.engine.Extensions;
 using jamster.engine.Services;
 
 namespace jamster.engine.Reducers;
@@ -10,6 +9,7 @@ public abstract class PreviousJamLineup(TeamSide teamSide, ReducerGameContext co
     , IHandlesEvent<JamEnded>
     , IHandlesEvent<PreviousJamSkaterOnTrack>
     , IDependsOnState<JamLineupState>
+    , IDependsOnState<TeamDetailsState>
 {
     protected override PreviousJamLineupState DefaultState => new(new(null, null, [null, null, null]));
     public override Option<string> GetStateKey() => Option.Some(teamSide.ToString());
@@ -28,11 +28,11 @@ public abstract class PreviousJamLineup(TeamSide teamSide, ReducerGameContext co
         var state = GetState();
 
         var position =
-            state.Lineup.JammerNumber == @event.Body.SkaterNumber ? SkaterPosition.Jammer
-            : state.Lineup.PivotNumber == @event.Body.SkaterNumber ? SkaterPosition.Pivot
+            state.Lineup.JammerId == @event.Body.SkaterId ? SkaterPosition.Jammer
+            : state.Lineup.PivotId == @event.Body.SkaterId ? SkaterPosition.Pivot
             : SkaterPosition.Blocker;
 
-        return [new SkaterOnTrack(@event.Tick, new(teamSide, @event.Body.SkaterNumber, position))];
+        return [new SkaterOnTrack(@event.Tick, new(teamSide, @event.Body.SkaterId, position))];
     });
 }
 

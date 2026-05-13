@@ -2,7 +2,7 @@ import { MouseEvent, ReactNode, useEffect, useMemo, useState } from "react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger, Button, buttonVariants, Card, CardContent, Checkbox, Form, FormControl, FormField, FormItem, FormMessage, Input, Separator } from "@/components/ui"
 import { useI18n, useIsMobile, useTeamApi } from "@/hooks";
 import { cn } from "@/lib/utils";
-import { SkaterRole, Team } from "@/types";
+import { Skater, SkaterRole, Team } from "@/types";
 import { Check, Pencil, Trash, X } from "lucide-react";
 import { useRosterInputSchema } from "./RosterInput";
 import { useForm } from "react-hook-form";
@@ -47,7 +47,7 @@ const RowLayout = ({ id, className, selectContent, numberContent, nameContent, t
 }
 
 type RosterTableRowProps = {
-    id?: string;
+    id: string;
     number: string;
     name: string;
     preventEdit?: boolean;
@@ -57,7 +57,7 @@ type RosterTableRowProps = {
     onEditStart?: () => void;
     onEditEnd?: () => void;
     onSelectedChanged?: (selected: boolean) => void;
-    onSkaterChanged?: (number: string, name: string) => void;
+    onSkaterChanged?: (id: string, number: string, name: string) => void;
 }
 
 const RosterTableRow = ({ id, number, name, preventEdit, selected, existingNumbers, disableSelect, onEditStart, onEditEnd, onSelectedChanged, onSkaterChanged }: RosterTableRowProps) => {
@@ -84,10 +84,10 @@ const RosterTableRow = ({ id, number, name, preventEdit, selected, existingNumbe
         onEditStart?.();
     }
 
-    const handleAcceptEdit = ({number, name}: { number: string, name: string }) => {
+    const handleAcceptEdit = (skater: Skater) => {
         setIsEditing(false);
         onEditEnd?.();
-        onSkaterChanged?.(number, name);
+        onSkaterChanged?.(skater.id, skater.number, skater.name);
         form.reset();
     }
 
@@ -103,7 +103,7 @@ const RosterTableRow = ({ id, number, name, preventEdit, selected, existingNumbe
             className={cn("py-2", selected && "bg-accent")}
             contentWrapper={(children, rowClassName) => 
                 <Form {...form}>
-                    <form onSubmit={form.handleSubmit(handleAcceptEdit)} className={cn(rowClassName, "p-0")}>
+                    <form onSubmit={form.handleSubmit(s => handleAcceptEdit({ id, ...s }))} className={cn(rowClassName, "p-0")}>
                         {children}
                     </form>
                 </Form>}
@@ -159,6 +159,7 @@ const RosterTableRow = ({ id, number, name, preventEdit, selected, existingNumbe
 }
 
 type RosterItem = {
+    id: string;
     number: string;
     name: string;
     selected: boolean;
@@ -225,19 +226,19 @@ export const RosterTable = ({ team }: RosterTableProps) => {
 
     const selectedSkaters = tableRoster.filter(s => s.selected);
 
-    const rosterItemToSkater = ({ number, name }: { number: string, name: string }) => 
-        ({ number, name, pronouns: '', role: SkaterRole.Skater });
+    const rosterItemToSkater = (rosterItem: Skater) => 
+        ({ ...rosterItem, pronouns: '', role: SkaterRole.Skater });
 
     const handleDeleteSelected = () => {
         setRoster(team.id, tableRoster.filter(s => !s.selected).map(rosterItemToSkater));
     }
 
-    const handleEditSkater = (index: number, number: string, name: string) => {
+    const handleEditSkater = (id: string, number: string, name: string) => {
         setRoster(
             team.id, 
             tableRoster
-                .map((s, i) => i === index ? { number, name } : s)
-                .map (rosterItemToSkater));
+                .map(s => s.id === id ? { id, number, name } : s)
+                .map(rosterItemToSkater));
     }
 
     return (
@@ -284,7 +285,7 @@ export const RosterTable = ({ team }: RosterTableProps) => {
                         existingNumbers={tableRoster.map(s => s.number).filter(n => n !== skater.number)}
                         disableSelect={isEditing}
                         onSelectedChanged={selected => setTableRoster(tableRoster.map((s, i2) => i2 == i ? { ...s, selected } : s))}
-                        onSkaterChanged={(number, name) => handleEditSkater(i, number, name)}
+                        onSkaterChanged={handleEditSkater}
                         onEditStart={handleEditStart} 
                         onEditEnd={handleEditEnd} 
                     />

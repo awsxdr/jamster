@@ -3,7 +3,7 @@ export type InjuriesState = {
 }
 
 export type Injury = {
-    skaterNumber: string;
+    skaterId: string;
     period: number;
     jam: number;
     totalJamNumberStart: number;

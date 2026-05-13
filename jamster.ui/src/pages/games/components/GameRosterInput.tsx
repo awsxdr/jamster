@@ -26,7 +26,7 @@ const useRosterInputSchema = (existingNumbers: string[]) => {
 
 type RosterRowProps = {
     existingNumbers: string[];
-    onSkatersAdded?: (skaters: GameSkater[]) => void;
+    onSkatersAdded?: (skaters: Omit<GameSkater, 'id'>[]) => void;
 }
 
 export const GameRosterInput = ({ existingNumbers, onSkatersAdded }: RosterRowProps) => {

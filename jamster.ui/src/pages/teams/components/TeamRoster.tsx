@@ -18,10 +18,10 @@ export const TeamRoster = ({ team, className }: TeamRosterProps) => {
 
     const skaterNumbers = useMemo(() => team.roster.map(s => s.number), [team]);
 
-    const handleSkatersAdded = (skaters: Skater[]) => {
+    const handleSkatersAdded = (skaters: Omit<Skater, 'id'>[]) => {
         setRoster(team.id, [
             ...team.roster,
-            ...skaters,
+            ...skaters.map(s => ({ id: '', ...s })),
         ].filter((v, i, a) => a.findIndex(s => s.number === v.number) === i));
         console.log([
             ...team.roster,

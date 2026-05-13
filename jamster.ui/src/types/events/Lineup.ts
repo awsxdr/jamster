@@ -2,38 +2,38 @@ import { EventWithBody } from "@/hooks/EventsApiHook";
 import { TeamSide } from "../TeamSide"
 
 export class SkaterOnTrack extends EventWithBody {
-    constructor(teamSide: TeamSide, position: SkaterPosition, skaterNumber: string) {
-        super("SkaterOnTrack", { teamSide, skaterNumber, position });
+    constructor(teamSide: TeamSide, position: SkaterPosition, skaterId: string) {
+        super("SkaterOnTrack", { teamSide, skaterId, position });
     }
 }
 
 export class SkaterOffTrack extends EventWithBody {
-    constructor(teamSide: TeamSide, skaterNumber: string) {
-        super("SkaterOffTrack", { teamSide, skaterNumber });
+    constructor(teamSide: TeamSide, skaterId: string) {
+        super("SkaterOffTrack", { teamSide, skaterId });
     }
 }
 
 export class SkaterAddedToJam extends EventWithBody {
-    constructor(teamSide: TeamSide, period: number, jam: number, position: SkaterPosition, skaterNumber: string) {
-        super("SkaterAddedToJam", { teamSide, period, jam, position, skaterNumber });
+    constructor(teamSide: TeamSide, period: number, jam: number, position: SkaterPosition, skaterId: string) {
+        super("SkaterAddedToJam", { teamSide, period, jam, position, skaterId });
     }
 }
 
 export class SkaterRemovedFromJam extends EventWithBody {
-    constructor(teamSide: TeamSide, period: number, jam: number, skaterNumber: string) {
-        super("SkaterRemovedFromJam", { teamSide, period, jam, skaterNumber });
+    constructor(teamSide: TeamSide, period: number, jam: number, skaterId: string) {
+        super("SkaterRemovedFromJam", { teamSide, period, jam, skaterId });
     }
 }
 
 export class SkaterInjuryAdded extends EventWithBody {
-    constructor(teamSide: TeamSide, skaterNumber: string) {
-        super("SkaterInjuryAdded", { teamSide, skaterNumber });
+    constructor(teamSide: TeamSide, skaterId: string) {
+        super("SkaterInjuryAdded", { teamSide, skaterId });
     }
 }
 
 export class SkaterInjuryRemoved extends EventWithBody {
-    constructor(teamSide: TeamSide, skaterNumber: string, totalJamNumberStart: number) {
-        super("SkaterInjuryRemoved", { teamSide, skaterNumber, totalJamNumberStart });
+    constructor(teamSide: TeamSide, skaterId: string, totalJamNumberStart: number) {
+        super("SkaterInjuryRemoved", { teamSide, skaterId, totalJamNumberStart });
     }
 }
 

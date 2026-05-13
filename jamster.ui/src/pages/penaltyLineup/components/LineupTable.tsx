@@ -52,16 +52,16 @@ export const LineupTable = ({
         return jams[totalJamNumber];
     }, [totalJamNumber, jams]);
 
-    const skaterNumbers = team?.roster.filter(s => s.isSkating).map(s => s.number).sort() ?? [];
+    const skatingSkaters = team?.roster.filter(s => s.isSkating).sort((a, b) => a.number < b.number ? -1 : a.number > b.number ? 1 : 0) ?? [];
 
     const skaterPositions = useMemo(() =>
-        team?.roster.reduce((map, { number }) => ({
+        team?.roster.reduce((map, { id }) => ({
             ...map,
-            [number]: (
+            [id]: (
                 ternary()
-                    .predicate(_ => currentJam?.jammerNumber === number).then(LineupPosition.Jammer)
-                    .predicate(_ => currentJam?.pivotNumber === number).then(LineupPosition.Pivot)
-                    .predicate(_ => currentJam?.blockerNumbers.includes(number) ?? false).then(LineupPosition.Blocker)
+                    .predicate(_ => currentJam?.jammerId === id).then(LineupPosition.Jammer)
+                    .predicate(_ => currentJam?.pivotId === id).then(LineupPosition.Pivot)
+                    .predicate(_ => currentJam?.blockerIds.includes(id) ?? false).then(LineupPosition.Blocker)
                     .default(LineupPosition.Bench)
             )
         }), {} as StringMap<LineupPosition>),
@@ -83,9 +83,9 @@ export const LineupTable = ({
     [skaterPenalties, skaterExpulsions, injuries, rules]);
 
     const injuredSkaters = useMemo(() =>
-        injuries.filter(i => !i.expired).map(i => i.skaterNumber), [injuries]);
+        injuries.filter(i => !i.expired).map(i => team?.roster.find(s => s.id == i.skaterId)?.number ?? ""), [injuries]);
 
-    const handlePositionClicked = (skaterNumber: string, position: LineupPosition) => {
+    const handlePositionClicked = (skaterId: string, position: LineupPosition) => {
         if(!currentJam) {
             return;
         }
@@ -95,7 +95,7 @@ export const LineupTable = ({
                 teamSide, 
                 currentJam.period,
                 currentJam.jam,
-                skaterNumber
+                skaterId
             ));
         } else {
             sendEvent(gameId, new SkaterAddedToJam(
@@ -103,7 +103,7 @@ export const LineupTable = ({
                 currentJam.period,
                 currentJam.jam,
                 position as unknown as SkaterPosition, 
-                skaterNumber));
+                skaterId));
         }
     }
 
@@ -122,18 +122,18 @@ export const LineupTable = ({
     const headerClassName = "border-b-2 border-black";
     const headerTextClassName = "font-bold flex text-center justify-center items-end";
 
-    const handleInjuryAdded = (skaterNumber: string) => {
-        sendEvent(gameId, new SkaterInjuryAdded(teamSide, skaterNumber));
+    const handleInjuryAdded = (skaterId: string) => {
+        sendEvent(gameId, new SkaterInjuryAdded(teamSide, skaterId));
     }
 
-    const handleInjuryRemoved = (skaterNumber: string) => {
-        const injuryJamNumber = injuries.filter(i => i.skaterNumber === skaterNumber).at(-1)?.totalJamNumberStart;
+    const handleInjuryRemoved = (skaterId: string) => {
+        const injuryJamNumber = injuries.filter(i => i.skaterId === skaterId).at(-1)?.totalJamNumberStart;
 
         if(injuryJamNumber === undefined) {
             return;
         }
 
-        sendEvent(gameId, new SkaterInjuryRemoved(teamSide, skaterNumber, injuryJamNumber));
+        sendEvent(gameId, new SkaterInjuryRemoved(teamSide, skaterId, injuryJamNumber));
     }
 
     return (
@@ -175,14 +175,14 @@ export const LineupTable = ({
                 </Button>
             </div>
             <MenuColumn 
-                skaterNumbers={skaterNumbers} 
+                skaters={skatingSkaters} 
                 skaterPositions={skaterPositions}
                 injuredSkaters={injuredSkaters}
                 onInjuryAdded={handleInjuryAdded}
                 onInjuryRemoved={handleInjuryRemoved} 
             />
             <SkaterNumberColumn 
-                skaterNumbers={skaterNumbers}
+                skaters={skatingSkaters}
                 skaterPositions={skaterPositions} 
                 skaterPenalties={skaterPenalties} 
                 offTrackSkaters={offTrackSkaters} 
@@ -194,8 +194,8 @@ export const LineupTable = ({
             <SkaterPositionColumn
                 teamSide={teamSide}
                 position={LineupPosition.Bench}
-                skaterNumbers={skaterNumbers}
-                selectedSkaters={skaterNumbers.filter(s => currentJam?.jammerNumber !== s && currentJam?.pivotNumber !== s && !currentJam?.blockerNumbers.includes(s))}
+                skaters={skatingSkaters}
+                selectedSkaters={skatingSkaters.filter(s => currentJam?.jammerId !== s.id && currentJam?.pivotId !== s.id && !currentJam?.blockerIds.includes(s.id)).map(s => s.id)}
                 offTrackSkaters={offTrackSkaters}
                 injuredSkaters={injuredSkaters} 
                 compact={compact}
@@ -205,8 +205,8 @@ export const LineupTable = ({
             <SkaterPositionColumn
                 teamSide={teamSide}
                 position={LineupPosition.Jammer}
-                skaterNumbers={skaterNumbers}
-                selectedSkaters={currentJam?.jammerNumber ? [currentJam?.jammerNumber] : []}
+                skaters={skatingSkaters}
+                selectedSkaters={currentJam?.jammerId ? [currentJam?.jammerId] : []}
                 offTrackSkaters={offTrackSkaters}
                 injuredSkaters={injuredSkaters} 
                 compact={compact}
@@ -216,8 +216,8 @@ export const LineupTable = ({
             <SkaterPositionColumn
                 teamSide={teamSide}
                 position={LineupPosition.Pivot}
-                skaterNumbers={skaterNumbers}
-                selectedSkaters={currentJam?.pivotNumber ? [currentJam?.pivotNumber] : []}
+                skaters={skatingSkaters}
+                selectedSkaters={currentJam?.pivotId ? [currentJam?.pivotId] : []}
                 offTrackSkaters={offTrackSkaters}
                 injuredSkaters={injuredSkaters} 
                 compact={compact}
@@ -227,8 +227,8 @@ export const LineupTable = ({
             <SkaterPositionColumn
                 teamSide={teamSide}
                 position={LineupPosition.Blocker}
-                skaterNumbers={skaterNumbers}
-                selectedSkaters={currentJam?.blockerNumbers.filter(b => b) as string[] ?? []}
+                skaters={skatingSkaters}
+                selectedSkaters={currentJam?.blockerIds.filter(b => b) as string[] ?? []}
                 offTrackSkaters={offTrackSkaters}
                 injuredSkaters={injuredSkaters} 
                 compact={compact}
@@ -237,7 +237,7 @@ export const LineupTable = ({
             />
             <PenaltyBoxColumn
                 teamSide={teamSide}
-                skaterNumbers={skaterNumbers}
+                skaters={skatingSkaters}
                 skaterPenalties={skaterPenalties}
                 compact={compact}
                 onClick={handleBoxClicked}

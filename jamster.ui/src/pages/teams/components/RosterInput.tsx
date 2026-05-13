@@ -26,7 +26,7 @@ export const useRosterInputSchema = (existingNumbers: string[]) => {
 
 type RosterRowProps = {
     existingNumbers: string[];
-    onSkatersAdded?: (skaters: Skater[]) => void;
+    onSkatersAdded?: (skaters: Omit<Skater, 'id'>[]) => void;
 }
 
 export const RosterInput = ({ existingNumbers, onSkatersAdded }: RosterRowProps) => {
@@ -43,7 +43,7 @@ export const RosterInput = ({ existingNumbers, onSkatersAdded }: RosterRowProps)
         }
     });
     
-    const handleSubmit = ({number, name}: Skater) => {
+    const handleSubmit = ({number, name}: Omit<Skater, 'id'>) => {
         form.setFocus('number');
         onSkatersAdded?.([{number, name}]);
         form.reset();

@@ -104,9 +104,7 @@ export const useRosterTableInputSchema = (existingNumbers: string[]) => {
 
 
 type RosterTableRowProps = {
-    number: string;
-    name: string;
-    isSkating: boolean;
+    skater: GameSkater;
     preventEdit?: boolean;
     selected?: boolean;
     existingNumbers: string[];
@@ -118,7 +116,7 @@ type RosterTableRowProps = {
     onSkaterDeleted?: () => void;
 }
 
-const RosterTableRow = ({ number, name, isSkating, preventEdit, selected, existingNumbers, onEditStart, onEditEnd, onSkaterChanged, onSkaterDeleted }: RosterTableRowProps) => {
+const RosterTableRow = ({ skater, preventEdit, selected, existingNumbers, onEditStart, onEditEnd, onSkaterChanged, onSkaterDeleted }: RosterTableRowProps) => {
 
     const [isEditing, setIsEditing] = useState(false);
 
@@ -127,9 +125,9 @@ const RosterTableRow = ({ number, name, isSkating, preventEdit, selected, existi
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: {
-            number: number,
-            name: name,
-            isSkating: isSkating,
+            number: skater.number,
+            name: skater.name,
+            isSkating: skater.isSkating,
         }
     });
 
@@ -143,10 +141,10 @@ const RosterTableRow = ({ number, name, isSkating, preventEdit, selected, existi
         onEditStart?.();
     }
 
-    const handleAcceptEdit = (skater: GameSkater) => {
+    const handleAcceptEdit = (editedSkater: Omit<GameSkater, 'id'>) => {
         setIsEditing(false);
         onEditEnd?.();
-        onSkaterChanged?.(skater);
+        onSkaterChanged?.({ id: skater.id, ...editedSkater });
         form.reset();
     }
 
@@ -159,7 +157,7 @@ const RosterTableRow = ({ number, name, isSkating, preventEdit, selected, existi
     useEffect(() => {
         const { isSkating } = form.getValues();
 
-        onSkaterChanged?.({ number, name, isSkating });
+        onSkaterChanged?.({ id: skater.id, number: skater.number, name: skater.name, isSkating });
     }, [form.watch('isSkating')]);
 
     return (
@@ -182,7 +180,7 @@ const RosterTableRow = ({ number, name, isSkating, preventEdit, selected, existi
                         </FormItem>
                     )} />
                 ) : (
-                    <span className="inline-block text-nowrap">{number}</span>
+                    <span className="inline-block text-nowrap">{skater.number}</span>
                 )
             }
             nameContent={
@@ -196,7 +194,7 @@ const RosterTableRow = ({ number, name, isSkating, preventEdit, selected, existi
                         </FormItem>
                     )} />
                 ) : (
-                    <span className="inline-block text-nowrap">{name}</span>
+                    <span className="inline-block text-nowrap">{skater.name}</span>
                 )
             }
             skatingContent={
@@ -263,8 +261,8 @@ export const GameRosterTable = ({ roster, className, onSkaterChanged, onSkaterDe
                 <Separator />
                 { roster.map((skater, i) => (
                     <RosterTableRow 
-                        {...skater} 
-                        key={skater.number}
+                        skater={skater}
+                        key={skater.id}
                         preventEdit={isEditing}
                         existingNumbers={roster.map(s => s.number).filter(n => n !== skater.number)}
                         disableSelect={isEditing}

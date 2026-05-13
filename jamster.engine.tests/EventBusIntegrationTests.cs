@@ -126,10 +126,10 @@ public class EventBusIntegrationTests
 
         await AddEvent(new TeamSet(0_000, new(TeamSide.Home, homeTeam)));
         await AddEvent(new TeamSet(0_000, new(TeamSide.Away, awayTeam)));
-        await AddEvent(new SkaterOnTrack(10_000, new(TeamSide.Home, homeTeam.Roster[0].Number, SkaterPosition.Jammer)));
-        await AddEvent(new SkaterOnTrack(10_500, new(TeamSide.Home, homeTeam.Roster[1].Number, SkaterPosition.Pivot)));
-        await AddEvent(new SkaterOnTrack(11_000, new(TeamSide.Away, awayTeam.Roster[0].Number, SkaterPosition.Jammer)));
-        await AddEvent(new SkaterOnTrack(11_500, new(TeamSide.Away, awayTeam.Roster[1].Number, SkaterPosition.Pivot)));
+        await AddEvent(new SkaterOnTrack(10_000, new(TeamSide.Home, homeTeam.Roster[0].Id, SkaterPosition.Jammer)));
+        await AddEvent(new SkaterOnTrack(10_500, new(TeamSide.Home, homeTeam.Roster[1].Id, SkaterPosition.Pivot)));
+        await AddEvent(new SkaterOnTrack(11_000, new(TeamSide.Away, awayTeam.Roster[0].Id, SkaterPosition.Jammer)));
+        await AddEvent(new SkaterOnTrack(11_500, new(TeamSide.Away, awayTeam.Roster[1].Id, SkaterPosition.Pivot)));
         await AddEvent(new JamStarted(40_000));
         await AddEvent(new LeadMarked(50_000, new(TeamSide.Home, true)));
         await AddEvent(new ScoreModifiedRelative(60_000, new(TeamSide.Home, 4)));

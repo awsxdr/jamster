@@ -30,6 +30,7 @@ public abstract class ScoreSheet(TeamSide teamSide, ReducerGameContext context, 
     , IDependsOnState<GameStageState>
     , IDependsOnState<TeamJamStatsState>
     , IDependsOnState<OvertimeState>
+    , IDependsOnState<TeamDetailsState>
 {
     protected override ScoreSheetState DefaultState => ScoreSheetState.Default;
 
@@ -49,8 +50,8 @@ public abstract class ScoreSheet(TeamSide teamSide, ReducerGameContext context, 
         {
             Period = gameStage.PeriodNumber,
             Jam = gameStage.JamNumber,
-            JammerNumber = lineup.JammerNumber ?? "?",
-            PivotNumber = lineup.PivotNumber ?? "?",
+            JammerNumber = GetSkaterNumber(lineup.JammerId),
+            PivotNumber = GetSkaterNumber(lineup.PivotId),
             GameTotal = state.Jams.Any() ? state.Jams[^1].GameTotal : 0,
             IsOvertimeJam = overtime.IsInOvertime,
         }).ToArray()));
@@ -63,11 +64,11 @@ public abstract class ScoreSheet(TeamSide teamSide, ReducerGameContext context, 
         switch (@event.Body.Position)
         {
             case SkaterPosition.Jammer:
-                ModifyJam(@event.Body.Period, @event.Body.Jam, jam => jam with { JammerNumber = @event.Body.SkaterNumber });
+                ModifyJam(@event.Body.Period, @event.Body.Jam, jam => jam with { JammerNumber = GetSkaterNumber(@event.Body.SkaterId) });
                 break;
 
             case SkaterPosition.Pivot:
-                ModifyJam(@event.Body.Period, @event.Body.Jam, jam => jam with { PivotNumber = @event.Body.SkaterNumber });
+                ModifyJam(@event.Body.Period, @event.Body.Jam, jam => jam with { PivotNumber = GetSkaterNumber(@event.Body.SkaterId) });
                 break;
         }
 
@@ -78,8 +79,8 @@ public abstract class ScoreSheet(TeamSide teamSide, ReducerGameContext context, 
     {
         ModifyJam(@event.Body.Period, @event.Body.Jam, jam => jam with
         {
-            JammerNumber = jam.JammerNumber == @event.Body.SkaterNumber ? string.Empty : jam.JammerNumber,
-            PivotNumber = jam.PivotNumber == @event.Body.SkaterNumber ? string.Empty : jam.PivotNumber,
+            JammerNumber = jam.JammerNumber == GetSkaterNumber(@event.Body.SkaterId) ? string.Empty : jam.JammerNumber,
+            PivotNumber = jam.PivotNumber == GetSkaterNumber(@event.Body.SkaterId) ? string.Empty : jam.PivotNumber,
         });
 
         return [];
@@ -286,6 +287,12 @@ public abstract class ScoreSheet(TeamSide teamSide, ReducerGameContext context, 
             ).ToArray()));
 
         return [new JamNumberOffset(@event.Tick, new(jam.Period, -1))];
+    }
+
+    private string GetSkaterNumber(Guid? skaterId)
+    {
+        var team = GetKeyedState<TeamDetailsState>(teamSide.ToString());
+        return skaterId?.Map(i => team.Team.Roster.SingleOrDefault(s => s.Id == i))?.Number ?? "?";
     }
 
     private void ModifyLatestJam(Func<ScoreSheetJam, ScoreSheetJam> mapper)

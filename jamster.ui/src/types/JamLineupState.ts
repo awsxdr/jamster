@@ -1,5 +1,5 @@
 export type JamLineupState = {
-    jammerNumber: string | undefined;
-    pivotNumber: string | undefined;
-    blockerNumbers: (string | undefined)[];
+    jammerId: string | undefined;
+    pivotId: string | undefined;
+    blockerIds: (string | undefined)[];
 }
