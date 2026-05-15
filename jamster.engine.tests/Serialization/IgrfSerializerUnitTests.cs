@@ -1,11 +1,11 @@
-﻿using jamster.engine.tests.GameGeneration;
-using FluentAssertions;
+﻿using FluentAssertions;
 
 using jamster.engine.Domain;
 using jamster.engine.Events;
 using jamster.engine.Reducers;
 using jamster.engine.Serialization;
 using jamster.engine.Services;
+using jamster.engine.TestGames.GameGeneration;
 
 namespace jamster.engine.tests.Serialization;
 

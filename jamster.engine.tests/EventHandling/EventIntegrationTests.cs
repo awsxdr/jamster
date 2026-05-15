@@ -1,12 +1,15 @@
 ﻿using System.Collections.Immutable;
+using System.Text.Json;
 
-using jamster.engine.tests.GameGeneration;
 using FluentAssertions;
 using Func;
 
 using jamster.engine.Events;
 using jamster.engine.Reducers;
 using jamster.engine.Services;
+using jamster.engine.TestGames.GameGeneration;
+
+using DomainTick = jamster.engine.Domain.Tick;
 
 namespace jamster.engine.tests.EventHandling;
 
@@ -48,9 +51,125 @@ public class EventIntegrationTests : EventBusIntegrationTest
     {
         var game = GameGenerator.GenerateRandom();
         var simulator = new GameSimulator(game);
-        var simulatorEvents = simulator.SimulateGame();
+        var simulatorEvents = simulator.SimulateGame(Option.Some(GenerateValidationEvent));
+
+        foreach (var @event in simulatorEvents)
+        {
+            if (@event is ValidateStateFakeEvent) continue;
+
+            Console.WriteLine(@event.HasBody
+                ? $"{@event.Tick}: {@event.GetType().Name} {JsonSerializer.Serialize(@event.GetBodyObject()!)}"
+                : $"{@event.Tick}: {@event.GetType().Name}");
+        }
+
 
         await AddEvents(simulatorEvents);
+    }
+
+    private Event GenerateValidationEvent(GameSimulator.GameState gameState, DomainTick tick)
+    {
+        return new ValidateStateFakeEvent(tick, [
+            new PeriodClockState(
+                gameState.Clocks.PeriodClock.Running
+                    && (
+                        gameState.Stage is Stage.Jam or Stage.Timeout
+                        || (gameState.Clocks.PeriodClock.TicksPassedAtLastStart + tick - gameState.Clocks.PeriodClock.LastStartTick).Seconds < Rules.DefaultRules.PeriodRules.DurationInSeconds
+                    ),
+                gameState.Stage is Stage.BeforeGame or Stage.AfterGame
+                    || gameState is { Stage: Stage.Lineup or Stage.Timeout or Stage.AfterTimeout, Jam: 0 }
+                    || gameState is { Stage: Stage.Intermission, PeriodFinalized: true }
+                    || gameState.Clocks.PeriodClock.Running && gameState.Clocks.PeriodClock.TicksPassedAtLastStart + tick - gameState.Clocks.PeriodClock.LastStartTick >= DomainTick.FromSeconds(Rules.DefaultRules.PeriodRules.DurationInSeconds)
+                    || !gameState.Clocks.PeriodClock.Running && gameState.Clocks.PeriodClock.PassedTicks >= DomainTick.FromSeconds(Rules.DefaultRules.PeriodRules.DurationInSeconds),
+                gameState.Clocks.PeriodClock.PassedTicks > 0,
+                gameState.Clocks.PeriodClock.LastStartTick,
+                gameState.Clocks.PeriodClock.TicksPassedAtLastStart,
+                gameState.Clocks.PeriodClock.Running
+                    ? Math.Min(gameState.Clocks.PeriodClock.TicksPassedAtLastStart + tick - gameState.Clocks.PeriodClock.LastStartTick, DomainTick.FromSeconds(Rules.DefaultRules.PeriodRules.DurationInSeconds))
+                    : gameState.Clocks.PeriodClock.PassedTicks
+            ),
+            new JamClockState(
+                gameState.Clocks.JamClock.Running,
+                gameState.Clocks.JamClock.LastStartTick,
+                gameState.Clocks.JamClock.Running
+                    ? gameState.Clocks.JamClock.TicksPassedAtLastStart + tick - gameState.Clocks.JamClock.LastStartTick
+                    : gameState.Clocks.JamClock.PassedTicks,
+                true,
+                !gameState.JamInfo.HomeTeam.Called && !gameState.JamInfo.AwayTeam.Called && gameState.Clocks.JamClock.PassedTicks.Seconds == Rules.DefaultRules.JamRules.DurationInSeconds
+            ),
+            new LineupClockState(
+                gameState.Clocks.LineupClock.Running,
+                gameState.Clocks.LineupClock.LastStartTick,
+                gameState.Clocks.LineupClock.Running
+                    ? gameState.Clocks.LineupClock.TicksPassedAtLastStart + tick - gameState.Clocks.LineupClock.LastStartTick
+                    : gameState.Clocks.LineupClock.PassedTicks
+            ),
+            new IntermissionClockState(
+                gameState.Clocks.IntermissionClock.Running && (gameState.Clocks.IntermissionClock.LastStartTick - tick).Seconds < Rules.DefaultRules.IntermissionRules.DurationInSeconds,
+                gameState.Stage is not Stage.Intermission || gameState.Clocks.IntermissionClock.PassedTicks >= DomainTick.FromSeconds(Rules.DefaultRules.IntermissionRules.DurationInSeconds),
+                DomainTick.FromSeconds(Rules.DefaultRules.IntermissionRules.DurationInSeconds),
+                gameState.Stage is Stage.Intermission ? gameState.Clocks.IntermissionClock.LastStartTick + DomainTick.FromSeconds(Rules.DefaultRules.IntermissionRules.DurationInSeconds) : 0,
+                gameState.Stage is Stage.Intermission ? Math.Max(0, (gameState.Clocks.IntermissionClock.LastStartTick + DomainTick.FromSeconds(Rules.DefaultRules.IntermissionRules.DurationInSeconds) - tick).Seconds) : 0
+            ),
+            ("Home", new PenaltyBoxState(
+                gameState.Lineups.HomeTeamLineup.Skaters
+                    .Where(s => s?.Penalty is { EntryTick: not null })
+                    .Select(s => s!.Id)
+                    .ToArray(),
+                gameState.Lineups.HomeTeamLineup.Skaters
+                    .Where(s => s?.Penalty is { EntryTick: null })
+                    .Select(s => s!.Id)
+                    .ToArray()
+                )),
+            ("Away", new PenaltyBoxState(
+                gameState.Lineups.AwayTeamLineup.Skaters
+                    .Where(s => s?.Penalty is { EntryTick: not null })
+                    .Select(s => s!.Id)
+                    .ToArray(),
+                gameState.Lineups.AwayTeamLineup.Skaters
+                    .Where(s => s?.Penalty is { EntryTick: null })
+                    .Select(s => s!.Id)
+                    .ToArray()
+            )),
+            ("Home", new JamLineupState(
+                GetSkaterId(t => t.HomeTeam)(gameState.Sheets.HomeSheets.LineupSheet[^1].JammerNumber),
+                GetSkaterId(t => t.HomeTeam)(gameState.Sheets.HomeSheets.LineupSheet[^1].PivotNumber),
+                gameState.Sheets.HomeSheets.LineupSheet[^1].BlockerNumbers.Select(GetSkaterId(t => t.HomeTeam)).OrderBy(x => x).ToArray()
+            )),
+            ("Away", new JamLineupState(
+                GetSkaterId(t => t.AwayTeam)(gameState.Sheets.AwaySheets.LineupSheet[^1].JammerNumber),
+                GetSkaterId(t => t.AwayTeam)(gameState.Sheets.AwaySheets.LineupSheet[^1].PivotNumber),
+                gameState.Sheets.AwaySheets.LineupSheet[^1].BlockerNumbers.Select(GetSkaterId(t => t.AwayTeam)).OrderBy(x => x).ToArray()
+            )),
+            ("Home", new TeamScoreState(gameState.Scores.HomeScore.GameTotal, gameState.Scores.HomeScore.JamTotal)),
+            ("Away", new TeamScoreState(gameState.Scores.AwayScore.GameTotal, gameState.Scores.AwayScore.JamTotal)),
+            ("Home", new TeamJamStatsState(
+                gameState.JamInfo.HomeTeam.Lead,
+                gameState.JamInfo.HomeTeam.Lost,
+                gameState.JamInfo.HomeTeam.Called,
+                gameState.Sheets.HomeSheets.ScoreSheet[^1].StarPassTrip != null,
+                gameState.JamInfo.HomeTeam.CompletedInitial)
+            ),
+            ("Away", new TeamJamStatsState(
+                gameState.JamInfo.AwayTeam.Lead,
+                gameState.JamInfo.AwayTeam.Lost,
+                gameState.JamInfo.AwayTeam.Called,
+                gameState.Sheets.AwaySheets.ScoreSheet[^1].StarPassTrip != null,
+                gameState.JamInfo.AwayTeam.CompletedInitial)
+            ),
+            new GameStageState(
+                gameState.Stage,
+                gameState.Period + (gameState.Stage == Stage.BeforeGame ? 1 : 0),
+                gameState.Jam,
+                gameState.TotalJam,
+                gameState.PeriodFinalized,
+                gameState.NextJamShouldStart
+            ),
+            new OvertimeState(gameState.IsInOvertime),
+        ]);
+
+        Func<string?, Guid?> GetSkaterId(Func<GameSimulator.Teams, GameTeam> teamSelector) => number =>
+            teamSelector(gameState.Teams).Roster.SingleOrDefault(s => s.Number == number)?.Id;
+
     }
 
     [Test]

@@ -17,6 +17,7 @@ public readonly struct Tick(long value)
     public static Tick FromSeconds(double seconds) => (int)(seconds * TicksPerSecond);
 
     public int Seconds => (int)(_value / TicksPerSecond);
+    public int Millseconds => (int)(_value / TicksPerSecond * 1000);
 
     public static implicit operator long(Tick tick) => tick._value;
     public static implicit operator Tick(long tick) => new(tick);

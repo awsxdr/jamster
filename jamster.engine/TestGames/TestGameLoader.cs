@@ -2,8 +2,10 @@
 using jamster.engine.DataStores;
 using jamster.engine.Domain;
 using jamster.engine.Events;
+using jamster.engine.Services;
+using jamster.engine.TestGames.GameGeneration;
 
-namespace jamster.engine.Services;
+namespace jamster.engine.TestGames;
 
 public interface ITestGameLoader
 {
@@ -107,6 +109,7 @@ public class TestGameLoader(
             .EndRepeat()
             .Wait(30),
 
+        ["Random"] = new GameSimulator(GameGenerator.GenerateRandom()).SimulateGame(Option.None<Func<GameSimulator.GameState, Tick, Event>>())
     };
 
     public async Task<Result> ConfigureTestGame(string testGameName)
@@ -123,8 +126,11 @@ public class TestGameLoader(
         var store = await gameDataStoreFactory.GetDataStore(databaseName);
         store.SetInfo(gameInfo);
 
+        var i = 0;
+
         foreach (var @event in events)
         {
+            Console.WriteLine(++i);
             store.AddEvent(@event);
         }
 

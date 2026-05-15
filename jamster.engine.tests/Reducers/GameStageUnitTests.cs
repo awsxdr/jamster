@@ -167,12 +167,44 @@ public class GameStageUnitTests : ReducerUnitTest<GameStage, GameStageState>
 
         MockState<OvertimeState>(new(true));
         MockState<RulesState>(new(Rules.DefaultRules));
-        MockState<PeriodClockState>(new(false, true, true, 0, 0,
-            DomainTick.FromSeconds(Rules.DefaultRules.PeriodRules.DurationInSeconds + 10)));
+        MockState<PeriodClockState>(new(false, true, true, 0, 0, DomainTick.FromSeconds(Rules.DefaultRules.PeriodRules.DurationInSeconds + 10)));
 
         await Subject.Handle(new JamEnded(0));
 
         State.Stage.Should().Be(Stage.Lineup);
+    }
+
+    [TestCase(32.0, true)]
+    [TestCase(28.0, false)]
+    [TestCase(29.5, false)]
+    [TestCase(30.5, false)]
+    public async Task JamEnded_SetsNextJamShouldStartAsExpected(double secondsRemainingInPeriod, bool expectedJamShouldStart)
+    {
+        State = GameStageState.Default with { Stage = Stage.Jam };
+
+        var rules = Rules.DefaultRules;
+        MockState<OvertimeState>(new(false));
+        MockState<RulesState>(new(rules));
+        MockState<PeriodClockState>(new(true, false, true, 0, 0, DomainTick.FromSeconds(rules.PeriodRules.DurationInSeconds - secondsRemainingInPeriod)));
+
+        await Subject.Handle(new JamEnded(0));
+
+        State.NextJamShouldStart.Should().Be(expectedJamShouldStart);
+    }
+
+    [Test]
+    public async Task JamEnded_WhenLessThan30SecondsInPeriod_AndInOvertime_SetsNextJamShouldStartToTrue()
+    {
+        State = GameStageState.Default with { Stage = Stage.Jam };
+
+        var rules = Rules.DefaultRules;
+        MockState<OvertimeState>(new(true));
+        MockState<RulesState>(new(rules));
+        MockState<PeriodClockState>(new(true, false, true, 0, 0, DomainTick.FromSeconds(rules.PeriodRules.DurationInSeconds - 20)));
+
+        await Subject.Handle(new JamEnded(0));
+
+        State.NextJamShouldStart.Should().Be(true);
     }
 
     [TestCase(Stage.BeforeGame, Stage.BeforeGame)]
@@ -304,6 +336,18 @@ public class GameStageUnitTests : ReducerUnitTest<GameStage, GameStageState>
         State.PeriodIsFinalized.Should().Be(expectedFinalized);
     }
 
+    [Test]
+    public async Task PeriodFinalized_SetsNextJamShouldStartToTrue()
+    {
+        State = GameStageState.Default with { Stage = Stage.Intermission, NextJamShouldStart = false };
+
+        MockState<RulesState>(new(Rules.DefaultRules));
+
+        await Subject.Handle(new PeriodFinalized(0));
+
+        State.NextJamShouldStart.Should().BeTrue();
+    }
+
     [TestCase(TimeoutType.Official, true, false, Stage.Timeout)]
     [TestCase(TimeoutType.Team, true, false, Stage.Intermission)]
     [TestCase(TimeoutType.Official, true, true, Stage.Intermission)]
@@ -335,7 +379,7 @@ public class GameStageUnitTests : ReducerUnitTest<GameStage, GameStageState>
     [TestCase(1, 10, 2, 5, 10)]
     public async Task JamNumberOffset_AdjustsJamNumberAccordingly(int currentPeriod, int currentJam, int offsetPeriod, int offset, int expectedJam)
     {
-        State = new(Stage.Lineup, currentPeriod, currentJam, currentJam + (currentPeriod - 1) * 20, false);
+        State = new(Stage.Lineup, currentPeriod, currentJam, currentJam + (currentPeriod - 1) * 20, false, true);
 
         await Subject.Handle(new JamNumberOffset(0, new(offsetPeriod, offset)));
 

@@ -1,8 +1,6 @@
-﻿using Func;
+﻿using jamster.engine.Domain;
 
-using jamster.engine.Domain;
-
-namespace jamster.engine.tests.GameGeneration;
+namespace jamster.engine.TestGames.GameGeneration;
 
 public abstract record GameState(
     SimulatorGame Game,

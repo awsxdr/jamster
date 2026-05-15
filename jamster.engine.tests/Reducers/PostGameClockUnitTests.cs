@@ -12,7 +12,7 @@ public class PostGameClockUnitTests : ReducerUnitTest<PostGameClock, PostGameClo
     public async Task PeriodEnded_WhenLastPeriod_StartsTheClock()
     {
         State = PostGameClockState.Default;
-        MockState(new GameStageState(Stage.Jam, 2, 5, 10, false));
+        MockState(new GameStageState(Stage.Jam, 2, 5, 10, false, false));
         MockState(new OvertimeState(false));
         MockState(new RulesState(Rules.DefaultRules));
 
@@ -27,7 +27,7 @@ public class PostGameClockUnitTests : ReducerUnitTest<PostGameClock, PostGameClo
     public async Task PeriodEnded_WhenNotLastPeriod_DoesNotStartTheClock()
     {
         State = PostGameClockState.Default;
-        MockState(new GameStageState(Stage.Jam, 1, 5, 5, false));
+        MockState(new GameStageState(Stage.Jam, 1, 5, 5, false, false));
         MockState(new OvertimeState(false));
         MockState(new RulesState(Rules.DefaultRules));
 
@@ -40,7 +40,7 @@ public class PostGameClockUnitTests : ReducerUnitTest<PostGameClock, PostGameClo
     public async Task PeriodEnded_WhenInOvertime_StartsTheClock()
     {
         State = PostGameClockState.Default;
-        MockState(new GameStageState(Stage.Jam, 2, 1, 11, false));
+        MockState(new GameStageState(Stage.Jam, 2, 1, 11, false, false));
         MockState(new OvertimeState(true));
         MockState(new RulesState(Rules.DefaultRules));
 

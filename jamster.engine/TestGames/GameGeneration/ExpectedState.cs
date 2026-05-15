@@ -1,6 +1,6 @@
 ﻿using jamster.engine.Reducers;
 
-namespace jamster.engine.tests.GameGeneration;
+namespace jamster.engine.TestGames.GameGeneration;
 
 public record ExpectedState(
     Clock PeriodClock,

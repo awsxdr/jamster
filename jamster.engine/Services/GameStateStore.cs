@@ -16,6 +16,12 @@ public sealed class EventHandledEventArgs : EventArgs
     public required int Index { get; init; }
 }
 
+public sealed class StateChangedEventArgs : EventArgs
+{
+    public required string StateKey { get; init; }
+    public required object State { get; init; }
+}
+
 public interface IGameStateStore
 {
     event EventHandler<EventHandledEventArgs> EventHandled;

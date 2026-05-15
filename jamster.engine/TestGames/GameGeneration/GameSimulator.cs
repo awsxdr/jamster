@@ -1,12 +1,7 @@
 ﻿using System.Linq.Expressions;
-using System.Text.Json;
-
-using jamster.engine.tests.EventHandling;
-using Func;
 
 using jamster.engine.Domain;
 using jamster.engine.Events;
-using jamster.engine.Extensions;
 using jamster.engine.Reducers;
 
 // ReSharper disable RedundantDefaultMemberInitializer
@@ -15,9 +10,9 @@ using jamster.engine.Reducers;
 // ReSharper disable UnusedAutoPropertyAccessor.Local
 // ReSharper disable MemberHidesStaticFromOuterClass
 
-namespace jamster.engine.tests.GameGeneration;
+namespace jamster.engine.TestGames.GameGeneration;
 
-public class GameSimulator(SimulatorGame game)
+internal class GameSimulator(SimulatorGame game)
 {
     private const float TicksPerSecond = 10;
     private const int TickIncrement = (int)(Tick.TicksPerSecond / TicksPerSecond);
@@ -27,7 +22,7 @@ public class GameSimulator(SimulatorGame game)
     private List<Event> _events = new();
     private Tick _tick = 0;
 
-    public Event[] SimulateGame()
+    public Event[] SimulateGame(Option<Func<GameState, Tick, Event>> validationEventFactory)
     {
         _gameState = new();
         _events = new();
@@ -64,130 +59,21 @@ public class GameSimulator(SimulatorGame game)
             if(_gameState.Stage != Stage.AfterGame)
                 TickLineupTracker();
 
-            if (_tick - lastValidationTick > Tick.FromSeconds(ValidationIntervalInSeconds) && _events.All(e => e.Tick != _tick))
+            if (validationEventFactory is Some<Func<GameState, Tick, Event>> factory && _tick - lastValidationTick > Tick.FromSeconds(ValidationIntervalInSeconds) && _events.All(e => e.Tick != _tick))
             {
                 lastValidationTick = _tick;
-                _events.Add(GenerateValidationEvent());
+                _events.Add(factory.Value(_gameState, _tick));
             }
 
             _tick += TickIncrement;
         }
         while (_gameState is not { Period: 2, Stage: Stage.AfterGame, PeriodFinalized: true });
 
-        foreach (var @event in _events)
-        {
-            if (@event is ValidateStateFakeEvent) continue;
-
-            Console.WriteLine(@event.HasBody
-                ? $"{@event.Tick}: {@event.GetType().Name} {JsonSerializer.Serialize(@event.GetBodyObject()!)}"
-                : $"{@event.Tick}: {@event.GetType().Name}");
-        }
-
         return _events.ToArray();
     }
 
     private Func<string?, Guid?> GetSkaterId(Func<Teams, GameTeam> teamSelector) => number =>
         teamSelector(_gameState.Teams).Roster.SingleOrDefault(s => s.Number == number)?.Id;
-
-    private Event GenerateValidationEvent() =>
-        new ValidateStateFakeEvent(_tick, [
-            new PeriodClockState(
-                _gameState.Clocks.PeriodClock.Running 
-                    && (
-                        _gameState.Stage is Stage.Jam or Stage.Timeout
-                        || (_gameState.Clocks.PeriodClock.TicksPassedAtLastStart + _tick - _gameState.Clocks.PeriodClock.LastStartTick).Seconds < Rules.DefaultRules.PeriodRules.DurationInSeconds
-                    ),
-                _gameState.Stage is Stage.BeforeGame or Stage.AfterGame
-                    || _gameState is { Stage: Stage.Lineup or Stage.Timeout or Stage.AfterTimeout, Jam: 0 }
-                    || _gameState is { Stage: Stage.Intermission, PeriodFinalized: true }
-                    || _gameState.Clocks.PeriodClock.Running && _gameState.Clocks.PeriodClock.TicksPassedAtLastStart + _tick - _gameState.Clocks.PeriodClock.LastStartTick >= Tick.FromSeconds(Rules.DefaultRules.PeriodRules.DurationInSeconds)
-                    || !_gameState.Clocks.PeriodClock.Running && _gameState.Clocks.PeriodClock.PassedTicks >= Tick.FromSeconds(Rules.DefaultRules.PeriodRules.DurationInSeconds),
-                _gameState.Clocks.PeriodClock.PassedTicks > 0,
-                _gameState.Clocks.PeriodClock.LastStartTick,
-                _gameState.Clocks.PeriodClock.TicksPassedAtLastStart,
-                _gameState.Clocks.PeriodClock.Running
-                    ? Math.Min(_gameState.Clocks.PeriodClock.TicksPassedAtLastStart + _tick - _gameState.Clocks.PeriodClock.LastStartTick, Tick.FromSeconds(Rules.DefaultRules.PeriodRules.DurationInSeconds))
-                    : _gameState.Clocks.PeriodClock.PassedTicks
-            ),
-            new JamClockState(
-                _gameState.Clocks.JamClock.Running,
-                _gameState.Clocks.JamClock.LastStartTick,
-                _gameState.Clocks.JamClock.Running
-                    ? _gameState.Clocks.JamClock.TicksPassedAtLastStart + _tick - _gameState.Clocks.JamClock.LastStartTick
-                    : _gameState.Clocks.JamClock.PassedTicks,
-                true,
-                !_gameState.JamInfo.HomeTeam.Called && !_gameState.JamInfo.AwayTeam.Called && _gameState.Clocks.JamClock.PassedTicks.Seconds == Rules.DefaultRules.JamRules.DurationInSeconds
-            ),
-            new LineupClockState(
-                _gameState.Clocks.LineupClock.Running,
-                _gameState.Clocks.LineupClock.LastStartTick,
-                _gameState.Clocks.LineupClock.Running
-                    ? _gameState.Clocks.LineupClock.TicksPassedAtLastStart + _tick - _gameState.Clocks.LineupClock.LastStartTick
-                    : _gameState.Clocks.LineupClock.PassedTicks
-            ),
-            new IntermissionClockState(
-                _gameState.Clocks.IntermissionClock.Running && (_gameState.Clocks.IntermissionClock.LastStartTick - _tick).Seconds < Rules.DefaultRules.IntermissionRules.DurationInSeconds,
-                _gameState.Stage is not Stage.Intermission || _gameState.Clocks.IntermissionClock.PassedTicks >= Tick.FromSeconds(Rules.DefaultRules.IntermissionRules.DurationInSeconds),
-                Tick.FromSeconds(Rules.DefaultRules.IntermissionRules.DurationInSeconds),
-                _gameState.Stage is Stage.Intermission ? _gameState.Clocks.IntermissionClock.LastStartTick + Tick.FromSeconds(Rules.DefaultRules.IntermissionRules.DurationInSeconds) : 0,
-                _gameState.Stage is Stage.Intermission ? Math.Max(0, (_gameState.Clocks.IntermissionClock.LastStartTick + Tick.FromSeconds(Rules.DefaultRules.IntermissionRules.DurationInSeconds) - _tick).Seconds) : 0
-            ),
-            ("Home", new PenaltyBoxState(
-                _gameState.Lineups.HomeTeamLineup.Skaters
-                    .Where(s => s?.Penalty is { EntryTick: not null })
-                    .Select(s => s!.Id)
-                    .ToArray(),
-                _gameState.Lineups.HomeTeamLineup.Skaters
-                    .Where(s => s?.Penalty is { EntryTick: null })
-                    .Select(s => s!.Id)
-                    .ToArray()
-                )),
-            ("Away", new PenaltyBoxState(
-                _gameState.Lineups.AwayTeamLineup.Skaters
-                    .Where(s => s?.Penalty is { EntryTick: not null })
-                    .Select(s => s!.Id)
-                    .ToArray(),
-                _gameState.Lineups.AwayTeamLineup.Skaters
-                    .Where(s => s?.Penalty is { EntryTick: null })
-                    .Select(s => s!.Id)
-                    .ToArray()
-            )),
-            ("Home", new JamLineupState(
-                GetSkaterId(t => t.HomeTeam)(_gameState.Sheets.HomeSheets.LineupSheet[^1].JammerNumber),
-                GetSkaterId(t => t.HomeTeam)(_gameState.Sheets.HomeSheets.LineupSheet[^1].PivotNumber),
-                _gameState.Sheets.HomeSheets.LineupSheet[^1].BlockerNumbers.Select(GetSkaterId(t => t.HomeTeam)).OrderBy(x => x).ToArray()
-            )),
-            ("Away", new JamLineupState(
-                GetSkaterId(t => t.AwayTeam)(_gameState.Sheets.AwaySheets.LineupSheet[^1].JammerNumber),
-                GetSkaterId(t => t.AwayTeam)(_gameState.Sheets.AwaySheets.LineupSheet[^1].PivotNumber),
-                _gameState.Sheets.AwaySheets.LineupSheet[^1].BlockerNumbers.Select(GetSkaterId(t => t.AwayTeam)).OrderBy(x => x).ToArray()
-            )),
-            ("Home", new TeamScoreState(_gameState.Scores.HomeScore.GameTotal, _gameState.Scores.HomeScore.JamTotal)),
-            ("Away", new TeamScoreState(_gameState.Scores.AwayScore.GameTotal, _gameState.Scores.AwayScore.JamTotal)),
-            ("Home", new TeamJamStatsState(
-                _gameState.JamInfo.HomeTeam.Lead,
-                _gameState.JamInfo.HomeTeam.Lost,
-                _gameState.JamInfo.HomeTeam.Called,
-                _gameState.Sheets.HomeSheets.ScoreSheet[^1].StarPassTrip != null,
-                _gameState.JamInfo.HomeTeam.CompletedInitial)
-            ),
-            ("Away", new TeamJamStatsState(
-                _gameState.JamInfo.AwayTeam.Lead,
-                _gameState.JamInfo.AwayTeam.Lost,
-                _gameState.JamInfo.AwayTeam.Called,
-                _gameState.Sheets.AwaySheets.ScoreSheet[^1].StarPassTrip != null,
-                _gameState.JamInfo.AwayTeam.CompletedInitial)
-            ),
-            new GameStageState(
-                _gameState.Stage,
-                _gameState.Period + (_gameState.Stage == Stage.BeforeGame ? 1 : 0),
-                _gameState.Jam,
-                _gameState.TotalJam,
-                _gameState.PeriodFinalized,
-                _gameState.NextJamShouldStart
-            ),
-            new OvertimeState(_gameState.IsInOvertime),
-        ]);
 
     private void TickBeforeGame()
     {
@@ -245,7 +131,6 @@ public class GameSimulator(SimulatorGame game)
                 _gameState.Clocks.PeriodClock.PassedTicks = Tick.FromSeconds(Rules.DefaultRules.PeriodRules.DurationInSeconds);
                 _gameState.Clocks.LineupClock.Running = false;
                 StartClock(c => c.IntermissionClock, reset: true);
-                _events.Add(new DebugFakeEvent(_tick, "Intermission start"));
             }
             else
             {
@@ -298,8 +183,6 @@ public class GameSimulator(SimulatorGame game)
             _gameState.TimeoutInfo = new();
 
             _events.Add(new TimeoutStarted(_tick));
-
-            return;
         }
     }
 
@@ -477,7 +360,6 @@ public class GameSimulator(SimulatorGame game)
                     _gameState.Stage = Stage.Intermission;
                     StopClock(c => c.PeriodClock, maxTick: Tick.FromSeconds(Rules.DefaultRules.PeriodRules.DurationInSeconds));
                     StartClock(c => c.IntermissionClock, reset: true, align: true);
-                    _events.Add(new DebugFakeEvent(_tick, "Intermission start"));
                 }
                 else
                 {
@@ -808,7 +690,7 @@ public class GameSimulator(SimulatorGame game)
     private void LogDebug(string message) =>
         Console.WriteLine($"{_tick}: {message}");
 
-    private class GameState
+    internal class GameState
     {
         public Stage Stage { get; set; } = Stage.BeforeGame;
         public int Period { get; set; } = 0;
@@ -826,14 +708,14 @@ public class GameSimulator(SimulatorGame game)
         public bool NextJamShouldStart { get; set; } = true;
     }
 
-    private class TeamJamInfo
+    internal class TeamJamInfo
     {
         public JamInfo HomeTeam { get; set; } = new();
         public JamInfo AwayTeam { get; set; } = new();
         public bool Injury { get; set; } = false;
     }
 
-    private class JamInfo
+    internal class JamInfo
     {
         public bool Lost { get; set; } = false;
         public bool Lead { get; set; } = false;
@@ -841,7 +723,7 @@ public class GameSimulator(SimulatorGame game)
         public bool CompletedInitial { get; set; } = false;
     }
 
-    private class TimeoutInfo
+    internal class TimeoutInfo
     {
         public TimeoutType Type { get; set; } = TimeoutType.Untyped;
         public TeamSide? Side { get; set; } = null;
@@ -849,19 +731,19 @@ public class GameSimulator(SimulatorGame game)
         public TeamTimeoutInfo AwayTeam { get; set; } = new();
     }
 
-    private class TeamTimeoutInfo
+    internal class TeamTimeoutInfo
     {
         public ReviewStatus ReviewStatus { get; set; } = ReviewStatus.Unused;
         public int RemainingTimeouts { get; set; } = Rules.DefaultRules.TimeoutRules.TeamTimeoutAllowance;
     }
 
-    private class Teams
+    internal class Teams
     {
         public GameTeam HomeTeam { get; set; } = new([], new (Color.White, Color.Black), []);
         public GameTeam AwayTeam { get; set; } = new([], new(Color.Black, Color.White), []);
     }
 
-    private class Clock
+    internal class Clock
     {
         public Tick PassedTicks { get; set; } = 0;
         public bool Running { get; set; } = false;
@@ -869,7 +751,7 @@ public class GameSimulator(SimulatorGame game)
         public Tick TicksPassedAtLastStart { get; set; } = 0;
     }
 
-    private class Clocks
+    internal class Clocks
     {
         public Clock PeriodClock { get; set; } = new();
         public Clock JamClock { get; set; } = new();
@@ -878,51 +760,51 @@ public class GameSimulator(SimulatorGame game)
         public Clock TimeoutClock { get; set; } = new();
     }
 
-    private class Penalty
+    internal class Penalty
     {
         public Tick? EntryTick { get; set; } = null;
         public int PenaltyCount { get; set; } = 1;
         public Tick TicksServed { get; set; } = 0;
     }
 
-    private class LineupSkater
+    internal class LineupSkater
     {
         public Guid Id { get; set; } = Guid.NewGuid();
         public string Number { get; set; } = string.Empty;
         public Penalty? Penalty { get; set; } = null;
     }
 
-    private class TeamLineup
+    internal class TeamLineup
     {
         public LineupSkater?[] Skaters { get; set; } = [];
     }
 
-    private class Lineups
+    internal class Lineups
     {
         public TeamLineup HomeTeamLineup { get; set; } = new();
         public TeamLineup AwayTeamLineup { get; set; } = new();
     }
 
-    private class Scores
+    internal class Scores
     {
         public TeamScore HomeScore { get; set; } = new();
         public TeamScore AwayScore { get; set; } = new();
     }
 
-    private class TeamScore
+    internal class TeamScore
     {
         public int GameTotal { get; set; } = 0;
         public int JamTotal { get; set; } = 0;
     }
 
-    private class Sheets
+    internal class Sheets
     {
         public List<ScoreSheetJam> ScoreSheet { get; set; } = [new() { Period = 1, Jam = 1 }];
         public List<LineupSheetJam> LineupSheet { get; set; } = [new() { Period = 1, Jam = 1 }];
         public List<PenaltySheetLine> PenaltySheet { get; set; } = [];
     }
 
-    private class ScoreSheetJam
+    internal class ScoreSheetJam
     {
         public int Period { get; set; } = 0;
         public int Jam { get; set; } = 0;
@@ -939,7 +821,7 @@ public class GameSimulator(SimulatorGame game)
         public int GameTotal { get; set; } = 0;
     }
 
-    private class LineupSheetJam
+    internal class LineupSheetJam
     {
         public int Period { get; set; } = 0;
         public int Jam { get; set; } = 0;
@@ -951,13 +833,13 @@ public class GameSimulator(SimulatorGame game)
         public string[] SkaterNumbers => ((string?[])[JammerNumber, PivotNumber, ..BlockerNumbers]).Where(s => s != null).ToArray()!;
     }
 
-    private class PenaltySheetLine
+    internal class PenaltySheetLine
     {
         public string SkaterNumber { get; set; } = string.Empty;
         public List<engine.Reducers.Penalty> Penalties { get; set; } = new();
     }
 
-    private class TeamsSheets
+    internal class TeamsSheets
     {
         public Sheets HomeSheets { get; set; } = new();
         public Sheets AwaySheets { get; set; } = new();

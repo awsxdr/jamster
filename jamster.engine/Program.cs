@@ -1,10 +1,12 @@
 using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
+using Autofac;
 using Autofac.Extensions.DependencyInjection;
 
 using CommandLine;
@@ -15,6 +17,7 @@ using jamster.engine.DataStores;
 using jamster.engine.Domain;
 using jamster.engine.Hubs;
 using jamster.engine.Services;
+using jamster.engine.TestGames;
 
 using Microsoft.AspNetCore.Connections;
 using Microsoft.AspNetCore.Diagnostics;
@@ -28,6 +31,8 @@ using NLog.Targets;
 using NLog.Web;
 
 using LogLevel = NLog.LogLevel;
+
+[assembly: InternalsVisibleTo("jamster.engine.tests")]
 
 namespace jamster.engine;
 
@@ -65,11 +70,16 @@ public class Program
         builder.Host.UseServiceProviderFactory(new AutofacServiceProviderFactory(container =>
         {
             container.RegisterServices();
+            container.RegisterCarolinaCompatibilityLayer();
             container.RegisterConfigurations();
             container.RegisterDataStores();
             container.RegisterReducers();
             container.RegisterHubNotifiers();
             AdditionalDependencies?.Invoke(container);
+
+#if DEBUG
+            container.RegisterType<TestGameLoader>().As<ITestGameLoader>().SingleInstance();
+#endif
         }));
 
         builder.Services

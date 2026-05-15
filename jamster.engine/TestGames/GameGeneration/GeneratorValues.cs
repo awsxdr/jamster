@@ -1,4 +1,4 @@
-﻿namespace jamster.engine.tests.GameGeneration;
+﻿namespace jamster.engine.TestGames.GameGeneration;
 
 public record GeneratorValues(float PenaltyChance)
 {

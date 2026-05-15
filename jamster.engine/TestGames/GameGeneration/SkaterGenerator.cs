@@ -1,9 +1,6 @@
-﻿using Func;
+﻿using jamster.engine.Domain;
 
-using jamster.engine.Domain;
-using jamster.engine.Extensions;
-
-namespace jamster.engine.tests.GameGeneration;
+namespace jamster.engine.TestGames.GameGeneration;
 
 public static class SkaterGenerator
 {

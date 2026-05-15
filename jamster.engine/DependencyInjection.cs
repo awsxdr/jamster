@@ -41,6 +41,30 @@ public static class DependencyInjection
         }
     }
 
+    public static ICollection<Type> GetCarolinaCompatibilityTypes() =>
+        Assembly.GetExecutingAssembly().GetTypes()
+            .Where(t => t.Namespace?.StartsWith($"{typeof(Program).Namespace}.{nameof(Carolina)}") ?? false)
+            .Where(t => t is { IsAbstract: false, IsGenericType: false, IsNested: false, IsClass: true })
+            .Where(t => !t.IsAssignableTo<MulticastDelegate>())
+            .ToArray();
+
+    public static void RegisterCarolinaCompatibilityLayer(this ContainerBuilder builder)
+    {
+        var carolinaTypes = GetCarolinaCompatibilityTypes();
+
+        foreach (var type in carolinaTypes)
+        {
+            if (type.GetCustomAttribute<DoNotRegisterAttribute>() is not null) continue;
+
+            var singleton = type.GetCustomAttribute<SingletonAttribute>() is not null;
+
+            var registration = builder.RegisterType(type).AsImplementedInterfaces();
+
+            if (singleton)
+                registration.SingleInstance();
+        }
+    }
+
     public static ICollection<Type> GetReducerTypes() =>
         Assembly.GetExecutingAssembly().GetTypes()
             .Where(t => !t.IsAbstract && t.IsAssignableTo<IReducer>())

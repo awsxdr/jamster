@@ -2,7 +2,6 @@
 using System.Text.Json.Nodes;
 
 using jamster.engine.Domain;
-using jamster.engine.Extensions;
 using jamster.engine.Services;
 
 namespace jamster.engine.Events;
