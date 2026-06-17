@@ -25,13 +25,9 @@ public class ConfigurationNotifier : Notifier<ConfigurationHub>
 
 public class ConfigurationHub : Hub
 {
-    public async Task WatchConfiguration(string configurationKey)
-    {
-        await Groups.AddToGroupAsync(Context.ConnectionId, configurationKey);
-    }
+    public Task WatchConfiguration(string configurationKey) =>
+        Groups.AddToGroupAsync(Context.ConnectionId, configurationKey);
 
-    public async Task UnwatchConfiguration(string configurationKey)
-    {
-        await Groups.RemoveFromGroupAsync(Context.ConnectionId, configurationKey);
-    }
+    public Task UnwatchConfiguration(string configurationKey) => 
+        Groups.RemoveFromGroupAsync(Context.ConnectionId, configurationKey);
 }

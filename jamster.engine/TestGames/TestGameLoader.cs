@@ -126,13 +126,11 @@ public class TestGameLoader(
         var store = await gameDataStoreFactory.GetDataStore(databaseName);
         store.SetInfo(gameInfo);
 
-        var i = 0;
-
         foreach (var @event in events)
         {
-            Console.WriteLine(++i);
             store.AddEvent(@event);
         }
+        Console.WriteLine($"Test game {testGameName} loaded");
 
         return Result.Succeed();
     }

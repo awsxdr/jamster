@@ -1,7 +1,6 @@
 ﻿using System.Collections.Concurrent;
 
 using jamster.engine.Domain;
-using jamster.engine.Extensions;
 using jamster.engine.Hubs;
 
 using Microsoft.AspNetCore.SignalR;
@@ -22,7 +21,7 @@ public interface IConnectedClientsService
     Result<ConnectedClient> GetClientById(Guid clientId);
     Result<ConnectedClient> GetClientByName(string clientName);
 
-    public sealed class ConnectedClientsChangedArgs : EventArgs
+    sealed class ConnectedClientsChangedArgs : EventArgs
     {
         public required ConnectedClient[] Clients { get; init; }
     }

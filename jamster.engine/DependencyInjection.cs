@@ -24,13 +24,14 @@ public static class DependencyInjection
             .Where(t => !t.IsAssignableTo<MulticastDelegate>())
             .ToArray();
 
-    public static void RegisterServices(this ContainerBuilder builder)
+    public static void RegisterServices(this ContainerBuilder builder, CommandLineOptions options)
     {
         var serviceTypes = GetServiceTypes();
 
         foreach (var type in serviceTypes)
         {
-            if (type.GetCustomAttribute<DoNotRegisterAttribute>() is not null) continue;
+            if (!ShouldRegister(type, options))
+                continue;
 
             var singleton = type.GetCustomAttribute<SingletonAttribute>() is not null;
 
@@ -48,13 +49,14 @@ public static class DependencyInjection
             .Where(t => !t.IsAssignableTo<MulticastDelegate>())
             .ToArray();
 
-    public static void RegisterCarolinaCompatibilityLayer(this ContainerBuilder builder)
+    public static void RegisterCarolinaCompatibilityLayer(this ContainerBuilder builder, CommandLineOptions options)
     {
         var carolinaTypes = GetCarolinaCompatibilityTypes();
 
         foreach (var type in carolinaTypes)
         {
-            if (type.GetCustomAttribute<DoNotRegisterAttribute>() is not null) continue;
+            if (!ShouldRegister(type, options))
+                continue;
 
             var singleton = type.GetCustomAttribute<SingletonAttribute>() is not null;
 
@@ -70,12 +72,15 @@ public static class DependencyInjection
             .Where(t => !t.IsAbstract && t.IsAssignableTo<IReducer>())
             .ToArray();
 
-    public static void RegisterReducers(this ContainerBuilder builder)
+    public static void RegisterReducers(this ContainerBuilder builder, CommandLineOptions options)
     {
         var reducerTypes = GetReducerTypes();
 
         foreach (var reducerType in reducerTypes)
         {
+            if (!ShouldRegister(reducerType, options))
+                continue;
+
             builder.RegisterType(reducerType).AsSelf();
             builder.Register<ReducerFactory>(context =>
             {
@@ -91,6 +96,7 @@ public static class DependencyInjection
             .Where(ass => !ass.IsDynamic)
             .SelectMany(ass => ass.GetTypes())
             .Where(t => !t.IsAbstract && t.IsAssignableTo<IConfigurationFactory>())
+            .DistinctBy(t => t.FullName)
             .ToArray();
 
     public static void RegisterConfigurations(this ContainerBuilder builder)
@@ -119,7 +125,7 @@ public static class DependencyInjection
         builder.RegisterType<UserDataStore>().As<IUserDataStore>().SingleInstance();
     }
 
-    public static void RegisterHubNotifiers(this ContainerBuilder builder)
+    public static void RegisterHubNotifiers(this ContainerBuilder builder, CommandLineOptions options)
     {
         var hubTypes =
             Assembly.GetExecutingAssembly().GetTypes()
@@ -128,8 +134,35 @@ public static class DependencyInjection
 
         foreach (var hubType in hubTypes)
         {
+            if (!ShouldRegister(hubType, options))
+                continue;
+
             builder.RegisterType(hubType).AsSelf().As<INotifier>().SingleInstance();
         }
+    }
+
+    private static bool ShouldRegister(Type type, CommandLineOptions options)
+    {
+        if (type.GetCustomAttribute<DoNotRegisterAttribute>() is not null) 
+            return false;
+
+        var predicateRegister = type.GetCustomAttribute<RegisterOnPredicateAttribute>();
+
+        if (predicateRegister is not null)
+        {
+            if (!predicateRegister.ShouldRegister(options))
+                return false;
+        }
+
+        var optionRegister = type.GetCustomAttribute<RegisterOnOptionAttribute>();
+
+        if (optionRegister is not null)
+        {
+            if (!optionRegister.ShouldRegister(options))
+                return false;
+        }
+
+        return true;
     }
 }
 
@@ -138,3 +171,20 @@ public sealed class SingletonAttribute : Attribute;
 
 [AttributeUsage(AttributeTargets.Class)]
 public sealed class DoNotRegisterAttribute : Attribute;
+
+[AttributeUsage(AttributeTargets.Class)]
+public class RegisterOnPredicateAttribute(Type type, string predicateName) : Attribute
+{
+    public bool ShouldRegister(CommandLineOptions options) =>
+        type.GetMethod(predicateName)?.Invoke(null, [options]) as bool? ??
+        throw new ArgumentException("Given method cannot be found or does not return a bool");
+}
+public sealed class RegisterOnPredicateAttribute<T>(string predicateName) : RegisterOnPredicateAttribute(typeof(T), predicateName);
+
+[AttributeUsage(AttributeTargets.Class)]
+public sealed class RegisterOnOptionAttribute(string optionName) : Attribute
+{
+    public bool ShouldRegister(CommandLineOptions options) =>
+        typeof(CommandLineOptions).GetProperty(optionName)?.GetValue(options) as bool? ??
+        throw new ArgumentException("Given option cannot be found or does not return a bool");
+}

@@ -54,15 +54,11 @@ public class GameClock(GameInfo game, IEnumerable<ITickReceiverAsync> receivers,
         });
     }
 
-    public void Stop()
-    {
+    public void Stop() =>
         _isRunning = false;
-    }
 
-    public void Dispose()
-    {
+    public void Dispose() =>
         _isRunning = false;
-    }
 }
 
 public interface ITickReceiver : ITickReceiverAsync

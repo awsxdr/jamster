@@ -27,17 +27,14 @@ public class SystemStateNotifier : Notifier<SystemStateHub>
                     return Result.Succeed();
                 })
                 .OnError<GameFileNotFoundForIdError>(_ =>
-                {
-                    logger.LogError("Could not find game file for new current game");
-                });
+                    logger.LogError("Could not find game file for new current game")
+                );
         };
     }
 }
 
 public class SystemStateHub : Hub
 {
-    public async Task WatchSystemState()
-    {
-        await Groups.AddToGroupAsync(Context.ConnectionId, "CurrentGame");
-    }
+    public Task WatchSystemState() =>
+        Groups.AddToGroupAsync(Context.ConnectionId, "CurrentGame");
 }

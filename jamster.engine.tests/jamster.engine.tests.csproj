@@ -50,6 +50,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="Carolina\" />
     <Folder Include="Extensions\" />
   </ItemGroup>
 

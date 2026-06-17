@@ -11,7 +11,7 @@ public interface ISystemStateStore
     Task<Result<GameInfo>> GetCurrentGame();
     Task<Result<GameInfo>> SetCurrentGame(Guid gameId);
 
-    public sealed class SystemStateChangedEventArgs<TValue>(TValue value) : EventArgs
+    sealed class SystemStateChangedEventArgs<TValue>(TValue value) : EventArgs
     {
         public TValue Value { get; } = value;
     }

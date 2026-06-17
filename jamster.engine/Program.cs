@@ -5,6 +5,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
 
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
@@ -23,6 +24,8 @@ using Microsoft.AspNetCore.Connections;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc.ApiExplorer;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.AspNetCore.StaticFiles;
+using Microsoft.Extensions.FileProviders;
 
 using NLog;
 using NLog.Config;
@@ -69,13 +72,16 @@ public class Program
 
         builder.Host.UseServiceProviderFactory(new AutofacServiceProviderFactory(container =>
         {
-            container.RegisterServices();
-            container.RegisterCarolinaCompatibilityLayer();
+            container.RegisterServices(commandLineOptions);
+            if (commandLineOptions.EnableCarolinaCompatibility)
+                container.RegisterCarolinaCompatibilityLayer(commandLineOptions);
             container.RegisterConfigurations();
             container.RegisterDataStores();
-            container.RegisterReducers();
-            container.RegisterHubNotifiers();
+            container.RegisterReducers(commandLineOptions);
+            container.RegisterHubNotifiers(commandLineOptions);
             AdditionalDependencies?.Invoke(container);
+
+            container.RegisterType<FileExtensionContentTypeProvider>().As<IContentTypeProvider>();
 
 #if DEBUG
             container.RegisterType<TestGameLoader>().As<ITestGameLoader>().SingleInstance();
@@ -90,21 +96,28 @@ public class Program
                 options.JsonSerializerOptions.Converters.AddAll(JsonSerializerOptions.Converters);
             });
 
-        builder.Services.AddSignalR().AddJsonProtocol(options =>
-        {
-            options.PayloadSerializerOptions = JsonSerializerOptions;
-        });
+        builder.Services.AddSignalR(options =>
+            {
+                if (builder.Environment.IsDevelopment())
+                {
+                    options.EnableDetailedErrors = true;
+                }
+
+                options.DisableImplicitFromServicesParameters = true;
+                options.MaximumReceiveMessageSize = 10 * 1024 * 1024;
+            })
+            .AddJsonProtocol(options =>
+                options.PayloadSerializerOptions = JsonSerializerOptions
+            );
 
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen(options =>
-        {
-            options.ResolveConflictingActions(HandleApiDescriptionConflicts);
-        });
+            options.ResolveConflictingActions(HandleApiDescriptionConflicts)
+        );
 
         builder.Services.AddSpaStaticFiles(config =>
-        {
-            config.RootPath = Path.Combine(RunningEnvironment.RootPath, "wwwroot");
-        });
+            config.RootPath = Path.Combine(RunningEnvironment.RootPath, "wwwroot")
+        );
 
         builder.Services.AddSingleton(new KeyFrameSettings(commandLineOptions.KeyFrameFrequency > 0, commandLineOptions.KeyFrameFrequency));
 
@@ -125,16 +138,10 @@ public class Program
             app.UseSwaggerUI();
         }
 
-        app.UseCors(policyBuilder =>
-        {
-            policyBuilder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
-        });
-
         if (commandLineOptions.UseSsl)
             app.UseHttpsRedirection();
 
         app.UseExceptionHandler(options =>
-        {
             options.Run(context =>
             {
                 var exceptionHandler = context.Features.Get<IExceptionHandlerFeature>();
@@ -143,23 +150,77 @@ public class Program
                     logger.Error(exceptionHandler.Error, "Uncaught exception while handling request");
 
                 return Task.CompletedTask;
-            });
-        });
+            })
+        );
+
+        app.UseRouting();
 
         app.UseAuthorization();
 
+        app.UseCors(policyBuilder =>
+            policyBuilder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader()
+        );
+
         app.MapControllers();
 
-        app.UseSpaStaticFiles();
-        app.UseSpa(config =>
+        var uiPath = Path.Combine(RunningEnvironment.RootPath, "wwwroot");
+        string[] carolinaFolders = ["components", "external", "fonts", "javascript", "json", "nso", "styles", "views"];
+
+        if (Directory.Exists(uiPath))
         {
-            config.Options.SourcePath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!, "wwwroot");
-            config.Options.DefaultPage = "/index.html";
-        });
+            app.Use(async (context, next) =>
+            {
+                if (!context.Request.Path.StartsWithSegments("/carolina"))
+                {
+                    string? host = context.Request.Headers.Host;
+
+                    if (host != null)
+                    {
+                        string? referer = context.Request.Headers.Referer;
+
+                        if (referer != null)
+                        {
+                            var searchRegex = new Regex($"https?://[^/]+(/api/v1/screens/.*|/carolina/|/{string.Join("/.*|/", carolinaFolders)}/.*)");
+
+                            var refererMatch = searchRegex.Match(referer);
+
+                            if (refererMatch.Success)
+                            {
+                                context.Request.Path = $"/carolina{context.Request.Path}";
+                            }
+                        }
+                    }
+                }
+
+                await next();
+            });
+
+            app.UseDefaultFiles(new DefaultFilesOptions
+            {
+                FileProvider = new PhysicalFileProvider(uiPath),
+                DefaultFileNames = ["index.html", "index.htm"],
+            });
+        }
 
         foreach (var notifier in app.Services.GetService<IEnumerable<INotifier>>() ?? [])
         {
             MapNotifier(app, notifier);
+        }
+
+        app.UseEndpoints(_ => { });
+
+        if (Directory.Exists(uiPath))
+        {
+            app.UseSpaStaticFiles();
+            app.MapWhen(
+                context => !context.Request.Path.StartsWithSegments("/carolina") && carolinaFolders.All(f => !context.Request.Path.StartsWithSegments($"/{f}")),
+                spaApp =>
+                    spaApp.UseSpa(config =>
+                    {
+                        config.Options.SourcePath = uiPath;
+                        config.Options.DefaultPage = "/index.html";
+                    })
+            );
         }
 
         if (commandLineOptions.Hostname is "0.0.0.0" or "::")
@@ -220,7 +281,7 @@ public class Program
 
     public static bool SkipCommandLineParse { get; set; }
     public static bool SkipFirstRunSetup { get; set; }
-    public static Action<Autofac.ContainerBuilder>? AdditionalDependencies { get; set; } = null;
+    public static Action<ContainerBuilder>? AdditionalDependencies { get; set; }
     public static JsonSerializerOptions JsonSerializerOptions { get; } = GetSerializerOptions();
 
     private static JsonSerializerOptions GetSerializerOptions()
@@ -266,9 +327,8 @@ public class Program
         app
             .MapHub<THub>(pattern)
             .RequireCors(policyBuilder =>
-            {
-                policyBuilder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
-            });
+                policyBuilder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader()
+            );
 
     private static MethodInfo GetGenericMapHubMethod() =>
         typeof(Program)
@@ -395,6 +455,9 @@ public sealed class CommandLineOptions
 
     [Option("key-frequency", Required = false, Default = (ushort)5, HelpText = "Set how often keyframes are captured; the lower the number, the more often frames are captured. More keyframes will make undo and timeline changes quicker but will require more memory. Set to 0 to disable keyframes.")]
     public ushort KeyFrameFrequency { get; set; }
+
+    [Option("crg-compatibility", Required = false, Default = false, HelpText = "Enable compatibility with Carolina (CRG) custom screens. This significantly increases memory and processor usage.")]
+    public bool EnableCarolinaCompatibility { get; set; }
 
     [Option("root-path", Required = false, Hidden = true, HelpText = "Set the path to the folder to use as the root folder.")]
     public string? RootPath { get; set; }

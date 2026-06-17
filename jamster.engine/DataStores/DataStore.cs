@@ -4,7 +4,7 @@ namespace jamster.engine.DataStores;
 
 public interface IDataStore : IDisposable
 {
-    public ISQLiteConnection Connection { get; }
+    ISQLiteConnection Connection { get; }
     void BeginTransaction();
     void CommitTransaction();
     void RollbackTransaction();

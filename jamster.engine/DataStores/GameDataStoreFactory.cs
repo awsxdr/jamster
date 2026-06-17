@@ -16,14 +16,12 @@ public class GameDataStoreFactory(GameDataStore.Factory gameDataStoreFactory) : 
     private readonly AsyncManualResetEvent _gamesLock = new(false);
     private readonly ConcurrentDictionary<string, AsyncLazy<IGameDataStore>> _dataStores = new();
 
-    public async Task<IGameDataStore> GetDataStore(string databaseName)
-    {
-        return await _dataStores.GetOrAdd(databaseName, _ => new(async (cancellationToken) =>
+    public async Task<IGameDataStore> GetDataStore(string databaseName) =>
+        await _dataStores.GetOrAdd(databaseName, _ => new(async (cancellationToken) =>
         {
             using var @lock = await AcquireLock();
             return gameDataStoreFactory(databaseName);
         })).WithCancellation(default);
-    }
 
     public async Task ReleaseConnection(string databaseName)
     {

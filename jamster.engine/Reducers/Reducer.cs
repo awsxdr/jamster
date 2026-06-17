@@ -12,7 +12,7 @@ public interface IReducer
     object GetDefaultState();
     Option<string> GetStateKey();
 
-    public async Task<IEnumerable<Event>> Handle<TEvent>(TEvent @event, Guid7? sourceEventId = null) where TEvent : Event
+    async Task<IEnumerable<Event>> Handle<TEvent>(TEvent @event, Guid7? sourceEventId = null) where TEvent : Event
     {
         if (this is IHandlesAllEventsAsync allEventsHandler)
             return await allEventsHandler.HandleAsync(@event, sourceEventId);
@@ -23,7 +23,7 @@ public interface IReducer
         return await handler.HandleAsync(@event);
     }
 
-    public Task<IEnumerable<Event>> HandleUntyped(Event @event, Guid7? sourceEventId = null)
+    Task<IEnumerable<Event>> HandleUntyped(Event @event, Guid7? sourceEventId = null)
     {
         var handleTask = (Task<IEnumerable<Event>>) typeof(IReducer)
             .GetMethod(nameof(Handle))

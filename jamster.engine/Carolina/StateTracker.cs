@@ -1,4 +1,6 @@
-﻿using jamster.engine.DataStores;
+﻿using System.Collections.Concurrent;
+
+using jamster.engine.DataStores;
 using jamster.engine.Domain;
 using jamster.engine.Reducers;
 using jamster.engine.Services;
@@ -7,8 +9,10 @@ namespace jamster.engine.Carolina;
 
 public interface IStateTracker
 {
-    Task<Result<IReadOnlyDictionary<string, object?>>> GetGameState(Guid gameId);
-    void WatchState(string stateKey);
+    Task<Result<IReadOnlyDictionary<string, object>>> GetGameState(Guid gameId);
+    Guid WatchStates(string[] stateKey, Func<Dictionary<string, object>, Task> changeHandler);
+    void UnwatchStates(Guid watchId);
+    Dictionary<string, object> GetAllStates();
 }
 
 [Singleton]
@@ -17,10 +21,11 @@ public class StateTracker : IStateTracker
     private readonly IGameContextFactory _gameContextFactory;
     private readonly IChannelMapper _channelMapper;
     private readonly Task _initialized;
-    private GameInfo? _currentGame = null;
+    private GameInfo? _currentGame;
 
     private readonly Dictionary<Guid, IGameStateStore> _watchedGames = new();
-    private readonly Dictionary<Guid, SortedDictionary<string, object?>> _states = new();
+    private readonly Dictionary<Guid, SortedDictionary<string, object>> _states = new();
+    private readonly ConcurrentDictionary<Guid, WatchedStatesChangeDetector> _changeDetectors = new();
 
     public StateTracker(
         ISystemStateStore systemStateStore,
@@ -66,20 +71,33 @@ public class StateTracker : IStateTracker
         }
     }
 
-    public async Task<Result<IReadOnlyDictionary<string, object?>>> GetGameState(Guid gameId)
+    public async Task<Result<IReadOnlyDictionary<string, object>>> GetGameState(Guid gameId)
     {
         await _initialized;
 
         return
             _states.TryGetValue(gameId, out var state)
-                ? Result.Succeed<IReadOnlyDictionary<string, object?>>(state.AsReadOnly())
-                : Result<IReadOnlyDictionary<string, object?>>.Fail<GameNotFoundError>();
+                ? Result.Succeed<IReadOnlyDictionary<string, object>>(state.AsReadOnly())
+                : Result<IReadOnlyDictionary<string, object>>.Fail<GameNotFoundError>();
     }
 
-    public void WatchState(string stateKey)
+    public Guid WatchStates(string[] stateKeys, Func<Dictionary<string, object>, Task> changeHandler)
     {
+        var watchId = Guid.NewGuid();
 
+        _changeDetectors[watchId] = new WatchedStatesChangeDetector(stateKeys, changeHandler);
+
+        var allStates = GetAllStates();
+        _ = _changeDetectors[watchId].ProcessChange(allStates, allStates.Keys.ToArray());
+
+        return watchId;
     }
+
+    public void UnwatchStates(Guid watchId) =>
+        _changeDetectors.Remove(watchId, out _);
+
+    public Dictionary<string, object> GetAllStates() =>
+        _states.SelectMany(x => x.Value).GroupBy(x => x.Key).Select(g => g.First()).ToDictionary(x => x.Key, x => x.Value);
 
     private void OnGamesListChanged(object? sender, GamesListChangedEventArgs e)
     {
@@ -104,69 +122,109 @@ public class StateTracker : IStateTracker
         _states[game.Id] = new();
         _watchedGames[game.Id] = gameContext.StateStore;
 
-        AddDefaultStates(_states[game.Id]);
-        
-        var allGameStates = gameContext.StateStore.GetAllStates();
-
-        foreach (var stateKey in allGameStates.Keys)
-        {
-            UpdateState(stateKey, allGameStates[stateKey], gameContext.StateStore, game.Id);
-            gameContext.StateStore.WatchStateByName(stateKey, s => UpdateState(stateKey, s, gameContext.StateStore, game.Id));
-        }
+        var changeHandler = OnStateChanged(game);
+        gameContext.StateStore.StateChanged += changeHandler;
+        changeHandler(this, EventArgs.Empty);
     }
 
-    private static void AddDefaultStates(SortedDictionary<string, object?> state)
+    private EventHandler<EventArgs> OnStateChanged(GameInfo game) => (_, _) =>
     {
-        state["ScoreBoard.Version(release)"] = "v2025.10";
-        state["ScoreBoard.Version(release.commit)"] = "b9a33ac56d7274f93c2889d22214f28d56017605";
-        state["ScoreBoard.Version(release.host)"] = "localhost";
-        state["ScoreBoard.Version(release.time)"] = "20260420190905";
-        state["ScoreBoard.Version(release.user)"] = "frank";
-    }
+        var stateStore = _watchedGames[game.Id];
 
-    private Task UpdateState(string stateKey, object state, IGameStateStore stateStore, Guid gameId)
-    {
-        TeamSide? teamSide =
-            stateKey.EndsWith("_Home") ? TeamSide.Home
-            : stateKey.EndsWith("_Away") ? TeamSide.Away
-            : null;
+        var snapshot = new StateSnapshot(
+            stateStore.GetState<GameStageState>(),
+            stateStore.GetState<OvertimeState>(),
+            stateStore.GetState<JamClockState>(),
+            stateStore.GetState<PeriodClockState>(),
+            stateStore.GetState<LineupClockState>(),
+            stateStore.GetState<TimeoutClockState>(),
+            stateStore.GetState<IntermissionClockState>(),
+            stateStore.GetState<PostGameClockState>(),
+            stateStore.GetState<CurrentTimeoutTypeState>(),
+            stateStore.GetState<TimeoutListState>(),
+            stateStore.GetState<RulesState>(),
+            new(
+                stateStore.GetKeyedState<TeamScoreState>(nameof(TeamSide.Home)),
+                stateStore.GetKeyedState<TeamScoreState>(nameof(TeamSide.Away))
+            ),
+            new(
+                stateStore.GetKeyedState<TripScoreState>(nameof(TeamSide.Home)),
+                stateStore.GetKeyedState<TripScoreState>(nameof(TeamSide.Away))
+            ),
+            new(
+                stateStore.GetKeyedState<TeamJamStatsState>(nameof(TeamSide.Home)),
+                stateStore.GetKeyedState<TeamJamStatsState>(nameof(TeamSide.Away))
+            ),
+            new(
+                stateStore.GetKeyedState<TeamTimeoutsState>(nameof(TeamSide.Home)),
+                stateStore.GetKeyedState<TeamTimeoutsState>(nameof(TeamSide.Away))
+            ),
+            new(
+                stateStore.GetKeyedState<JamLineupState>(nameof(TeamSide.Home)),
+                stateStore.GetKeyedState<JamLineupState>(nameof(TeamSide.Away))
+            ),
+            new(
+                stateStore.GetKeyedState<TeamDetailsState>(nameof(TeamSide.Home)),
+                stateStore.GetKeyedState<TeamDetailsState>(nameof(TeamSide.Away))
+            ),
+            new(
+                stateStore.GetKeyedState<ScoreSheetState>(nameof(TeamSide.Home)),
+                stateStore.GetKeyedState<ScoreSheetState>(nameof(TeamSide.Away))
+            ),
+            new(
+                stateStore.GetKeyedState<PenaltySheetState>(nameof(TeamSide.Home)),
+                stateStore.GetKeyedState<PenaltySheetState>(nameof(TeamSide.Away))
+            ),
+            new(
+                stateStore.GetKeyedState<LineupSheetState>(nameof(TeamSide.Home)),
+                stateStore.GetKeyedState<LineupSheetState>(nameof(TeamSide.Away))
+            ),
+            new(
+                stateStore.GetKeyedState<PenaltyBoxState>(nameof(TeamSide.Home)),
+                stateStore.GetKeyedState<PenaltyBoxState>(nameof(TeamSide.Away))
+            ),
+            new(
+                stateStore.GetKeyedState<BoxTripsState>(nameof(TeamSide.Home)),
+                stateStore.GetKeyedState<BoxTripsState>(nameof(TeamSide.Away))
+            ),
+            new(
+                stateStore.GetKeyedState<InjuriesState>(nameof(TeamSide.Home)),
+                stateStore.GetKeyedState<InjuriesState>(nameof(TeamSide.Away))
+            )
+        );
 
-        var rules = stateStore.GetState<RulesState>().Rules;
+        var newStates = _channelMapper.MapGameStates(snapshot, game);
 
-        var mappedStates = state switch
+        if (game.Id == _currentGame?.Id)
         {
-            GameStageState s => _channelMapper.Map(s, gameId),
-            OvertimeState s => _channelMapper.Map(s, gameId),
-            JamClockState s => _channelMapper.Map(s, gameId),
-            PeriodClockState s => _channelMapper.Map(s, rules, gameId),
-            LineupClockState s => _channelMapper.Map(s, gameId),
-            TimeoutClockState s => _channelMapper.Map(s, gameId),
-            IntermissionClockState s => _channelMapper.Map(s, gameId),
-            PostGameClockState s => _channelMapper.Map(s, gameId),
-            TeamScoreState s when teamSide is not null => _channelMapper.Map(s, (TeamSide)teamSide, gameId),
-            TripScoreState s when teamSide is not null => _channelMapper.Map(s, (TeamSide)teamSide, gameId),
-            TeamJamStatsState s when teamSide is not null => _channelMapper.Map(s, (TeamSide)teamSide, gameId),
-            TeamTimeoutsState s when teamSide is not null => _channelMapper.Map(s, (TeamSide)teamSide, rules, gameId),
-            JamLineupState s when teamSide is not null => _channelMapper.Map(s, stateStore.GetKeyedState<TeamDetailsState>(((TeamSide)teamSide).ToString()), (TeamSide)teamSide, gameId),
-            CurrentTimeoutTypeState s => _channelMapper.Map(s, gameId),
-            TeamDetailsState s when teamSide is not null => _channelMapper.Map(s, (TeamSide)teamSide, gameId),
-            ScoreSheetState s => _channelMapper.Map(s, stateStore.GetKeyedState<ScoreSheetState>(teamSide == TeamSide.Home ? nameof(TeamSide.Away) : nameof(TeamSide.Home)), (TeamSide)teamSide!, gameId),
-            PenaltySheetState s when teamSide is not null => _channelMapper.Map(s, (TeamSide)teamSide, gameId),
-            LineupSheetState s when teamSide is not null => _channelMapper.Map(s, stateStore.GetKeyedState<TeamDetailsState>(teamSide.ToString()!), (TeamSide)teamSide, gameId),
-            PenaltyBoxState s when teamSide is not null => _channelMapper.Map(s, stateStore.GetKeyedState<JamLineupState>(teamSide.ToString()!), stateStore.GetKeyedState<TeamDetailsState>(teamSide.ToString()!), (TeamSide)teamSide, gameId),
-            TimeoutListState s => _channelMapper.Map(s, gameId),
-            _ => []
-        };
+            var gameIdentifier = $"Game({game.Id})";
+            var gameKeys = newStates.Keys.Where(k => k.Contains(gameIdentifier)).ToArray();
 
-        foreach (var (key, value) in mappedStates)
-        {
-            _states[gameId][key] = value;
+            foreach (var key in gameKeys)
+            {
+                newStates[key.Replace(gameIdentifier, "CurrentGame")] = newStates[key];
+            }
+
+            newStates["ScoreBoard.CurrentGame.Game"] = game.Id;
         }
 
-        return Task.CompletedTask;
-    }
+        var previousStates = _states[game.Id];
 
-    
+        var changedKeys =
+            newStates.Keys.Difference(previousStates.Keys)
+                .Concat(
+                    newStates.Keys.Intersect(previousStates.Keys)
+                        .Where(k => !previousStates[k].Equals(newStates[k]))
+                )
+                .ToArray();
+
+        _states[game.Id] = new(newStates);
+
+        foreach (var changeDetector in _changeDetectors.Values)
+        {
+            _ = changeDetector.ProcessChange(_states[game.Id], changedKeys);
+        }
+    };
 }
 
-public sealed class GameNotFoundError : ResultError;
+public sealed class GameNotFoundError : NotFoundError;

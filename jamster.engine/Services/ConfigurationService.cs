@@ -1,6 +1,5 @@
 ﻿using jamster.engine.DataStores;
 using jamster.engine.Events;
-using jamster.engine.Extensions;
 using jamster.engine.Reducers;
 
 namespace jamster.engine.Services;
@@ -19,7 +18,7 @@ public interface IConfigurationService
     Task<Result> SetConfigurationForGame<TConfiguration>(Guid gameId, TConfiguration configuration) where TConfiguration : class;
     Task<Result> SetConfigurationForGame(Guid gameId, object configuration, Type configurationType);
 
-    public sealed class ConfigurationChangedEventArgs(string key, object value) : EventArgs
+    sealed class ConfigurationChangedEventArgs(string key, object value) : EventArgs
     {
         public string Key { get; } = key;
         public object Value { get; } = value;

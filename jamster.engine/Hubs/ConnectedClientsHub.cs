@@ -24,10 +24,8 @@ public class ConnectedClientsNotifier : Notifier<ConnectedClientsHub>
         _connectedClientsService.ConnectedClientsChanged += OnConnectedClientsChanged;
     }
 
-    private async Task OnConnectedClientsChanged(object? sender, IConnectedClientsService.ConnectedClientsChangedArgs e)
-    {
-        await HubContext.Clients.Groups("ClientsList").SendAsync("ConnectedClientsChanged", e.Clients.Select(c => (ClientsController.ClientModel)c).ToArray());
-    }
+    private Task OnConnectedClientsChanged(object? sender, IConnectedClientsService.ConnectedClientsChangedArgs e) =>
+        HubContext.Clients.Groups("ClientsList").SendAsync("ConnectedClientsChanged", e.Clients.Select(c => (ClientsController.ClientModel)c).ToArray());
 }
 
 public class ConnectedClientsHub(IConnectedClientsService connectedClientsService) : Hub

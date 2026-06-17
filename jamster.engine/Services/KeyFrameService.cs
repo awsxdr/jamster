@@ -8,7 +8,7 @@ namespace jamster.engine.Services;
 
 public interface IKeyFrameService
 {
-    public delegate IKeyFrameService Factory(IGameStateStore stateStore);
+    delegate IKeyFrameService Factory(IGameStateStore stateStore);
 
     void CaptureKeyFrame();
     void CaptureKeyFrameAtTick(Tick tick);

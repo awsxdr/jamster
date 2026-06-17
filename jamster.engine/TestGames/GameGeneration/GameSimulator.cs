@@ -59,7 +59,7 @@ internal class GameSimulator(SimulatorGame game)
             if(_gameState.Stage != Stage.AfterGame)
                 TickLineupTracker();
 
-            if (validationEventFactory is Some<Func<GameState, Tick, Event>> factory && _tick - lastValidationTick > Tick.FromSeconds(ValidationIntervalInSeconds) && _events.All(e => e.Tick != _tick))
+            if (validationEventFactory is Some<Func<GameState, Tick, Event>> factory && _tick - lastValidationTick > Tick.FromSeconds(ValidationIntervalInSeconds) && _events.All(e => e.Tick < _tick))
             {
                 lastValidationTick = _tick;
                 _events.Add(factory.Value(_gameState, _tick));
@@ -98,7 +98,7 @@ internal class GameSimulator(SimulatorGame game)
         }
         else
         {
-            LogDebug("Starting jam");
+            LogDebug($"Starting jam {_gameState.Jam + 1}");
             _events.Add(new JamStarted(_tick));
             _gameState.Stage = Stage.Jam;
             _gameState.Period = Math.Max(1, _gameState.Period);
@@ -115,6 +115,7 @@ internal class GameSimulator(SimulatorGame game)
     private void TickLineup()
     {
         const float timeoutChance = 1 / 150f / TicksPerSecond;
+        const float finalPointsChance = 1 / 10f / TicksPerSecond;
 
         TickClock(c => c.LineupClock);
         TickClock(c => c.PeriodClock, Tick.FromSeconds(Rules.DefaultRules.PeriodRules.DurationInSeconds));
@@ -147,7 +148,7 @@ internal class GameSimulator(SimulatorGame game)
 
         if (passedSeconds >= Rules.DefaultRules.LineupRules.DurationInSeconds)
         {
-            LogDebug("Starting jam");
+            LogDebug($"Starting jam {_gameState.Jam + 1}");
             _events.Add(new JamStarted(_tick));
             _gameState.Stage = Stage.Jam;
             StopClock(c => c.LineupClock);
@@ -163,7 +164,27 @@ internal class GameSimulator(SimulatorGame game)
             return;
         }
 
-        if (RandomTrigger(timeoutChance))
+        if (
+            _gameState.JamInfo.HomeTeam.OutstandingPostJamPoints > 0 && (
+                RandomTrigger(finalPointsChance) || (int)passedSeconds >= Rules.DefaultRules.LineupRules.DurationInSeconds / 2
+            )
+        )
+        {
+            SetTripScore(TeamSide.Home, _gameState.JamInfo.HomeTeam.OutstandingPostJamPoints);
+            _gameState.JamInfo.HomeTeam.OutstandingPostJamPoints = 0;
+        }
+
+        if (
+            _gameState.JamInfo.AwayTeam.OutstandingPostJamPoints > 0 && (
+                RandomTrigger(finalPointsChance) || (int)passedSeconds >= Rules.DefaultRules.LineupRules.DurationInSeconds / 2
+            )
+        )
+        {
+            SetTripScore(TeamSide.Away, _gameState.JamInfo.AwayTeam.OutstandingPostJamPoints);
+            _gameState.JamInfo.AwayTeam.OutstandingPostJamPoints = 0;
+        }
+
+        if (_gameState.Clocks.LineupClock.PassedTicks > Tick.FromSeconds(1) && RandomTrigger(timeoutChance))
         {
             LogDebug("Starting timeout");
 
@@ -215,31 +236,35 @@ internal class GameSimulator(SimulatorGame game)
                 ? _gameState.Sheets.HomeSheets.ScoreSheet
                 : _gameState.Sheets.AwaySheets.ScoreSheet);
 
-            var leadAvailable = !_gameState.JamInfo.HomeTeam.Lead && !_gameState.JamInfo.AwayTeam.Lead && !tripTeamJamInfo.Lost;
-            if (leadAvailable)
+            if (_tick - tripTeamJamInfo.LastTripTick >= Tick.FromSeconds(10))
             {
-                tripTeamJamInfo.Lead = true;
-                tripTeamJamInfo.CompletedInitial = true;
-                tripTeamScoreSheet[^1].Lead = true;
-                tripTeamScoreSheet[^1].NoInitial = false;
-                tripTeamScoreSheet[^1].TripScores.Add(0);
-                _events.Add(new LeadMarked(_tick, new(tripTeamSide, true)));
-                LogDebug($"Lead earned for {tripTeamSide} team");
-            }
-            else
-            {
-                if (tripTeamScoreSheet[^1].TripScores.Count == 0)
+                var leadAvailable = !_gameState.JamInfo.HomeTeam.Lead && !_gameState.JamInfo.AwayTeam.Lead && !tripTeamJamInfo.Lost;
+                if (leadAvailable)
                 {
+                    tripTeamJamInfo.Lead = true;
                     tripTeamJamInfo.CompletedInitial = true;
+                    tripTeamScoreSheet[^1].Lead = true;
                     tripTeamScoreSheet[^1].NoInitial = false;
-                    _events.Add(new InitialTripCompleted(_tick, new(tripTeamSide, true)));
-                    LogDebug($"Initial trip completed for {tripTeamSide} team");
+                    tripTeamScoreSheet[^1].TripScores.Add(0);
+                    _events.Add(new LeadMarked(_tick, new(tripTeamSide, true)));
+                    LogDebug($"Lead earned for {tripTeamSide} team");
                 }
                 else
                 {
-                    SetTripScore(tripTeamSide, 4);
+                    if (tripTeamScoreSheet[^1].TripScores.Count == 0)
+                    {
+                        tripTeamJamInfo.CompletedInitial = true;
+                        tripTeamScoreSheet[^1].NoInitial = false;
+                        _events.Add(new InitialTripCompleted(_tick, new(tripTeamSide, true)));
+                        LogDebug($"Initial trip completed for {tripTeamSide} team");
+                    }
+                    else
+                    {
+                        SetTripScore(tripTeamSide, 4);
+                    }
+                    tripTeamScoreSheet[^1].TripScores.Add(0);
                 }
-                tripTeamScoreSheet[^1].TripScores.Add(0);
+                tripTeamJamInfo.LastTripTick = _tick;
             }
         }
 
@@ -249,7 +274,7 @@ internal class GameSimulator(SimulatorGame game)
         }
 
         if (
-            (_gameState.JamInfo.HomeTeam.Lead || _gameState.JamInfo.AwayTeam.Lead) 
+            (_gameState.JamInfo.HomeTeam is { Lead: true, Lost: false } || _gameState.JamInfo.AwayTeam is { Lead: true, Lost: false }) 
             && RandomTrigger(callChance * (_gameState.JamInfo.HomeTeam.CompletedInitial && _gameState.JamInfo.AwayTeam.CompletedInitial ? 4 : 1))
             && Rules.DefaultRules.JamRules.DurationInSeconds - _gameState.Clocks.JamClock.PassedTicks.Seconds > 1 /* Hard to calculate state when called in the last second */)
         {
@@ -260,6 +285,7 @@ internal class GameSimulator(SimulatorGame game)
             
             EndJam("called");
             var alignedTick = AlignToClock(_tick, _gameState.Clocks.PeriodClock);
+
             _gameState.Clocks.JamClock.PassedTicks = alignedTick - _gameState.Clocks.JamClock.LastStartTick;
             LogDebug($"Jam ended at {alignedTick} with last start tick of {_gameState.Clocks.JamClock.LastStartTick}. Passed ticks is {_gameState.Clocks.JamClock.PassedTicks}");
             _events.Add(new CallMarked(_tick, new(_gameState.JamInfo.HomeTeam.Lead ? TeamSide.Home : TeamSide.Away, true)));
@@ -313,39 +339,14 @@ internal class GameSimulator(SimulatorGame game)
             skater.Penalty.EntryTick = _tick;
         }
 
-        void SetTripScore(TeamSide side, int score)
-        {
-            var tripTeamScoreSheet = side == TeamSide.Home
-                ? _gameState.Sheets.HomeSheets.ScoreSheet
-                : _gameState.Sheets.AwaySheets.ScoreSheet;
-
-            tripTeamScoreSheet[^1].GameTotal += score;
-            tripTeamScoreSheet[^1].JamTotal += score;
-            tripTeamScoreSheet[^1].TripScores[^1] = score;
-            if (side == TeamSide.Home)
-            {
-                _gameState.Scores.HomeScore.GameTotal += score;
-                _gameState.Scores.HomeScore.JamTotal += score;
-            }
-            else
-            {
-                _gameState.Scores.AwayScore.GameTotal += score;
-                _gameState.Scores.AwayScore.JamTotal += score;
-            }
-
-            LogDebug($"Adding {score} points for {side} team");
-            _events.Add(new ScoreModifiedRelative(_tick, new(side, score)));
-
-        }
-
         void EndJam(string endReason)
         {
             StopClock(c => c.JamClock);
 
-            if(_gameState.JamInfo.HomeTeam.CompletedInitial)
-                SetTripScore(TeamSide.Home, Random.Shared.Next(5));
-            if (_gameState.JamInfo.AwayTeam.CompletedInitial)
-                SetTripScore(TeamSide.Away, Random.Shared.Next(5));
+            if(_gameState.JamInfo.HomeTeam.CompletedInitial && _tick - _gameState.JamInfo.HomeTeam.LastTripTick >= Tick.FromSeconds(10))
+                _gameState.JamInfo.HomeTeam.OutstandingPostJamPoints = Random.Shared.Next(5);
+            if (_gameState.JamInfo.AwayTeam.CompletedInitial && _tick - _gameState.JamInfo.AwayTeam.LastTripTick >= Tick.FromSeconds(10))
+                _gameState.JamInfo.AwayTeam.OutstandingPostJamPoints = Random.Shared.Next(5);
 
             if (_gameState.Clocks.PeriodClock.PassedTicks >= Tick.FromSeconds(Rules.DefaultRules.PeriodRules.DurationInSeconds))
             {
@@ -383,6 +384,40 @@ internal class GameSimulator(SimulatorGame game)
         }
     }
 
+    private void SetTripScore(TeamSide side, int score)
+    {
+        var tripTeamScoreSheet = side == TeamSide.Home
+            ? _gameState.Sheets.HomeSheets.ScoreSheet
+            : _gameState.Sheets.AwaySheets.ScoreSheet;
+
+        if (_gameState.Stage == Stage.Jam)
+        {
+            tripTeamScoreSheet[^1].GameTotal += score;
+            tripTeamScoreSheet[^1].JamTotal += score;
+            tripTeamScoreSheet[^1].TripScores[^1] = score;
+        }
+        else
+        {
+            tripTeamScoreSheet[^2].GameTotal += score;
+            tripTeamScoreSheet[^2].JamTotal += score;
+            tripTeamScoreSheet[^2].TripScores[^1] = score;
+        }
+
+        if (side == TeamSide.Home)
+        {
+            _gameState.Scores.HomeScore.GameTotal += score;
+            _gameState.Scores.HomeScore.JamTotal += score;
+        }
+        else
+        {
+            _gameState.Scores.AwayScore.GameTotal += score;
+            _gameState.Scores.AwayScore.JamTotal += score;
+        }
+
+        LogDebug($"Adding {score} points for {side} team");
+        _events.Add(new ScoreModifiedRelative(_tick, new(side, score)));
+    }
+    
     private void AddRandomPenalty()
     {
         string[] penaltyCodes = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "L", "M", "N", "P", "X"];
@@ -409,6 +444,8 @@ internal class GameSimulator(SimulatorGame game)
         {
             var jamInfo = penaltySide == TeamSide.Home ? _gameState.JamInfo.HomeTeam : _gameState.JamInfo.AwayTeam;
             var lost = jamInfo.Lost || jamInfo.Lead || (!_gameState.JamInfo.HomeTeam.Lead && !_gameState.JamInfo.AwayTeam.Lead);
+            if(lost && !jamInfo.Lost)
+                LogDebug($"Lead lost for {penaltySide} team");
             jamInfo.Lost = lost;
             scoreSheet[^1].Lost = lost;
         }
@@ -519,7 +556,7 @@ internal class GameSimulator(SimulatorGame game)
 
         if (RandomTrigger(jamStartChance))
         {
-            LogDebug("Starting jam");
+            LogDebug($"Starting jam {_gameState.Jam + 1}");
             _events.Add(new JamStarted(_tick));
             _gameState.Stage = Stage.Jam;
             StopClock(c => c.TimeoutClock);
@@ -721,6 +758,8 @@ internal class GameSimulator(SimulatorGame game)
         public bool Lead { get; set; } = false;
         public bool Called { get; set; } = false;
         public bool CompletedInitial { get; set; } = false;
+        public Tick LastTripTick { get; set; } = 0;
+        public int OutstandingPostJamPoints { get; set; } = 0;
     }
 
     internal class TimeoutInfo

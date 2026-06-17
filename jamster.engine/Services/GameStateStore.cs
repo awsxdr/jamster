@@ -25,6 +25,7 @@ public sealed class StateChangedEventArgs : EventArgs
 public interface IGameStateStore
 {
     event EventHandler<EventHandledEventArgs> EventHandled;
+    event EventHandler<EventArgs> StateChanged;
 
     object GetState(Type stateType);
     TState GetState<TState>() where TState : class;
@@ -56,6 +57,7 @@ public class GameStateStore(ILogger<GameStateStore> logger) : IGameStateStore
     private int _eventCount;
 
     public event EventHandler<EventHandledEventArgs>? EventHandled;
+    public event EventHandler<EventArgs>? StateChanged;
 
     public object GetState(Type stateType) =>
         _states[GetStateName(stateType)];
@@ -245,6 +247,7 @@ public class GameStateStore(ILogger<GameStateStore> logger) : IGameStateStore
         if (hasChanged)
         {
             GetEventSource<TState>(stateName).Update(state);
+            StateChanged?.Invoke(this, EventArgs.Empty);
         }
     }
 

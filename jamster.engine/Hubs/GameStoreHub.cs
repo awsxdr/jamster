@@ -16,9 +16,7 @@ public class GameStoreNotifier : Notifier<GameStoreHub>, IDisposable
         : base(hubContext)
     {
         gameDiscoveryService.GamesListChanged += (_, games) =>
-        {
             HubContext.Clients.Group("GameList").SendAsync("GamesListChanged", games, _cancellationTokenSource.Token);
-        };
     }
 
     public void Dispose() =>

@@ -22,9 +22,9 @@ public class TimelineIntegrationTests : IntegrationTest<Timeline>
     {
         builder.RegisterInstance(new KeyFrameSettings(false, 0));
 
-        builder.RegisterServices();
+        builder.RegisterServices(new());
         builder.RegisterConfigurations();
-        builder.RegisterReducers();
+        builder.RegisterReducers(new());
 
         var systemTimeMock = new Mock<ISystemTime>();
         systemTimeMock
