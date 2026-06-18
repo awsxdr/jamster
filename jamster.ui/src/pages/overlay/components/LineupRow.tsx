@@ -44,9 +44,9 @@ export const LineupRow = ({ side }: LineupRowProps) => {
         <div className={cn(side === TeamSide.Home ? homeRowClassName : awayRowClassName, visible && 'w-[--lineup-row-width]')}>
             <div className={jammerNameClassName}>{jammerText}</div>
             <div className={skaterNumberClassName}>{pivot.number ?? '-'}{starPass && translate("Overlay.LineupRow.StarPassMarker")}</div>
-            <div className={skaterNumberClassName}>{blockers[0].number}</div>
-            <div className={skaterNumberClassName}>{blockers[1].number}</div>
-            <div className={skaterNumberClassName}>{blockers[2].number}</div>
+            <div className={skaterNumberClassName}>{blockers[0]?.number ?? '-'}</div>
+            <div className={skaterNumberClassName}>{blockers[1]?.number ?? '-'}</div>
+            <div className={skaterNumberClassName}>{blockers[2]?.number ?? '-'}</div>
         </div>
     )
 }
