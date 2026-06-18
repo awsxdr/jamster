@@ -12,6 +12,7 @@ public class GameStatesNotifier(IGameDiscoveryService gameDiscoveryService, IHub
     : Notifier<GameStatesHub>(hubContext)
 {
     private readonly ConcurrentDictionary<Guid, List<string>> _watchedStatesByGame = new();
+    private readonly ConcurrentDictionary<Guid, Lazy<ConcurrentDictionary<string, object>>> _queuedStateChangesByGame = new();
     private readonly AsyncManualResetEvent _watchedStatesLock = new(false);
 
     public override string HubAddress => "api/hubs/game/{gameId:guid}";
@@ -28,13 +29,34 @@ public class GameStatesNotifier(IGameDiscoveryService gameDiscoveryService, IHub
 
         var gameContext = await GetGameContext(gameId);
 
+        var stateQueue = _queuedStateChangesByGame.GetOrAdd(gameId, _ => new(() => 
+        {
+            var stateQueue = new ConcurrentDictionary<string, object>();
+
+            gameContext.GameClock.TickCompleted += async (_, _) =>
+            {
+                using var queueLock = await stateQueue.AcquireLockAsync();
+
+                foreach (var (name, state) in stateQueue)
+                {
+                    var group = HubContext.Clients.Group($"{gameId}_{name}");
+
+                    await group.SendAsync("StateChanged", name, state);
+                }
+
+                stateQueue.Clear();
+            };
+
+            return stateQueue;
+        })).Value;
+
         gameContext.StateStore.WatchStateByName(
             stateName,
             async state =>
             {
-                var group = HubContext.Clients.Group($"{gameId}_{stateName}");
-                
-                await group.SendAsync("StateChanged", stateName, state);
+                using var queueLock = await stateQueue.AcquireLockAsync();
+
+                stateQueue.AddOrUpdate(stateName, state, (_, _) => state);
             });
     }
 
