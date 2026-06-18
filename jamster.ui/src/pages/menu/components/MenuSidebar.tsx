@@ -179,7 +179,7 @@ export const MenuSidebar = () => {
                                             </SidebarMenuButton>
                                             { item.newTab && (
                                                 <SidebarMenuBadge>
-                                                    <ExternalLink size="small" />
+                                                    <ExternalLink size="16" className="align-center" color="#ccc" />
                                                 </SidebarMenuBadge>
                                             )}
                                         </SidebarMenuItem>
