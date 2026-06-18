@@ -7,7 +7,7 @@ export type LanguageName = {
 }
 
 type I18n = {
-    translate: (key: string, options?: { ignorePrefix: boolean }) => string;
+    translate: (key: string, options?: { ignorePrefix?: boolean, fallback?: string }) => string;
     language: string;
     languages: LanguageName[];
     setLanguage: (language: string) => void;
@@ -16,9 +16,9 @@ type I18n = {
 export const useI18n = (i18nOptions?: { prefix?: string }): I18n => {
     const context = useContext(I18nContext);
 
-    const translate = (key: string, options?: { ignorePrefix: boolean }) => {
+    const translate = (key: string, options?: { ignorePrefix?: boolean, fallback?: string }) => {
         const prefix = (options?.ignorePrefix ? "" : i18nOptions?.prefix) ?? "";
-        return context.translate(prefix + key);
+        return context.translate(prefix + key, options?.fallback);
     }
 
     return {
@@ -39,7 +39,7 @@ type I18nContextProps = {
     language: string;
     translations: Translations;
     languages: LanguageName[],
-    translate: (key: string) => string;
+    translate: (key: string, fallback?: string) => string;
     setLanguage: (key: string) => void;
 };
 
@@ -75,17 +75,17 @@ export const I18nContextProvider = ({ usageKey, defaultLanguage, languages, chil
     const translations = useMemo(() => languages[language] ?? {}, [languages, language]);
     const languageNames = Object.keys(languages).map(key => ({ code: key, displayName: languages[key].name }));
 
-    const translate = useCallback((key: string) => {
+    const translate = useCallback((key: string, fallback?: string) => {
         const translation = 
             language === 'dev'
                 ? makeDevTranslation(languages[defaultLanguage][key])
                 : translations[key];
             
-        if (translation === undefined) {
+        if (translation === undefined && fallback === undefined) {
             console.warn("Translation missing for key", key);
         }
         
-        return translation ?? key;
+        return translation ?? fallback ?? key;
     }, 
     [translations, language]);
 

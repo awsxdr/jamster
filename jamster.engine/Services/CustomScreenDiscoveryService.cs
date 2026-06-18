@@ -26,11 +26,19 @@ public partial class CarolinaCustomScreenDiscoveryService : ICustomScreenDiscove
 
     public CustomScreen[] GetCustomScreens() =>
         Directory.GetDirectories(_screensPath)
+            .Where(d => File.Exists(Path.Combine(d, "index.html")) || File.Exists(Path.Combine(d, "index.htm")))
             .Select(ReadCustomScreen)
             .ToArray();
 
-    private CustomScreen ReadCustomScreen(string path) =>
-        new(GetScreenId(path), GetScreenName(path), new CustomScreenFilePath(path), CustomScreenType.Carolina);
+    private static CustomScreen ReadCustomScreen(string path) =>
+        new(
+            GetScreenId(path),
+            GetScreenName(path),
+            "Miscellaneous",
+            true,
+            new CustomScreenFilePath(path),
+            CustomScreenType.Carolina
+        );
 
     private static Guid GetScreenId(string path) =>
         new(MD5.Create().ComputeHash(Encoding.UTF8.GetBytes(path)));

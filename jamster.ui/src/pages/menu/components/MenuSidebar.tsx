@@ -1,27 +1,33 @@
-import { Button, Collapsible, CollapsibleContent, CollapsibleTrigger, Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from "@components/ui"
-import { Captions, ChevronDown, ChevronLeft, ChevronRight, CircleHelp, ClipboardPenLine, Grid3X3, Keyboard, List, MonitorCog, Shirt, TvMinimal, Users } from "lucide-react"
-import { ReactNode } from "react";
+import { Button, Collapsible, CollapsibleContent, CollapsibleTrigger, Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuBadge, SidebarMenuButton, SidebarMenuItem, useSidebar } from "@components/ui"
+import { Captions, ChevronDown, ChevronLeft, ChevronRight, CircleHelp, ClipboardPenLine, ExternalLink, Grid3X3, Keyboard, List, MonitorCog, Shirt, TvMinimal, Users } from "lucide-react"
+import { ReactNode, useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { LanguageMenu } from "./LanguageMenu";
 import { ThemeMenu } from "./ThemeMenu";
 import { useI18n } from "@/hooks/I18nHook";
+import { useScreensApi } from "@/hooks";
 
 type SidebarItem = {
     title: string;
     href: string;
     icon?: ReactNode;
+    newTab?: boolean;
+    isCustom?: boolean;
 };
 
 type SidebarGroup = {
     collapsible?: boolean;
     defaultOpen?: boolean;
+    isCustom?: boolean;
     items: SidebarItem[];
 }
 
 type SidebarGroupList = Record<string, SidebarGroup>;
 
-const sidebarItems: SidebarGroupList = {
+const defaultSidebarItems: SidebarGroupList = {
     "ControlGroup": {
+        collapsible: true,
+        defaultOpen: true,
         items: [
             {
                 title: "ScoreboardControl",
@@ -36,31 +42,36 @@ const sidebarItems: SidebarGroupList = {
         ],
     },
     "DisplayGroup": {
+        collapsible: true,
+        defaultOpen: true,
         items: [
             {
                 title: "ScoreboardDisplay",
                 href: "/scoreboard",
-                icon: <TvMinimal />
+                icon: <TvMinimal />,
+                newTab: true,
             },
             {
                 title: "Overlay",
                 href: "/overlay",
-                icon: <Captions />
+                icon: <Captions />,
+                newTab: true,
             },
             {
                 title: "Penalties",
                 href: "/penalties",
-                icon: <Grid3X3 />
+                icon: <Grid3X3 />,
+                newTab: true,
             },
             {
                 title: "DisplayManagement",
                 href: "/clients",
-                icon: <MonitorCog />
+                icon: <MonitorCog />,
             },
         ]
     },
     "DataGroup": {
-        collapsible: false,
+        collapsible: true,
         defaultOpen: true,
         items: [
             {
@@ -107,6 +118,39 @@ export const MenuSidebar = () => {
 
     const { open: sidebarOpen, toggleSidebar, isMobile } = useSidebar();
     const { translate } = useI18n({ prefix: "MenuSidebar." });
+    const [sidebarItems, setSidebarItems] = useState(defaultSidebarItems);
+
+    const { getScreens } = useScreensApi();
+
+    useEffect(() => {
+        getScreens().then(screens => {
+            const categories = [...new Set(screens.map(s => s.category))];
+            
+            setSidebarItems({
+                ...defaultSidebarItems,
+                ...categories.reduce((result, category) => {
+                    return {
+                        ...result,
+                        [category]: {
+                            collapsible: true,
+                            defaultOpen: false,
+                            isCustom: !defaultSidebarItems[category],
+                            ...defaultSidebarItems[category],
+                            items: [
+                                ...defaultSidebarItems[category]?.items ?? [],
+                                ...screens.filter(s => s.category === category).map(s => ({
+                                    title: s.name,
+                                    href: s.url,
+                                    newTab: s.ownTab,
+                                    isCustom: true,
+                                }))
+                            ],
+                        }
+                    };
+                }, {})
+            })
+        });
+    }, []);
 
     return (
         <Sidebar collapsible="icon">
@@ -117,7 +161,7 @@ export const MenuSidebar = () => {
                     </Button>
                 </SidebarHeader>
             }
-            <SidebarContent>
+            <SidebarContent className="gap-0">
                 {
                     Object.keys(sidebarItems).map(groupName => {
                         const group = sidebarItems[groupName];
@@ -128,11 +172,16 @@ export const MenuSidebar = () => {
                                     {group.items.map(item =>
                                         <SidebarMenuItem key={item.title}>
                                             <SidebarMenuButton asChild isActive={location.pathname.startsWith(item.href)} tooltip={translate(item.title)}>
-                                                <Link to={item.href} onClick={() => isMobile && toggleSidebar()}>
+                                                <Link to={item.href} target={item.newTab ? "_blank" : "_self"} onClick={() => isMobile && toggleSidebar()}>
                                                     {item.icon}
-                                                    <span>{translate(item.title)}</span>
+                                                    <span>{translate(item.title, { fallback: item.isCustom ? item.title : undefined })}</span>
                                                 </Link>
                                             </SidebarMenuButton>
+                                            { item.newTab && (
+                                                <SidebarMenuBadge>
+                                                    <ExternalLink size="small" />
+                                                </SidebarMenuBadge>
+                                            )}
                                         </SidebarMenuItem>
                                     )}
                                 </SidebarMenu>
@@ -142,10 +191,10 @@ export const MenuSidebar = () => {
                         if(group.collapsible) {
                             return (
                                 <Collapsible key={groupName} defaultOpen={group.defaultOpen} className="group/collapsible">
-                                    <SidebarGroup>
+                                    <SidebarGroup className="p-1">
                                         <SidebarGroupLabel asChild>
                                             <CollapsibleTrigger>
-                                                {translate(groupName)}
+                                                {translate(groupName, { fallback: group.isCustom ? groupName : undefined })}
                                                 <ChevronDown className="ml-auto transition-transform group-data-[state=open]/collapsible:rotate-180" />
                                             </CollapsibleTrigger>
                                         </SidebarGroupLabel>

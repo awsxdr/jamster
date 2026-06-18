@@ -4,6 +4,7 @@ export * from './Client';
 export * from './ClientActivity';
 export * from './Color';
 export * from './ControlPanelViewConfiguration';
+export * from './CustomScreen';
 export * from './DisplayConfiguration';
 export * from './DisplaySide';
 export * from './GameInfo';

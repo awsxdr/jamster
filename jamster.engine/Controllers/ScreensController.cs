@@ -11,7 +11,10 @@ public class ScreensController(ICustomScreensService customScreensService, ICont
 {
     [HttpGet("")]
     public async Task<IActionResult> GetCustomScreens() =>
-        Ok(await customScreensService.GetCustomScreens());
+        Ok(
+            (await customScreensService.GetCustomScreens())
+            .Select(s => new CustomScreenModel(s.Id, s.Name, s.Category, s.OwnTab, $"/api/v1/screens/{s.Id}"))
+        );
 
     [HttpGet("{screenId:guid}")]
     public async Task<IActionResult> GetScreenIndex(Guid screenId) =>
@@ -38,4 +41,6 @@ public class ScreensController(ICustomScreensService customScreensService, ICont
             var r => throw new UnexpectedResultException(r)
         };
     }
+
+    public record CustomScreenModel(Guid Id, string Name, string Category, bool OwnTab, string Url);
 }
