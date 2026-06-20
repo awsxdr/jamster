@@ -23,12 +23,18 @@ public abstract class PenaltySheet(TeamSide teamSide, ReducerGameContext context
     {
         var state = GetState();
 
-        SetState(new(state.Lines.Where(l => @event.Body.Team.Roster.Any(s => s.Id == l.SkaterId))
-            .Concat(@event.Body.Team.Roster
+        var existingSkaters =
+            state.Lines.Where(l => @event.Body.Team.Roster.Any(s => s.Id == l.SkaterId))
+                .Select(l => l with { SkaterNumber = @event.Body.Team.Roster.Single(s => s.Id == l.SkaterId).Number });
+        var newSkaters =
+            @event.Body.Team.Roster
                 .Where(s => state.Lines.All(l => l.SkaterId != s.Id))
-                .Select(s => new PenaltySheetLine(s.Id, s.Number, null, [])))
-            .OrderBy(l => l.SkaterNumber)
-            .ToArray()));
+                .Select(s => new PenaltySheetLine(s.Id, s.Number, null, []));
+
+        SetState(new(
+            existingSkaters.Concat(newSkaters)
+                .OrderBy(l => l.SkaterNumber)
+                .ToArray()));
 
         return [];
     });

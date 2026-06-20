@@ -49,7 +49,7 @@ public partial class CarolinaCustomScreenDiscoveryService : ICustomScreenDiscove
             .FirstOrDefault(f => Path.GetFileNameWithoutExtension(f) == "index");
 
         if (indexFile == null)
-            return Path.GetFileName(path) ?? "Unknown";
+            return Path.GetFileName(path);
 
         var pageTitleMatch = TitleRegex().Match(File.ReadAllText(indexFile));
 

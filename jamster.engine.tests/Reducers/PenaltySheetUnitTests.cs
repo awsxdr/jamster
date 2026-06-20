@@ -559,5 +559,37 @@ public class PenaltySheetUnitTests : ReducerUnitTest<HomePenaltySheet, PenaltySh
 
         State.Should().Be(originalState);
     }
+
+    [Test]
+    public async Task TeamSet_WhenSkaterNumberChanges_CorrectlyMovesPenaltiesWithSkater()
+    {
+        State = new([
+            new(SkaterId(1), "1", null, []),
+            new(SkaterId(2), "2", null, []),
+            new(SkaterId(3), "3", null, [new("X", 1, 5, true), new("D", 1, 8, true)]),
+            new(SkaterId(4), "4", null, []),
+            new(SkaterId(5), "5", null, []),
+            new(SkaterId(6), "6", null, []),
+        ]);
+
+        await Subject.Handle(new TeamSet(0, new(TeamSide.Home, new([], new(Color.Black, Color.White),
+        [
+            new(SkaterId(3), "03", "", true),
+            new(SkaterId(1), "1", "", true),
+            new(SkaterId(2), "2", "", true),
+            new(SkaterId(4), "4", "", true),
+            new(SkaterId(5), "5", "", true),
+            new(SkaterId(6), "6", "", true),
+        ]))));
+
+        State.Should().Be(new PenaltySheetState([
+            new(SkaterId(3), "03", null, [new("X", 1, 5, true), new("D", 1, 8, true)]),
+            new(SkaterId(1), "1", null, []),
+            new(SkaterId(2), "2", null, []),
+            new(SkaterId(4), "4", null, []),
+            new(SkaterId(5), "5", null, []),
+            new(SkaterId(6), "6", null, []),
+        ]));
+    }
 }
 
