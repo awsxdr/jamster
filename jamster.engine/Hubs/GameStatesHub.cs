@@ -1,4 +1,5 @@
 ﻿using System.Collections.Concurrent;
+using System.Diagnostics;
 
 using DotNext.Threading;
 
@@ -8,7 +9,7 @@ using Microsoft.AspNetCore.SignalR;
 
 namespace jamster.engine.Hubs;
 
-public class GameStatesNotifier(IGameDiscoveryService gameDiscoveryService, IHubContext<GameStatesHub> hubContext, IGameContextFactory contextFactory)
+public class GameStatesNotifier(IGameDiscoveryService gameDiscoveryService, IHubContext<GameStatesHub> hubContext, IGameContextFactory contextFactory, ILogger<GameStatesNotifier> logger)
     : Notifier<GameStatesHub>(hubContext)
 {
     private readonly ConcurrentDictionary<Guid, List<string>> _watchedStatesByGame = new();
@@ -33,16 +34,20 @@ public class GameStatesNotifier(IGameDiscoveryService gameDiscoveryService, IHub
         {
             var stateQueue = new ConcurrentDictionary<string, object>();
 
-            gameContext.GameClock.TickCompleted += async (_, _) =>
+            gameContext.GameClock.TickCompleted += async (_, e) =>
             {
                 using var queueLock = await stateQueue.AcquireLockAsync();
 
+                var stopwatch = Stopwatch.StartNew();
                 foreach (var (name, state) in stateQueue)
                 {
                     var group = HubContext.Clients.Group($"{gameId}_{name}");
 
                     await group.SendAsync("StateChanged", name, state);
                 }
+
+                if(stateQueue.Any())
+                    logger.LogDebug("Sent {eventCount} state updates at tick {tick}. Completed in {time}ms", stateQueue.Count, e.Tick, stopwatch.ElapsedMilliseconds);
 
                 stateQueue.Clear();
             };

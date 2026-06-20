@@ -138,7 +138,7 @@ export const GameStateContextProvider = ({ gameId, children }: PropsWithChildren
         } finally {
             pendingFetchesRef.current.delete(stateName);
         }
-    }, [gameId, stateNotifiers]);
+    }, [gameId]);
 
     useEffect(() => {
         if(!gameId) {
@@ -220,11 +220,14 @@ export const GameStateContextProvider = ({ gameId, children }: PropsWithChildren
     }, [connection]);
 
     const notify = useCallback((stateName: string, state: object) => {
-        if(!stateNotifiers[stateName]) {
+        const notifiers = stateNotifiersRef.current[stateName];
+
+        if (!notifiers) {
             return;
         }
-        Object.values(stateNotifiers[stateName])?.forEach(n => n(state));
-    }, [gameId, stateNotifiers]);
+
+        Object.values(notifiers)?.forEach(n => n(state));
+    }, []);
 
     useEffect(() => {
         connection?.on("StateChanged", notify);
@@ -234,8 +237,13 @@ export const GameStateContextProvider = ({ gameId, children }: PropsWithChildren
 
     const hasConnection = isConnected;
 
+    const context = useMemo(
+        () => ({ gameId, stateNotifiers, watchState, unwatchState, connection, hasConnection  }),
+        [gameId, stateNotifiers, watchState, unwatchState, connection, hasConnection]
+    );
+
     return (
-        <GameStateContext.Provider value={{ gameId, stateNotifiers, watchState, unwatchState, connection, hasConnection  }}>
+        <GameStateContext.Provider value={context}>
             { children }
         </GameStateContext.Provider>
     )

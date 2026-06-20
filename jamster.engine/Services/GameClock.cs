@@ -6,10 +6,15 @@ namespace jamster.engine.Services;
 
 public interface IGameClock : IDisposable
 {
-    event AsyncEventHandler<EventArgs>? TickCompleted;
+    event AsyncEventHandler<TickCompletedEventArgs>? TickCompleted;
 
     void Run();
     void Stop();
+}
+
+public class TickCompletedEventArgs : EventArgs
+{
+    public required Tick Tick { get; init; }
 }
 
 public class GameClock(GameInfo game, IEnumerable<ITickReceiverAsync> receivers, IEventBus eventBus, ISystemTime systemTime, ILogger<GameClock> logger) : IGameClock
@@ -18,7 +23,7 @@ public class GameClock(GameInfo game, IEnumerable<ITickReceiverAsync> receivers,
 
     public static readonly Guid TickEventId = Guid.Parse("00000000-0000-0000-0000-00000000c10c");
 
-    public event AsyncEventHandler<EventArgs>? TickCompleted;
+    public event AsyncEventHandler<TickCompletedEventArgs>? TickCompleted;
 
     public int TicksBetweenFrames { get; init; } = 10;
 
@@ -53,7 +58,7 @@ public class GameClock(GameInfo game, IEnumerable<ITickReceiverAsync> receivers,
                     }
                 }
 
-                TickCompleted?.InvokeHandlersAsync(this, EventArgs.Empty);
+                TickCompleted?.InvokeHandlersAsync(this, new() { Tick = tick });
 
                 Thread.Sleep(TicksBetweenFrames);
             }
