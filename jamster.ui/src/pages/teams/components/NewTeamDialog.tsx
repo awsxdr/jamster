@@ -5,7 +5,7 @@ import { ColorSelectButton } from "@/components";
 import { Loader2 } from "lucide-react";
 import { useI18n } from "@/hooks/I18nHook";
 import { DialogDescription } from "@radix-ui/react-dialog";
-import { useTeamColorMap } from "@/hooks";
+import { teamColorMap } from "@/hooks";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -52,7 +52,6 @@ type NewTeamDialogProps = {
 export const NewTeamDialog = ({ onNewTeamCreated, onCancelled }: NewTeamDialogProps) => {
 
     const { translate } = useI18n();
-    const colorMap = useTeamColorMap();
 
     const [shirtColor, setShirtColor] = useState<HslColor>({ hue: 0, saturation: 0, lightness: 0 });
     const [complementaryColor, setComplementaryColor] = useState<HslColor>({ hue: 0, saturation: 0, lightness: 1 });
@@ -91,7 +90,7 @@ export const NewTeamDialog = ({ onNewTeamCreated, onCancelled }: NewTeamDialogPr
     useEffect(() => {
         const normalizedKitColorName = form.getValues().shirtColorName.trim().toLowerCase();
 
-        const predefinedKitColor = colorMap[normalizedKitColorName];
+        const predefinedKitColor = teamColorMap[normalizedKitColorName];
 
         if(!predefinedKitColor) {
             return;

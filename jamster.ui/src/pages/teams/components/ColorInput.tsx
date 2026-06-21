@@ -1,5 +1,5 @@
 import { Button, Form, FormControl, FormField, FormItem, FormLabel, FormMessage, Input } from "@/components/ui";
-import { useI18n, useTeamColorMap } from "@/hooks"
+import { useI18n, teamColorMap } from "@/hooks"
 import { Color, HslColor, TeamColor } from "@/types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -35,7 +35,6 @@ export const ColorInput = ({ id, existingColors, onColorAdded }: ColorInputProps
     const { translate } = useI18n();
 
     const formSchema = useColorInputSchema(existingColors);
-    const colorMap = useTeamColorMap();
 
     const [shirtColor, setShirtColor] = useState<HslColor>({ hue: 0, saturation: 0, lightness: 0 });
     const [complementaryColor, setComplementaryColor] = useState<HslColor>({ hue: 0, saturation: 0, lightness: 1 });
@@ -54,7 +53,7 @@ export const ColorInput = ({ id, existingColors, onColorAdded }: ColorInputProps
 
         const normalizedKitColorName = kitColorName.trim().toLowerCase();
 
-        const predefinedKitColor = colorMap[normalizedKitColorName];
+        const predefinedKitColor = teamColorMap[normalizedKitColorName];
 
         if(!predefinedKitColor) {
             return;

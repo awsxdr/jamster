@@ -1,4 +1,4 @@
-import { createContext, PropsWithChildren, useContext, useEffect, useState } from "react";
+import { createContext, PropsWithChildren, useCallback, useContext, useEffect, useMemo, useState } from "react";
 
 type Theme = "dark" | "light" | "system";
 
@@ -42,16 +42,18 @@ export const ThemeProvider = ({
         }
     }, [theme]);
 
-    const value = {
-        theme,
-        setTheme: (theme: Theme) => {
-            localStorage.setItem("jamster-scoreboard-theme", theme);
-            setTheme(theme);
-        }
-    };
+    const changeTheme = useCallback((theme: Theme) => {
+        localStorage.setItem("jamster-scoreboard-theme", theme);
+        setTheme(theme);
+    }, [setTheme]);
+
+    const context = useMemo(
+        () => ({ theme, setTheme: changeTheme }),
+        [theme, changeTheme]
+    );
 
     return (
-        <ThemeProviderContext.Provider value={value}>
+        <ThemeProviderContext.Provider value={context}>
             {children}
         </ThemeProviderContext.Provider>
     );

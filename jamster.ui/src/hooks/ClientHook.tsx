@@ -69,10 +69,14 @@ export const useClients = () => {
 
 export const ClientConnectionContextProvider = ({ children }: PropsWithChildren) => {
     const { connection } = useHubConnection("clients");
-    const [changeActivityNotifiers, setChangeActivityNotifiers] = useState<ChangeActivityNotifier>({});
     const [clients, setClients] = useState<Client[]>([]);
     const [clientActivity, setClientActivity] = useState<ActivityData>({ activity: ClientActivity.Unknown, gameId: null, languageCode: "en" });
     const [clientName, setClientName] = useState("");
+
+    const clientNameRef = useRef(clientName);
+    clientNameRef.current = clientName;
+
+    const changeActivityNotifiersRef = useRef<ChangeActivityNotifier>({});
 
     const getInitialState = useCallback(async () => {
         return await clientsApi.getConnectedClients();
@@ -130,74 +134,72 @@ export const ClientConnectionContextProvider = ({ children }: PropsWithChildren)
     }, [connection]);
 
     const handleChangeActivity = useCallback((activity: ActivityData) => {
-        Object.values(changeActivityNotifiers).forEach(notifier => {
+        Object.values(changeActivityNotifiersRef.current).forEach(notifier => {
             notifier(activity);
         });
-    }, [changeActivityNotifiers]);
+    }, []);
 
-    const setActivity = (activity: ActivityData) => {
+    const setActivity = useCallback((activity: ActivityData) => {
         setClientActivity(activity);
 
         connection?.send("SetActivity", activity);
-    }
+    }, [connection, setClientActivity]);
 
-    const watchActivityChange = (handler: ChangeActivityHandler) => {
+    const watchActivityChange = useCallback((handler: ChangeActivityHandler) => {
         const newId = uuidv4();
 
-        setChangeActivityNotifiers(n => ({
-            ...n,
-            [newId]: handler,
-        }));
+        changeActivityNotifiersRef.current[newId] = handler;
 
         return newId;
-    }
+    }, []);
 
-    const unwatchActivityChange = (handle: CallbackHandle) => {
-        setChangeActivityNotifiers(n => {
-            if(!n[handle]) {
-                console.warn("Attempt to unwatch activity change with invalid handle", handle);
-                return n;
-            }
+    const unwatchActivityChange = useCallback((handle: CallbackHandle) => {
+        if(!changeActivityNotifiersRef.current[handle]) {
+            console.warn("Attempt to unwatch activity change with invalid handle", handle);
+            return;
+        }
 
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            const { [handle]: _, ...newNotifier} = n;
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { [handle]: _, ...newNotifier} = changeActivityNotifiersRef.current;
 
-            return newNotifier;
-        });
-    }
+        changeActivityNotifiersRef.current = newNotifier;
+    }, []);
 
-    const getName = async () => {
+    const getName = useCallback(async () => {
         const name = await connection?.invoke<string>("GetConnectionName");
-        if(name && clientName !== name) {
+        if(name && clientNameRef.current !== name) {
             setClientName(name);
         }
 
         return name ?? "";
-    }
+    }, [connection, setClientName]);
 
-    const setName = async (name: string) => {
+    const setName = useCallback(async (name: string) => {
         await connection?.invoke("SetConnectionName", name);
         setClientName(name);
-    }
+    }, [connection, setClientName]);
 
     useEffect(() => {
         connection?.on("ChangeActivity", handleChangeActivity);
         return () => connection?.off("ChangeActivity", handleChangeActivity);
     }, [connection, handleChangeActivity]);
 
+    const context = useMemo(
+        () => ({ 
+            clients, 
+            hasConnection: !!connection, 
+            activity: clientActivity,
+            setActivity, 
+            watchActivityChange, 
+            unwatchActivityChange,
+            getName,
+            setName,
+        }),
+        [clients, connection, clientActivity, setActivity, watchActivityChange, unwatchActivityChange, getName, setName]
+    );
+
     return (
-        <ClientConnectionContext.Provider 
-            value={{ 
-                clients, 
-                hasConnection: !!connection, 
-                activity: clientActivity,
-                setActivity, 
-                watchActivityChange, 
-                unwatchActivityChange,
-                getName,
-                setName,
-            }}
-        >
+        <ClientConnectionContext.Provider value={context}>
             { children }
         </ClientConnectionContext.Provider>
     )

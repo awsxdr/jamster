@@ -1,6 +1,6 @@
 import { ChangeEvent, MouseEvent, useEffect, useState } from "react";
 import { Button, Card, CardContent, Checkbox, Form, FormControl, FormField, FormItem, FormMessage, Input } from "@/components/ui"
-import { useI18n, teamApi, useTeamColorMap } from "@/hooks";
+import { useI18n, teamApi, teamColorMap } from "@/hooks";
 import { cn } from "@/lib/utils";
 import { Color, HslColor, StringMap, Team, TeamColor } from "@/types";
 import { Check, Pencil, Trash, X } from "lucide-react"
@@ -34,7 +34,6 @@ const ColorRow = ({ id, color, disableEdit, disableSelect, existingColors, onEdi
     const [complementaryColor, setComplementaryColor] = useState<HslColor>({ hue: 0, saturation: 0, lightness: 1 });
 
     const formSchema = useColorInputSchema(existingColors);
-    const colorMap = useTeamColorMap();
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
@@ -60,7 +59,7 @@ const ColorRow = ({ id, color, disableEdit, disableSelect, existingColors, onEdi
 
         const normalizedKitColorName = kitColorName.trim().toLowerCase();
 
-        const predefinedKitColor = colorMap[normalizedKitColorName];
+        const predefinedKitColor = teamColorMap[normalizedKitColorName];
 
         if(!predefinedKitColor) {
             return;

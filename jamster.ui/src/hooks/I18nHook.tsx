@@ -73,7 +73,15 @@ export const I18nContextProvider = ({ usageKey, defaultLanguage, languages, chil
     const [language, setLanguage] = useState(localStorage.getItem(storageKey) ?? defaultLanguage);
     
     const translations = useMemo(() => languages[language] ?? {}, [languages, language]);
-    const languageNames = Object.keys(languages).map(key => ({ code: key, displayName: languages[key].name }));
+    const languageNames = useMemo(() => {
+        const names = Object.keys(languages).map(key => ({ code: key, displayName: languages[key].name }));
+
+        if(import.meta.env.MODE === 'development') {
+            names.push({ code: 'dev', displayName: 'I18n test'});
+        }
+
+        return names;
+    }, [languages]);
 
     const translate = useCallback((key: string, fallback?: string) => {
         const translation = 
@@ -89,17 +97,18 @@ export const I18nContextProvider = ({ usageKey, defaultLanguage, languages, chil
     }, 
     [translations, language]);
 
-    if(import.meta.env.MODE === 'development') {
-        languageNames.push({ code: 'dev', displayName: 'I18n test'});
-    }
-
     const changeLanguage = useCallback((key: string) => {
         setLanguage(key);
         localStorage.setItem(storageKey, key);
     }, [setLanguage]);
 
+    const context = useMemo(
+        () => ({ language, languages: languageNames, translations, translate, setLanguage: changeLanguage }),
+        [language, languageNames, translations, translate, changeLanguage]
+    );
+
     return (
-        <I18nContext.Provider value={{ language, languages: languageNames, translations, translate, setLanguage: changeLanguage }}>
+        <I18nContext.Provider value={context}>
             {children}
         </I18nContext.Provider>
     )

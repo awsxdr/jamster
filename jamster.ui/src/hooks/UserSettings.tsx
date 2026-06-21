@@ -1,6 +1,5 @@
-import { createContext, PropsWithChildren, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, PropsWithChildren, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useConfiguration, useHubConnection, userApi } from ".";
-import { HubConnection } from "@microsoft/signalr";
 import { useUserLogin } from "./UserLogin";
 import * as uuid from 'uuid';
 
@@ -10,7 +9,6 @@ type UserConfigurationChanged<TConfiguration> = (value: TConfiguration) => void;
 type UserSettingsProviderState = {
     watchUserConfiguration: <TConfiguration,>(userName: string, configurationName: string, onChanged: UserConfigurationChanged<TConfiguration>) => CallbackHandle;
     unwatchUserConfiguration: (userName: string, configurationName: string, handle: CallbackHandle) => void;
-    connection?: HubConnection;
 }
 
 const DEFAULT_STATE: UserSettingsProviderState = {
@@ -27,7 +25,7 @@ export const useCurrentUserConfiguration = <TConfiguration,>(configurationName: 
     const { userName } = useUserLogin();
     const { configuration: baseConfiguration, setConfiguration: setBaseConfiguration } = useConfiguration<TConfiguration>(configurationName);
 
-    const safeBaseConfiguration = useMemo(() => baseConfiguration ?? defaultValue, [baseConfiguration]);
+    const safeBaseConfiguration = useMemo(() => baseConfiguration ?? defaultValue, [baseConfiguration, defaultValue]);
 
     if (context === undefined) {
         throw new Error('useUserSettings must be used inside a UserSettingsProvider');
@@ -53,7 +51,7 @@ export const useCurrentUserConfiguration = <TConfiguration,>(configurationName: 
 
     const setConfiguration = useCallback((configuration: TConfiguration) => {
         userApi.setConfiguration(userName, configurationName, configuration);
-    }, [userName, configurationName, userApi]);
+    }, [userName, configurationName]);
 
     return {
         configuration: userName ? value : safeBaseConfiguration,
@@ -67,73 +65,76 @@ type ConfigurationNotifierMap = Record<string, ConfigurationNotifier>;
 type UserConfigurationNotifierMap = Record<string, ConfigurationNotifierMap>;
 
 export const UserSettingsContextProvider = ({ children }: PropsWithChildren) => {
-    const [notifiers, setNotifiers] = useState<UserConfigurationNotifierMap>({});
+    const userConfigurationNotifiersRef = useRef<UserConfigurationNotifierMap>({});
 
     const handleConnectionDisconnect = async () => {
         if(!connection) {
             return;
         }
 
-        Object.keys(notifiers).forEach(userName => {
-            Object.keys(notifiers[userName]).forEach(configurationType => {
+        Object.keys(userConfigurationNotifiersRef.current).forEach(userName => {
+            Object.keys(userConfigurationNotifiersRef.current[userName]).forEach(configurationType => {
                 connection.invoke("UnwatchUserConfiguration", userName, configurationType);
             });
         });
     }
 
     const { connection } = useHubConnection("users", handleConnectionDisconnect);
+    const connectionRef = useRef(connection);
+    connectionRef.current = connection;
 
-    const watchUserConfiguration = <TConfiguration,>(userName: string, configurationName: string, onChange: UserConfigurationChanged<TConfiguration>) => {
+    const watchUserConfiguration = useCallback(<TConfiguration,>(userName: string, configurationName: string, onChange: UserConfigurationChanged<TConfiguration>) => {
         const newId = uuid.v4();
 
-        setNotifiers(n => ({
-            ...n,
-            [userName]: {
-                ...(n[userName] ?? {}),
-                [configurationName]: {
-                    ...(n[userName]?.[configurationName] ?? {}),
-                    [newId]: genericConfiguration => onChange(genericConfiguration as TConfiguration)
-                }
-            }
-        }));
+        if (!userConfigurationNotifiersRef.current[userName]?.[configurationName]) {
+            connectionRef.current?.invoke("WatchUserConfiguration", userName, configurationName);
+        }
+
+        userConfigurationNotifiersRef.current[userName] = {
+            ...(userConfigurationNotifiersRef.current[userName] ?? {}),
+            [configurationName]: {
+                ...(userConfigurationNotifiersRef.current[userName]?.[configurationName] ?? {}),
+                [newId]: genericConfiguration => onChange(genericConfiguration as TConfiguration),
+            },
+        };
 
         return newId;
-    }
+    }, []);
 
-    const unwatchUserConfiguration = (userName: string, configurationName: string, handle: CallbackHandle) => {
-        setNotifiers(n => {
-            if(!n[userName]?.[configurationName]?.[handle]) {
-                console.warn("Attempt to unwatch user configuration with invalid handle", handle);
-            }
+    const unwatchUserConfiguration = useCallback((userName: string, configurationName: string, handle: CallbackHandle) => {
+        if(!userConfigurationNotifiersRef.current[userName]?.[configurationName]?.[handle]) {
+            console.warn("Attempt to unwatch user configuration with invalid handle", handle);
+            return;
+        }
 
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            const { [handle]: _, ...newNotifier } = n[userName][configurationName];
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { [handle]: _, ...newNotifier } = userConfigurationNotifiersRef.current[userName][configurationName];
 
-            return {
-                ...n,
-                [userName]: {
-                    ...n[userName],
-                    [configurationName]: newNotifier
-                }
-            }
-        });
-    }
+        userConfigurationNotifiersRef.current[userName] = {
+            ...userConfigurationNotifiersRef.current[userName],
+            [configurationName]: newNotifier
+        }
+    }, []);
 
     useEffect(() => {
         if (!connection) {
             return;
         }
 
-        Object.keys(notifiers).forEach(userName => {
-            Object.keys(notifiers[userName]).forEach(configurationType => {
-                connection.invoke("WatchUserConfiguration", userName, configurationType);
+        const registerWatchers = () =>
+            Object.keys(userConfigurationNotifiersRef.current).forEach(userName => {
+                Object.keys(userConfigurationNotifiersRef.current[userName]).forEach(configurationType => {
+                    connection.invoke("WatchUserConfiguration", userName, configurationType);
+                });
             });
-        });
-    }, [connection, notifiers]);
+
+        registerWatchers();
+        connection.onreconnected(registerWatchers);
+    }, [connection]);
 
     const notify = useCallback((userName: string, configurationName: string, configuration: object) => {
-        Object.values(notifiers[userName][configurationName])?.forEach(n => n(configuration));
-    }, [notifiers]);
+        Object.values(userConfigurationNotifiersRef.current[userName][configurationName])?.forEach(n => n(configuration));
+    }, []);
 
     useEffect(() => {
         connection?.on("UserConfigurationChanged", notify);
@@ -141,8 +142,13 @@ export const UserSettingsContextProvider = ({ children }: PropsWithChildren) => 
         return () => connection?.off("UserConfigurationChanged", notify);
     }, [connection, notify]);
 
+    const context = useMemo(
+        () => ({ watchUserConfiguration, unwatchUserConfiguration }),
+        [watchUserConfiguration, unwatchUserConfiguration]
+    );
+
     return (
-        <UserSettingsContext.Provider value={{ watchUserConfiguration, unwatchUserConfiguration }}>
+        <UserSettingsContext.Provider value={context}>
             {children}
         </UserSettingsContext.Provider>
     );

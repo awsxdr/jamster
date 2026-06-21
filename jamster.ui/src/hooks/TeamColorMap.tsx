@@ -1,6 +1,6 @@
 import { StringMap, TeamColor } from "@/types";
 
-export const useTeamColorMap = (): StringMap<TeamColor> => [
+export const teamColorMap: StringMap<TeamColor> = [
     [["red"], ["#ff0000", "#ffffff"]],
     [["pink"], ["#ff8888", "#000000"]],
     [["orange"], ["#ff8800", "#000000"]],

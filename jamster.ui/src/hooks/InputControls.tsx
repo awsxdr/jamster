@@ -1,5 +1,5 @@
 import { Control, DEFAULT_INPUT_CONTROLS, InputControls } from "@/types";
-import { createContext, PropsWithChildren, useCallback, useContext, useState } from "react";
+import { createContext, PropsWithChildren, useCallback, useContext, useMemo, useState } from "react";
 import { useCurrentUserConfiguration } from "./UserSettings";
 import { useHotkeys } from "react-hotkeys-hook";
 
@@ -48,14 +48,15 @@ export const useShortcutsContext = () => useContext(ShortcutsContext);
 export const ShortcutsContextProvider = ({ children }: PropsWithChildren) => {
     const { configuration: shortcuts, setConfiguration: setShortcuts } = useCurrentUserConfiguration<InputControls>("InputControls", DEFAULT_INPUT_CONTROLS);
     
-    const handleSetShortcuts = (shortcuts: InputControls) => {
-        setShortcuts(shortcuts);
-    }
-
     const [shortcutsEnabled, setShortcutsEnabled] = useState(true);
 
+    const context = useMemo(
+        () => ({ shortcuts, shortcutsEnabled, setShortcuts, setShortcutsEnabled }),
+        [shortcuts, shortcutsEnabled, setShortcuts, setShortcutsEnabled]
+    );
+
     return (
-        <ShortcutsContext.Provider value={{ shortcuts, shortcutsEnabled, setShortcuts: handleSetShortcuts, setShortcutsEnabled }}>
+        <ShortcutsContext.Provider value={context}>
             { children }
         </ShortcutsContext.Provider>
     )

@@ -1,4 +1,4 @@
-import { createContext, PropsWithChildren, useContext, useEffect, useState } from "react";
+import { createContext, PropsWithChildren, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { userApi } from ".";
 import { getCookie, setCookie, removeCookie } from 'typescript-cookie';
 
@@ -30,28 +30,33 @@ const USER_NAME_COOKIE_NAME = "jamster.currentUser";
 export const UserLoginContextProvider = ({ children }: PropsWithChildren) => {
     const [userName, setUserName] = useState<string>();
 
+    const login = useCallback((userName: string) => {
+        userApi.createUser(userName).then(() => {
+            setUserName(userName); 
+            setCookie(USER_NAME_COOKIE_NAME, userName, { expires: 1 });
+        });
+    }, [setUserName]);
+
+    const logout = useCallback(() => {
+        setUserName(undefined);
+        removeCookie(USER_NAME_COOKIE_NAME);
+    }, [setUserName]);
+
     useEffect(() => {
         const cookieUser = getCookie(USER_NAME_COOKIE_NAME);
 
         if(cookieUser && !userName) {
             login(cookieUser);
         }
-    }, []);
+    }, [userName, login]);
 
-    const login = (userName: string) => {
-        userApi.createUser(userName).then(() => {
-            setUserName(userName); 
-            setCookie(USER_NAME_COOKIE_NAME, userName, { expires: 1 });
-        });
-    }
-
-    const logout = () => {
-        setUserName(undefined);
-        removeCookie(USER_NAME_COOKIE_NAME);
-    }
+    const context = useMemo(
+        () => ({ userName, login, logout }),
+        [userName, login, logout]
+    );
 
     return (
-        <UserLoginContext.Provider value={{ userName, login, logout }}>
+        <UserLoginContext.Provider value={context}>
             { children }
         </UserLoginContext.Provider>
     )

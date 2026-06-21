@@ -13,6 +13,8 @@ type TeamListContextProps = {
     teams: StringMap<Team>;
 }
 
+type TeamListNotifierMap = StringMap<StringMap<TeamChanged>>;
+
 const TeamListContext = createContext<TeamListContextProps>({
     watchTeam: () => { throw new Error('watchTeam called before context created'); },
     unwatchTeam: () => { throw new Error('unwatchTeam called before context created'); },
@@ -54,8 +56,9 @@ export const useTeam = (teamId: string) => {
 }
 
 export const TeamListContextProvider = ({ children }: PropsWithChildren) => {
-    const [teamNotifiers, setTeamNotifiers] = useState<StringMap<StringMap<TeamChanged>>>({});
     const [teams, setTeams] = useState<StringMap<Team>>({});
+
+    const teamNotifiersRef = useRef<TeamListNotifierMap>({});
 
     const { connection } = useHubConnection('teams');
 
@@ -69,31 +72,36 @@ export const TeamListContextProvider = ({ children }: PropsWithChildren) => {
                 teams.reduce((teams, team) => ({ ...teams, [team.id]: team }), {})
             );
 
-            Object.keys(teamNotifiers).forEach(teamId =>
-                Object.values(teamNotifiers[teamId] ?? {}).forEach(notifier =>
+            Object.keys(teamNotifiersRef.current).forEach(teamId =>
+                Object.values(teamNotifiersRef.current[teamId] ?? {}).forEach(notifier =>
                     notifier?.(teams.filter(t => t.id === teamId)[0])
                 )
             )
         });
     }, []);
 
-    const watchTeam = (teamId: string, onTeamChanged: TeamChanged) => {
-        const watchId = uuidv4();
+    const watchTeam = useCallback((teamId: string, onTeamChanged: TeamChanged) => {
+        const handle = uuidv4();
 
-        setTeamNotifiers(notifiers => ({
-            ...notifiers,
-            [teamId]: { ...notifiers[teamId], [watchId]: onTeamChanged }
-        }));
+        teamNotifiersRef.current[teamId] = {
+            ...(teamNotifiersRef.current[teamId] ?? {}),
+            [handle]: onTeamChanged
+        };
 
-        return watchId;
-    }
+        return handle;
+    }, []);
 
-    const unwatchTeam = (teamId: string, watchId: string) => {
-        setTeamNotifiers(notifiers => ({
-            ...notifiers,
-            [teamId]: { ...notifiers[teamId], [watchId]: undefined }
-        }));
-    }
+    const unwatchTeam = useCallback((teamId: string, handle: string) => {
+        if(!teamNotifiersRef.current[teamId]?.[handle]) {
+            console.warn("Attempt to unwatch team list change with invalid handle", handle);
+            return;
+        }
+
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { [handle]: _, ...newNotifiers } = teamNotifiersRef.current[teamId];
+
+        teamNotifiersRef.current[teamId] = newNotifiers;
+    }, []);
 
     useEffect(() => {
         (async () => {
@@ -101,9 +109,7 @@ export const TeamListContextProvider = ({ children }: PropsWithChildren) => {
             await connection?.invoke("WatchTeamCreated");
             await connection?.invoke("WatchTeamArchived");
         })();
-    }, [connection]);
 
-    useEffect(() => {
         connection?.onreconnected(() => {
             connection?.invoke("WatchTeamChanged");
             connection?.invoke("WatchTeamCreated");
@@ -112,8 +118,8 @@ export const TeamListContextProvider = ({ children }: PropsWithChildren) => {
     }, [connection]);
 
     const notify = useCallback((teamId: string, team?: Team) => {
-        Object.values(teamNotifiers[teamId] ?? {}).forEach(n => n?.(team));
-    }, [teamNotifiers, setTeamNotifiers]);
+        Object.values(teamNotifiersRef.current[teamId] ?? {}).forEach(n => n?.(team));
+    }, []);
 
     useEffect(() => {
         connection?.on("TeamCreated", (team: Team) => {
@@ -138,8 +144,13 @@ export const TeamListContextProvider = ({ children }: PropsWithChildren) => {
         };
     }, [connection, notify]);
 
+    const context = useMemo(
+        () => ({ watchTeam, unwatchTeam, teams }),
+        [watchTeam, unwatchTeam, teams]
+    );
+
     return (
-        <TeamListContext.Provider value={{ watchTeam, unwatchTeam, teams }}>
+        <TeamListContext.Provider value={context}>
             { children }
         </TeamListContext.Provider>
     );
