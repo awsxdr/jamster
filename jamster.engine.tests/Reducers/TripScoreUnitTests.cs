@@ -37,7 +37,7 @@ public class TripScoreUnitTests : ReducerUnitTest<HomeTripScore, TripScoreState>
     }
 
     [Test]
-    public async Task JamEnded_WhenTripHasScore_SendsTripCompletedEvent_AndSendsScoreModifiedBy0Event()
+    public async Task JamEnded_WhenTripHasScore_SendsTripCompletedEvent_AndSendsScoreModifiedBy0Event_AndSetsScoreToNull()
     {
         State = new(3, 1, 0);
         MockState(new JamClockState(true, 0, 0, true, false));
@@ -53,10 +53,12 @@ public class TripScoreUnitTests : ReducerUnitTest<HomeTripScore, TripScoreState>
         var tripCompletedEvent = implicitEvents.OfType<TripCompleted>().Should().ContainSingle().Subject;
         tripCompletedEvent.Tick.Should().Be(1000);
         tripCompletedEvent.Body.TeamSide.Should().Be(TeamSide.Home);
+
+        State.Score.Should().BeNull();
     }
 
     [Test]
-    public async Task JamEnded_WhenTripScoreIsNull_SendsScoreModifiedBy0Event()
+    public async Task JamEnded_WhenTripScoreIsNull_SendsScoreModifiedBy0Event_AndSetsScoreToNull()
     {
         State = new(null, 1, 0);
         MockState(new JamClockState(true, 0, 0, true, false));
@@ -67,6 +69,8 @@ public class TripScoreUnitTests : ReducerUnitTest<HomeTripScore, TripScoreState>
         scoreModifiedEvent.Tick.Should().Be(1000);
         scoreModifiedEvent.Body.TeamSide.Should().Be(TeamSide.Home);
         scoreModifiedEvent.Body.Value.Should().Be(0);
+
+        State.Score.Should().BeNull();
     }
 
     [Test]

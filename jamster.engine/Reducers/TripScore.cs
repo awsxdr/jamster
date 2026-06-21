@@ -55,7 +55,11 @@ public abstract class TripScore(TeamSide teamSide, ReducerGameContext context, I
     {
         logger.LogDebug("Resetting trip score due to jam end");
 
-        return GetState() switch
+        var state = GetState();
+
+        SetState(state with { Score = null });
+
+        return state switch
         {
             { JamTripCount: 0 } => [],
             { Score: null } => [new ScoreModifiedRelative(@event.Tick, new(teamSide, 0))],
