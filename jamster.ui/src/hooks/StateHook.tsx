@@ -1,6 +1,5 @@
 import { createContext, PropsWithChildren, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react"
 import { useHubConnection } from "./SignalRHubConnection";
-import { HubConnection } from "@microsoft/signalr";
 import { useGameApi } from "./GameApiHook";
 import { GameStageState, OvertimeState, TripScoreState, TeamDetailsState, TeamScoreState, TeamSide, TeamTimeoutsState, JamLineupState, TimeoutListState, PeriodClockState, TimeoutClockState, JamClockState, LineupClockState, UndoListState, ScoreSheetState, RulesState, LineupSheetState, PenaltyBoxState, GameSummaryState, PenaltySheetState, InjuriesState, StringMap, BoxTripsState, TimelineState } from "@/types";
 import { CurrentTimeoutTypeState } from "@/types/CurrentTimeoutTypeState";
@@ -14,15 +13,12 @@ type StateWatch = <TState,>(stateName: string, onStateChange: StateChanged<TStat
 
 type GameStateContextProps = {
     gameId?: string;
-    stateNotifiers: StateNotifierMap;
     watchState: StateWatch;
     unwatchState: (stateName: string, handle: CallbackHandle) => void;
-    connection?: HubConnection;
     hasConnection: boolean;
 };
 
 const GameStateContext = createContext<GameStateContextProps>({
-    stateNotifiers: {},
     watchState: () => { throw new Error('watchState called before context created'); },
     unwatchState: () => { throw new Error('unwatchState called before context created'); },
     hasConnection: false,
@@ -91,19 +87,15 @@ export const useHasServerConnection = () => {
 type CallbackHandle = string;
 
 export const GameStateContextProvider = ({ gameId, children }: PropsWithChildren<GameStateContextProviderProps>) => {
-    const [stateNotifiers, setStateNotifiers] = useState<StateNotifierMap>({});
     const [states, setStates] = useState<StringMap<object>>({});
     const gameApi = useGameApi();
 
     const statesRef = useRef(states);
     statesRef.current = states;
 
-    const stateNotifiersRef = useRef(stateNotifiers);
-    stateNotifiersRef.current = stateNotifiers;
+    const stateNotifiersRef = useRef<StateNotifierMap>({});
 
     const pendingFetchesRef = useRef<Set<string>>(new Set());
-
-    const currentlyWatchedStatesRef = useRef<Set<string>>(new Set());
 
     useEffect(() => pendingFetchesRef.current.clear(), [gameId]);
 
@@ -152,12 +144,24 @@ export const GameStateContextProvider = ({ gameId, children }: PropsWithChildren
     const handleConnectionDisconnect = async () => {
         if(!connection) return;
 
-        Object.keys(stateNotifiers).forEach(stateName => {
+        Object.keys(stateNotifiersRef.current).forEach(stateName => {
             connection.invoke("UnwatchState", stateName);
         });
     }
 
     const { connection, isConnected } = useHubConnection(gameId && `game/${gameId}`, handleConnectionDisconnect);
+    const connectionRef = useRef(connection);
+    connectionRef.current = connection;
+
+    useEffect(() => {
+        if(!connection) return;
+
+        const registerWatchers = () => 
+            Object.keys(stateNotifiersRef.current).forEach(s => connection.invoke('WatchState', s));
+
+        registerWatchers();
+        connection.onreconnected(registerWatchers);
+    }, [connection]);
 
     const watchState = useCallback(<TState,>(stateName: string, onStateChange: StateChanged<TState>): CallbackHandle => {
         
@@ -169,55 +173,38 @@ export const GameStateContextProvider = ({ gameId, children }: PropsWithChildren
             getInitialState(stateName).then(v => v && onStateChange(v as TState));
         }
 
-        setStateNotifiers(sn => ({
-            ...sn,
+        if(!Object.keys(stateNotifiersRef.current).includes(stateName)) {
+            connectionRef.current?.invoke("WatchState", stateName);
+        }
+
+        stateNotifiersRef.current = {
+            ...stateNotifiersRef.current,
             [stateName]: {
-                ...(sn[stateName] ?? {}),
+                ...(stateNotifiersRef.current[stateName] ?? {}),
                 [newId]: genericState => {
                     onStateChange(genericState as TState);
                     setStates(s => ({ ...s, [stateName]: genericState }));
                 }
             }
-        }));
+        };
 
         return newId;
     }, [getInitialState]);
 
-    const unwatchState = (stateName: string, handle: CallbackHandle) => {
-        setStateNotifiers(sn => {
+    const unwatchState = useCallback((stateName: string, handle: CallbackHandle) => {
 
-            if (!sn[stateName]?.[handle]) {
-                console.warn("Attempt to unwatch state with invalid handle", handle);
-            }
-
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            const { [handle]: _, ...newNotifier } = sn[stateName] ?? {};
-            return {
-                ...sn,
-                [stateName]: newNotifier
-            };
-        });
-    }
-
-    useEffect(() => {
-        if(!connection) {
-            currentlyWatchedStatesRef.current.clear();
-            return;
+        if (!stateNotifiersRef.current[stateName]?.[handle]) {
+            console.warn("Attempt to unwatch state with invalid handle", handle);
         }
 
-        const newStates = Object.keys(stateNotifiers).filter(s => !currentlyWatchedStatesRef.current.has(s));
-        newStates.forEach(stateName => {
-            connection.invoke("WatchState", stateName);
-            currentlyWatchedStatesRef.current.add(stateName);
-        });
-    }, [connection, stateNotifiers]);
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { [handle]: _, ...newNotifier } = stateNotifiersRef.current[stateName] ?? {};
 
-    useEffect(() => {
-        if(!connection) return;
-        connection.onreconnected(() => {
-            Object.keys(stateNotifiersRef.current).forEach(stateName => connection.invoke("WatchState", stateName));
-        });
-    }, [connection]);
+        stateNotifiersRef.current = {
+            ...stateNotifiersRef.current,
+            [stateName]: newNotifier,
+        };
+    }, []);
 
     const notify = useCallback((stateName: string, state: object) => {
         const notifiers = stateNotifiersRef.current[stateName];
@@ -238,8 +225,8 @@ export const GameStateContextProvider = ({ gameId, children }: PropsWithChildren
     const hasConnection = isConnected;
 
     const context = useMemo(
-        () => ({ gameId, stateNotifiers, watchState, unwatchState, connection, hasConnection  }),
-        [gameId, stateNotifiers, watchState, unwatchState, connection, hasConnection]
+        () => ({ gameId, watchState, unwatchState, hasConnection  }),
+        [gameId, watchState, unwatchState, hasConnection]
     );
 
     return (
