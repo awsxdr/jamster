@@ -1,12 +1,10 @@
-import { createContext, PropsWithChildren, useCallback, useContext, useEffect, useState } from "react";
-import { HubConnection } from "@microsoft/signalr";
+import { createContext, PropsWithChildren, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { configurationApi, useHubConnection } from ".";
 import { v4 as uuidv4 } from 'uuid';
 
 type ConfigurationContextProps = {
     watchConfiguration: <TConfiguration,>(configurationName: string, onChanged: ConfigurationChanged<TConfiguration>) => CallbackHandle;
     unwatchConfiguration: (configurationName: string, handle: CallbackHandle) => void;
-    connection?: HubConnection;
 }
 
 const ConfigurationContext = createContext<ConfigurationContextProps>({
@@ -33,9 +31,8 @@ export const useConfiguration = <TConfiguration,>(configurationName: string) => 
 
     useEffect(() => {
         const handle = context.watchConfiguration<TConfiguration>(configurationName, setValue);
-
         return () => context.unwatchConfiguration(configurationName, handle);
-    }, [configurationName, setValue]);
+    }, [configurationName, setValue, context.watchConfiguration, context.unwatchConfiguration]);
 
     const setCurrentConfiguration = useCallback((configuration: TConfiguration) => {
         configurationApi.setConfiguration(configurationName, configuration);
@@ -55,62 +52,60 @@ type ConfigurationNotifier = Record<CallbackHandle, (genericConfiguration: objec
 type ConfigurationNotifierMap = Record<string, ConfigurationNotifier>;
 
 export const ConfigurationContextProvider = ({ children }: PropsWithChildren) => {
-    const [notifiers, setNotifiers] = useState<ConfigurationNotifierMap>({});
+    const configurationNotifiersRef = useRef<ConfigurationNotifierMap>({});
 
     const handleConnectionDisconnect = async () => {
         if(!connection) return;
 
-        Object.keys(notifiers).forEach(stateName => {
+        Object.keys(configurationNotifiersRef.current).forEach(stateName => {
             connection.invoke("UnwatchConfiguration", stateName);
         });
     }
 
     const { connection } = useHubConnection("Configuration", handleConnectionDisconnect);
-
-    const watchConfiguration = <TConfiguration,>(configurationName: string, onChange: ConfigurationChanged<TConfiguration>) => {
-        const newId = uuidv4();
-
-        setNotifiers(n => ({
-            ...n,
-            [configurationName]: {
-                ...(n[configurationName] ?? {}),
-                [newId]: genericConfiguration => onChange(genericConfiguration as TConfiguration)
-            }
-        }));
-
-        return newId;
-    }
-
-    const unwatchConfiguration = (configurationName: string, handle: CallbackHandle) => {
-        setNotifiers(n => {
-            if(!n[configurationName]?.[handle]) {
-                console.warn("Attempt to unwatch configuration with invalid handle", handle);
-                return n;
-            }
-
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            const { [handle]: _, ...newNotifier } = n[configurationName];
-
-            return {
-                ...n,
-                [configurationName]: newNotifier,
-            };
-        });
-    }
+    const connectionRef = useRef(connection);
+    connectionRef.current = connection;
 
     useEffect(() => {
-        if (!connection) {
+        if (!connection) return;
+
+        const registerWatchers = () =>
+            Object.keys(configurationNotifiersRef.current).forEach(c => connection.invoke("WatchConfiguration", c));
+
+        registerWatchers();
+        connection.onreconnected(registerWatchers);
+    }, [connection]);
+
+    const watchConfiguration = useCallback(<TConfiguration,>(configurationName: string, onChange: ConfigurationChanged<TConfiguration>) => {
+        const newId = uuidv4();
+
+        if (!Object.keys(configurationNotifiersRef.current).includes(configurationName)) {
+            connectionRef.current?.invoke("WatchConfiguration", configurationName);
+        }
+
+        configurationNotifiersRef.current[configurationName] = {
+            ...(configurationNotifiersRef.current[configurationName] ?? {}),
+            [newId]: genericConfiguration => onChange(genericConfiguration as TConfiguration)
+        };
+
+        return newId;
+    }, []);
+
+    const unwatchConfiguration = useCallback((configurationName: string, handle: CallbackHandle) => {
+        if(!configurationNotifiersRef.current[configurationName]?.[handle]) {
+            console.warn("Attempt to unwatch configuration with invalid handle", handle);
             return;
         }
 
-        Object.keys(notifiers).forEach(configurationName => {
-            connection.invoke("WatchConfiguration", configurationName);
-        });
-    }, [connection, notifiers]);
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { [handle]: _, ...newNotifier } = configurationNotifiersRef.current[configurationName];
+
+        configurationNotifiersRef.current[configurationName] = newNotifier;
+    }, []);
 
     const notify = useCallback((configurationName: string, configuration: object) => {
-        Object.values(notifiers[configurationName])?.forEach(n => n(configuration));
-    }, [notifiers]);
+        Object.values(configurationNotifiersRef.current[configurationName])?.forEach(n => n(configuration));
+    }, []);
 
     useEffect(() => {
         connection?.on("ConfigurationChanged", notify);
@@ -118,8 +113,13 @@ export const ConfigurationContextProvider = ({ children }: PropsWithChildren) =>
         return () => connection?.off("ConfigurationChanged", notify);
     }, [connection, notify]);
 
+    const context = useMemo(
+        () => ({ watchConfiguration, unwatchConfiguration }),
+        [watchConfiguration, unwatchConfiguration]
+    );
+    
     return (
-        <ConfigurationContext.Provider value={{ watchConfiguration, unwatchConfiguration, connection }}>
+        <ConfigurationContext.Provider value={context}>
             {children}
         </ConfigurationContext.Provider>
     )
