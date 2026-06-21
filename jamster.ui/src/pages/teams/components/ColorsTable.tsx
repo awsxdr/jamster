@@ -1,6 +1,6 @@
 import { ChangeEvent, MouseEvent, useEffect, useState } from "react";
 import { Button, Card, CardContent, Checkbox, Form, FormControl, FormField, FormItem, FormMessage, Input } from "@/components/ui"
-import { useI18n, useTeamApi, useTeamColorMap } from "@/hooks";
+import { useI18n, teamApi, useTeamColorMap } from "@/hooks";
 import { cn } from "@/lib/utils";
 import { Color, HslColor, StringMap, Team, TeamColor } from "@/types";
 import { Check, Pencil, Trash, X } from "lucide-react"
@@ -158,11 +158,8 @@ type ColorsTableProps = {
 }
 
 export const ColorsTable = ({ id, team }: ColorsTableProps) => {
-
     const { translate } = useI18n();
     const [isEditing, setIsEditing] = useState(false);
-
-    const { setTeam } = useTeamApi();
 
     const [colorItems, setColorItems] = useState<ColorItem[]>([]);
 
@@ -191,14 +188,14 @@ export const ColorsTable = ({ id, team }: ColorsTableProps) => {
     const selectedColors = colorItems.filter(i => i.selected);
 
     const handleDeleteSelected = () => {
-        setTeam(team.id, {
+        teamApi.setTeam(team.id, {
             ...team,
             colors: colorItems.filter(i => !i.selected).reduce((o, i) => ({...o, [i.name]: i as TeamColor }), {} as StringMap<TeamColor>)
         });
     }
 
     const handleColorChanged = (index: number, name: string, color: TeamColor) => {
-        setTeam(team.id, {
+        teamApi.setTeam(team.id, {
             ...team,
             colors: {
                 ...colorItems.filter((_, i) => i !== index).reduce((o, i) => ({...o, [i.name]: i as TeamColor }), {} as StringMap<TeamColor>),

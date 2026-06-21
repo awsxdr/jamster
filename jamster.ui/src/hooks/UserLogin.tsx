@@ -1,5 +1,5 @@
 import { createContext, PropsWithChildren, useContext, useEffect, useState } from "react";
-import { useUserApi } from ".";
+import { userApi } from ".";
 import { getCookie, setCookie, removeCookie } from 'typescript-cookie';
 
 type UserLoginProviderState = {
@@ -29,7 +29,6 @@ const USER_NAME_COOKIE_NAME = "jamster.currentUser";
 
 export const UserLoginContextProvider = ({ children }: PropsWithChildren) => {
     const [userName, setUserName] = useState<string>();
-    const { createUser } = useUserApi();
 
     useEffect(() => {
         const cookieUser = getCookie(USER_NAME_COOKIE_NAME);
@@ -40,7 +39,7 @@ export const UserLoginContextProvider = ({ children }: PropsWithChildren) => {
     }, []);
 
     const login = (userName: string) => {
-        createUser(userName).then(() => {
+        userApi.createUser(userName).then(() => {
             setUserName(userName); 
             setCookie(USER_NAME_COOKIE_NAME, userName, { expires: 1 });
         });

@@ -1,7 +1,7 @@
 import { createContext, PropsWithChildren, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react"
 import { useHubConnection } from "./SignalRHubConnection";
 import { GameInfo } from "@/types";
-import { useGameApi } from "./GameApiHook";
+import { gameApi } from "./GameApi";
 import { v4 as uuidv4 } from 'uuid';
 
 type CallbackHandle = string;
@@ -25,11 +25,10 @@ const SystemStateContext = createContext<SystemStateContextProps>({
 export const useCurrentGame = () => {
     const context = useContext(SystemStateContext);
     const [currentGame, setCurrentGame] = useState<GameInfo>();
-    const gameApi = useGameApi();
     
     const getInitialState = useCallback(async () => {
         return await gameApi.getCurrentGame();
-    }, [gameApi]);
+    }, []);
 
     useEffect(() => {
         getInitialState().then(setCurrentGame);

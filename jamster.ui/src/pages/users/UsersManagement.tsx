@@ -3,7 +3,7 @@ import { Download, Loader2, Trash, Upload } from "lucide-react";
 import { useState } from "react";
 import { MobileSidebarTrigger } from "@/components/MobileSidebarTrigger";
 import { useI18n } from "@/hooks/I18nHook";
-import { UserListContextProvider, useUserApi, useUserList } from "@/hooks";
+import { UserListContextProvider, userApi, useUserList } from "@/hooks";
 import { UserTable } from "./components/UserTable";
 
 export const UsersManagement = () => (
@@ -14,7 +14,6 @@ export const UsersManagement = () => (
 
 const UsersManagementInternal = () => {
     const users = useUserList()
-    const { downloadUsers, deleteUser } = useUserApi();
     const [ isPreparingExport, setIsPreparingExport ] = useState(false);
 
     const { translate } = useI18n({ prefix: "UsersManagement." });
@@ -25,14 +24,14 @@ const UsersManagementInternal = () => {
         selectedUserNames
             .map(rowId => users[parseInt(rowId)].userName)
             .forEach(userName => {
-                deleteUser(userName);
+                userApi.deleteUser(userName);
             });
         setSelectedUserNames([]);
     }
 
     const handleDownloadClicked = () => {
         setIsPreparingExport(true);
-        downloadUsers(selectedUserNames.map(rowId => users[parseInt(rowId)].userName))
+        userApi.downloadUsers(selectedUserNames.map(rowId => users[parseInt(rowId)].userName))
             .finally(() => setIsPreparingExport(false));
     }
 

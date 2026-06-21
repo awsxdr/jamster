@@ -1,6 +1,6 @@
 import { createContext, PropsWithChildren, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react"
 import { useHubConnection } from "./SignalRHubConnection";
-import { useGameApi } from "./GameApiHook";
+import { gameApi } from "./GameApi";
 import { GameStageState, OvertimeState, TripScoreState, TeamDetailsState, TeamScoreState, TeamSide, TeamTimeoutsState, JamLineupState, TimeoutListState, PeriodClockState, TimeoutClockState, JamClockState, LineupClockState, UndoListState, ScoreSheetState, RulesState, LineupSheetState, PenaltyBoxState, GameSummaryState, PenaltySheetState, InjuriesState, StringMap, BoxTripsState, TimelineState } from "@/types";
 import { CurrentTimeoutTypeState } from "@/types/CurrentTimeoutTypeState";
 import { TeamJamStatsState } from "@/types/TeamJamStatsState";
@@ -88,7 +88,6 @@ type CallbackHandle = string;
 
 export const GameStateContextProvider = ({ gameId, children }: PropsWithChildren<GameStateContextProviderProps>) => {
     const [states, setStates] = useState<StringMap<object>>({});
-    const gameApi = useGameApi();
 
     const statesRef = useRef(states);
     statesRef.current = states;

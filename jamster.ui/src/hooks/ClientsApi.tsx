@@ -8,42 +8,39 @@ type ClientsApi = {
     setConnectionActivity: (clientName: string, activity: ActivityData) => Promise<void>;
 }
 
-export const useClientsApi: () => ClientsApi = () => {
+const getConnectedClients = async () => {
+    const response = await fetch(`${API_URL}/api/clients`);
+    return (await response.json()) as Client[];
+}
 
-    const getConnectedClients = async () => {
-        const response = await fetch(`${API_URL}/api/clients`);
-        return (await response.json()) as Client[];
-    }
+const getClient = async (clientName: string) => {
+    const response = await fetch(`${API_URL}/api/clients/${clientName}`);
+    return (await response.json()) as Client;
+}
 
-    const getClient = async (clientName: string) => {
-        const response = await fetch(`${API_URL}/api/clients/${clientName}`);
-        return (await response.json()) as Client;
-    }
+const setConnectionName = async (clientName: string, newName: string) => {
+    await fetch(`${API_URL}/api/clients/${clientName}/name`, {
+        method: 'PUT',
+        body: JSON.stringify({ name: newName }),
+        headers: {
+            "Content-Type": "application/json"
+        },
+    });
+}
 
-    const setConnectionName = async (clientName: string, newName: string) => {
-        await fetch(`${API_URL}/api/clients/${clientName}/name`, {
-            method: 'PUT',
-            body: JSON.stringify({ name: newName }),
-            headers: {
-                "Content-Type": "application/json"
-            },
-        });
-    }
+const setConnectionActivity = async (clientName: string, activity: ActivityData) => {
+    await fetch(`${API_URL}/api/clients/${clientName}/activity`, {
+        method: 'PUT',
+        body: JSON.stringify({ activityDetails: activity }),
+        headers: {
+            "Content-Type": "application/json"
+        },
+    });
+}
 
-    const setConnectionActivity = async (clientName: string, activity: ActivityData) => {
-        await fetch(`${API_URL}/api/clients/${clientName}/activity`, {
-            method: 'PUT',
-            body: JSON.stringify({ activityDetails: activity }),
-            headers: {
-                "Content-Type": "application/json"
-            },
-        });
-    }
-
-    return {
-        getConnectedClients,
-        getClient,
-        setConnectionName,
-        setConnectionActivity,
-    }
+export const clientsApi: ClientsApi = {
+    getConnectedClients,
+    getClient,
+    setConnectionName,
+    setConnectionActivity,
 }

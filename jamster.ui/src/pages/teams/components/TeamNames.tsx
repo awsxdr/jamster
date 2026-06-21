@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle, Input, Label } from "@/components/ui"
-import { useI18n, useTeam, useTeamApi } from "@/hooks";
+import { useI18n, useTeam, teamApi } from "@/hooks";
 import { ChangeEvent, useEffect, useState } from "react";
 
 type TeamNamesProps = {
@@ -14,7 +14,6 @@ export const TeamNames = ({ teamId, className }: TeamNamesProps) => {
     const [scoreboardName, setScoreboardName] = useState("");
     const [overlayName, setOverlayName] = useState("");
 
-    const { setTeam } = useTeamApi();
     const { translate } = useI18n();
 
     useEffect(() => {
@@ -41,7 +40,7 @@ export const TeamNames = ({ teamId, className }: TeamNamesProps) => {
 
     const onTeamNameBlur = () => {
         if (teamId && team?.names["team"] !== teamName) {
-            setTeam(teamId, {
+            teamApi.setTeam(teamId, {
                 ...team,
                 names: { ...team?.names, "team": teamName },
                 colors: team?.colors ?? {}
@@ -51,7 +50,7 @@ export const TeamNames = ({ teamId, className }: TeamNamesProps) => {
 
     const onLeagueNameBlur = () => {
         if (teamId && team?.names["league"] !== leagueName) {
-            setTeam(teamId, {
+            teamApi.setTeam(teamId, {
                 ...team,
                 names: { ...team?.names, "league": leagueName },
                 colors: team?.colors ?? {}
@@ -61,7 +60,7 @@ export const TeamNames = ({ teamId, className }: TeamNamesProps) => {
 
     const onScoreboardNameBlur = () => {
         if (teamId && team?.names["scoreboard"] !== scoreboardName) {
-            setTeam(teamId, {
+            teamApi.setTeam(teamId, {
                 ...team,
                 names: { ...team?.names, "scoreboard": scoreboardName },
                 colors: team?.colors ?? {}
@@ -71,7 +70,7 @@ export const TeamNames = ({ teamId, className }: TeamNamesProps) => {
 
     const onOverlayNameBlur = () => {
         if (teamId && team?.names["overlay"] !== overlayName) {
-            setTeam(teamId, {
+            teamApi.setTeam(teamId, {
                 ...team,
                 names: { ...team?.names, "overlay": overlayName },
                 colors: team?.colors ?? {}

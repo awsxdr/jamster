@@ -1,6 +1,6 @@
 import { createContext, PropsWithChildren, useCallback, useContext, useEffect, useState } from "react";
 import { HubConnection } from "@microsoft/signalr";
-import { useConfigurationApi, useHubConnection } from ".";
+import { configurationApi, useHubConnection } from ".";
 import { v4 as uuidv4 } from 'uuid';
 
 type ConfigurationContextProps = {
@@ -18,7 +18,6 @@ export const useConfiguration = <TConfiguration,>(configurationName: string) => 
     const context = useContext(ConfigurationContext);
     const [value, setValue] = useState<TConfiguration>();
     const [isConfigurationLoaded, setIsConfigurationLoaded] = useState(false);
-    const { getConfiguration, setConfiguration } = useConfigurationApi();
 
     if (context === undefined) {
         throw new Error('useConfiguration must be used inside a UserSettingsProvider');
@@ -26,7 +25,7 @@ export const useConfiguration = <TConfiguration,>(configurationName: string) => 
 
     useEffect(() => {
         (async () => {
-            const initialValue = await getConfiguration<TConfiguration>(configurationName);
+            const initialValue = await configurationApi.getConfiguration<TConfiguration>(configurationName);
             setIsConfigurationLoaded(true);
             setValue(initialValue);
         })();
@@ -39,8 +38,8 @@ export const useConfiguration = <TConfiguration,>(configurationName: string) => 
     }, [configurationName, setValue]);
 
     const setCurrentConfiguration = useCallback((configuration: TConfiguration) => {
-        setConfiguration(configurationName, configuration);
-    }, [configurationName, setConfiguration]);
+        configurationApi.setConfiguration(configurationName, configuration);
+    }, [configurationName]);
 
     return { 
         configuration: value,

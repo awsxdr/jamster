@@ -1,4 +1,4 @@
-import { EventWithBody } from "@/hooks/EventsApiHook";
+import { EventWithBody } from "@/hooks/EventsApi";
 import { TeamSide } from "../TeamSide";
 
 export class ScoreModifiedRelative extends EventWithBody {

@@ -1,12 +1,8 @@
 import { Team, TeamSide } from "@/types";
-import { useEvents, useGameApi, useTeamApi } from ".";
+import { eventsApi, gameApi, teamApi } from ".";
 import { TeamSet } from "@/types/events";
 
 export const useCreateGame = () => {
-    const { createGame } = useGameApi();
-    const { sendEvent } = useEvents();
-    const { getTeam } = useTeamApi();
-
     return async (
         homeTeamId: string,
         homeTeamColorIndex: number,
@@ -14,7 +10,7 @@ export const useCreateGame = () => {
         awayTeamColorIndex: number,
         gameName: string
     ) => {
-        const gameId = await createGame(gameName);
+        const gameId = await gameApi.createGame(gameName);
 
         const defaultColor = {
             name: 'Black',
@@ -22,8 +18,8 @@ export const useCreateGame = () => {
             complementaryColor: '#ffffff',
         };
 
-        const homeTeam = await getTeam(homeTeamId);
-        const awayTeam = await getTeam(awayTeamId);
+        const homeTeam = await teamApi.getTeam(homeTeamId);
+        const awayTeam = await teamApi.getTeam(awayTeamId);
 
         const getTeamColor = (team: Team, colorIndex: number) => {
             const colorKeys = Object.keys(team.colors);
@@ -57,8 +53,8 @@ export const useCreateGame = () => {
             roster: awayTeam.roster.map(s => ({ ...s, isSkating: true })),
         };
         
-        await sendEvent(gameId, new TeamSet(TeamSide.Home, homeGameTeam));
-        await sendEvent(gameId, new TeamSet(TeamSide.Away, awayGameTeam));
+        await eventsApi.sendEvent(gameId, new TeamSet(TeamSide.Home, homeGameTeam));
+        await eventsApi.sendEvent(gameId, new TeamSet(TeamSide.Away, awayGameTeam));
 
         return gameId;
     };

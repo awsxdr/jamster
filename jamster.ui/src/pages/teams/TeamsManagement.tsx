@@ -5,14 +5,12 @@ import { Plus, Trash } from "lucide-react";
 import { NewTeamDialog, NewTeamDialogContainer, NewTeamDialogTrigger } from "./components/NewTeamDialog";
 import { useState } from "react";
 import { TeamColor } from "@/types";
-import { useTeamApi } from "@/hooks/TeamApiHook";
+import { teamApi } from "@/hooks/TeamApi";
 import { MobileSidebarTrigger } from "@/components/MobileSidebarTrigger";
 import { useI18n } from "@/hooks/I18nHook";
 
 export const TeamsManagement = () => {
-
     const teams = useTeamList();
-    const { createTeam, deleteTeam } = useTeamApi();
 
     const { translate } = useI18n();
     
@@ -20,7 +18,7 @@ export const TeamsManagement = () => {
     const [selectedTeamIds, setSelectedTeamIds] = useState<string[]>([]);
 
     const handleNewTeamCreated = (name: string, colorName: string, colors: TeamColor) => {
-        createTeam({
+        teamApi.createTeam({
             names: {
                 team: name,
             },
@@ -40,7 +38,7 @@ export const TeamsManagement = () => {
         selectedTeamIds
             .map(rowId => teams[parseInt(rowId)].id)
             .forEach(teamId => {
-                deleteTeam(teamId);
+                teamApi.deleteTeam(teamId);
             });
         setSelectedTeamIds([]);
     }

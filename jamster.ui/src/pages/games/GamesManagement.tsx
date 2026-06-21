@@ -1,7 +1,7 @@
 import { MobileSidebarTrigger } from "@/components/MobileSidebarTrigger";
 import { NewGameCreated, NewGameDialog, NewGameDialogContainer, NewGameDialogTrigger } from "@/components/NewGameDialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger, Button, buttonVariants, Separator } from "@/components/ui"
-import { useCreateGame, useGameApi, useGamesList, useI18n, useIsMobile } from "@/hooks"
+import { useCreateGame, gameApi, useGamesList, useI18n, useIsMobile } from "@/hooks"
 import { Plus, Trash, Upload } from "lucide-react"
 import { useState } from "react";
 import { UploadDialog, UploadDialogContainer, UploadDialogTrigger } from "./components/UploadDialog";
@@ -14,13 +14,12 @@ export const GamesManagement = () => {
     const [newGameDialogOpen, setNewGameDialogOpen] = useState(false);
     const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
 
-    const { uploadGame, deleteGame } = useGameApi();
     const createGame = useCreateGame();
 
     const games = useGamesList();
 
     const handleGameUploaded = async (file: File) => {
-        await uploadGame(file);
+        await gameApi.uploadGame(file);
         setUploadDialogOpen(false);
     }
 
@@ -42,7 +41,7 @@ export const GamesManagement = () => {
         selectedGameIds
             .map(rowId => games[parseInt(rowId)].id)
             .forEach(teamId => {
-                deleteGame(teamId);
+                gameApi.deleteGame(teamId);
             });
         setSelectedGameIds([]);
     }

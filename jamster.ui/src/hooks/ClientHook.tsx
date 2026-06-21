@@ -3,7 +3,7 @@ import { useHubConnection } from "./SignalRHubConnection";
 import { ActivityData, Client, ClientActivity } from "@/types";
 import { createBrowserRouter, RouteObject, useNavigate, useSearchParams } from "react-router-dom";
 import { v4 as uuidv4 } from 'uuid';
-import { useClientsApi } from "./ClientsApi";
+import { clientsApi } from "./ClientsApi";
 
 type CallbackHandle = string;
 
@@ -73,8 +73,6 @@ export const ClientConnectionContextProvider = ({ children }: PropsWithChildren)
     const [clients, setClients] = useState<Client[]>([]);
     const [clientActivity, setClientActivity] = useState<ActivityData>({ activity: ClientActivity.Unknown, gameId: null, languageCode: "en" });
     const [clientName, setClientName] = useState("");
-
-    const clientsApi = useClientsApi();
 
     const getInitialState = useCallback(async () => {
         return await clientsApi.getConnectedClients();

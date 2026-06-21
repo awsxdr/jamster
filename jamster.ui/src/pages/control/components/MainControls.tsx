@@ -2,7 +2,7 @@ import { ShortcutButton } from "@/components";
 import { TooltipProvider } from "@/components/ui";
 import { Card, CardContent } from "@/components/ui/card";
 import { useGameStageState, useLineupClockState, useOvertimeState, useRulesState, useUndoListState } from "@/hooks";
-import { Event, useEvents } from "@/hooks/EventsApiHook";
+import { Event, eventsApi } from "@/hooks/EventsApi";
 import { useI18n } from "@/hooks/I18nHook";
 import { Stage } from "@/types";
 import { IntermissionEnded, JamEnded, JamStarted, PeriodFinalized, TimeoutEnded, TimeoutStarted } from "@/types/events";
@@ -19,7 +19,6 @@ export const MainControls = ({ gameId, disabled }: MainControlsProps) => {
     const gameStage = useGameStageState();
     const overtime = useOvertimeState();
     const {translate, language} = useI18n({ prefix: "ScoreboardControl.MainControls." });
-    const { sendEvent, deleteEvent } = useEvents();
     const undoList = useUndoListState() ?? { };
     const lineupClock = useLineupClockState();
     const { rules } = useRulesState() ?? { };
@@ -70,7 +69,7 @@ export const MainControls = ({ gameId, disabled }: MainControlsProps) => {
             return;
         }
 
-        sendEvent(gameId, event);
+        eventsApi.sendEvent(gameId, event);
     }
 
     const handleStart = () => {
@@ -98,7 +97,7 @@ export const MainControls = ({ gameId, disabled }: MainControlsProps) => {
             return;
         }
 
-        deleteEvent(gameId, undoList.latestUndoEventId);
+        eventsApi.deleteEvent(gameId, undoList.latestUndoEventId);
     }
 
     const buttonClass = "w-full py-6 md:w-auto md:px-4 md:py-2";

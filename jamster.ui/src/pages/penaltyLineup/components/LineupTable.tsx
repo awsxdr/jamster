@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui";
-import { useEvents, useGameStageState, useI18n, useInjuriesState, useLineupSheetState, usePenaltySheetState, useRulesState, useTeamDetailsState } from "@/hooks";
+import { eventsApi, useGameStageState, useI18n, useInjuriesState, useLineupSheetState, usePenaltySheetState, useRulesState, useTeamDetailsState } from "@/hooks";
 import { cn } from "@/lib/utils";
 import { LineupPosition, Penalty, StringMap, TeamSide } from "@/types";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -29,7 +29,6 @@ export const LineupTable = ({
     const { injuries } = useInjuriesState(teamSide) ?? { injuries: [] };
     const penaltySheet = usePenaltySheetState(teamSide) ?? { lines: [] };
     const { rules } = useRulesState() ?? { };    
-    const { sendEvent } = useEvents();
 
     const gameStage = useGameStageState();
 
@@ -68,11 +67,11 @@ export const LineupTable = ({
     [currentJam, team]);
 
     const skaterPenalties = useMemo(() => 
-        penaltySheet.lines.reduce((map, line) => ({ ...map, [line.skaterNumber]: line.penalties }), {} as StringMap<Penalty[]>), 
+        penaltySheet.lines.reduce((map, line) => ({ ...map, [line.skaterId]: line.penalties }), {} as StringMap<Penalty[]>), 
     [penaltySheet]);
 
     const skaterExpulsions = useMemo(() =>
-        penaltySheet.lines.reduce((map, line) => ({ ...map, [line.skaterNumber]: line.expulsionPenalty }), {} as StringMap<Penalty | null>),
+        penaltySheet.lines.reduce((map, line) => ({ ...map, [line.skaterId]: line.expulsionPenalty }), {} as StringMap<Penalty | null>),
     [penaltySheet]);
 
     const offTrackSkaters = useMemo(() => 
@@ -91,14 +90,14 @@ export const LineupTable = ({
         }
 
         if(position === LineupPosition.Bench) {
-            sendEvent(gameId, new SkaterRemovedFromJam(
+            eventsApi.sendEvent(gameId, new SkaterRemovedFromJam(
                 teamSide, 
                 currentJam.period,
                 currentJam.jam,
                 skaterId
             ));
         } else {
-            sendEvent(gameId, new SkaterAddedToJam(
+            eventsApi.sendEvent(gameId, new SkaterAddedToJam(
                 teamSide,
                 currentJam.period,
                 currentJam.jam,
@@ -107,11 +106,11 @@ export const LineupTable = ({
         }
     }
 
-    const handleBoxClicked = (skaterNumber: string, currentlyInBox: boolean) => {
+    const handleBoxClicked = (skaterId: string, currentlyInBox: boolean) => {
         if(currentlyInBox) {
-            sendEvent(gameId, new SkaterReleasedFromBox(teamSide, skaterNumber));
+            eventsApi.sendEvent(gameId, new SkaterReleasedFromBox(teamSide, skaterId));
         } else {
-            sendEvent(gameId, new SkaterSatInBox(teamSide, skaterNumber));
+            eventsApi.sendEvent(gameId, new SkaterSatInBox(teamSide, skaterId));
         }
     }
 
@@ -123,17 +122,17 @@ export const LineupTable = ({
     const headerTextClassName = "font-bold flex text-center justify-center items-end";
 
     const handleInjuryAdded = (skaterId: string) => {
-        sendEvent(gameId, new SkaterInjuryAdded(teamSide, skaterId));
+        eventsApi.sendEvent(gameId, new SkaterInjuryAdded(teamSide, skaterId));
     }
 
     const handleInjuryRemoved = (skaterId: string) => {
-        const injuryJamNumber = injuries.filter(i => i.skaterId === skaterId).at(-1)?.totalJamNumberStart;
+        const injuryJamNumber = injuries.filter(i => i.skaterId === skaterId)[-1]?.totalJamNumberStart;
 
         if(injuryJamNumber === undefined) {
             return;
         }
 
-        sendEvent(gameId, new SkaterInjuryRemoved(teamSide, skaterId, injuryJamNumber));
+        eventsApi.sendEvent(gameId, new SkaterInjuryRemoved(teamSide, skaterId, injuryJamNumber));
     }
 
     return (
@@ -175,6 +174,7 @@ export const LineupTable = ({
                 </Button>
             </div>
             <MenuColumn 
+                teamSide={teamSide}
                 skaters={skatingSkaters} 
                 skaterPositions={skaterPositions}
                 injuredSkaters={injuredSkaters}
@@ -182,9 +182,9 @@ export const LineupTable = ({
                 onInjuryRemoved={handleInjuryRemoved} 
             />
             <SkaterNumberColumn 
+                teamSide={teamSide}
                 skaters={skatingSkaters}
                 skaterPositions={skaterPositions} 
-                skaterPenalties={skaterPenalties} 
                 offTrackSkaters={offTrackSkaters} 
                 injuredSkaters={injuredSkaters} 
                 compact={compact}
@@ -199,6 +199,7 @@ export const LineupTable = ({
                 offTrackSkaters={offTrackSkaters}
                 injuredSkaters={injuredSkaters} 
                 compact={compact}
+                currentJam={totalJamNumber >= jams.length - 1 || totalJamNumber === -1}
                 className="col-start-3"
                 onSkaterClicked={s => handlePositionClicked(s, LineupPosition.Bench)}
             />
@@ -210,6 +211,7 @@ export const LineupTable = ({
                 offTrackSkaters={offTrackSkaters}
                 injuredSkaters={injuredSkaters} 
                 compact={compact}
+                currentJam={totalJamNumber >= jams.length - 1 || totalJamNumber === -1}
                 className="col-start-4"
                 onSkaterClicked={s => handlePositionClicked(s, LineupPosition.Jammer)}
             />
@@ -221,6 +223,7 @@ export const LineupTable = ({
                 offTrackSkaters={offTrackSkaters}
                 injuredSkaters={injuredSkaters} 
                 compact={compact}
+                currentJam={totalJamNumber >= jams.length - 1 || totalJamNumber === -1}
                 className="col-start-5"
                 onSkaterClicked={s => handlePositionClicked(s, LineupPosition.Pivot)}
             />
@@ -231,6 +234,7 @@ export const LineupTable = ({
                 selectedSkaters={currentJam?.blockerIds.filter(b => b) as string[] ?? []}
                 offTrackSkaters={offTrackSkaters}
                 injuredSkaters={injuredSkaters} 
+                currentJam={totalJamNumber >= jams.length - 1 || totalJamNumber === -1}
                 compact={compact}
                 className="col-start-6 border-r-2"
                 onSkaterClicked={s => handlePositionClicked(s, LineupPosition.Blocker)}

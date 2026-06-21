@@ -1,5 +1,5 @@
 import { CSSProperties, useMemo, useState } from "react";
-import { useEvents, useI18n, usePenaltySheetState, useRulesState, useTeamDetailsState } from "@/hooks";
+import { eventsApi, useI18n, usePenaltySheetState, useRulesState, useTeamDetailsState } from "@/hooks";
 import { cn } from "@/lib/utils";
 import { Penalty, StringMap, TeamSide } from "@/types";
 import { ExpulsionDialog, PenaltyDialog, PenaltyRow } from ".";
@@ -17,7 +17,6 @@ export const PenaltyTable = ({ gameId, teamSide, offsetForLineupTable, compact }
     const { rules } = useRulesState() ?? { };
     const { translate } = useI18n({ prefix: "PenaltyLineup.PenaltyTable." });
     const penaltySheet = usePenaltySheetState(teamSide) ?? { lines: [] };
-    const { sendEvent } = useEvents();
     const { team } = useTeamDetailsState(teamSide) ?? {};
 
     const [penaltyDialogOpen, setPenaltyDialogOpen] = useState(false);
@@ -58,7 +57,7 @@ export const PenaltyTable = ({ gameId, teamSide, offsetForLineupTable, compact }
         if(editingIndex < selectedSkaterPenalties.length) {
             (async () => {
                 const originalPenalty = selectedSkaterPenalties[editingIndex];
-                sendEvent(gameId, new PenaltyUpdated(
+                eventsApi.sendEvent(gameId, new PenaltyUpdated(
                     teamSide, 
                     editingSkaterNumber, 
                     originalPenalty.code, 
@@ -69,11 +68,11 @@ export const PenaltyTable = ({ gameId, teamSide, offsetForLineupTable, compact }
                     penalty.jam
                 ));
                 if(originalPenalty.served !== penalty.served) {
-                    sendEvent(gameId, new PenaltyServedSet(teamSide, editingSkaterNumber, penalty.code, penalty.period, penalty.jam, penalty.served));
+                    eventsApi.sendEvent(gameId, new PenaltyServedSet(teamSide, editingSkaterId, penalty.code, penalty.period, penalty.jam, penalty.served));
                 }
             })();
         } else {
-            sendEvent(gameId, new PenaltyAssessed(teamSide, editingSkaterNumber, penalty.code));
+            eventsApi.sendEvent(gameId, new PenaltyAssessed(teamSide, editingSkaterId, penalty.code));
         }
     }
 
@@ -84,7 +83,7 @@ export const PenaltyTable = ({ gameId, teamSide, offsetForLineupTable, compact }
         }
 
         const penalty = selectedSkaterPenalties[editingIndex];
-        sendEvent(gameId, new PenaltyRescinded(
+        eventsApi.sendEvent(gameId, new PenaltyRescinded(
             teamSide, 
             editingSkaterNumber, 
             penalty.code, 
@@ -99,9 +98,9 @@ export const PenaltyTable = ({ gameId, teamSide, offsetForLineupTable, compact }
 
     const handleExpulsionAccept = (penalty: Penalty | null) => {
         if(penalty === null) {
-            sendEvent(gameId, new ExpulsionCleared(teamSide, editingSkaterNumber));
+            eventsApi.sendEvent(gameId, new ExpulsionCleared(teamSide, editingSkaterId));
         } else {
-            sendEvent(gameId, new SkaterExpelled(teamSide, editingSkaterNumber, penalty.code, penalty.period, penalty.jam));
+            eventsApi.sendEvent(gameId, new SkaterExpelled(teamSide, editingSkaterId, penalty.code, penalty.period, penalty.jam));
         }
     }
 

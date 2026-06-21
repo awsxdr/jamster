@@ -1,4 +1,4 @@
-import { useEvents, useGameStageState, useIntermissionClockState } from "@/hooks"
+import { eventsApi, useGameStageState, useIntermissionClockState } from "@/hooks"
 import { useI18n } from "@/hooks/I18nHook";
 import { Button } from "@/components/ui";
 import { Pencil } from "lucide-react";
@@ -15,7 +15,6 @@ type ClocksContainerProps = {
 export const ClocksContainer = ({ gameId }: ClocksContainerProps) => {
     const gameStage = useGameStageState();
     const { translate } = useI18n();
-    const { sendEvent } = useEvents();
     const intermissionClock = useIntermissionClockState();
 
     const [isEditing, setIsEditing] = useState(false);
@@ -25,22 +24,22 @@ export const ClocksContainer = ({ gameId }: ClocksContainerProps) => {
     }
 
     const handlePeriodClockSet = (value: number) =>
-        sendEvent(gameId, new PeriodClockSet(value));
+        eventsApi.sendEvent(gameId, new PeriodClockSet(value));
 
     const handleJamClockSet = (value: number) =>
-        sendEvent(gameId, new JamClockSet(value));
+        eventsApi.sendEvent(gameId, new JamClockSet(value));
 
     const handleLineupClockSet = (value: number) =>
-        sendEvent(gameId, new LineupClockSet(value));
+        eventsApi.sendEvent(gameId, new LineupClockSet(value));
 
     const handleTimeoutClockSet = (value: number) =>
-        sendEvent(gameId, new TimeoutClockSet(value));
+        eventsApi.sendEvent(gameId, new TimeoutClockSet(value));
 
     const handleIntermissionClockSet = (value: number) => {
-        sendEvent(gameId, new IntermissionClockSet(value));
+        eventsApi.sendEvent(gameId, new IntermissionClockSet(value));
 
         if(!intermissionClock?.isRunning && gameStage?.stage && [Stage.BeforeGame, Stage.Intermission, Stage.AfterGame].includes(gameStage.stage)) {
-            sendEvent(gameId, new IntermissionStarted());
+            eventsApi.sendEvent(gameId, new IntermissionStarted());
         }
     }
 

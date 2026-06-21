@@ -1,5 +1,5 @@
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui";
-import { useGameApi, useI18n } from "@/hooks";
+import { gameApi, useI18n } from "@/hooks";
 import { GameInfo } from "@/types";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
@@ -10,12 +10,11 @@ type EditBreadcrumbsProps = {
 
 export const EditBreadcrumbs = ({ gameId }: EditBreadcrumbsProps) => {
     const { translate } = useI18n();
-    const { getGame } = useGameApi();
     const [ gameInfo, setGameInfo ] = useState<GameInfo>();
 
     useEffect(() => {
         (async () => {
-            const gameInfo = await getGame(gameId);
+            const gameInfo = await gameApi.getGame(gameId);
             setGameInfo(gameInfo);
         })();
     }, [gameId]);

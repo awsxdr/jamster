@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui"
-import { useI18n, useTeamApi } from "@/hooks";
+import { useI18n, teamApi } from "@/hooks";
 import { ColorInput } from "./ColorInput";
 import { ColorsTable } from "./ColorsTable";
 import { Team, TeamColor } from "@/types";
@@ -10,13 +10,10 @@ type TeamColorsProps = {
 }
 
 export const TeamColors = ({ team, className }: TeamColorsProps) => {
-
     const { translate } = useI18n();
 
-    const { setTeam } = useTeamApi();
-
     const handleColorAdded = (name: string, color: TeamColor) => {
-        setTeam(team.id, { ...team, colors: { ...team.colors, [name]: color }});
+        teamApi.setTeam(team.id, { ...team, colors: { ...team.colors, [name]: color }});
     }
 
     return (

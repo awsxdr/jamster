@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui"
 import { RosterInput } from "./RosterInput";
 import { RosterTable } from "./RosterTable";
-import { useI18n, useTeamApi } from "@/hooks";
+import { useI18n, teamApi } from "@/hooks";
 import { Skater, Team } from "@/types";
 import { useMemo } from "react";
 
@@ -11,15 +11,12 @@ type TeamRosterProps = {
 }
 
 export const TeamRoster = ({ team, className }: TeamRosterProps) => {
-
     const { translate } = useI18n();
-
-    const { setRoster } = useTeamApi();
 
     const skaterNumbers = useMemo(() => team.roster.map(s => s.number), [team]);
 
     const handleSkatersAdded = (skaters: Omit<Skater, 'id'>[]) => {
-        setRoster(team.id, [
+        teamApi.setRoster(team.id, [
             ...team.roster,
             ...skaters.map(s => ({ id: '', ...s })),
         ].filter((v, i, a) => a.findIndex(s => s.number === v.number) === i));

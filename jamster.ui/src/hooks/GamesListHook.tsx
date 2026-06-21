@@ -2,7 +2,7 @@ import { createContext, PropsWithChildren, useCallback, useContext, useEffect, u
 import { useHubConnection } from "./SignalRHubConnection";
 import { HubConnection } from "@microsoft/signalr";
 import { GameInfo } from "@/types";
-import { useGameApi } from "./GameApiHook";
+import { gameApi } from "./GameApi";
 import { v4 as uuidv4 } from 'uuid';
 
 type CallbackHandle = string;
@@ -25,7 +25,6 @@ const GamesListContext = createContext<GamesListContextProps>({
 export const useGamesList = () => {
     const context = useContext(GamesListContext);
     const [value, setValue] = useState<GameInfo[]>([]);
-    const gameApi = useGameApi();
     
     const getInitialState = useCallback(async () => {
         return await gameApi.getGames();

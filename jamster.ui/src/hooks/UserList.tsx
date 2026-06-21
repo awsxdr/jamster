@@ -1,7 +1,7 @@
 import { User } from "@/types";
 import { createContext, PropsWithChildren, useCallback, useContext, useEffect, useState } from "react";
 import { useHubConnection } from "./SignalRHubConnection";
-import { useUserApi } from "./UserApi";
+import { userApi } from "./UserApi";
 
 type UserListContextProps = {
     users: User[];
@@ -21,8 +21,6 @@ export const UserListContextProvider = ({ children }: PropsWithChildren) => {
     const [users, setUsers] = useState<User[]>([]);
 
     const { connection } = useHubConnection('users');
-
-    const userApi = useUserApi();
 
     const getInitialState = useCallback(async () => {
         return await userApi.getUsers();

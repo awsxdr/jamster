@@ -1,4 +1,4 @@
-import { GameStateContextProvider, useBlankStatsBookApi, useGameApi, useI18n } from "@/hooks";
+import { GameStateContextProvider, useBlankStatsBookApi, gameApi, useI18n } from "@/hooks";
 import { useNavigate, useParams } from "react-router-dom";
 import { Button, Card, CardContent } from "@/components/ui";
 import { MobileSidebarTrigger } from "@/components";
@@ -13,7 +13,6 @@ export const GameEdit = () => {
     const { gameId } = useParams();
     const navigate = useNavigate();
     const { translate } = useI18n();
-    const { downloadStatsbook } = useGameApi();
     const { blankStatsBookConfigured } = useBlankStatsBookApi();
     const [ isStatsBookDialogOpen, setIsStatsBookDialogOpen] = useState(false);
 
@@ -28,7 +27,7 @@ export const GameEdit = () => {
             return;
         }
 
-        downloadStatsbook(gameId);
+        gameApi.downloadStatsbook(gameId);
     }
 
     const handleUploadSuccessful = () => {

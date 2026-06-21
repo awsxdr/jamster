@@ -1,6 +1,6 @@
 import { MouseEvent, ReactNode, useEffect, useMemo, useState } from "react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger, Button, buttonVariants, Card, CardContent, Checkbox, Form, FormControl, FormField, FormItem, FormMessage, Input, Separator } from "@/components/ui"
-import { useI18n, useIsMobile, useTeamApi } from "@/hooks";
+import { useI18n, useIsMobile, teamApi } from "@/hooks";
 import { cn } from "@/lib/utils";
 import { Skater, SkaterRole, Team } from "@/types";
 import { Check, Pencil, Trash, X } from "lucide-react";
@@ -173,7 +173,6 @@ export const RosterTable = ({ team }: RosterTableProps) => {
 
     const [isEditing, setIsEditing] = useState(false);
     const { translate } = useI18n();
-    const { setRoster } = useTeamApi();
     const isMobile = useIsMobile();
 
     const handleEditStart = () => {
@@ -230,11 +229,11 @@ export const RosterTable = ({ team }: RosterTableProps) => {
         ({ ...rosterItem, pronouns: '', role: SkaterRole.Skater });
 
     const handleDeleteSelected = () => {
-        setRoster(team.id, tableRoster.filter(s => !s.selected).map(rosterItemToSkater));
+        teamApi.setRoster(team.id, tableRoster.filter(s => !s.selected).map(rosterItemToSkater));
     }
 
     const handleEditSkater = (id: string, number: string, name: string) => {
-        setRoster(
+        teamApi.setRoster(
             team.id, 
             tableRoster
                 .map(s => s.id === id ? { id, number, name } : s)

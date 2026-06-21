@@ -3,7 +3,7 @@ import { JamLineTrip, ScoreSheetJam, TeamSide } from "@/types"
 import { EditableCell } from "./EditableCell";
 import { CheckCell } from "./CheckCell";
 import { ternary } from "@/utilities/switchex";
-import { useEvents } from "@/hooks";
+import { eventsApi } from "@/hooks";
 import { ScoreSheetCalledSet, ScoreSheetInjurySet, ScoreSheetJammerNumberSet, ScoreSheetLeadSet, ScoreSheetLostSet, ScoreSheetPivotNumberSet, ScoreSheetTripScoreSet } from "@/types/events";
 import React from "react";
 
@@ -40,9 +40,6 @@ const linesEqual = (prev: RowData, next: RowData) =>
     && prev.isOvertimeJam === next.isOvertimeJam;
 
 export const ScoreSheetJamRow = React.memo(function ScoreSheetJamRow({ gameId, teamSide, lineNumber, line, even, preStarPass, postStarPass, className }: ScoreSheetJamRowProps) {
-
-    const { sendEvent } = useEvents();
-
     const rowColorClass = even ? "bg-white dark:bg-gray-900" : "bg-green-100 dark:bg-green-900";
     const rowEmphasisColorClass = even ? "bg-green-100 dark:bg-green-900" : "bg-green-200 dark:bg-green-700";
     const rowFixedEmphasisColorClass = "bg-green-200 dark:bg-green-700";
@@ -90,32 +87,32 @@ export const ScoreSheetJamRow = React.memo(function ScoreSheetJamRow({ gameId, t
 
     const handleJammerNumberSet = (value: string) => {
         if (postStarPass) {
-            sendEvent(gameId, new ScoreSheetPivotNumberSet(teamSide, lineNumber, value));
+            eventsApi.sendEvent(gameId, new ScoreSheetPivotNumberSet(teamSide, lineNumber, value));
         } else {
-            sendEvent(gameId, new ScoreSheetJammerNumberSet(teamSide, lineNumber, value));
+            eventsApi.sendEvent(gameId, new ScoreSheetJammerNumberSet(teamSide, lineNumber, value));
         }
     }
 
     const handleLostSet = (value: boolean) => {
         if(!postStarPass) {
-            sendEvent(gameId, new ScoreSheetLostSet(teamSide, lineNumber, value));
+            eventsApi.sendEvent(gameId, new ScoreSheetLostSet(teamSide, lineNumber, value));
         }
     }
 
     const handleLeadSet = (value: boolean) => {
         if (!postStarPass) {
-            sendEvent(gameId, new ScoreSheetLeadSet(teamSide, lineNumber, value));
+            eventsApi.sendEvent(gameId, new ScoreSheetLeadSet(teamSide, lineNumber, value));
         }
     }
 
     const handleCalledSet = (value: boolean) => {
         if(!postStarPass) {
-            sendEvent(gameId, new ScoreSheetCalledSet(teamSide, lineNumber, value));
+            eventsApi.sendEvent(gameId, new ScoreSheetCalledSet(teamSide, lineNumber, value));
         }
     }
 
     const handleInjurySet = (value: boolean) => {
-        sendEvent(gameId, new ScoreSheetInjurySet(lineNumber, value));
+        eventsApi.sendEvent(gameId, new ScoreSheetInjurySet(lineNumber, value));
     }
 
     const handleTripScoreChanged = (trip: number, value: string) => {
@@ -126,7 +123,7 @@ export const ScoreSheetJamRow = React.memo(function ScoreSheetJamRow({ gameId, t
                 .predicate(() => Number.isNaN(parsedValue)).then(0)
                 .default(parsedValue);
         
-        sendEvent(gameId, new ScoreSheetTripScoreSet(teamSide, lineNumber, trip, newValue));
+        eventsApi.sendEvent(gameId, new ScoreSheetTripScoreSet(teamSide, lineNumber, trip, newValue));
     }
 
     const PreStarPassTripList = () => (

@@ -1,5 +1,5 @@
 import { createContext, PropsWithChildren, useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { useConfiguration, useHubConnection, useUserApi } from ".";
+import { useConfiguration, useHubConnection, userApi } from ".";
 import { HubConnection } from "@microsoft/signalr";
 import { useUserLogin } from "./UserLogin";
 import * as uuid from 'uuid';
@@ -24,7 +24,6 @@ export const useCurrentUserConfiguration = <TConfiguration,>(configurationName: 
     const context = useContext(UserSettingsContext);
     const [value, setValue] = useState<TConfiguration>(defaultValue);
     const [isConfigurationLoaded, setIsConfigurationLoaded] = useState(false);
-    const userApi = useUserApi();
     const { userName } = useUserLogin();
     const { configuration: baseConfiguration, setConfiguration: setBaseConfiguration } = useConfiguration<TConfiguration>(configurationName);
 

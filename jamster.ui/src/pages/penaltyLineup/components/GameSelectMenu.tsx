@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger } from "@/components/ui";
 import { GameInfo, GameStageState, Stage } from "@/types";
-import { useGameApi, useI18n } from "@/hooks";
+import { gameApi, useI18n } from "@/hooks";
 import { SelectValue } from "@radix-ui/react-select";
 import { switchex } from "@/utilities/switchex";
 
@@ -52,14 +52,13 @@ type GameSelectMenuProps = {
 export const GameSelectMenu = ({ games, currentGame, selectedGameId, disabled, onSelectedGameIdChanged }: GameSelectMenuProps) => {
 
     const { translate } = useI18n({ prefix: "PenaltyLineup.GameSelectMenu." });
-    const { getGameState } = useGameApi();
 
     const getGameGroup = async (id: string) => {
         if(id === currentGame?.id) {
             return GameGroup.Current;
         }
 
-        const state = await getGameState<GameStageState>(id, "GameStageState")
+        const state = await gameApi.getGameState<GameStageState>(id, "GameStageState")
         
         return switchex(state.stage)
             .case(Stage.BeforeGame).then(GameGroup.Upcoming)

@@ -5,7 +5,7 @@ import { Link, useLocation } from "react-router-dom";
 import { LanguageMenu } from "./LanguageMenu";
 import { ThemeMenu } from "./ThemeMenu";
 import { useI18n } from "@/hooks/I18nHook";
-import { useScreensApi } from "@/hooks";
+import { screensApi } from "@/hooks";
 
 type SidebarItem = {
     title: string;
@@ -120,10 +120,8 @@ export const MenuSidebar = () => {
     const { translate } = useI18n({ prefix: "MenuSidebar." });
     const [sidebarItems, setSidebarItems] = useState(defaultSidebarItems);
 
-    const { getScreens } = useScreensApi();
-
     useEffect(() => {
-        getScreens().then(screens => {
+        screensApi.getScreens().then(screens => {
             const categories = [...new Set(screens.map(s => s.category))];
             
             setSidebarItems({

@@ -1,11 +1,9 @@
-import { EventStreamEvent, SortOrder, useEvents } from "@/hooks"
+import { EventStreamEvent, SortOrder, eventsApi } from "@/hooks"
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { EventList } from "./components/EventList";
 
 export const Timeline = () => {
-
-    const { getEvents, moveEvent, deleteEvent } = useEvents();
     const [ events, setEvents ] = useState<EventStreamEvent[]>([]);
     const [ listDirty, setListDirty ] = useState(true);
     
@@ -17,7 +15,7 @@ export const Timeline = () => {
         }
 
         (async () => {
-            const events = await getEvents(gameId, { order: SortOrder.Desc });
+            const events = await eventsApi.getEvents(gameId, { order: SortOrder.Desc });
             setEvents(events);
         })();
 
@@ -29,7 +27,7 @@ export const Timeline = () => {
             return;
         }
 
-        moveEvent(gameId, eventId, newTick, true).then(() => setListDirty(true));
+        eventsApi.moveEvent(gameId, eventId, newTick, true).then(() => setListDirty(true));
     }
 
     const handleEventDeleted = (eventId: string) => {
@@ -37,7 +35,7 @@ export const Timeline = () => {
             return;
         }
 
-        deleteEvent(gameId, eventId).then(() => setListDirty(true));
+        eventsApi.deleteEvent(gameId, eventId).then(() => setListDirty(true));
     }
 
     return (

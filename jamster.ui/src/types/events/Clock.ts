@@ -1,4 +1,4 @@
-import { EventWithBody } from "@/hooks/EventsApiHook";
+import { EventWithBody } from "@/hooks/EventsApi";
 
 export class IntermissionClockSet extends EventWithBody {
     constructor(secondsRemaining: number) {

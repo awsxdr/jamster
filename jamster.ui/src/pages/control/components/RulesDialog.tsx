@@ -1,5 +1,5 @@
 import { Button, Card, Collapsible, CollapsibleContent, CollapsibleTrigger, Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, Input, ScrollArea, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Switch } from "@/components/ui";
-import { useEvents, useI18n, useRulesState } from "@/hooks";
+import { eventsApi, useI18n, useRulesState } from "@/hooks";
 import { cn } from "@/lib/utils";
 import { IntermissionRules, JamRules, LineupRules, PenaltyRules, PeriodEndBehavior, PeriodRules, Ruleset, TimeoutPeriodClockStopBehavior, TimeoutResetBehavior, TimeoutRules } from "@/types";
 import { RulesetSet } from "@/types/events";
@@ -106,7 +106,6 @@ export const RulesDialog = ({ gameId }: RulesDialogProps) => {
     
 
     const { rules } = useRulesState() ?? { };
-    const { sendEvent } = useEvents();
 
     if(!rules) {
         return <></>
@@ -127,7 +126,7 @@ export const RulesDialog = ({ gameId }: RulesDialogProps) => {
     }
 
     const handleChange = (value: (rules: Ruleset) => Ruleset) =>
-        sendEvent(gameId, new RulesetSet({ ...rules, ...value(rules) }));
+        eventsApi.sendEvent(gameId, new RulesetSet({ ...rules, ...value(rules) }));
 
     const handlePeriodChange = (value: Partial<PeriodRules>) =>
         handleChange(r => ({ ...r, periodRules: { ...r.periodRules, ...value }}));

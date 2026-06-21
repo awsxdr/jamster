@@ -1,4 +1,4 @@
-import { useEvents, useI18n, useTimeoutListState } from "@/hooks";
+import { eventsApi, useI18n, useTimeoutListState } from "@/hooks";
 import { cn } from "@/lib/utils";
 import { DisplaySide, TeamSide } from "@/types"
 import { TeamReviewLost, TeamReviewRetained } from "@/types/events";
@@ -17,7 +17,6 @@ type TimeoutListProps = {
 export const TimeoutList = ({ gameId, displaySide, className }: TimeoutListProps) => {
 
     const { timeouts } = useTimeoutListState() ?? { timeouts: [] };
-    const { sendEvent } = useEvents();
     const { translate } = useI18n();
     const [open, setIsOpen] = useState(true);
 
@@ -26,7 +25,7 @@ export const TimeoutList = ({ gameId, displaySide, className }: TimeoutListProps
     }
 
     const handleTimeoutRetentionChanged = (side: TeamSide, eventId: string, retained: boolean) => {
-        sendEvent(gameId, retained ? new TeamReviewRetained(side, eventId) : new TeamReviewLost(side, eventId));
+        eventsApi.sendEvent(gameId, retained ? new TeamReviewRetained(side, eventId) : new TeamReviewLost(side, eventId));
     }
 
     return (

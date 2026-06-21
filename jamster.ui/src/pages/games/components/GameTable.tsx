@@ -1,6 +1,6 @@
 import { SortableColumnHeader } from "@/components/SortableColumnHeader";
 import { Checkbox, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui"
-import { useGameApi, useI18n } from "@/hooks";
+import { gameApi, useI18n } from "@/hooks";
 import { GameInfo, GameStageState, Stage, StringMap, TeamDetailsState, TeamScoreState } from "@/types"
 import { switchex } from "@/utilities/switchex";
 import { CheckedState } from "@radix-ui/react-checkbox";
@@ -33,8 +33,6 @@ export const GameTable = ({ games, selectedGameIds, onSelectedGameIdsChanged }: 
     const [sorting, setSorting] = useState<SortingState>([]);
     const { translate } = useI18n();
 
-    const { getGameState } = useGameApi();
-
     const [gameItems, setGameItems] = useState<GameItem[]>([]);
 
     const getTeamName = (names: StringMap<string>) => names["team"] ?? names["league"] ?? "";
@@ -54,15 +52,15 @@ export const GameTable = ({ games, selectedGameIds, onSelectedGameIdsChanged }: 
     useEffect(() => {
         Promise.all(games.map(async (game): Promise<GameItem> => {
 
-            const homeTeamScore = await getGameState<TeamScoreState>(game.id, "TeamScoreState_Home");
-            const awayTeamScore = await getGameState<TeamScoreState>(game.id, "TeamScoreState_Away");
-            const stage = await getGameState<GameStageState>(game.id, "GameStageState");
+            const homeTeamScore = await gameApi.getGameState<TeamScoreState>(game.id, "TeamScoreState_Home");
+            const awayTeamScore = await gameApi.getGameState<TeamScoreState>(game.id, "TeamScoreState_Away");
+            const stage = await gameApi.getGameState<GameStageState>(game.id, "GameStageState");
 
             return {
                 id: game.id,
                 name: game.name,
-                homeTeam: getTeamName((await getGameState<TeamDetailsState>(game.id, "TeamDetailsState_Home")).team.names),
-                awayTeam: getTeamName((await getGameState<TeamDetailsState>(game.id, "TeamDetailsState_Away")).team.names),
+                homeTeam: getTeamName((await gameApi.getGameState<TeamDetailsState>(game.id, "TeamDetailsState_Home")).team.names),
+                awayTeam: getTeamName((await gameApi.getGameState<TeamDetailsState>(game.id, "TeamDetailsState_Away")).team.names),
                 stage: { 
                     stage: getStageValue(stage.stage).toString(), 
                     homeScore: homeTeamScore.score, 

@@ -1,6 +1,6 @@
 import { StringMap, Team } from "@/types";
 import { createContext, PropsWithChildren, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
-import { useTeamApi } from "./TeamApiHook";
+import { teamApi } from "./TeamApi";
 import { useHubConnection } from "./SignalRHubConnection";
 import { v4 as uuidv4 } from 'uuid';
 
@@ -30,10 +30,9 @@ export const useTeamList = () => {
 export const useTeam = (teamId: string) => {
     const context = useContext(TeamListContext);
     const [team, setTeam] = useState<Team>();
-    const { getTeam } = useTeamApi();
 
     const getInitialState = useCallback(async () => {
-        return await getTeam(teamId);
+        return await teamApi.getTeam(teamId);
     }, [teamId]);
 
     const setTeamRef = useRef(setTeam);
@@ -59,8 +58,6 @@ export const TeamListContextProvider = ({ children }: PropsWithChildren) => {
     const [teams, setTeams] = useState<StringMap<Team>>({});
 
     const { connection } = useHubConnection('teams');
-
-    const teamApi = useTeamApi();
 
     const getInitialState = useCallback(async () => {
         return await teamApi.getTeams();

@@ -1,4 +1,4 @@
-import { EventWithoutBody } from "@/hooks/EventsApiHook";
+import { EventWithoutBody } from "@/hooks/EventsApi";
 
 export class JamStarted extends EventWithoutBody {
     constructor() {

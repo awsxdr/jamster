@@ -1,4 +1,4 @@
-import { useCurrentUserConfiguration, useEvents, useTeamDetailsState, useTripScoreState, Event, useI18n } from "@/hooks";
+import { useCurrentUserConfiguration, eventsApi, useTeamDetailsState, useTripScoreState, Event, useI18n } from "@/hooks";
 import { ControlPanelViewConfiguration, DEFAULT_CONTROL_PANEL_VIEW_CONFIGURATION, TeamSide } from "@/types"
 import { useMemo } from "react";
 import { TeamScore } from "./TeamScore";
@@ -19,9 +19,6 @@ type TeamControlsProps = {
 }
 
 export const TeamControls = ({ gameId, side, disabled, className }: TeamControlsProps) => {
-
-    const { sendEvent } = useEvents();
-
     const { translate } = useI18n({ prefix: "ScoreboardControl.TeamControls." })
 
     const { configuration: viewConfiguration } = useCurrentUserConfiguration<ControlPanelViewConfiguration>("ControlPanelViewConfiguration", DEFAULT_CONTROL_PANEL_VIEW_CONFIGURATION);
@@ -40,7 +37,7 @@ export const TeamControls = ({ gameId, side, disabled, className }: TeamControls
     const sendEventIfIdSet = (event: Event) => {
         if(!gameId) return;
 
-        sendEvent(gameId, event);
+        eventsApi.sendEvent(gameId, event);
     }
 
     const incrementScore = () => {

@@ -1,5 +1,5 @@
 import { ScrollArea, ScrollBar } from "@/components/ui"
-import { useEvents, useTimelineState } from "@/hooks"
+import { eventsApi, useTimelineState } from "@/hooks"
 import { Fragment, useEffect, useRef } from "react";
 import { TimelineItem, TimelineSeparator } from ".";
 
@@ -8,9 +8,7 @@ type TimelineProps = {
 }
 
 export const Timeline = ({ gameId }: TimelineProps) => {
-
     const timeline = useTimelineState();
-    const { moveEvent } = useEvents();
 
     const lastItemRef = useRef<HTMLDivElement>(null);
 
@@ -27,7 +25,7 @@ export const Timeline = ({ gameId }: TimelineProps) => {
     }
 
     const handleAdjust = (eventId: string, tick: number) => {
-        moveEvent(gameId, eventId, tick, true);
+        eventsApi.moveEvent(gameId, eventId, tick, true);
     }
 
     return (

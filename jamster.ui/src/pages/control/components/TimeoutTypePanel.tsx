@@ -1,7 +1,7 @@
 import { RadioButtonGroup, TooltipRadioItem } from "@/components/RadioButtonGroup";
 import { Card, CardContent } from "@/components/ui";
 import { useCurrentTimeoutTypeState, useGameStageState, useTeamDetailsState } from "@/hooks";
-import { useEvents } from "@/hooks/EventsApiHook";
+import { eventsApi } from "@/hooks/EventsApi";
 import { useI18n } from "@/hooks/I18nHook";
 import { cn } from "@/lib/utils";
 import { Stage, TeamDetailsState, TeamSide, TimeoutType } from "@/types";
@@ -28,8 +28,6 @@ export const TimeoutTypePanel = ({ gameId, disabled }: TimeoutTypePanelProps) =>
 
     const timeoutType = useCurrentTimeoutTypeState();
     const { stage } = useGameStageState() ?? { stage: Stage.BeforeGame };
-
-    const { sendEvent } = useEvents();
 
     const homeTeam = useTeamDetailsState(TeamSide.Home);
     const awayTeam = useTeamDetailsState(TeamSide.Away);
@@ -93,7 +91,7 @@ export const TimeoutTypePanel = ({ gameId, disabled }: TimeoutTypePanelProps) =>
             return;
         }
         
-        sendEvent(
+        eventsApi.sendEvent(
             gameId, 
             new TimeoutTypeSet(
                 switchex(selectedType)
@@ -111,7 +109,7 @@ export const TimeoutTypePanel = ({ gameId, disabled }: TimeoutTypePanelProps) =>
             return;
         }
 
-        sendEvent(gameId, new TimeoutTypeSet({ type: "Untyped" }));
+        eventsApi.sendEvent(gameId, new TimeoutTypeSet({ type: "Untyped" }));
     }
 
     return (

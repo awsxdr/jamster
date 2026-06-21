@@ -1,6 +1,6 @@
 import { TooltipButton } from "@/components";
 import { Card, CardContent, TooltipProvider } from "@/components/ui"
-import { useEvents, useGameStageState, useI18n, useOvertimeState, usePostGameClockState, useRulesState, useTeamScoreState } from "@/hooks";
+import { eventsApi, useGameStageState, useI18n, useOvertimeState, usePostGameClockState, useRulesState, useTeamScoreState } from "@/hooks";
 import { cn } from "@/lib/utils"
 import { Stage, TeamSide } from "@/types";
 import { OvertimeEnded, OvertimeStarted, PeriodFinalized } from "@/types/events";
@@ -12,8 +12,6 @@ type PeriodEndControlPanelProps = {
 };
 
 export const PeriodEndControlPanel = ({ gameId }: PeriodEndControlPanelProps) => {
-    const { sendEvent } = useEvents();
-
     const postGameClock = usePostGameClockState();
     const homeTeamScore = useTeamScoreState(TeamSide.Home);
     const awayTeamScore = useTeamScoreState(TeamSide.Away);
@@ -48,15 +46,15 @@ export const PeriodEndControlPanel = ({ gameId }: PeriodEndControlPanelProps) =>
     }
 
     const handleFinalizePeriod = () => {
-        sendEvent(gameId, new PeriodFinalized());
+        eventsApi.sendEvent(gameId, new PeriodFinalized());
     }
 
     const handleBeginOvertime = () => {
-        sendEvent(gameId, new OvertimeStarted());
+        eventsApi.sendEvent(gameId, new OvertimeStarted());
     }
 
     const handleEndOvertime = () => {
-        sendEvent(gameId, new OvertimeEnded());
+        eventsApi.sendEvent(gameId, new OvertimeEnded());
     }
 
     const visible = overtime?.isInOvertime && stage.stage === Stage.Lineup || [Stage.AfterGame, Stage.Intermission].includes(stage.stage) && !stage.periodIsFinalized;

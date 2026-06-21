@@ -1,4 +1,4 @@
-import { EventWithBody, EventWithoutBody } from "@/hooks/EventsApiHook";
+import { EventWithBody, EventWithoutBody } from "@/hooks/EventsApi";
 import { TeamSide } from "../TeamSide";
 
 export class TimeoutTypeSet extends EventWithBody {

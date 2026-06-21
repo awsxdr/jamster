@@ -1,5 +1,5 @@
 import { Button, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuPortal, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger, Slider } from "@/components/ui"
-import { useEvents, useI18n } from "@/hooks";
+import { eventsApi, useI18n } from "@/hooks";
 import { cn } from "@/lib/utils";
 import { TeamSide } from "@/types";
 import { ScoreSheetLineDeleted, ScoreSheetStarPassTripSet } from "@/types/events";
@@ -15,9 +15,6 @@ type JamEditMenuProps = {
 }
 
 export const JamEditMenu = React.memo(function JamEditMenu({ gameId, teamSide, lineNumber, starPassTrip, className }: JamEditMenuProps) {
-
-    const { sendEvent } = useEvents();
-
     const [starPassValue, setStarPassValue] = useState(1);
     const [starPass, setStarPass] = useState(false);
     const { translate } = useI18n({ prefix: "ScoreboardControl.StatsSheet.JamEditMenu." });
@@ -32,15 +29,15 @@ export const JamEditMenu = React.memo(function JamEditMenu({ gameId, teamSide, l
         const newStarPass = !starPass;
         setStarPass(newStarPass);
 
-        sendEvent(gameId, new ScoreSheetStarPassTripSet(teamSide, lineNumber, newStarPass ? 0 : null));
+        eventsApi.sendEvent(gameId, new ScoreSheetStarPassTripSet(teamSide, lineNumber, newStarPass ? 0 : null));
     }
 
     const handleStarPassTripCommit = () => {
-        sendEvent(gameId, new ScoreSheetStarPassTripSet(teamSide, lineNumber, starPassValue - 1));
+        eventsApi.sendEvent(gameId, new ScoreSheetStarPassTripSet(teamSide, lineNumber, starPassValue - 1));
     }
 
     const handleJamDeleted = () => {
-        sendEvent(gameId, new ScoreSheetLineDeleted(lineNumber));
+        eventsApi.sendEvent(gameId, new ScoreSheetLineDeleted(lineNumber));
     }
 
     return (

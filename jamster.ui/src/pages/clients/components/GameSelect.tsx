@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Label, Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger } from "@/components/ui";
 import { GameStageState, Stage } from "@/types";
-import { useCurrentGame, useGameApi, useGamesList, useI18n } from "@/hooks";
+import { useCurrentGame, gameApi, useGamesList, useI18n } from "@/hooks";
 import { SelectValue } from "@radix-ui/react-select";
 import { switchex } from "@/utilities/switchex";
 
@@ -50,7 +50,6 @@ type GameSelectProps = {
 export const GameSelect = ({ selectedGameId, disabled, onSelectedGameIdChanged }: GameSelectProps) => {
 
     const { translate } = useI18n({ prefix: "Clients.GameSelect." });
-    const { getGameState } = useGameApi();
     const { currentGame } = useCurrentGame();
     const games = useGamesList();
 
@@ -59,7 +58,7 @@ export const GameSelect = ({ selectedGameId, disabled, onSelectedGameIdChanged }
             return GameGroup.Current;
         }
 
-        const state = await getGameState<GameStageState>(id, "GameStageState")
+        const state = await gameApi.getGameState<GameStageState>(id, "GameStageState")
         
         return (
             switchex(state.stage)

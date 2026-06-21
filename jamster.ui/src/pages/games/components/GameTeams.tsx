@@ -1,4 +1,4 @@
-import { useEvents, useTeamDetailsState } from "@/hooks";
+import { eventsApi, useTeamDetailsState } from "@/hooks";
 import { GameTeam, TeamSide } from "@/types";
 import { TeamDetails } from "./TeamDetails";
 import { TeamSet } from "@/types/events";
@@ -8,9 +8,6 @@ type GameTeamsProps = {
 }
 
 export const GameTeams = ({ gameId }: GameTeamsProps) => {
-
-    const { sendEvent } = useEvents();
-
     const homeTeam = useTeamDetailsState(TeamSide.Home);
     const awayTeam = useTeamDetailsState(TeamSide.Away);
 
@@ -19,7 +16,7 @@ export const GameTeams = ({ gameId }: GameTeamsProps) => {
     }
 
     const handleTeamChanged = (side: TeamSide, team: GameTeam) => {
-        sendEvent(gameId, new TeamSet(side, team));
+        eventsApi.sendEvent(gameId, new TeamSet(side, team));
     }
 
     return (
