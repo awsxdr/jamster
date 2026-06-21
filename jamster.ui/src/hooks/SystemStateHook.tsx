@@ -1,6 +1,5 @@
-import { createContext, PropsWithChildren, useCallback, useContext, useEffect, useRef, useState } from "react"
+import { createContext, PropsWithChildren, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react"
 import { useHubConnection } from "./SignalRHubConnection";
-import { HubConnection } from "@microsoft/signalr";
 import { GameInfo } from "@/types";
 import { useGameApi } from "./GameApiHook";
 import { v4 as uuidv4 } from 'uuid';
@@ -11,10 +10,11 @@ type CurrentGameChanged = (games: GameInfo) => void;
 type CurrentGameWatch = (onCurrentGameChanged: CurrentGameChanged) => CallbackHandle;
 type CurrentGameUnwatch = (handle: CallbackHandle) => void;
 
+type CurrentGameNotifierMap = Record<CallbackHandle, CurrentGameChanged>;
+
 type SystemStateContextProps = {
     watchCurrentGame: CurrentGameWatch,
     unwatchCurrentGame: CurrentGameUnwatch,
-    connection?: HubConnection,
 };
 
 const SystemStateContext = createContext<SystemStateContextProps>({
@@ -29,7 +29,7 @@ export const useCurrentGame = () => {
     
     const getInitialState = useCallback(async () => {
         return await gameApi.getCurrentGame();
-    }, []);
+    }, [gameApi]);
 
     useEffect(() => {
         getInitialState().then(setCurrentGame);
@@ -44,7 +44,7 @@ export const useCurrentGame = () => {
         return () => {
             context.unwatchCurrentGame(callbackHandle);
         }
-    }, [context.connection, setCurrentGame]);
+    }, [context.watchCurrentGame, context.unwatchCurrentGame, setCurrentGame]);
 
     const updateCurrentGame = async (gameId: string) => {
         await gameApi.setCurrentGame(gameId);
@@ -54,55 +54,40 @@ export const useCurrentGame = () => {
 }
 
 export const SystemStateContextProvider = ({ children }: PropsWithChildren) => {
-    const [currentGameNotifiers, setCurrentGameNotifiers] = useState<Record<CallbackHandle, CurrentGameChanged>>({});
-
     const { connection } = useHubConnection(`System`);
 
-    const watchCurrentGame = (onStateChange: CurrentGameChanged) => {
-
-        const newId = uuidv4();
-
-        setCurrentGameNotifiers(notifiers => ({
-            ...notifiers,
-            [newId]: onStateChange
-        }));
-
-        return newId;
-    }
-
-    const unwatchCurrentGame = (handle: CallbackHandle) => {
-        setCurrentGameNotifiers(cgn => {
-            if (!cgn[handle]) {
-                console.warn("Attempt to unwatch current game with invalid handle");
-            }
-
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            const { [handle]: _, ...newNotifiers } = cgn;
-
-            return newNotifiers;
-        })
-    }
-
-    useEffect(() => {
-        if(!connection) {
-            return;
-        }
-
-        connection?.invoke("WatchSystemState");
-    }, [connection]);
-
-    const currentGameNotifiersRef = useRef(currentGameNotifiers);
-    currentGameNotifiersRef.current = currentGameNotifiers;
+    const currentGameNotifiersRef = useRef<CurrentGameNotifierMap>({});
 
     useEffect(() => {
         if (!connection) {
             return;
         }
 
+        connection?.invoke("WatchSystemState");
         connection?.onreconnected(() => {
             connection?.invoke("WatchSystemState");
         });
     }, [connection]);
+
+    const watchCurrentGame = useCallback((onStateChange: CurrentGameChanged) => {
+        const newId = uuidv4();
+
+        currentGameNotifiersRef.current[newId] = onStateChange;
+
+        return newId;
+    }, []);
+
+    const unwatchCurrentGame = useCallback((handle: CallbackHandle) => {
+        if (!currentGameNotifiersRef.current[handle]) {
+            console.warn("Attempt to unwatch current game with invalid handle");
+            return;
+        }
+        
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { [handle]: _, ...newNotifiers } = currentGameNotifiersRef.current ?? {};
+
+        currentGameNotifiersRef.current = newNotifiers;
+    }, []);
 
     useEffect(() => {
         connection?.on("CurrentGameChanged", (game: GameInfo) => {
@@ -112,8 +97,13 @@ export const SystemStateContextProvider = ({ children }: PropsWithChildren) => {
         return () => connection?.off("CurrentGameChanged");
     }, [connection]);
 
+    const context = useMemo(
+        () => ({ watchCurrentGame, unwatchCurrentGame }),
+        [watchCurrentGame, unwatchCurrentGame]
+    );
+
     return (
-        <SystemStateContext.Provider value={{ watchCurrentGame, unwatchCurrentGame, connection  }}>
+        <SystemStateContext.Provider value={context}>
             { children }
         </SystemStateContext.Provider>
     )

@@ -177,14 +177,11 @@ export const GameStateContextProvider = ({ gameId, children }: PropsWithChildren
             connectionRef.current?.invoke("WatchState", stateName);
         }
 
-        stateNotifiersRef.current = {
-            ...stateNotifiersRef.current,
-            [stateName]: {
-                ...(stateNotifiersRef.current[stateName] ?? {}),
-                [newId]: genericState => {
-                    onStateChange(genericState as TState);
-                    setStates(s => ({ ...s, [stateName]: genericState }));
-                }
+        stateNotifiersRef.current[stateName] = {
+            ...(stateNotifiersRef.current[stateName] ?? {}),
+            [newId]: genericState => {
+                onStateChange(genericState as TState);
+                setStates(s => ({ ...s, [stateName]: genericState }));
             }
         };
 
@@ -195,6 +192,7 @@ export const GameStateContextProvider = ({ gameId, children }: PropsWithChildren
 
         if (!stateNotifiersRef.current[stateName]?.[handle]) {
             console.warn("Attempt to unwatch state with invalid handle", handle);
+            return;
         }
 
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
