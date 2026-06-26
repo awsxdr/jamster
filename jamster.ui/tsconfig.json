@@ -10,6 +10,7 @@
       "@hooks/*": ["./src/hooks/*"],
       "@components/*": ["./src/components/*"],
       "@pages/*": ["./src/pages/*"]
-    }
+    },
+    "types": ["@testing-library/jest-dom"]
   }
 }

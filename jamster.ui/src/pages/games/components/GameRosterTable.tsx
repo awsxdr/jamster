@@ -154,11 +154,10 @@ const RosterTableRow = ({ skater, preventEdit, selected, existingNumbers, onEdit
         form.reset();
     }
 
-    useEffect(() => {
-        const { isSkating } = form.getValues();
-
+    const handleIsSkatingChanged = (isSkating: boolean, onChange: (...event: unknown[]) => void) => {
+        onChange(isSkating);
         onSkaterChanged?.({ id: skater.id, number: skater.number, name: skater.name, isSkating });
-    }, [form.watch('isSkating')]);
+    }
 
     return (
         <RowLayout
@@ -199,7 +198,7 @@ const RosterTableRow = ({ skater, preventEdit, selected, existingNumbers, onEdit
             }
             skatingContent={
                 <FormField control={form.control} name="isSkating" render={({field: {value, onChange, ...field}}) => (
-                    <Switch checked={value} onCheckedChange={onChange} {...field} />
+                    <Switch checked={value} onCheckedChange={value => handleIsSkatingChanged(value, onChange)} {...field} />
                 )} />
             }
             toolsContent={

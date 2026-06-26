@@ -1,15 +1,15 @@
-import { useRulesState } from "@/hooks";
-import { GameSkater, LineupPosition, Penalty, StringMap } from "@/types";
+import { useI18n, usePenaltyBoxState, useRulesState } from "@/hooks";
+import { GameSkater, LineupPosition, StringMap, TeamSide } from "@/types";
 import { Bandage, OctagonX } from "lucide-react";
 import { RowMenu } from ".";
 import { Button } from "@/components/ui";
 import { cn } from "@/lib/utils";
-import { CSSProperties, Fragment } from "react";
+import { CSSProperties } from "react";
 
-type SkaterNumberColumnProps = {
+export type SkaterNumberColumnProps = {
+    teamSide: TeamSide;
     skaters: GameSkater[];
     skaterPositions: StringMap<LineupPosition>;
-    skaterPenalties: StringMap<Penalty[]>;
     offTrackSkaters: string[];
     injuredSkaters: string[];
     compact?: boolean;
@@ -17,9 +17,12 @@ type SkaterNumberColumnProps = {
     onInjuryRemoved?: (skaterNumber: string) => void;
 }
 
-export const SkaterNumberColumn = ({ skaters, skaterPositions, skaterPenalties, offTrackSkaters, injuredSkaters, compact, onInjuryAdded, onInjuryRemoved }: SkaterNumberColumnProps) => {
+export const SkaterNumberColumn = ({ teamSide, skaters, skaterPositions, offTrackSkaters, injuredSkaters, compact, onInjuryAdded, onInjuryRemoved }: SkaterNumberColumnProps) => {
 
     const { rules } = useRulesState() ?? { };
+    const penaltyBox = usePenaltyBoxState(teamSide) ?? { skaters: [], queuedSkaters: [] };
+
+    const { translate } = useI18n({ prefix: 'PenaltyLineup.SkaterNumberColumn.'})
 
     if(!rules) {
         return (<></>);
@@ -29,17 +32,25 @@ export const SkaterNumberColumn = ({ skaters, skaterPositions, skaterPenalties, 
         <>
             { skaters.map(({ id, number }, row) => {
                 const position = skaterPositions[id];
-                const penalties = skaterPenalties[id];
                 const injured = injuredSkaters.includes(id);
-
-                if (!penalties) {
-                    return (<Fragment key={id}></Fragment>);
-                }
+                const inBox = penaltyBox.skaters.includes(id);
 
                 const content = (
                     <>
-                        { offTrackSkaters.includes(id) && <OctagonX className="text-red-600 dark:text-red-400" /> }
-                        { injured && <Bandage className="text-yellow-600 dark:text-yellow-300" /> }
+                        { offTrackSkaters.includes(id) && (
+                            <OctagonX 
+                                className="text-red-600 dark:text-red-400" 
+                                aria-label={translate('OffTrack')} 
+                                role="img" 
+                            /> 
+                        )}
+                        { injured && (
+                            <Bandage 
+                                className="text-yellow-600 dark:text-yellow-300" 
+                                aria-label={translate('Injured')} 
+                                role="img" 
+                            /> 
+                        )}
                         <span>{number}</span>
                     </>);
 
@@ -57,6 +68,7 @@ export const SkaterNumberColumn = ({ skaters, skaterPositions, skaterPenalties, 
                         } as CSSProperties}
                     >
                         <RowMenu 
+                            inBox={inBox}
                             disableNotes={position === LineupPosition.Bench} 
                             injuryActive={injuredSkaters.includes(id)}
                             onInjuryAdded={() => onInjuryAdded?.(id)}

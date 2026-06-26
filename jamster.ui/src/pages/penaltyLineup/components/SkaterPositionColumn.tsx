@@ -1,3 +1,4 @@
+/* eslint-disable @stylistic/indent */
 import { cn } from "@/lib/utils";
 import { GameSkater, LineupPosition, TeamSide } from "@/types";
 import { Button, ButtonVariant } from "@/components/ui";
@@ -12,12 +13,13 @@ type SkaterPositionColumnProps = {
     selectedSkaters: string[];
     offTrackSkaters: string[];
     injuredSkaters: string[];
+    currentJam?: boolean;
     compact?: boolean;
     className?: string;
     onSkaterClicked?: (skaterNumber: string) => void;
 }
 
-export const SkaterPositionColumn = ({ teamSide, position, skaters, selectedSkaters, offTrackSkaters, injuredSkaters, compact, className, onSkaterClicked}: SkaterPositionColumnProps) => {
+export const SkaterPositionColumn = ({ teamSide, position, skaters, selectedSkaters, offTrackSkaters, injuredSkaters, currentJam, compact, className, onSkaterClicked}: SkaterPositionColumnProps) => {
 
     const { translate } = useI18n({ prefix: "PenaltyLineup.SkaterPositionColumn." });
     const penaltyBox = usePenaltyBoxState(teamSide) ?? { skaters: [], queuedSkaters: [] };
@@ -30,12 +32,12 @@ export const SkaterPositionColumn = ({ teamSide, position, skaters, selectedSkat
                     const inBox = penaltyBox.skaters.includes(id);
 
                     const variant =
-                        !selected 
-                            ? "outline"
-                            : switchex(position)
-                                .predicate(p => p !== LineupPosition.Bench && (offTrackSkaters.includes(id) || injuredSkaters.includes(id))).then<ButtonVariant>( "destructive")
-                                .predicate(p => p === LineupPosition.Bench && inBox).then("destructive")
-                                .default("default");
+                        !selected ? "outline"
+                        : !currentJam ? "default"
+                        : switchex(position)
+                            .predicate(p => p !== LineupPosition.Bench && (offTrackSkaters.includes(id) || injuredSkaters.includes(id))).then<ButtonVariant>("destructive")
+                            .predicate(p => p === LineupPosition.Bench && inBox).then("destructive")
+                            .default("default");
 
                     const even = row % 2 === 0;
                     const isBench = position === LineupPosition.Bench;
@@ -56,6 +58,8 @@ export const SkaterPositionColumn = ({ teamSide, position, skaters, selectedSkat
                         >
                             <Button 
                                 id={`PenaltyLineup.LineupTable.Skater${id}.Position.${position}`}
+                                aria-label={position}
+                                aria-invalid={variant.toString() === "destructive"}
                                 className={cn("rounded-none w-full px-1 md:px-4 border-0 h-full", !selected && rowClass)}
                                 variant={variant}
                                 onClick={() => onSkaterClicked?.(id)}

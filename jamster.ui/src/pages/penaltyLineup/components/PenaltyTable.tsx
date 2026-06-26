@@ -21,28 +21,28 @@ export const PenaltyTable = ({ gameId, teamSide, offsetForLineupTable, compact }
 
     const [penaltyDialogOpen, setPenaltyDialogOpen] = useState(false);
     const [expulsionDialogOpen, setExpulsionDialogOpen] = useState(false);
-    const [editingSkaterNumber, setEditingSkaterNumber] = useState("");
+    const [editingSkaterId, setEditingSkaterId] = useState("");
     const [editingIndex, setEditingIndex] = useState(0);
     const [editingPenalty, setEditingPenalty] = useState<Penalty>();
 
-    const skaterNumbers = team?.roster.filter(s => s.isSkating).map(s => s.number).sort() ?? [];
-    const penaltyLines = useMemo(() => penaltySheet.lines.filter(l => skaterNumbers.includes(l.skaterNumber)), [skaterNumbers]);
+    const skaterIds = team?.roster.filter(s => s.isSkating).sort((a, b) => a.number.localeCompare(b.number)).map(s => s.id) ?? [];
+    const penaltyLines = useMemo(() => penaltySheet.lines.filter(l => skaterIds.includes(l.skaterId)), [skaterIds]);
 
     const skaterPenalties = useMemo(() => 
-        penaltyLines.reduce((map, line) => ({ ...map, [line.skaterNumber]: line.penalties }), {} as StringMap<Penalty[]>), 
+        penaltyLines.reduce((map, line) => ({ ...map, [line.skaterId]: line.penalties }), {} as StringMap<Penalty[]>), 
     [penaltyLines]);
 
     const skaterExpulsions = useMemo(() =>
-        penaltyLines.reduce((map, line) => ({ ...map, [line.skaterNumber]: line.expulsionPenalty }), {} as StringMap<Penalty | null>),
+        penaltyLines.reduce((map, line) => ({ ...map, [line.skaterId]: line.expulsionPenalty }), {} as StringMap<Penalty | null>),
     [penaltyLines]);
 
     if (!rules) {
         return (<></>);
     }
     
-    const handlePenaltyClicked = (skaterNumber: string, index: number) => {
-        const selectedSkaterPenalties = skaterPenalties[skaterNumber] ?? [];
-        setEditingSkaterNumber(skaterNumber);
+    const handlePenaltyClicked = (skaterId: string, index: number) => {
+        const selectedSkaterPenalties = skaterPenalties[skaterId] ?? [];
+        setEditingSkaterId(skaterId);
         setEditingIndex(index);
         if(index < selectedSkaterPenalties.length) {
             setEditingPenalty(selectedSkaterPenalties[index]);
@@ -53,13 +53,13 @@ export const PenaltyTable = ({ gameId, teamSide, offsetForLineupTable, compact }
     }
 
     const handlePenaltyAccept = (penalty: Penalty) => {
-        const selectedSkaterPenalties = [...(skaterPenalties[editingSkaterNumber] ?? [])];
+        const selectedSkaterPenalties = [...(skaterPenalties[editingSkaterId] ?? [])];
         if(editingIndex < selectedSkaterPenalties.length) {
             (async () => {
                 const originalPenalty = selectedSkaterPenalties[editingIndex];
                 eventsApi.sendEvent(gameId, new PenaltyUpdated(
                     teamSide, 
-                    editingSkaterNumber, 
+                    editingSkaterId, 
                     originalPenalty.code, 
                     originalPenalty.period, 
                     originalPenalty.jam,
@@ -77,7 +77,7 @@ export const PenaltyTable = ({ gameId, teamSide, offsetForLineupTable, compact }
     }
 
     const handlePenaltyDelete = () => {
-        const selectedSkaterPenalties = [...(skaterPenalties[editingSkaterNumber] ?? [])];
+        const selectedSkaterPenalties = [...(skaterPenalties[editingSkaterId] ?? [])];
         if(editingIndex >= selectedSkaterPenalties.length) {
             return;
         }
@@ -85,14 +85,14 @@ export const PenaltyTable = ({ gameId, teamSide, offsetForLineupTable, compact }
         const penalty = selectedSkaterPenalties[editingIndex];
         eventsApi.sendEvent(gameId, new PenaltyRescinded(
             teamSide, 
-            editingSkaterNumber, 
+            editingSkaterId, 
             penalty.code, 
             penalty.period, 
             penalty.jam));
     }
 
-    const handleExpulsionClicked = (skaterNumber: string) => {
-        setEditingSkaterNumber(skaterNumber);
+    const handleExpulsionClicked = (skaterId: string) => {
+        setEditingSkaterId(skaterId);
         setExpulsionDialogOpen(true);
     }
 
@@ -121,13 +121,13 @@ export const PenaltyTable = ({ gameId, teamSide, offsetForLineupTable, compact }
             </div>
             { penaltyLines.map((l, row) => (
                 <PenaltyRow 
-                    key={l.skaterNumber} 
+                    key={l.skaterId} 
                     {...l} 
                     row={row} 
                     offsetForLineupTable={offsetForLineupTable} 
                     compact={compact}
-                    onPenaltyClicked={i => handlePenaltyClicked(l.skaterNumber, i)}
-                    onExpulsionClicked={() => handleExpulsionClicked(l.skaterNumber)}
+                    onPenaltyClicked={i => handlePenaltyClicked(l.skaterId, i)}
+                    onExpulsionClicked={() => handleExpulsionClicked(l.skaterId)}
                 />) 
             )}
             <div 
@@ -146,8 +146,8 @@ export const PenaltyTable = ({ gameId, teamSide, offsetForLineupTable, compact }
             />
             <ExpulsionDialog
                 open={expulsionDialogOpen}
-                expulsionPenalty={skaterExpulsions[editingSkaterNumber] ?? null}
-                penalties={skaterPenalties[editingSkaterNumber] ?? []}
+                expulsionPenalty={skaterExpulsions[editingSkaterId] ?? null}
+                penalties={skaterPenalties[editingSkaterId] ?? []}
                 onOpenChanged={setExpulsionDialogOpen}
                 onAccept={handleExpulsionAccept}
             />

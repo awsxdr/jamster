@@ -93,12 +93,12 @@ export const TeamDetails = ({ team, className, onTeamChanged }: TeamDetailsProps
         });
     }
 
-    const handleSkatersAdded = (skaters: Omit<GameSkater, 'id'>[]) => {
+    const handleSkatersAdded = (skaters: GameSkater[]) => {
         onTeamChanged?.({
             ...team,
             roster: [
                 ...team.roster,
-                ...skaters.map(s => ({ ...s, id: '' }))
+                ...skaters
             ],
         });
     }

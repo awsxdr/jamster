@@ -6,6 +6,8 @@ import { useI18n } from "@/hooks";
 import { useMemo, ClipboardEvent } from "react";
 import { useForm } from "react-hook-form";
 import { GameSkater } from "@/types";
+import { v4 as uuid4 } from 'uuid';
+
 
 const useRosterInputSchema = (existingNumbers: string[]) => {
     const { translate } = useI18n();
@@ -26,7 +28,7 @@ const useRosterInputSchema = (existingNumbers: string[]) => {
 
 type RosterRowProps = {
     existingNumbers: string[];
-    onSkatersAdded?: (skaters: Omit<GameSkater, 'id'>[]) => void;
+    onSkatersAdded?: (skaters: GameSkater[]) => void;
 }
 
 export const GameRosterInput = ({ existingNumbers, onSkatersAdded }: RosterRowProps) => {
@@ -45,7 +47,7 @@ export const GameRosterInput = ({ existingNumbers, onSkatersAdded }: RosterRowPr
     
     const handleSubmit = (skater: { name: string, number: string }) => {
         form.setFocus('number');
-        onSkatersAdded?.([{ ...skater, isSkating: true }]);
+        onSkatersAdded?.([{ ...skater, id: uuid4(), isSkating: true }]);
         form.reset();
     }
 
@@ -69,7 +71,7 @@ export const GameRosterInput = ({ existingNumbers, onSkatersAdded }: RosterRowPr
             const number = match.groups?.["number"] || match.groups?.["number2"];
 
             return name && number
-                ? { number, name, isSkating: true } as GameSkater
+                ? { number, name, id: uuid4(), isSkating: true } as GameSkater
                 : undefined;
         }).filter(skater =>
             skater !== undefined

@@ -1,18 +1,21 @@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui";
 import { useI18n } from "@/hooks";
-import { Ban, Bandage, NotebookPen } from "lucide-react";
+import { Ban, Bandage, NotebookPen, Replace } from "lucide-react";
 import { PropsWithChildren } from "react";
 
-type RowMenuProps = {
+export type RowMenuProps = {
+    inBox?: boolean;
     injuryActive?: boolean;
     disableNotes?: boolean;
     onInjuryAdded?: () => void;
     onInjuryRemoved?: () => void;
 }
 
-export const RowMenu = ({ injuryActive, disableNotes, onInjuryAdded, onInjuryRemoved, children }: PropsWithChildren<RowMenuProps>) => {
+export const RowMenu = ({ inBox, injuryActive, disableNotes, onInjuryAdded, onInjuryRemoved, children }: PropsWithChildren<RowMenuProps>) => {
 
     const { translate } = useI18n({ prefix: "PenaltyLineup.RowMenu." });
+
+    console.log("RowMenu", inBox);
 
     return (
         <DropdownMenu>
@@ -20,10 +23,16 @@ export const RowMenu = ({ injuryActive, disableNotes, onInjuryAdded, onInjuryRem
                 { children }
             </DropdownMenuTrigger>
             <DropdownMenuContent>
+                { inBox && (
+                    <DropdownMenuItem>
+                        <Replace />
+                        { translate("Substitute") }
+                    </DropdownMenuItem>
+                )}
                 { !injuryActive && (
                     <DropdownMenuItem onClick={onInjuryAdded}>
                         <Bandage />
-                        { translate("AddInjury" ) }
+                        { translate("AddInjury") }
                     </DropdownMenuItem>
                 )}
                 { injuryActive && (
