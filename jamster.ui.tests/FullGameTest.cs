@@ -1,4 +1,4 @@
-﻿using FluentAssertions;
+﻿using AwesomeAssertions;
 
 using jamster.engine.Configurations;
 using jamster.engine.Domain;

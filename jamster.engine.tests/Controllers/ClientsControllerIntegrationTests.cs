@@ -1,7 +1,7 @@
 ﻿using System.Net;
 using System.Text.Json;
 
-using FluentAssertions;
+using AwesomeAssertions;
 using Func;
 
 using jamster.engine.Controllers;

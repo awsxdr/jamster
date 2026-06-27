@@ -2,7 +2,7 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
-using FluentAssertions;
+using AwesomeAssertions;
 using Func;
 
 using jamster.engine.Controllers;

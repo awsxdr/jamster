@@ -4,7 +4,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 
 using Autofac;
-using FluentAssertions;
+using AwesomeAssertions;
 
 using jamster.engine.DataStores;
 using jamster.engine.Domain;

@@ -1,4 +1,4 @@
-﻿using FluentAssertions;
+﻿using AwesomeAssertions;
 
 using jamster.engine.Domain;
 using jamster.engine.Events;
@@ -206,7 +206,7 @@ public class ScoreSheetUnitTests : ReducerUnitTest<HomeScoreSheet, ScoreSheetSta
     }
 
     [Test]
-    public async Task InitialTripCompleted_WhenCompletedTrue_AndTeamMatches_AddsASingleTrip()
+    public async Task InitialTripCompleted_WhenCompletedTrue_AndTeamMatches_AddsASingleTripWithExpectedScore([Values] Stage stage)
     {
         State = new([
             new(1, 1, "123", "555", false, true, true, false, false, [4, 4, 3], null, 11, 11, false),
@@ -214,12 +214,13 @@ public class ScoreSheetUnitTests : ReducerUnitTest<HomeScoreSheet, ScoreSheetSta
             new(1, 3, "?", "?", false, false, false, false, false, [], null, 0, 13, false),
         ]);
         MockKeyedState<TeamJamStatsState>(nameof(TeamSide.Home), new(false, false, false, false, true));
+        MockState<GameStageState>(new(stage, 1, 3, 3, false, true));
 
         await Subject.Handle(new InitialTripCompleted(1000, new(TeamSide.Home, true)));
 
         State.Jams.Should().HaveCount(3)
             .And.Subject.Last().Trips.Should().ContainSingle()
-            .Which.Score.Should().BeNull();
+            .Which.Score.Should().Be(stage == Stage.Jam ? null : 0);
     }
 
     [Test]
@@ -231,6 +232,7 @@ public class ScoreSheetUnitTests : ReducerUnitTest<HomeScoreSheet, ScoreSheetSta
             new(1, 3, "?", "?", false, false, false, false, false, [0, 0], null, 0, 13, false),
         ]);
         MockKeyedState<TeamJamStatsState>(nameof(TeamSide.Home), new(false, false, false, false, false));
+        MockState<GameStageState>(new(Stage.Jam, 1, 3, 3, false, true));
 
         await Subject.Handle(new InitialTripCompleted(1000, new(TeamSide.Home, false)));
 
@@ -260,6 +262,7 @@ public class ScoreSheetUnitTests : ReducerUnitTest<HomeScoreSheet, ScoreSheetSta
             new(1, 1, "123", "555", false, false, false, false, true, [3], null, 3, 3, false),
         ]);
         MockKeyedState<TeamJamStatsState>(nameof(TeamSide.Home), new(false, false, false, false, true));
+        MockState<GameStageState>(new(Stage.Jam, 1, 1, 1, false, true));
 
         await Subject.Handle(new InitialTripCompleted(1000, new(TeamSide.Home, true)));
 

@@ -1,5 +1,5 @@
 ﻿using Autofac;
-using FluentAssertions;
+using AwesomeAssertions;
 
 using jamster.engine.DataStores;
 using jamster.engine.Domain;

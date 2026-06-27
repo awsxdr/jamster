@@ -3,7 +3,7 @@
 using jamster.engine.tests.EventHandling;
 using Autofac;
 using Autofac.Extras.Moq;
-using FluentAssertions;
+using AwesomeAssertions;
 using Func;
 
 using jamster.engine.DataStores;

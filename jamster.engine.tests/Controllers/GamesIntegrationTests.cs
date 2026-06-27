@@ -1,6 +1,6 @@
 ﻿using System.Net;
 
-using FluentAssertions;
+using AwesomeAssertions;
 
 using jamster.engine.Controllers;
 using jamster.engine.DataStores;

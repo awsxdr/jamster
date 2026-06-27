@@ -1,7 +1,7 @@
 using System.Reflection;
 using System.Runtime.CompilerServices;
 
-using FluentAssertions;
+using AwesomeAssertions;
 using Func;
 
 using jamster.engine.Domain;

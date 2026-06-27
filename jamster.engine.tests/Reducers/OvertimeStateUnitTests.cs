@@ -1,4 +1,4 @@
-using FluentAssertions;
+using AwesomeAssertions;
 
 using jamster.engine.Events;
 using jamster.engine.Reducers;
