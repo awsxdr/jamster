@@ -416,8 +416,32 @@ public static class TestGameEventsSource
         .Event<SkaterOnTrack>(1).WithBody(new SkaterOnTrackBody(TeamSide.Away, AwayTeam.Roster[1].Id, SkaterPosition.Pivot))
         .Event<JamStarted>(30)
         .Event<ScoreModifiedRelative>(1).WithBody(new ScoreModifiedRelativeBody(TeamSide.Home, 1))
+        .Validate([
+            ("Home", new ScoreSheetState([
+                new(1, 1, HomeTeam.Roster[0].Number, HomeTeam.Roster[1].Number, false, true, true, false, false, [new JamLineTrip(4), new JamLineTrip(3)], null, 7, 7, false),
+                new(1, 2, HomeTeam.Roster[1].Number, HomeTeam.Roster[3].Number, false, false, false, false, true, [], null, 0, 7, false),
+                new(1, 3, HomeTeam.Roster[0].Number, HomeTeam.Roster[1].Number, false, true, true, false, false, [new JamLineTrip(0)], null, 0, 7, false),
+                new(1, 4, HomeTeam.Roster[0].Number, HomeTeam.Roster[1].Number, false, false, false, false, false, [new JamLineTrip(1)], null, 1, 8, false),
+            ]))
+        ])
         .Event<ScoreModifiedRelative>(1).WithBody(new ScoreModifiedRelativeBody(TeamSide.Home, 1))
+        .Validate([
+            ("Home", new ScoreSheetState([
+                new(1, 1, HomeTeam.Roster[0].Number, HomeTeam.Roster[1].Number, false, true, true, false, false, [new JamLineTrip(4), new JamLineTrip(3)], null, 7, 7, false),
+                new(1, 2, HomeTeam.Roster[1].Number, HomeTeam.Roster[3].Number, false, false, false, false, true, [], null, 0, 7, false),
+                new(1, 3, HomeTeam.Roster[0].Number, HomeTeam.Roster[1].Number, false, true, true, false, false, [new JamLineTrip(0)], null, 0, 7, false),
+                new(1, 4, HomeTeam.Roster[0].Number, HomeTeam.Roster[1].Number, false, false, false, false, false, [new JamLineTrip(2)], null, 2, 9, false),
+            ]))
+        ])
         .Event<ScoreModifiedRelative>(1).WithBody(new ScoreModifiedRelativeBody(TeamSide.Home, 1))
+        .Validate([
+            ("Home", new ScoreSheetState([
+                new(1, 1, HomeTeam.Roster[0].Number, HomeTeam.Roster[1].Number, false, true, true, false, false, [new JamLineTrip(4), new JamLineTrip(3)], null, 7, 7, false),
+                new(1, 2, HomeTeam.Roster[1].Number, HomeTeam.Roster[3].Number, false, false, false, false, true, [], null, 0, 7, false),
+                new(1, 3, HomeTeam.Roster[0].Number, HomeTeam.Roster[1].Number, false, true, true, false, false, [new JamLineTrip(0)], null, 0, 7, false),
+                new(1, 4, HomeTeam.Roster[0].Number, HomeTeam.Roster[1].Number, false, false, false, false, false, [new JamLineTrip(3)], null, 3, 10, false),
+            ]))
+        ])
         .Event<ScoreModifiedRelative>(1).WithBody(new ScoreModifiedRelativeBody(TeamSide.Home, 1))
         .Validate([
             ("Home", new ScoreSheetState([
@@ -896,10 +920,8 @@ public static class TestGameEventsSource
 
     public static Event[] OvertimeJam =>
         new EventsBuilder(0, [])
-            .Event<TeamSet>(0)
-            .WithBody(new TeamSetBody(TeamSide.Home, new(HomeTeam.Names, HomeTeam.Color, HomeTeam.Roster)))
-            .Event<TeamSet>(0)
-            .WithBody(new TeamSetBody(TeamSide.Away, new(AwayTeam.Names, AwayTeam.Color, AwayTeam.Roster)))
+            .Event<TeamSet>(0).WithBody(new TeamSetBody(TeamSide.Home, new(HomeTeam.Names, HomeTeam.Color, HomeTeam.Roster)))
+            .Event<TeamSet>(0).WithBody(new TeamSetBody(TeamSide.Away, new(AwayTeam.Names, AwayTeam.Color, AwayTeam.Roster)))
             .Event<JamStarted>(90).Event<JamEnded>(30)
             .Event<JamStarted>(90).Event<JamEnded>(30)
             .Event<JamStarted>(90).Event<JamEnded>(30)
@@ -971,6 +993,174 @@ public static class TestGameEventsSource
                 new OvertimeState(false),
                 new PostGameClockState(true, overtimeEndedTick, 0, 0),
             ])
+            .Build();
+
+    public static Event[] TripCompletionShouldNotImpactNextJam =>
+        new EventsBuilder(0, [])
+            .Event<TeamSet>(0).WithBody(new TeamSetBody(TeamSide.Home, new(HomeTeam.Names, HomeTeam.Color, HomeTeam.Roster)))
+            .Event<TeamSet>(0).WithBody(new TeamSetBody(TeamSide.Away, new(AwayTeam.Names, AwayTeam.Color, AwayTeam.Roster)))
+            .Wait(10)
+            .Event<IntermissionEnded>(30)
+            // Score well before jam end
+            .Event<JamStarted>(10)
+            .Event<LeadMarked>(30).WithBody(new LeadMarkedBody(TeamSide.Home, true))
+            .Event<ScoreModifiedRelative>(10).WithBody(new ScoreModifiedRelativeBody(TeamSide.Home, 4))
+            .Event<CallMarked>(30).WithBody(new CallMarkedBody(TeamSide.Home, true))
+            .Event<JamStarted>(10)
+            .Validate([
+                ("Home", new TeamJamStatsState(false, false, false, false, false)),
+                ("Away", new TeamJamStatsState(false, false, false, false, false)),
+            ])
+            // Score one second before jam end
+            .Event<LeadMarked>(30).WithBody(new LeadMarkedBody(TeamSide.Home, true))
+            .Event<ScoreModifiedRelative>(1).WithBody(new ScoreModifiedRelativeBody(TeamSide.Home, 4))
+            .Event<CallMarked>(30).WithBody(new CallMarkedBody(TeamSide.Home, true))
+            .Event<JamStarted>(10)
+            .Validate([
+                ("Home", new TeamJamStatsState(false, false, false, false, false)),
+                ("Away", new TeamJamStatsState(false, false, false, false, false)),
+            ])
+            // Score 3 seconds before jam end
+            .Event<LeadMarked>(30).WithBody(new LeadMarkedBody(TeamSide.Home, true))
+            .Event<ScoreModifiedRelative>(TripScore.TripScoreResetTimeInTicks.Seconds).WithBody(new ScoreModifiedRelativeBody(TeamSide.Home, 4))
+            .Event<CallMarked>(30).WithBody(new CallMarkedBody(TeamSide.Home, true))
+            .Event<JamStarted>(10)
+            .Validate([
+                ("Home", new TeamJamStatsState(false, false, false, false, false)),
+                ("Away", new TeamJamStatsState(false, false, false, false, false)),
+            ])
+            .Build();
+
+    public static Event[] FixingStats =>
+        new EventsBuilder(0, [])
+            .Event<TeamSet>(0).WithBody(new TeamSetBody(TeamSide.Home, new(HomeTeam.Names, HomeTeam.Color, HomeTeam.Roster)))
+            .Event<TeamSet>(0).WithBody(new TeamSetBody(TeamSide.Away, new(AwayTeam.Names, AwayTeam.Color, AwayTeam.Roster)))
+            .Wait(10)
+            .Event<IntermissionEnded>(30)
+            // Wrong team marked lead
+            .Event<JamStarted>(10)
+            .Event<LeadMarked>(1).WithBody(new LeadMarkedBody(TeamSide.Away, true))
+            .Event<LeadMarked>(1).WithBody(new LeadMarkedBody(TeamSide.Home, true))
+            .Event<InitialTripCompleted>(1).WithBody(new InitialTripCompletedBody(TeamSide.Away, false))
+            .Validate([
+                ("Home", new TeamJamStatsState(true, false, false, false, true)),
+                ("Away", new TeamJamStatsState(false, false, false, false, false)),
+                ("Home", new ScoreSheetState([new(1, 1, "?", "?", false, true, false, false, false, [new(null)], null, 0, 0, false)])),
+                ("Away", new ScoreSheetState([new(1, 1, "?", "?", false, false, false, false, true, [], null, 0, 0, false)])),
+            ])
+            .Wait(10)
+            .Event<JamEnded>(30)
+            .Validate([
+                ("Home", new TeamJamStatsState(true, false, true, false, true)),
+                ("Away", new TeamJamStatsState(false, false, false, false, false)),
+                ("Home", new ScoreSheetState([new(1, 1, "?", "?", false, true, true, false, false, [new(0)], null, 0, 0, false)])),
+                ("Away", new ScoreSheetState([new(1, 1, "?", "?", false, false, false, false, true, [], null, 0, 0, false)])),
+            ])
+            .GetValidatedState<ScoreSheetState>("Home", out var homeScoreSheet)
+            .GetValidatedState<ScoreSheetState>("Away", out var awayScoreSheet)
+            // Return to initial trip after lead
+            .Event<JamStarted>(10)
+            .Event<LeadMarked>(3).WithBody(new LeadMarkedBody(TeamSide.Home, true))
+            .Event<InitialTripCompleted>(1).WithBody(new InitialTripCompletedBody(TeamSide.Home, false))
+            .Validate([
+                ("Home", new TeamJamStatsState(true, false, false, false, false)),
+                ("Away", new TeamJamStatsState(false, false, false, false, false)),
+                ("Home", new ScoreSheetState([..homeScoreSheet.Jams, new(1, 2, "?", "?", false, true, false, false, true, [], null, 0, 0, false)])),
+                ("Away", new ScoreSheetState([..awayScoreSheet.Jams, new(1, 2, "?", "?", false, false, false, false, true, [], null, 0, 0, false)])),
+            ])
+            .Wait(10)
+            .Event<JamEnded>(30)
+            .Validate([
+                ("Home", new TeamJamStatsState(true, false, true, false, false)),
+                ("Away", new TeamJamStatsState(false, false, false, false, false)),
+                ("Home", new ScoreSheetState([..homeScoreSheet.Jams, new(1, 2, "?", "?", false, true, true, false, true, [], null, 0, 0, false)])),
+                ("Away", new ScoreSheetState([..awayScoreSheet.Jams, new(1, 2, "?", "?", false, false, false, false, true, [], null, 0, 0, false)])),
+            ])
+            .GetValidatedState<ScoreSheetState>("Home", out homeScoreSheet)
+            .GetValidatedState<ScoreSheetState>("Away", out awayScoreSheet)
+            // Mark initial after jam
+            .Event<JamStarted>(10)
+            .Event<LeadMarked>(3).WithBody(new LeadMarkedBody(TeamSide.Home, true))
+            .Validate([
+                ("Home", new TeamJamStatsState(true, false, false, false, true)),
+                ("Away", new TeamJamStatsState(false, false, false, false, false)),
+                ("Home", new ScoreSheetState([..homeScoreSheet.Jams, new(1, 3, "?", "?", false, true, false, false, false, [new(null)], null, 0, 0, false)])),
+                ("Away", new ScoreSheetState([..awayScoreSheet.Jams, new(1, 3, "?", "?", false, false, false, false, true, [], null, 0, 0, false)])),
+            ])
+            .Wait(10)
+            .Event<JamEnded>(3)
+            .Event<InitialTripCompleted>(2).WithBody(new InitialTripCompletedBody(TeamSide.Away, true))
+            .Validate([
+                ("Home", new TeamJamStatsState(true, false, true, false, true)),
+                ("Away", new TeamJamStatsState(false, false, false, false, true)),
+                ("Home", new ScoreSheetState([..homeScoreSheet.Jams, new(1, 3, "?", "?", false, true, true, false, false, [new(0)], null, 0, 0, false)])),
+                ("Away", new ScoreSheetState([..awayScoreSheet.Jams, new(1, 3, "?", "?", false, false, false, false, false, [new(0)], null, 0, 0, false)])),
+            ])
+            .GetValidatedState<ScoreSheetState>("Home", out homeScoreSheet)
+            .GetValidatedState<ScoreSheetState>("Away", out awayScoreSheet)
+            // Mark lost after jam
+            .Event<JamStarted>(10)
+            .Event<LeadMarked>(3).WithBody(new LeadMarkedBody(TeamSide.Home, true))
+            .Validate([
+                ("Home", new TeamJamStatsState(true, false, false, false, true)),
+                ("Away", new TeamJamStatsState(false, false, false, false, false)),
+                ("Home", new ScoreSheetState([..homeScoreSheet.Jams, new(1, 4, "?", "?", false, true, false, false, false, [new(null)], null, 0, 0, false)])),
+                ("Away", new ScoreSheetState([..awayScoreSheet.Jams, new(1, 4, "?", "?", false, false, false, false, true, [], null, 0, 0, false)])),
+            ])
+            .Wait(10)
+            .Event<JamEnded>(3)
+            .Event<LostMarked>(2).WithBody(new LostMarkedBody(TeamSide.Away, true))
+            .Validate([
+                ("Home", new TeamJamStatsState(true, false, true, false, true)),
+                ("Away", new TeamJamStatsState(false, true, false, false, false)),
+                ("Home", new ScoreSheetState([..homeScoreSheet.Jams, new(1, 4, "?", "?", false, true, true, false, false, [new(0)], null, 0, 0, false)])),
+                ("Away", new ScoreSheetState([..awayScoreSheet.Jams, new(1, 4, "?", "?", true, false, false, false, true, [], null, 0, 0, false)])),
+            ])
+            .GetValidatedState<ScoreSheetState>("Home", out homeScoreSheet)
+            .GetValidatedState<ScoreSheetState>("Away", out awayScoreSheet)
+            // Clear lost after jam
+            .Event<JamStarted>(10)
+            .Event<LostMarked>(3).WithBody(new LostMarkedBody(TeamSide.Away, true))
+            .Event<LeadMarked>(3).WithBody(new LeadMarkedBody(TeamSide.Home, true))
+            .Validate([
+                ("Home", new TeamJamStatsState(true, false, false, false, true)),
+                ("Away", new TeamJamStatsState(false, true, false, false, false)),
+                ("Home", new ScoreSheetState([..homeScoreSheet.Jams, new(1, 5, "?", "?", false, true, false, false, false, [new(null)], null, 0, 0, false)])),
+                ("Away", new ScoreSheetState([..awayScoreSheet.Jams, new(1, 5, "?", "?", true, false, false, false, true, [], null, 0, 0, false)])),
+            ])
+            .Wait(10)
+            .Event<JamEnded>(3)
+            .Event<LostMarked>(2).WithBody(new LostMarkedBody(TeamSide.Away, false))
+            .Validate([
+                ("Home", new TeamJamStatsState(true, false, true, false, true)),
+                ("Away", new TeamJamStatsState(false, false, false, false, false)),
+                ("Home", new ScoreSheetState([..homeScoreSheet.Jams, new(1, 5, "?", "?", false, true, true, false, false, [new(0)], null, 0, 0, false)])),
+                ("Away", new ScoreSheetState([..awayScoreSheet.Jams, new(1, 5, "?", "?", false, false, false, false, true, [], null, 0, 0, false)])),
+            ])
+            .GetValidatedState<ScoreSheetState>("Home", out homeScoreSheet)
+            .GetValidatedState<ScoreSheetState>("Away", out awayScoreSheet)
+            // Change call to injury after jam
+            .Event<JamStarted>(10)
+            .Event<LeadMarked>(3).WithBody(new LeadMarkedBody(TeamSide.Home, true))
+            .Validate([
+                ("Home", new TeamJamStatsState(true, false, false, false, true)),
+                ("Away", new TeamJamStatsState(false, false, false, false, false)),
+                ("Home", new ScoreSheetState([..homeScoreSheet.Jams, new(1, 6, "?", "?", false, true, false, false, false, [new(null)], null, 0, 0, false)])),
+                ("Away", new ScoreSheetState([..awayScoreSheet.Jams, new(1, 6, "?", "?", false, false, false, false, true, [], null, 0, 0, false)])),
+            ])
+            .Wait(10)
+            .Event<JamEnded>(3)
+            .Event<ScoreSheetInjurySet>(1).WithBody(new ScoreSheetInjurySetBody(5, true))
+            .Event<ScoreSheetCalledSet>(1).WithBody(new ScoreSheetStatsSetBody(TeamSide.Home, 5, false))
+            .Validate([
+                new GameStageState(Stage.Lineup, 1, 6, 6, false, true),
+                ("Home", new TeamJamStatsState(true, false, true, false, true)),
+                ("Away", new TeamJamStatsState(false, false, false, false, false)),
+                ("Home", new ScoreSheetState([..homeScoreSheet.Jams, new(1, 6, "?", "?", false, true, false, true, false, [new(0)], null, 0, 0, false)])),
+                ("Away", new ScoreSheetState([..awayScoreSheet.Jams, new(1, 6, "?", "?", false, false, false, true, true, [], null, 0, 0, false)])),
+            ])
+            .GetValidatedState<ScoreSheetState>("Home", out homeScoreSheet)
+            .GetValidatedState<ScoreSheetState>("Away", out awayScoreSheet)
             .Build();
 
     public static readonly GameTeam HomeTeam = new(

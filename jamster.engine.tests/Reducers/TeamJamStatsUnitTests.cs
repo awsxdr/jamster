@@ -8,22 +8,29 @@ namespace jamster.engine.tests.Reducers;
 
 public class TeamJamStatsUnitTests : ReducerUnitTest<HomeTeamJamStats, TeamJamStatsState>
 {
-    [TestCase(false, TeamSide.Home, true, true)]
-    [TestCase(false, TeamSide.Away, true, false)]
-    [TestCase(true, TeamSide.Home, true, true)]
-    [TestCase(true, TeamSide.Home, false, false)]
-    [TestCase(true, TeamSide.Away, false, true)]
-    [TestCase(true, TeamSide.Away, true, false)]
-    [TestCase(false, TeamSide.Home, false, false)]
-    public async Task LeadMarked_WhenNotInOvertime_UpdatesStateAsExpected(bool initialLead, TeamSide side, bool lead, bool expectedLead)
+    [TestCase(false, TeamSide.Home, true, true, false)]
+    [TestCase(false, TeamSide.Away, true, false, false)]
+    [TestCase(true, TeamSide.Home, true, true, false)]
+    [TestCase(true, TeamSide.Home, false, false, false)]
+    [TestCase(true, TeamSide.Away, false, true, false)]
+    [TestCase(true, TeamSide.Away, true, true, true)]
+    [TestCase(false, TeamSide.Home, false, false, false)]
+    public async Task LeadMarked_WhenNotInOvertime_UpdatesStateAsExpected(bool initialLead, TeamSide side, bool lead, bool expectedLead, bool expectClearLeadEvent)
     {
         MockState(GameStageState.Default);
 
         State = State with { Lead = initialLead };
 
-        await Subject.Handle(new LeadMarked(0, new(side, lead)));
+        var result = await Subject.Handle(new LeadMarked(0, new(side, lead)));
+        result = result.ToArray();
 
         State.Lead.Should().Be(expectedLead);
+
+        if (expectClearLeadEvent)
+        {
+            result.OfType<LeadMarked>().Should().ContainSingle().Which.Body.Lead.Should().BeFalse();
+            result.OfType<LeadMarked>().Should().ContainSingle().Which.Body.TeamSide.Should().Be(TeamSide.Home);
+        }
     }
 
     [Test]
@@ -112,15 +119,17 @@ public class TeamJamStatsUnitTests : ReducerUnitTest<HomeTeamJamStats, TeamJamSt
         State.HasCompletedInitial.Should().Be(expectedCompleted);
     }
 
-    [TestCase(TeamSide.Home, false)]
-    [TestCase(null, true)]
-    [TestCase(TeamSide.Away, false)]
-    public async Task InitialTripCompleted_UpdatesLostAsExpected(TeamSide? leadSide, bool expectedLost)
+    [TestCase(TeamSide.Home, true, false)]
+    [TestCase(TeamSide.Home, false, false)]
+    [TestCase(null, true, true)]
+    [TestCase(null, false, false)]
+    [TestCase(TeamSide.Away, true, false)]
+    public async Task InitialTripCompleted_UpdatesLostAsExpected(TeamSide? leadSide, bool tripCompleted, bool expectedLost)
     {
         State = State with { Lead = leadSide == TeamSide.Home };
         MockKeyedState("Away", (TeamJamStatsState)Subject.GetDefaultState() with { Lead = leadSide == TeamSide.Away });
 
-        await Subject.Handle(new InitialTripCompleted(0, new(TeamSide.Home, true)));
+        await Subject.Handle(new InitialTripCompleted(0, new(TeamSide.Home, tripCompleted)));
 
         State.Lost.Should().Be(expectedLost);
     }

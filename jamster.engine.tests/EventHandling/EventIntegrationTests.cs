@@ -20,19 +20,35 @@ namespace jamster.engine.tests.EventHandling;
 
 public class EventIntegrationTests : EventBusIntegrationTest
 {
-    [TestCase(typeof(TestGameEventsSource), nameof(TestGameEventsSource.FullGame), TestName = "Full game")]
-    [TestCase(typeof(TestGameEventsSource), nameof(TestGameEventsSource.JamsWithScoresAndStats), TestName = "Jams with scores and stats")]
-    [TestCase(typeof(TestGameEventsSource), nameof(TestGameEventsSource.SingleJamStartedWithoutEndingIntermission), TestName = "Single jam started without ending intermission")]
-    [TestCase(typeof(TestGameEventsSource), nameof(TestGameEventsSource.OfficialReviewDuringIntermission), TestName = "Official review during intermission")]
-    [TestCase(typeof(TestGameEventsSource), nameof(TestGameEventsSource.CustomRules), TestName = "Custom rules")]
-    [TestCase(typeof(TestGameEventsSource), nameof(TestGameEventsSource.JamsWithLineupsAndPenalties), TestName = "Jams with lineups and penalties")]
-    [TestCase(typeof(TestGameEventsSource), nameof(TestGameEventsSource.JamsWithOverrunningJam), TestName = "Jams with overrunning jam")]
-    [TestCase(typeof(TestGameEventsSource), nameof(TestGameEventsSource.TimeoutBeforeFirstJam), TestName = "Timeout before first jam")]
-    [TestCase(typeof(TestGameEventsSource), nameof(TestGameEventsSource.OvertimeJam), TestName = "Overtime jam")]
-    public async Task EventSources_UpdateStatesAsExpected(Type eventSourceType, string eventSourceName)
+    private static string GetTestName(PropertyInfo property)
     {
-        var events = GetEvents(eventSourceType, eventSourceName);
+        var nameRegex = new Regex(@"(\d+|[A-Z][a-z]*)");
 
+        var names =
+            nameRegex.Matches(property.Name)
+                .Select(m => m.Value)
+                .ToArray()
+                .Map(n => (string[])
+                [
+                    n.First(),
+                    ..n.Skip(1).Select(x => x.ToLowerInvariant())
+                ]);
+
+        return string.Join(" ", names);
+    }
+
+    public static IEnumerable<TestCaseData> GetTestGames() =>
+        typeof(TestGameEventsSource)
+            .GetProperties(BindingFlags.Public | BindingFlags.Static)
+            .Where(p => p.PropertyType == typeof(Event[]))
+            .Select(p => new TestCaseData(p.GetValue(null)).SetName(GetTestName(p)));
+
+    [TestCaseSource(nameof(GetTestGames))]
+    public async Task EventSources_UpdateStatesAsExpected(Event[] events)
+    {
+        using var assertionScope = new AssertionScope();
+
+        assertionScope.FormattingOptions.AddFormatter(new LatestJamScoreSheetFormatter());
         await AddEvents(events);
 
         await Tick(events.Last().Tick + 1);
@@ -71,7 +87,7 @@ public class EventIntegrationTests : EventBusIntegrationTest
         await AddEvents(simulatorEvents);
     }
 
-    private Event GenerateValidationEvent(GameSimulator.GameState gameState, DomainTick tick)
+    private static Event GenerateValidationEvent(GameSimulator.GameState gameState, DomainTick tick)
     {
         return new ValidateStateFakeEvent(tick, [
             new PeriodClockState(
@@ -234,7 +250,7 @@ public class EventIntegrationTests : EventBusIntegrationTest
 
         return;
 
-        Func<IGameStateStore, object> GetStateGetter(string? key, Type stateType) =>
+        static Func<IGameStateStore, object> GetStateGetter(string? key, Type stateType) =>
             key is null
                 ? typeof(IGameStateStore)
                     .GetMethods()
@@ -250,7 +266,27 @@ public class EventIntegrationTests : EventBusIntegrationTest
         object[] GetAllStates() => stateGetters.Select(g => g(StateStore)).ToArray();
     }
 
-    public static Event[] GetEvents(Type eventSourceType, string eventSourceName) =>
+    private static Event[] GetEvents(Type eventSourceType, string eventSourceName) =>
         eventSourceType.GetProperty(eventSourceName)?.GetValue(null) as Event[]
         ?? throw new ArgumentException();
+
+    private class LatestJamScoreSheetFormatter : IValueFormatter
+    {
+        public bool CanHandle(object value) => value is IEnumerable<ScoreSheetJam>;
+
+        public void Format(object value, FormattedObjectGraph formattedGraph, FormattingContext context, FormatChild formatChild)
+        {
+            var jams = (IEnumerable<ScoreSheetJam>)value;
+
+            var serializerOptions =
+                new JsonSerializerOptions(JsonSerializerDefaults.Web) { WriteIndented = true };
+
+            var output = JsonSerializer.Serialize(jams.LastOrDefault(), serializerOptions);
+
+            if(context.UseLineBreaks)
+                formattedGraph.AddLine(output);
+            else
+                formattedGraph.AddFragment(output);
+        }
+    }
 }

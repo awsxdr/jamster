@@ -102,13 +102,9 @@ public abstract class EventBusIntegrationTest
             await EventBus.AddEvent(Game, @event);
 
             if (@event is ValidateStateFakeEvent validate)
-            {
                 validate.ValidateStates(StateStore);
-            }
             else if (@event is DebugFakeEvent debug)
-            {
                 Console.WriteLine($"Debug event with label '{debug.Label}'");
-            }
         }
     }
 

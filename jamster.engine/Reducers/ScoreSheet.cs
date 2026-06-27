@@ -89,13 +89,18 @@ public abstract class ScoreSheet(TeamSide teamSide, ReducerGameContext context, 
     public IEnumerable<Event> Handle(InitialTripCompleted @event) => @event.HandleIfTeam(teamSide, () =>
     {
         var jamStatsState = GetKeyedState<TeamJamStatsState>(teamSide.ToString());
+        var gameStageState = GetState<GameStageState>();
 
         ModifyLatestJam(jam => jam with
         {
             NoInitial = !jamStatsState.HasCompletedInitial,
-            Trips = jamStatsState.HasCompletedInitial 
-                ? jam.Trips.Any() ? jam.Trips : [new JamLineTrip(null)]
-                : [],
+            Trips = (@event.Body.TripCompleted, jam.Trips.Any(), gameStageState.Stage) switch
+            {
+                (false, _, _) => [],
+                (_, true, _) => jam.Trips,
+                (_, _, Stage.Jam) => [new JamLineTrip(null)],
+                _ => [new JamLineTrip(0)]
+            }
         });
 
         return [];
@@ -110,16 +115,22 @@ public abstract class ScoreSheet(TeamSide teamSide, ReducerGameContext context, 
 
     public IEnumerable<Event> Handle(ScoreModifiedRelative @event) => @event.HandleIfTeam(teamSide, () =>
     {
-        ModifyLatestJam(jam => jam with
+        ModifyLatestJam(jam =>
         {
-            JamTotal = jam.JamTotal + @event.Body.Value,
-            GameTotal = jam.GameTotal + @event.Body.Value,
-            Trips = jam.Trips.Any()
-                ? jam.Trips.Take(jam.Trips.Length - 1).Append(jam.Trips[^1] with
+            if(!jam.Trips.Any())
+                logger.LogDebug("Adding trip to jam with value {value} due to score modified when no existing trips", @event.Body.Value);
+
+            return jam with
+            {
+                JamTotal = jam.JamTotal + @event.Body.Value,
+                GameTotal = jam.GameTotal + @event.Body.Value,
+                Trips = jam.Trips.Any()
+                    ? jam.Trips.Take(jam.Trips.Length - 1).Append(jam.Trips[^1] with
                     {
                         Score = (jam.Trips[^1].Score ?? 0) + @event.Body.Value,
                     }).ToArray()
-                : [new JamLineTrip(@event.Body.Value)]
+                    : [new JamLineTrip(@event.Body.Value)]
+            };
         });
 
         return [];
@@ -127,6 +138,7 @@ public abstract class ScoreSheet(TeamSide teamSide, ReducerGameContext context, 
 
     public IEnumerable<Event> Handle(LeadMarked @event) => @event.HandleIfTeam(teamSide, () =>
     {
+        logger.LogDebug("Marking lead as {lead} on {team} score sheet", @event.Body.Lead, teamSide);
         ModifyLatestJam(jam => jam with { Lead = @event.Body.Lead });
 
         return [];
@@ -327,7 +339,10 @@ public abstract class ScoreSheet(TeamSide teamSide, ReducerGameContext context, 
         var state = GetState();
 
         if (totalJamNumber >= state.Jams.Length || totalJamNumber < 0)
+        {
+            logger.LogDebug("Attempt to set stats on invalid jam number {jam}. Maximum jam number is {totalJamNumber}", totalJamNumber, state.Jams.Length - 1);
             return;
+        }
 
         SetState(new(
             state.Jams.Take(totalJamNumber)

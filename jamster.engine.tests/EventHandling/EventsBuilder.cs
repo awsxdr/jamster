@@ -1,4 +1,3 @@
-using System.Reflection;
 using System.Runtime.CompilerServices;
 
 using AwesomeAssertions;
@@ -22,10 +21,10 @@ public class EventsBuilder(Tick tick, Event[] events)
             GetNextTick(durationInSeconds),
             [.. events, @event]);
 
-    public virtual EventsBuilder Validate(params object[] states) =>
-        Event(new ValidateStateFakeEvent(Tick, states), 0);
+    public virtual ValidatingEventsBuilder Validate(params object[] states) =>
+        new(Tick, events, states);
 
-    public virtual EventsBuilder Validate(Func<Tick, object[]> states) =>
+    public virtual ValidatingEventsBuilder Validate(Func<Tick, object[]> states) =>
         Validate(states(Tick));
 
     public virtual EventsBuilder Wait(int durationInSeconds) => Event<WaitFakeEvent>(durationInSeconds);
@@ -43,15 +42,15 @@ public class EventsBuilder<TEventBeingBuilt>(Tick tick, Event[] events, int curr
     where TEventBeingBuilt : Event
 {
     internal int EventDurationInSeconds { get; } = currentEventDurationInSeconds;
-    private Guid7? _nextEventId = null;
+    private Guid7? _nextEventId;
 
     public override EventsBuilder<TEvent> Event<TEvent>(int durationInSeconds) =>
         BuildCurrentEvent().Event<TEvent>(durationInSeconds);
 
-    public override EventsBuilder Validate(params object[] states) =>
+    public override ValidatingEventsBuilder Validate(params object[] states) =>
         BuildCurrentEvent().Validate(states);
 
-    public override EventsBuilder Validate(Func<Tick, object[]> states) =>
+    public override ValidatingEventsBuilder Validate(Func<Tick, object[]> states) =>
         BuildCurrentEvent().Validate(states);
 
     public override EventsBuilder Wait(int durationInSeconds) =>
@@ -79,6 +78,45 @@ public class EventsBuilder<TEventBeingBuilt>(Tick tick, Event[] events, int curr
 
         return Event(@event, EventDurationInSeconds);
     }
+}
+
+public class ValidatingEventsBuilder(Tick tick, Event[] events, object[] states) : EventsBuilder(tick, events)
+{
+    public override EventsBuilder<TEvent> Event<TEvent>(int durationInSeconds) =>
+        BuildValidator().Event<TEvent>(durationInSeconds);
+
+    public override ValidatingEventsBuilder Validate(params object[] nextStates) =>
+        BuildValidator().Validate(nextStates);
+
+    public override ValidatingEventsBuilder Validate(Func<Tick, object[]> nextStates) =>
+        BuildValidator().Validate(nextStates);
+
+    public override EventsBuilder Wait(int durationInSeconds) =>
+        BuildValidator().Wait(durationInSeconds);
+
+    public override Event[] Build() =>
+        BuildValidator().Build();
+
+    public ValidatingEventsBuilder GetValidatedState<TState>(out TState state) where TState : class
+    {
+        state = (states.Single(s => s is TState) as TState)!;
+
+        return this;
+    }
+
+    public ValidatingEventsBuilder GetValidatedState<TState>(string stateKey, out TState state) where TState : class
+    {
+        state = (
+            states.OfType<ITuple>()
+                .Single(t => t is [string k, TState] && k == stateKey)
+                [1] as TState
+        )!;
+
+        return this;
+    }
+
+    private EventsBuilder BuildValidator() =>
+        Event(new ValidateStateFakeEvent(Tick, states), 0);
 }
 
 public static class EventsBuilderExtensions
@@ -109,7 +147,7 @@ public class ValidateStateFakeEvent(Tick tick, params object[] states) : Event(t
                 var tupleState = tuple[1]!;
 
                 var storedState = stateStore.GetStateByName($"{tupleState.GetType().Name}_{key}");
-
+                
                 storedState.Should().BeAssignableTo<Success>();
                 storedState.ValueOr(() => null).Result.Should().Be(tupleState);
             }

@@ -149,4 +149,54 @@ public class TripScoreUnitTests : ReducerUnitTest<HomeTripScore, TripScoreState>
 
         State.LastScoreTick.Should().Be(0);
     }
+
+    [Test]
+    public async Task InitialTripCompleted_WhenCompleted_AndNoTrips_AndTeamMatches_AddsTrip()
+    {
+        State = new(null, 0, 0);
+
+        await Subject.Handle(new InitialTripCompleted(0, new(TeamSide.Home, true)));
+
+        State.JamTripCount.Should().Be(1);
+    }
+
+    [Test]
+    public async Task InitialTripCompleted_WhenCompleted_AndHasTrips_AndTeamMatches_DoesNotChangeState()
+    {
+        State = new(null, 2, 0);
+
+        await Subject.Handle(new InitialTripCompleted(0, new(TeamSide.Home, true)));
+
+        State.Should().Be(new TripScoreState(null, 2, 0));
+    }
+
+    [Test]
+    public async Task InitialTripCompleted_WhenNotCompleted_AndNoTrips_DoesNotChangeState()
+    {
+        State = new(null, 0, 0);
+
+        await Subject.Handle(new InitialTripCompleted(0, new(TeamSide.Home, false)));
+
+        State.Should().Be(new TripScoreState(null, 0, 0));
+    }
+
+    [Test]
+    public async Task InitialTripCompleted_WhenNotCompleted_AndSingleTrip_RemovesTrip()
+    {
+        State = new(null, 1, 0);
+
+        await Subject.Handle(new InitialTripCompleted(0, new(TeamSide.Home, false)));
+
+        State.JamTripCount.Should().Be(0);
+    }
+
+    [Test]
+    public async Task InitialTripCompleted_WhenNotComplete_AndNoTrips_DoesNotAddTrip()
+    {
+        State = new(null, 0, 0);
+
+        await Subject.Handle(new InitialTripCompleted(0, new(TeamSide.Home, false)));
+
+        State.JamTripCount.Should().Be(0);
+    }
 }

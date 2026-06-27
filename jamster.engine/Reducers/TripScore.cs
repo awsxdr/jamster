@@ -19,7 +19,7 @@ public abstract class TripScore(TeamSide teamSide, ReducerGameContext context, I
 {
     protected override TripScoreState DefaultState => new(null, 0, 0);
 
-    public static readonly Tick TripScoreResetTimeInTicks = 3000;
+    public static readonly Tick TripScoreResetTimeInTicks = Domain.Tick.FromSeconds(3);
 
     public override Option<string> GetStateKey() =>
         Option.Some(teamSide.ToString());
@@ -84,8 +84,24 @@ public abstract class TripScore(TeamSide teamSide, ReducerGameContext context, I
 
     public IEnumerable<Event> Handle(InitialTripCompleted @event) => @event.HandleIfTeam(teamSide, () =>
     {
-        logger.LogDebug("Adding trip due to initial trip completed at tick {tick}", @event.Tick);
-        SetState(GetState() with { Score = null, JamTripCount = @event.Body.TripCompleted ? 1 : 0 });
+        logger.LogDebug(
+            @event.Body.TripCompleted
+                ? "Adding trip due to initial trip completed at tick {tick}"
+                : "Removing trip due to initial trip cleared at tick {tick}",
+            @event.Tick);
+
+        var state = GetState();
+        SetState(state with
+        {
+            Score = null, 
+            JamTripCount = (@event.Body.TripCompleted, state.JamTripCount) switch
+            {
+                (true, 0) => 1,
+                (true, _) => state.JamTripCount,
+                (false, 1) => 0,
+                (false, _) => state.JamTripCount,
+            }
+        });
 
         return [];
     });

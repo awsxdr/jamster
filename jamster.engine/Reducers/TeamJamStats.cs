@@ -1,6 +1,5 @@
 ﻿using jamster.engine.Domain;
 using jamster.engine.Events;
-using jamster.engine.Extensions;
 using jamster.engine.Services;
 
 namespace jamster.engine.Reducers;
@@ -30,21 +29,24 @@ public abstract class TeamJamStats(TeamSide teamSide, ReducerGameContext gameCon
     {
         var state = GetState();
 
-        var lead =
-            @event.Body switch
+        var events = new List<Event>();
+
+        if (@event.Body.TeamSide == teamSide)
+        {
+            SetState(state with { Lead = @event.Body.Lead });
+
+            if (!state.HasCompletedInitial && @event.Body.Lead)
             {
-                _ when teamSide == @event.Body.TeamSide => @event.Body.Lead,
-                (_, true) when teamSide != @event.Body.TeamSide => false,
-                _ => state.Lead
-            };
+                logger.LogDebug("Initial trip completed set to true for {teamSide} due to lead marked", teamSide);
+                events.Add(new InitialTripCompleted(@event.Tick, new(teamSide, true)));
+            }
+        }
+        else if (@event.Body.Lead && state.Lead)
+        {
+            events.Add(new LeadMarked(@event.Tick, new(teamSide, false)));
+        }
 
-        SetState(state with { Lead = lead });
-
-        if (state.HasCompletedInitial || !lead) return [];
-
-        logger.LogDebug("Initial trip completed set to {value} for {teamSide} due to lead marked", lead, teamSide);
-
-        return [new InitialTripCompleted(@event.Tick, new(teamSide, true))];
+        return events;
     }
 
     public IEnumerable<Event> Handle(LostMarked @event) => @event.HandleIfTeam(teamSide, () =>
@@ -84,7 +86,16 @@ public abstract class TeamJamStats(TeamSide teamSide, ReducerGameContext gameCon
     {
         var state = GetState();
         var opponentState = GetKeyedState<TeamJamStatsState>(teamSide == TeamSide.Home ? nameof(TeamSide.Away) : nameof(TeamSide.Home));
-        SetState(state with { HasCompletedInitial = @event.Body.TripCompleted, Lost = state.Lost || !state.Lead && !opponentState.Lead});
+        SetState(state with
+        {
+            HasCompletedInitial = @event.Body.TripCompleted, 
+            Lost = (state.Lost, state.Lead, opponentState.Lead, @event.Body.TripCompleted) switch
+            {
+                (true, _, _, true) => true,
+                (_, false, false, true) => true,
+                _ => false
+            }
+        });
 
         return [];
     });
