@@ -29,28 +29,84 @@ public interface IGameDiscoveryService
             .TrimEnd('.');
 }
 
+public interface IFileSystemWatcher : IDisposable
+{
+    event FileSystemEventHandler? Created;
+    event FileSystemEventHandler? Deleted;
+    event RenamedEventHandler? Renamed;
+
+    bool EnableRaisingEvents { get; set; }
+}
+
+public class FileSystemWatcherWrapper(string path, string filter = "*.*") : IFileSystemWatcher
+{
+    public delegate IFileSystemWatcher Factory(string path, string filter);
+
+    private readonly FileSystemWatcher _fileSystemWatcher = new(path, filter);
+
+    public event FileSystemEventHandler? Created
+    {
+        add => _fileSystemWatcher.Created += value;
+        remove => _fileSystemWatcher.Created -= value;
+    }
+
+    public event FileSystemEventHandler? Deleted
+    {
+        add => _fileSystemWatcher.Deleted += value;
+        remove => _fileSystemWatcher.Deleted -= value;
+    }
+
+    public event RenamedEventHandler? Renamed
+    {
+        add => _fileSystemWatcher.Renamed += value;
+        remove => _fileSystemWatcher.Renamed -= value;
+    }
+    public bool EnableRaisingEvents
+    {
+        get => _fileSystemWatcher.EnableRaisingEvents;
+        set => _fileSystemWatcher.EnableRaisingEvents = value;
+    }
+
+    public void Dispose() => _fileSystemWatcher.Dispose();
+}
+
 [Singleton]
-public class GameDiscoveryService : IGameDiscoveryService
+public class GameDiscoveryService : IGameDiscoveryService, IDisposable
 {
     private readonly IGameDataStoreFactory _gameStoreFactory;
+    private readonly ILogger<GameDiscoveryService> _logger;
+    private readonly IFileSystemWatcher _fileSystemWatcher;
 
     public event EventHandler<GamesListChangedEventArgs>? GamesListChanged;
 
-    public GameDiscoveryService(IGameDataStoreFactory gameStoreFactory)
+    public GameDiscoveryService(
+        IGameDataStoreFactory gameStoreFactory, 
+        FileSystemWatcherWrapper.Factory fileSystemWatcherFactory,
+        ILogger<GameDiscoveryService> logger
+    )
     {
         _gameStoreFactory = gameStoreFactory;
+        _logger = logger;
 
-        var fileSystemWatcher = new FileSystemWatcher(GameDataStore.GamesFolder, "*.db");
+        _fileSystemWatcher = fileSystemWatcherFactory(GameDataStore.GamesFolder, "*.db");
+        _fileSystemWatcher.EnableRaisingEvents = true;
 
-        fileSystemWatcher.Created += OnGameListChanged;
-        fileSystemWatcher.Deleted += OnGameListChanged;
-        fileSystemWatcher.Renamed += OnGameListChanged;
+        _fileSystemWatcher.Created += OnGameListChanged;
+        _fileSystemWatcher.Deleted += OnGameListChanged;
+        _fileSystemWatcher.Renamed += OnGameListChanged;
     }
 
-    private void OnGameListChanged(object sender, FileSystemEventArgs e)
+    private async void OnGameListChanged(object sender, FileSystemEventArgs e)
     {
-        var games = GetGames().Result;
-        GamesListChanged?.Invoke(this, new GamesListChangedEventArgs { Games = games });
+        try
+        {
+            var games = await GetGames();
+            GamesListChanged?.Invoke(this, new GamesListChangedEventArgs { Games = games });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected error updating game list following file change");
+        }
     }
 
     public Task<GameInfo[]> GetGames() =>
@@ -106,6 +162,7 @@ public class GameDiscoveryService : IGameDiscoveryService
         return new(gameInfo.Id, gameInfo.Name);
     }
 
+    public void Dispose() => _fileSystemWatcher.Dispose();
 }
 
 public sealed class MultipleGameFilesFoundForIdError : ResultError;
